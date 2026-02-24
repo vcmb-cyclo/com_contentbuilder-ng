@@ -1081,7 +1081,7 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
         $advancedOptionsContent = '';
         // Démarrer les onglets
         $activeViewTab = Factory::getApplication()->input->getCmd('tab', 'tab0');
-        $allowedViewTabs = ['tab0', 'tab1', 'tab2', 'tab3', 'tab4', 'tab5', 'tab7', 'tab8', 'tab9'];
+        $allowedViewTabs = ['tab0', 'tab1', 'tab2', 'tab3', 'tab5', 'tab7', 'tab8', 'tab9'];
         if (!in_array($activeViewTab, $allowedViewTabs, true)) {
             $activeViewTab = 'tab0';
         }
@@ -2055,7 +2055,7 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
         </table>
         <?php
         echo HTMLHelper::_('uitab.endTab');
-        echo HTMLHelper::_('uitab.addTab', 'view-pane', 'tab3', Text::_('COM_CONTENTBUILDER_NG_DETAILS_TEMPLATE'));
+        echo HTMLHelper::_('uitab.addTab', 'view-pane', 'tab3', 'Detail Template');
 
         ?>
         <h3 class="mb-3">
@@ -2322,10 +2322,8 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
         echo $this->form->renderField('details_template');
         //        $editor = Editor::getInstance(Factory::getApplication()->get('editor'));
         //        echo $editor->display('details_template', $this->item->details_template, '100%', '550', '75', '20', true, 'details_template');
-
-        echo HTMLHelper::_('uitab.endTab');
-        echo HTMLHelper::_('uitab.addTab', 'view-pane', 'tab4', Text::_('COM_CONTENTBUILDER_NG_DETAILS_PREPARE'));
         ?>
+        <hr />
         <h3 class="mb-3">
             <?php echo Text::_('COM_CONTENTBUILDER_NG_DETAILS_PREPARE_MODE_TITLE'); ?>
         </h3>
@@ -3226,9 +3224,8 @@ $viewTabTooltips = [
     'tab9' => Text::_('COM_CONTENTBUILDER_NG_TAB_TIP_ADVANCED_OPTIONS'),
     'tab2' => Text::_('COM_CONTENTBUILDER_NG_TAB_TIP_LIST_INTRO_TEXT'),
     'tab1' => Text::_('COM_CONTENTBUILDER_NG_TAB_TIP_LIST_STATES'),
-    'tab3' => Text::_('COM_CONTENTBUILDER_NG_TAB_TIP_DETAILS_TEMPLATE'),
-    'tab4' => Text::_('COM_CONTENTBUILDER_NG_TAB_TIP_DETAILS_PREPARE'),
-    'tab5' => Text::_('COM_CONTENTBUILDER_NG_TAB_TIP_EDITABLE_TEMPLATE'),
+    'tab3' => Text::_('COM_CONTENTBUILDER_NG_TAB_TIP_DETAILS_TEMPLATE') . ' + ' . Text::_('COM_CONTENTBUILDER_NG_TAB_TIP_DETAILS_PREPARE'),
+    'tab5' => Text::_('COM_CONTENTBUILDER_NG_TAB_TIP_EDITABLE_TEMPLATE') . ' + ' . Text::_('COM_CONTENTBUILDER_NG_TAB_TIP_EDITABLE_PREPARE'),
     'tab7' => Text::_('COM_CONTENTBUILDER_NG_TAB_TIP_EMAIL_TEMPLATES'),
     'tab8' => Text::_('COM_CONTENTBUILDER_NG_TAB_TIP_PERMISSIONS'),
 ];
@@ -3296,7 +3293,7 @@ $jsonFlags = JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QU
             });
         }
 
-        function applyTabTooltips(tabsetId, tips) {
+        function applyTabTooltips(tabsetId, tips, attempt = 0) {
             const tabset = document.getElementById(tabsetId);
             if (!tabset || !tips) {
                 return;
@@ -3307,25 +3304,36 @@ $jsonFlags = JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QU
                 return;
             }
 
-            const triggers = jTab.querySelectorAll(
-                'button[aria-controls],button[data-tab],button[data-target],a[aria-controls],a[data-tab],a[data-target],a[href^="#"]'
-            );
+            const selector = 'button[aria-controls],button[data-tab],button[data-target],a[aria-controls],a[data-tab],a[data-target],a[href^="#"]';
+            const roots = [jTab];
+            if (jTab.shadowRoot) {
+                roots.push(jTab.shadowRoot);
+            }
 
-            triggers.forEach((trigger) => {
-                const id = getTabTargetId(trigger);
-                const tip = id ? tips[id] : null;
+            let applied = 0;
 
-                if (!tip) {
-                    return;
-                }
+            roots.forEach((root) => {
+                root.querySelectorAll(selector).forEach((trigger) => {
+                    const id = getTabTargetId(trigger);
+                    const tip = id ? tips[id] : null;
 
-                trigger.setAttribute('title', String(tip));
-                trigger.setAttribute('data-bs-toggle', 'tooltip');
-                trigger.setAttribute('data-bs-placement', 'top');
-                trigger.setAttribute('data-bs-title', String(tip));
+                    if (!tip) {
+                        return;
+                    }
+
+                    trigger.setAttribute('title', String(tip));
+                    trigger.setAttribute('data-bs-toggle', 'tooltip');
+                    trigger.setAttribute('data-bs-placement', 'top');
+                    trigger.setAttribute('data-bs-title', String(tip));
+                    applied++;
+                });
+
+                initBootstrapTooltips(root);
             });
 
-            initBootstrapTooltips(jTab);
+            if (applied === 0 && attempt < 12) {
+                window.setTimeout(() => applyTabTooltips(tabsetId, tips, attempt + 1), 120);
+            }
         }
 
         function setHidden(name, value) {
