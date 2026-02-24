@@ -1081,7 +1081,7 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
         $advancedOptionsContent = '';
         // Démarrer les onglets
         $activeViewTab = Factory::getApplication()->input->getCmd('tab', 'tab0');
-        $allowedViewTabs = ['tab0', 'tab1', 'tab2', 'tab3', 'tab4', 'tab5', 'tab6', 'tab7', 'tab8', 'tab9'];
+        $allowedViewTabs = ['tab0', 'tab1', 'tab2', 'tab3', 'tab4', 'tab5', 'tab7', 'tab8', 'tab9'];
         if (!in_array($activeViewTab, $allowedViewTabs, true)) {
             $activeViewTab = 'tab0';
         }
@@ -2394,9 +2394,11 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
         //      $editor = Editor::getInstance(Factory::getApplication()->get('editor'));
         //      echo $editor->display('editable_template', $this->item->editable_template, '100%', '550', '75', '20', true, 'editable_template');
         ?>
+        <hr />
+        <h3 class="mb-3">
+            <?php echo Text::_('COM_CONTENTBUILDER_NG_DETAILS_PREPARE_MODE_TITLE'); ?>
+        </h3>
         <?php
-        echo HTMLHelper::_('uitab.endTab');
-        echo HTMLHelper::_('uitab.addTab', 'view-pane', 'tab6', Text::_('COM_CONTENTBUILDER_NG_EDITABLE_PREPARE'));
 
         if ($this->item->edit_by_type) {
             echo Text::_('COM_CONTENTBUILDER_NG_EDITABLE_TEMPLATE_PROVIDED_BY_BREEZINGFORMS');
@@ -3227,7 +3229,6 @@ $viewTabTooltips = [
     'tab3' => Text::_('COM_CONTENTBUILDER_NG_TAB_TIP_DETAILS_TEMPLATE'),
     'tab4' => Text::_('COM_CONTENTBUILDER_NG_TAB_TIP_DETAILS_PREPARE'),
     'tab5' => Text::_('COM_CONTENTBUILDER_NG_TAB_TIP_EDITABLE_TEMPLATE'),
-    'tab6' => Text::_('COM_CONTENTBUILDER_NG_TAB_TIP_EDITABLE_PREPARE'),
     'tab7' => Text::_('COM_CONTENTBUILDER_NG_TAB_TIP_EMAIL_TEMPLATES'),
     'tab8' => Text::_('COM_CONTENTBUILDER_NG_TAB_TIP_PERMISSIONS'),
 ];
