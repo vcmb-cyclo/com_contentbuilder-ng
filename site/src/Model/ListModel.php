@@ -108,7 +108,16 @@ class ListModel extends BaseListModel
             $listDirection = isset($parts[1]) ? strtolower((string) $parts[1]) : $listDirection;
         }
 
-        if ($app->getSession()->get($option . 'formsd_id', 0) == 0 || $app->getSession()->get($option . 'formsd_id', 0) == $this->_id) {
+        $previousFormId = (int) $app->getSession()->get($option . 'formsd_id', 0);
+        $formSwitched = $previousFormId > 0 && $previousFormId !== $this->_id;
+
+        // Hard reset when moving from one CB view/form to another.
+        // This avoids bringing back any prior filter/sort/pagination state.
+        if ($formSwitched) {
+            $this->resetStateOnFormSwitch();
+        }
+
+        if ($previousFormId == 0 || $previousFormId == $this->_id) {
             $filter_order     = (string) $app->getUserState($option . 'formsd_filter_order', '');
             $filter_order_Dir = (string) $app->getUserState($option . 'formsd_filter_order_Dir', '');
             $filter           = $app->getUserStateFromRequest($option . 'formsd_filter', 'filter', '', 'string');
@@ -133,6 +142,15 @@ class ListModel extends BaseListModel
             $filter_order_Dir = $listDirection;
             $app->setUserState($option . 'formsd_filter_order_Dir', $filter_order_Dir);
         }
+
+        // Keep legacy list state in sync when switching views/forms.
+        // Without this, a previous form filter can be restored on pagination.
+        $app->setUserState($option . 'formsd_filter', (string) $filter);
+        $app->setUserState($option . 'formsd_filter_state', (int) $filter_state);
+        $app->setUserState($option . 'formsd_filter_publish', (int) $filter_publish);
+        $app->setUserState($option . 'formsd_filter_language', (string) $filter_language);
+        $app->setUserState($option . 'formsd_filter_order', (string) $filter_order);
+        $app->setUserState($option . 'formsd_filter_order_Dir', (string) $filter_order_Dir);
 
         $this->setState('formsd_filter_state', $filter_state);
         $this->setState('formsd_filter_publish', $filter_publish);
@@ -273,6 +291,35 @@ class ListModel extends BaseListModel
         $itemId = (int) $app->input->getInt('Itemid', 0);
 
         return $option . '.liststate.' . $formId . '.' . $layout . '.' . $itemId;
+    }
+
+    private function resetStateOnFormSwitch(): void
+    {
+        $app = Factory::getApplication();
+        $session = $app->getSession();
+        $option = 'com_contentbuilder_ng';
+
+        // Reset legacy list state keys.
+        $app->setUserState($option . 'formsd_filter', '');
+        $app->setUserState($option . 'formsd_filter_state', 0);
+        $app->setUserState($option . 'formsd_filter_publish', -1);
+        $app->setUserState($option . 'formsd_filter_language', '');
+        $app->setUserState($option . 'formsd_filter_order', '');
+        $app->setUserState($option . 'formsd_filter_order_Dir', '');
+
+        // Reset current view pagination state.
+        $paginationStateKey = $this->getPaginationStateKeyPrefix();
+        $app->setUserState($paginationStateKey . '.limit', 0);
+        $app->setUserState($paginationStateKey . '.start', 0);
+
+        // Reset current form external filter state.
+        $session->clear('com_contentbuilder_ng.filter_signal.' . $this->_id);
+        $session->clear('com_contentbuilder_ng.filter.' . $this->_id);
+        $session->clear('com_contentbuilder_ng.calendar_filter_from.' . $this->_id);
+        $session->clear('com_contentbuilder_ng.calendar_filter_to.' . $this->_id);
+        $session->clear('com_contentbuilder_ng.calendar_formats.' . $this->_id);
+        $session->clear('com_contentbuilder_ng.filter_keywords.' . $this->_id);
+        $session->clear('com_contentbuilder_ng.filter_article_categories.' . $this->_id);
     }
 
 
