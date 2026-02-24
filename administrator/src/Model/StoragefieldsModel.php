@@ -46,7 +46,6 @@ class StoragefieldsModel extends ListModel
     public function setStorageId(int $storageId): void
     {
         $this->storageId = $storageId;
-        $this->setState('storage.id', $storageId);
     }
 
     /**
@@ -55,6 +54,7 @@ class StoragefieldsModel extends ListModel
     protected function populateState($ordering = 'ordering', $direction = 'asc'): void
     {
         $app = Factory::getApplication();
+        $context = $this->context ?: 'com_contentbuilder_ng.storagefields';
         $storageId = (int) $this->storageId;
 
         if (!$storageId) {
@@ -77,6 +77,42 @@ class StoragefieldsModel extends ListModel
         $this->setState('filter.published', $published);
 
         parent::populateState($ordering, $direction);
+
+        // Joomla core may reset list.start to 0 when list[] exists without list[limit].
+        // Re-apply a consistent pagination state for this screen.
+        $listInput = (array) $app->input->get('list', [], 'array');
+        if (array_key_exists('limit', $listInput)) {
+            $effectiveLimit = (int) $listInput['limit'];
+        } elseif ($app->input->get('limit', null, 'raw') !== null) {
+            $effectiveLimit = (int) $app->input->getInt('limit', (int) $app->get('list_limit'));
+        } else {
+            $effectiveLimit = (int) $app->getUserState($context . '.list.limit', (int) $app->get('list_limit'));
+        }
+        $effectiveLimit = max(0, $effectiveLimit);
+
+        // Joomla admin pagination links set "limitstart"; prefer it over stale list[start].
+        if ($app->input->get('limitstart', null, 'raw') !== null) {
+            $requestedStart = (int) $app->input->getInt('limitstart', 0);
+        } elseif (array_key_exists('start', $listInput)) {
+            $requestedStart = (int) $listInput['start'];
+        } elseif ($app->input->get('start', null, 'raw') !== null) {
+            $requestedStart = (int) $app->input->getInt('start', 0);
+        } else {
+            $requestedStart = (int) $app->getUserState($context . '.list.start', 0);
+        }
+
+        $effectiveStart = ($effectiveLimit !== 0) ? (int) (floor($requestedStart / $effectiveLimit) * $effectiveLimit) : 0;
+        $effectiveStart = max(0, $effectiveStart);
+
+        $this->setState('list.limit', $effectiveLimit);
+        $this->setState('list.start', $effectiveStart);
+        // Keep legacy aliases in sync for helpers/components still reading these keys.
+        $this->setState('limit', $effectiveLimit);
+        $this->setState('limitstart', $effectiveStart);
+
+        $app->setUserState($context . '.list.limit', $effectiveLimit);
+        $app->setUserState($context . '.list.start', $effectiveStart);
+        $app->setUserState($context . '.limitstart', $effectiveStart);
     }
 
     /**

@@ -526,6 +526,11 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
         const form = document.getElementById('adminForm') || document.adminForm;
         if (!form) return;
 
+        if (!task || task === 'form.display') {
+            Joomla.submitform('form.display', form);
+            return;
+        }
+
         if (task == 'form.remove') {
             task = 'form.listremove';
         }
@@ -3166,10 +3171,12 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
     <div class="clr"></div>
 
     <input type="hidden" name="option" value="com_contentbuilder_ng" />
+    <input type="hidden" name="view" value="form" />
+    <input type="hidden" name="layout" value="edit" />
     <input type="hidden" name="id" value="<?php echo (int) $this->item->id; ?>" />
     <input type="hidden" name="jform[id]" value="<?php echo (int) $this->item->id; ?>" />
-    <input type="hidden" name="task" value="" />
-    <input type="hidden" name="limitstart" value="" />
+    <input type="hidden" name="task" value="form.display" />
+    <input type="hidden" name="limitstart" value="<?php echo (int) Factory::getApplication()->input->getInt('limitstart', 0); ?>" />
     <input type="hidden" name="jform[ordering]" value="<?php echo $this->item->ordering; ?>" />
     <input type="hidden" name="jform[published]" value="<?php echo $this->item->published; ?>" />
     <input type="hidden" name="list[ordering]" value="<?php echo htmlspecialchars($listOrder, ENT_QUOTES, 'UTF-8'); ?>" />

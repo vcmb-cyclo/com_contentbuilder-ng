@@ -91,25 +91,6 @@ class HtmlView extends BaseHtmlView
                 // IMPORTANT : fournir le form id au ListModel
                 $fieldsModel->setStorageId($storageId);
 
-                $list = (array) $app->input->get('list', [], 'array');
-                $ordering = isset($list['ordering']) ? preg_replace('/[^a-zA-Z0-9_\\.]/', '', (string) $list['ordering']) : '';
-                $direction = isset($list['direction']) ? strtolower((string) $list['direction']) : '';
-                $start = isset($list['start']) ? (int) $list['start'] : null;
-                $limit = isset($list['limit']) ? (int) $list['limit'] : null;
-
-                if ($ordering !== '') {
-                    $fieldsModel->setState('list.ordering', $ordering);
-                }
-                if ($direction === 'asc' || $direction === 'desc') {
-                    $fieldsModel->setState('list.direction', $direction);
-                }
-                if ($start !== null) {
-                    $fieldsModel->setState('list.start', $start);
-                }
-                if ($limit !== null && $limit >= 0) {
-                    $fieldsModel->setState('list.limit', $limit);
-                }
-
                 // Charge les items
                 $this->fields     = $fieldsModel->getItems();
                 $this->pagination = $fieldsModel->getPagination();

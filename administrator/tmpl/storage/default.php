@@ -66,7 +66,7 @@ foreach ($sortFields as $field) {
         'url' => \Joomla\CMS\Router\Route::_(
             'index.php?option=com_contentbuilder_ng&task=storage.display&layout=edit&id='
             . $storageId
-            . '&list[start]=0'
+            . '&limitstart=0'
             . '&list[ordering]=' . $field
             . '&list[direction]=' . $nextDir
             . '&list[limit]=' . max(0, $limitValue),
@@ -81,6 +81,17 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
         . htmlspecialchars($name, ENT_QUOTES, 'UTF-8') . '" id="' . htmlspecialchars($id, ENT_QUOTES, 'UTF-8')
         . '" value="1"' . ($checked ? ' checked="checked"' : '') . ' /></span>';
 };
+
+$wa = Factory::getApplication()->getDocument()->getWebAssetManager();
+$wa->addInlineStyle(
+    '.cb-storage-fields-table .cb-order-col{width:84px;min-width:84px;text-align:right;white-space:nowrap}'
+    . '.cb-storage-fields-table .cb-order-icons{display:inline-flex;justify-content:flex-end;gap:.5rem;width:100%}'
+    . '.cb-storage-fields-table .cb-order-icons>span{display:inline-flex}'
+    . '.cb-storage-pagination{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:.5rem}'
+    . '.cb-storage-pagination .cb-storage-pages{margin-left:auto}'
+    . '.cb-storage-pagination .cb-storage-pages .pagination{margin:0!important;text-align:right!important}'
+    . '.cb-storage-pagination .cb-storage-pages .pagination ul{display:flex;justify-content:flex-end;flex-wrap:wrap;gap:.35rem;margin:0;padding:0}'
+);
 
 ?>
 
@@ -140,7 +151,7 @@ if (document.readyState === 'loading') {
 }
 </script>
 
-<form action="<?php echo \Joomla\CMS\Router\Route::_('index.php?option=com_contentbuilder_ng&task=storage.edit&id=' . (int) $this->item->id); ?>"
+<form action="index.php"
     method="post" name="adminForm" id="adminForm" enctype="multipart/form-data">
 
 <?php
@@ -456,7 +467,7 @@ echo HTMLHelper::_('uitab.addTab', 'view-pane', 'tab0', Text::_('COM_CONTENTBUIL
             </td>
 
             <td valign="top">
-                <table class="table table-striped m-3" style="min-width: 697px;">
+                <table class="table table-striped m-3 cb-storage-fields-table" style="min-width: 697px;">
                     <thead>
                         <tr>
                             <th width="20">
@@ -477,7 +488,7 @@ echo HTMLHelper::_('uitab.addTab', 'view-pane', 'tab0', Text::_('COM_CONTENTBUIL
                                     <?php echo htmlspecialchars(Text::_('COM_CONTENTBUILDER_NG_STORAGE_GROUP'), ENT_QUOTES, 'UTF-8'); ?><?php echo $sortLinks['group_definition']['indicator']; ?>
                                 </a>
                             </th>
-                            <th>
+                            <th class="cb-order-col">
                                 <a href="<?php echo htmlspecialchars((string) $sortLinks['ordering']['url'], ENT_QUOTES, 'UTF-8'); ?>">
                                     <?php echo htmlspecialchars(Text::_('COM_CONTENTBUILDER_NG_ORDERBY'), ENT_QUOTES, 'UTF-8'); ?><?php echo $sortLinks['ordering']['indicator']; ?>
                                 </a>
@@ -543,13 +554,15 @@ echo HTMLHelper::_('uitab.addTab', 'view-pane', 'tab0', Text::_('COM_CONTENTBUIL
                                     name="itemGroupDefinitions[<?php echo $id; ?>]"><?php echo $group_definition; ?></textarea>
                             </td>
                           
-                            <td class="order text-nowrap">
+                            <td class="order cb-order-col">
                                 <?php if ($canOrder) : ?>
-                                    <span class="me-2">
-                                        <?php echo $this->pagination->orderUpIcon($i, true, 'storage.orderup', 'JLIB_HTML_MOVE_UP', $this->ordering); ?>
-                                    </span>
-                                    <span>
-                                        <?php echo $this->pagination->orderDownIcon($i, $n, true, 'storage.orderdown', 'JLIB_HTML_MOVE_DOWN', $this->ordering); ?>
+                                    <span class="cb-order-icons">
+                                        <span>
+                                            <?php echo $this->pagination->orderUpIcon($i, true, 'storage.orderup', 'JLIB_HTML_MOVE_UP', $this->ordering); ?>
+                                        </span>
+                                        <span>
+                                            <?php echo $this->pagination->orderDownIcon($i, $n, true, 'storage.orderdown', 'JLIB_HTML_MOVE_DOWN', $this->ordering); ?>
+                                        </span>
                                     </span>
                                 <?php endif; ?>
                             </td>
@@ -561,19 +574,21 @@ echo HTMLHelper::_('uitab.addTab', 'view-pane', 'tab0', Text::_('COM_CONTENTBUIL
                     <tfoot>
                         <tr>
                             <td colspan="6">
-                                <div class="pagination pagination-toolbar">
-                                    <div class="cbPagesCounter">
+                                <div class="cb-storage-pagination">
+                                    <div class="cbPagesCounter d-flex flex-wrap align-items-center gap-2">
                                         <?php if (!empty($this->pagination)) {
                                             echo $this->pagination->getPagesCounter();
                                         } ?>
                                         <?php
                                         echo '<span>' . Text::_('COM_CONTENTBUILDER_NG_DISPLAY_NUM') . '&nbsp;</span>';
-                                        echo '<div style="display:inline-block;">' . (empty($this->pagination) ? '' : $this->pagination->getLimitBox()) . '</div>';
+                                        echo '<div class="d-inline-block">' . (empty($this->pagination) ? '' : $this->pagination->getLimitBox()) . '</div>';
                                         ?>
                                     </div>
-                                    <?php if (!empty($this->pagination)) {
-                                        echo $this->pagination->getPagesLinks();
-                                    } ?>
+                                    <div class="cb-storage-pages">
+                                        <?php if (!empty($this->pagination)) {
+                                            echo $this->pagination->getPagesLinks();
+                                        } ?>
+                                    </div>
                                 </div>
                             </td>
                         </tr>
@@ -653,8 +668,10 @@ echo HTMLHelper::_('uitab.addTab', 'view-pane', 'tab0', Text::_('COM_CONTENTBUIL
     </div>
 
     <input type="hidden" name="option" value="com_contentbuilder_ng" />
+    <input type="hidden" name="view" value="storage" />
+    <input type="hidden" name="layout" value="edit" />
     <input type="hidden" name="id" value="<?php echo (int) $this->item->id; ?>">
-    <input type="hidden" name="task" value="storage.edit">
+    <input type="hidden" name="task" value="storage.display">
     <input type="hidden" name="jform[id]" value="<?php echo (int) $this->item->id; ?>" />
     <input type="hidden" name="jform[ordering]" value="<?php echo $this->item->ordering; ?>" />
     <input type="hidden" name="jform[published]" value="<?php echo $this->item->published; ?>" />
@@ -662,8 +679,7 @@ echo HTMLHelper::_('uitab.addTab', 'view-pane', 'tab0', Text::_('COM_CONTENTBUIL
     <input type="hidden" name="filter_order_Dir" value="<?php echo htmlspecialchars($listDirn, ENT_QUOTES, 'UTF-8'); ?>" />
     <input type="hidden" name="list[ordering]" value="<?php echo htmlspecialchars($listOrder, ENT_QUOTES, 'UTF-8'); ?>" />
     <input type="hidden" name="list[direction]" value="<?php echo htmlspecialchars($listDirn, ENT_QUOTES, 'UTF-8'); ?>" />
-    <input type="hidden" name="limitstart" value="<?php echo (int) $this->state?->get('list.start', 0); ?>" />
-    <input type="hidden" name="list[start]" value="<?php echo (int) $this->state?->get('list.start', 0); ?>" />
+    <input type="hidden" name="limitstart" value="<?php echo (int) Factory::getApplication()->input->getInt('limitstart', 0); ?>" />
     <input type="hidden" name="boxchecked" value="0" />
     <input type="hidden" name="tabStartOffset" value="<?php echo Factory::getApplication()->getSession()->get('tabStartOffset', 0); ?>" />
     <?php echo HTMLHelper::_('form.token'); ?>

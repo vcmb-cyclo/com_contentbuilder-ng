@@ -109,6 +109,8 @@ class ElementsModel extends ListModel
         $this->formId = $formId;
 
 
+        $context = $this->context ?: 'com_contentbuilder_ng.elements';
+
         // Filtre sur published
         $published = $app->getUserStateFromRequest('com_contentbuilder_ng.elements.filter.published', 'filter_published', '', 'string');
         $this->setState('filter.published', $published);
@@ -117,16 +119,15 @@ class ElementsModel extends ListModel
         $search = $app->getUserStateFromRequest('com_contentbuilder_ng.elements.filter.search', 'filter_search', '', 'string');
         $this->setState('filter.search', $search);
 
-        // Pagination
-        $limit = $app->getUserStateFromRequest('global.list.limit', 'limit', $app->get('list_limit'), 'uint');
+        // Pagination (scope local a la liste des elements)
+        $limit = $app->getUserStateFromRequest($context . '.list.limit', 'limit', $app->get('list_limit'), 'uint');
         $this->setState('list.limit', $limit);
 
-        $value = $app->getUserStateFromRequest('com_contentbuilder_ng.elements.limitstart', 'limitstart', 0, 'int');
+        $value = $app->getUserStateFromRequest($context . '.list.start', 'limitstart', 0, 'int');
         $limitstart = ($limit != 0 ? (floor($value / $limit) * $limit) : 0);
         $this->setState('list.start', $limitstart);
 
         // Tri
-        $context = 'com_contentbuilder_ng.elements';
         $list = (array) $app->input->get('list', [], 'array');
 
         $orderCol = (string) ($list['ordering'] ?? $app->getUserState($context . '.list.ordering', 'ordering'));
@@ -141,6 +142,42 @@ class ElementsModel extends ListModel
         $app->setUserState($context . '.list.direction', $orderDirn);
 
         parent::populateState($ordering, $direction);
+
+        // Joomla core may reset list.start to 0 when list[] exists without list[limit].
+        // Re-apply an explicit effective limit/start from request values used by this screen.
+        $listInput = (array) $app->input->get('list', [], 'array');
+        if (array_key_exists('limit', $listInput)) {
+            $effectiveLimit = (int) $listInput['limit'];
+        } elseif ($app->input->get('limit', null, 'raw') !== null) {
+            $effectiveLimit = (int) $app->input->getInt('limit', (int) $limit);
+        } else {
+            $effectiveLimit = (int) $app->getUserState($context . '.list.limit', (int) ($limit ?: $app->get('list_limit')));
+        }
+        $effectiveLimit = max(0, $effectiveLimit);
+
+        if (array_key_exists('start', $listInput)) {
+            $requestedStart = (int) $listInput['start'];
+        } elseif ($app->input->get('start', null, 'raw') !== null) {
+            $requestedStart = (int) $app->input->getInt('start', 0);
+        } elseif ($app->input->get('limitstart', null, 'raw') !== null) {
+            $requestedStart = (int) $app->input->getInt('limitstart', 0);
+        } else {
+            $requestedStart = (int) $app->getUserState($context . '.list.start', 0);
+        }
+
+        $effectiveStart = ($effectiveLimit !== 0) ? (int) (floor($requestedStart / $effectiveLimit) * $effectiveLimit) : 0;
+        $effectiveStart = max(0, $effectiveStart);
+
+        $this->setState('list.limit', $effectiveLimit);
+        $this->setState('list.start', $effectiveStart);
+        // Keep legacy aliases in sync for old helper calls still using these keys.
+        $this->setState('limit', $effectiveLimit);
+        $this->setState('limitstart', $effectiveStart);
+
+        $app->setUserState($context . '.list.limit', $effectiveLimit);
+        $app->setUserState($context . '.list.start', $effectiveStart);
+        $app->setUserState($context . '.limitstart', $effectiveStart);
+
         $this->setState('list.ordering', $orderCol);
         $this->setState('list.direction', $orderDirn);
     }
