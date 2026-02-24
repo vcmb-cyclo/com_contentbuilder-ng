@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <updates>
 	<update>
-		<name>Contentbuilder_ng</name>
+		<name>COM_CONTENTBUILDER_NG</name>
 		<description>ContentBuilder NG Update 6.1.0-RC9</description>
 		<element>com_contentbuilder_ng</element>
 		<type>component</type>

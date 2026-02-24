@@ -1,6 +1,5 @@
 <extension type="component" method="upgrade" version="6.0">
-
-    <name>Contentbuilder_ng</name>
+    <name>COM_CONTENTBUILDER_NG</name>
     <creationDate>2026-02-23</creationDate>
     <author>XDA+GIL</author>
     <authorEmail>bf@vcmb.fr</authorEmail>
@@ -56,7 +55,7 @@
 <!-- ADMINISTRATION -->
 <!-- ===================== -->
 <administration>
-    <menu>Contentbuilder_ng</menu>
+    <menu>COM_CONTENTBUILDER_NG</menu>
     <submenu>
         <menu view="storages">
             COM_CONTENTBUILDER_NG_STORAGES
