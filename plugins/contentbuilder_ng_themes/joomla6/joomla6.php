@@ -211,7 +211,7 @@ class plgContentbuilder_ng_themesJoomla6 extends CMSPlugin implements Subscriber
     box-shadow: none;
 }
 
-.cbEditableWrapper .cbToolBar .cbDeleteButton.btn-outline-danger .icon-trash,
+.cbEditableWrapper .cbToolBar .cbDeleteButton.btn-outline-danger .fa-trash,
 .cbEditableWrapper .cbToolBar .cbDeleteButton.btn-outline-danger .fa {
     color: inherit;
 }
@@ -465,8 +465,8 @@ class plgContentbuilder_ng_themesJoomla6 extends CMSPlugin implements Subscriber
     align-items: center;
 }
 
-.cbDetailsWrapper .cbTitleRecordNav .cbButton.btn [class^="icon-"],
-.cbDetailsWrapper .cbTitleRecordNav .cbButton.btn [class*=" icon-"] {
+.cbDetailsWrapper .cbTitleRecordNav .cbButton.btn [class^="fa-"],
+.cbDetailsWrapper .cbTitleRecordNav .cbButton.btn [class*=" fa-"] {
     color: #0d6efd;
 }
 
@@ -496,9 +496,9 @@ class plgContentbuilder_ng_themesJoomla6 extends CMSPlugin implements Subscriber
     box-shadow: none;
 }
 
-.cbDetailsWrapper .cbToolBar .cbDeleteButton.btn-outline-danger .icon-trash,
+.cbDetailsWrapper .cbToolBar .cbDeleteButton.btn-outline-danger .fa-trash,
 .cbDetailsWrapper .cbToolBar .cbDeleteButton.btn-outline-danger .fa,
-.cbDetailsWrapper .cbTitleRecordNav .cbDeleteButton.btn-outline-danger .icon-trash,
+.cbDetailsWrapper .cbTitleRecordNav .cbDeleteButton.btn-outline-danger .fa-trash,
 .cbDetailsWrapper .cbTitleRecordNav .cbDeleteButton.btn-outline-danger .fa {
     color: inherit;
 }

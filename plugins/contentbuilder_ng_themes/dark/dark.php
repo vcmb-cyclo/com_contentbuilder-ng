@@ -428,8 +428,8 @@ class plgContentbuilder_ng_themesDark extends CMSPlugin implements SubscriberInt
     align-items: center;
 }
 
-.cbDetailsWrapper .cbTitleRecordNav .cbButton.btn [class^="icon-"],
-.cbDetailsWrapper .cbTitleRecordNav .cbButton.btn [class*=" icon-"] {
+.cbDetailsWrapper .cbTitleRecordNav .cbButton.btn [class^="fa-"],
+.cbDetailsWrapper .cbTitleRecordNav .cbButton.btn [class*=" fa-"] {
     color: #0d6efd;
 }
 

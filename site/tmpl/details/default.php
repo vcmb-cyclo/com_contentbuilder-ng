@@ -156,7 +156,7 @@ CSS
             <?php echo Text::_('COM_CONTENTBUILDER_NG_PREVIEW_MODE') . ' - ' . Text::sprintf('COM_CONTENTBUILDER_NG_PREVIEW_CURRENT_FORM', $previewFormName) . ' - ' . Text::sprintf('COM_CONTENTBUILDER_NG_PREVIEW_CONFIG_TAB', Text::_('COM_CONTENTBUILDER_NG_PREVIEW_TAB_CONTENT_TEMPLATE')); ?>
         </span>
         <a class="btn btn-sm btn-outline-secondary" href="<?php echo $adminReturnUrl; ?>">
-            <span class="icon-arrow-left me-1" aria-hidden="true"></span>
+            <span class="fa-solid fa-arrow-left me-1" aria-hidden="true"></span>
             <?php echo Text::_('COM_CONTENTBUILDER_NG_BACK_TO_ADMIN'); ?>
         </a>
     </div>
@@ -217,7 +217,7 @@ if ($this->show_page_heading && $this->page_title) {
                         class="btn btn-sm btn-outline-secondary cbButton cbBackButton cbPrevButton"
                         href="<?php echo Route::_($detailsNavBaseLink . '&record_id=' . $prevRecordId); ?>"
                         title="<?php echo Text::_('JPREVIOUS'); ?>">
-                        <span class="icon-arrow-left me-1" aria-hidden="true"></span>
+                        <span class="fa-solid fa-arrow-left me-1" aria-hidden="true"></span>
                         <?php echo Text::_('JPREVIOUS'); ?>
                     </a>
                 <?php endif; ?>
@@ -227,7 +227,7 @@ if ($this->show_page_heading && $this->page_title) {
                         href="<?php echo Route::_($detailsNavBaseLink . '&record_id=' . $nextRecordId); ?>"
                         title="<?php echo Text::_('JNEXT'); ?>">
                         <?php echo Text::_('JNEXT'); ?>
-                        <span class="icon-arrow-right ms-1" aria-hidden="true"></span>
+                        <span class="fa-solid fa-arrow-right ms-1" aria-hidden="true"></span>
                     </a>
                 <?php endif; ?>
                 <?php if ($showCloseButton): ?>
@@ -235,7 +235,7 @@ if ($this->show_page_heading && $this->page_title) {
                         class="btn btn-sm btn-outline-secondary cbButton cbBackButton cbCloseButton"
                         href="<?php echo $closeListLink; ?>"
                         title="<?php echo Text::_('COM_CONTENTBUILDER_NG_CLOSE'); ?>">
-                        <span class="icon-times me-1" aria-hidden="true"></span>
+                        <span class="fa-solid fa-clocks me-1" aria-hidden="true"></span>
                         <?php echo Text::_('COM_CONTENTBUILDER_NG_CLOSE'); ?>
                     </a>
                 <?php endif; ?>
@@ -276,7 +276,7 @@ if ($showActionToolbar) {
             class="btn btn-sm btn-outline-secondary cbButton cbBackButton cbPrevButton"
             href="<?php echo Route::_($detailsNavBaseLink . '&record_id=' . $prevRecordId); ?>"
             title="<?php echo Text::_('JPREVIOUS'); ?>">
-            <span class="icon-arrow-left me-1" aria-hidden="true"></span>
+            <span class="fa-solid fa-arrow-left me-1" aria-hidden="true"></span>
             <?php echo Text::_('JPREVIOUS'); ?>
         </a>
     <?php endif; ?>
@@ -287,7 +287,7 @@ if ($showActionToolbar) {
             href="<?php echo Route::_($detailsNavBaseLink . '&record_id=' . $nextRecordId); ?>"
             title="<?php echo Text::_('JNEXT'); ?>">
             <?php echo Text::_('JNEXT'); ?>
-            <span class="icon-arrow-right ms-1" aria-hidden="true"></span>
+            <span class="fa-solid fa-arrow-right ms-1" aria-hidden="true"></span>
         </a>
     <?php endif; ?>
 
@@ -296,7 +296,7 @@ if ($showActionToolbar) {
             class="btn btn-sm btn-outline-secondary cbButton cbBackButton cbCloseButton"
             href="<?php echo $closeListLink; ?>"
             title="<?php echo Text::_('COM_CONTENTBUILDER_NG_CLOSE'); ?>">
-            <span class="icon-times me-1" aria-hidden="true"></span>
+            <span class="fa-solid fa-clocks me-1" aria-hidden="true"></span>
             <?php echo Text::_('COM_CONTENTBUILDER_NG_CLOSE'); ?>
         </a>
     <?php endif; ?>
@@ -313,7 +313,7 @@ if ($showActionToolbar) {
     <?php if ($delete_allowed) { ?>
         <button class="btn btn-sm btn-outline-danger cbButton cbDeleteButton d-inline-flex align-items-center gap-1 rounded-pill" onclick="contentbuilder_ng_delete();"
             title="<?php echo Text::_('COM_CONTENTBUILDER_NG_DELETE'); ?>">
-            <span class="icon-trash" aria-hidden="true"></span>
+            <span class="fa-solid fa-trash" aria-hidden="true"></span>
             <span><?php echo Text::_('COM_CONTENTBUILDER_NG_DELETE') ?></span>
         </button>
     <?php
@@ -323,7 +323,7 @@ if ($showActionToolbar) {
         <a class="btn btn-sm btn-outline-secondary cbButton cbBackButton"
             href="<?php echo $closeListLink; ?>"
             title="<?php echo Text::_('COM_CONTENTBUILDER_NG_CLOSE'); ?>">
-            <span class="icon-times me-1" aria-hidden="true"></span>
+            <span class="fa-solid fa-clocks me-1" aria-hidden="true"></span>
             <?php echo Text::_('COM_CONTENTBUILDER_NG_CLOSE') ?>
         </a>
     <?php endif; ?>

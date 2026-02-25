@@ -131,8 +131,8 @@ class HtmlView extends BaseHtmlView
         $dropdown->listCheck(true);
 
         $childToolbar = $dropdown->getChildToolbar();
-        $childToolbar->publish('storage.publish')->icon('icon-publish text-success')->listCheck(true);
-        $childToolbar->unpublish('storage.unpublish')->icon('icon-unpublish text-danger')->listCheck(true);
+        $childToolbar->publish('storage.publish')->icon('fa-solid fa-check text-success')->listCheck(true);
+        $childToolbar->unpublish('storage.unpublish')->icon('fa-solid fa-circle-xmark text-danger')->listCheck(true);
 
         $id = (int) ($this->item->id ?? 0);
         $isExternalTable = ((int) ($this->item->bytable ?? 0) === 1);

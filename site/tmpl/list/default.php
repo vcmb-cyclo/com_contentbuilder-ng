@@ -330,7 +330,7 @@ CSS
 				<?php echo Text::_('COM_CONTENTBUILDER_NG_PREVIEW_MODE') . ' - ' . Text::sprintf('COM_CONTENTBUILDER_NG_PREVIEW_CURRENT_FORM', $previewFormName) . ' - ' . Text::sprintf('COM_CONTENTBUILDER_NG_PREVIEW_CONFIG_TAB', Text::_('COM_CONTENTBUILDER_NG_PREVIEW_TAB_VIEW')); ?>
 			</span>
 			<a class="btn btn-sm btn-outline-secondary" href="<?php echo $adminReturnUrl; ?>">
-				<span class="icon-arrow-left me-1" aria-hidden="true"></span>
+				<span class="fa-solid fa-arrow-left me-1" aria-hidden="true"></span>
 				<?php echo Text::_('COM_CONTENTBUILDER_NG_BACK_TO_ADMIN'); ?>
 			</a>
 		</div>
@@ -389,7 +389,7 @@ by this block. -->
 								<?php endforeach; ?>
 								</select>
 								<button class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1" onclick="contentbuilder_ng_language();">
-									<span class="icon-check" aria-hidden="true"></span>
+									<span class="fa-solid fa-check" aria-hidden="true"></span>
 									<?php echo Text::_('COM_CONTENTBUILDER_NG_APPLY'); ?>
 								</button>
 							</div>
@@ -443,7 +443,7 @@ by this block. -->
 										onchange="document.adminForm.submit();" />
 
 										<button type="submit" class="btn btn-primary d-inline-flex align-items-center gap-1" id="cbSearchButton">
-											<span class="icon-search" aria-hidden="true"></span>
+											<span class="fa-solid fa-magnifying-glass" aria-hidden="true"></span>
 											<?php echo Text::_('COM_CONTENTBUILDER_NG_SEARCH'); ?>
 										</button>
 
@@ -453,7 +453,7 @@ by this block. -->
                 <?php echo $this->list_state && count($this->states) ? "if(document.getElementById('list_state_filter')) document.getElementById('list_state_filter').selectedIndex=0;" : ""; ?>
                 <?php echo $this->list_publish ? "if(document.getElementById('list_publish_filter')) document.getElementById('list_publish_filter').selectedIndex=0;" : ""; ?>
                 document.adminForm.submit();">
-											<span class="icon-times" aria-hidden="true"></span>
+											<span class="fa-solid fa-clocks" aria-hidden="true"></span>
 											<?php echo Text::_('COM_CONTENTBUILDER_NG_RESET'); ?>
 										</button>
 									</div>
@@ -512,14 +512,14 @@ by this block. -->
 											<a class="btn btn-sm btn-outline-primary align-self-center d-inline-flex align-items-center gap-1 rounded-pill cb-list-new-btn"
 												href="<?php echo $newRecordLink; ?>"
 												title="<?php echo Text::_('COM_CONTENTBUILDER_NG_NEW'); ?>">
-												<span class="icon-plus" aria-hidden="true"></span>
+												<span class="fa-solid fa-plus" aria-hidden="true"></span>
 												<span><?php echo Text::_('COM_CONTENTBUILDER_NG_NEW'); ?></span>
 											</a>
 										<?php endif; ?>
 
 										<?php if ($delete_allowed) : ?>
 											<button class="btn btn-sm btn-outline-danger d-inline-flex align-items-center gap-1 rounded-pill" onclick="contentbuilder_ng_delete();" title="<?php echo Text::_('COM_CONTENTBUILDER_NG_DELETE'); ?>">
-												<span class="icon-trash" aria-hidden="true"></span>
+												<span class="fa-solid fa-trash" aria-hidden="true"></span>
 												<span class="d-none d-md-inline"><?php echo Text::_('COM_CONTENTBUILDER_NG_DELETE'); ?></span>
 											</button>
 										<?php endif; ?>
@@ -554,7 +554,7 @@ by this block. -->
 											<a class="btn btn-sm btn-outline-success align-self-center d-inline-flex align-items-center gap-1 rounded-pill"
 												href="<?php echo Route::_('index.php?option=com_contentbuilder_ng&view=export&id=' . (int) Factory::getApplication()->input->getInt('id', 0) . '&type=xls&format=raw&tmpl=component'); ?>"
 												title="<?php echo Text::_('COM_CONTENTBUILDER_NG_EXPORT_XLSX_TOOLTIP'); ?>">
-												<span class="icon-download" aria-hidden="true"></span>
+												<span class="fa-solid fa-download" aria-hidden="true"></span>
 												<span>XLSX</span>
 											</a>
 										<?php endif; ?>
@@ -576,7 +576,7 @@ by this block. -->
 					if ($showPreviewLink) {
 					?>
 						<th class="table-light" width="20">
-							<span class="icon-eye" aria-hidden="true"></span>
+							<span class="fa-solid fa-eye" aria-hidden="true"></span>
 							<span class="visually-hidden"><?php echo Text::_('COM_CONTENTBUILDER_NG_DETAILS'); ?></span>
 						</th>
 					<?php
@@ -695,7 +695,7 @@ by this block. -->
 							<?php if ($view_allowed || $this->own_only) : ?>
 								<a class="text-primary" href="<?php echo $link; ?>"
 									title="<?php echo Text::_('COM_CONTENTBUILDER_NG_DETAILS'); ?>">
-									<span class="icon-eye" aria-hidden="true"></span>
+									<span class="fa-solid fa-eye" aria-hidden="true"></span>
 									<span class="visually-hidden"><?php echo Text::_('COM_CONTENTBUILDER_NG_DETAILS'); ?></span>
 								</a>
 							<?php endif; ?>
@@ -775,7 +775,7 @@ by this block. -->
 						?>
 							<td align="center" valign="middle">
 								<?php
-								$iconClass = $isPublished ? 'icon-publish text-success' : 'icon-unpublish text-danger';
+								$iconClass = $isPublished ? 'fa-solid fa-check text-success' : 'fa-solid fa-circle-xmark text-danger';
 								$iconTitle = $isPublished ? Text::_('JPUBLISHED') : Text::_('JUNPUBLISHED');
 								?>
 								<a class="btn btn-sm btn-link p-0" href="<?php echo $toggle_link; ?>" title="<?php echo $iconTitle; ?>">

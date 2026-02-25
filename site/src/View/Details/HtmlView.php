@@ -184,7 +184,7 @@ class HtmlView extends BaseHtmlView
 .cbDetailsWrapper .cbToolBar{padding:.35rem 0;background:transparent}
 .cbDetailsWrapper .cbToolBar .cbButton.btn{border-radius:999px;font-weight:600;padding-inline:.95rem;box-shadow:0 .32rem .85rem rgba(16,32,56,.12)}
 .cbDetailsWrapper .cbTitleRecordNav .cbButton.btn{border-radius:999px;font-weight:600;letter-spacing:.01em;font-size:.84rem;padding:.32rem .76rem;box-shadow:0 .2rem .56rem rgba(16,32,56,.11);display:inline-flex;align-items:center}
-.cbDetailsWrapper .cbTitleRecordNav .cbButton.btn [class^="icon-"],.cbDetailsWrapper .cbTitleRecordNav .cbButton.btn [class*=" icon-"]{color:#0d6efd}
+.cbDetailsWrapper .cbTitleRecordNav .cbButton.btn [class^="fa-"],.cbDetailsWrapper .cbTitleRecordNav .cbButton.btn [class*=" fa-"]{color:#0d6efd}
 .cbDetailsWrapper .cbDetailsBody{margin:.24rem 0 .4rem;padding:.54rem .58rem .24rem;border:1px solid rgba(36,61,86,.14);border-radius:.64rem;background:#fff;box-shadow:0 .24rem .62rem rgba(16,32,56,.05)}
 .cbDetailsWrapper .cbDetailsBody ul.category.list-striped.list-condensed{margin:0;padding:0;list-style:none;display:grid;gap:.3rem}
 .cbDetailsWrapper .cbDetailsBody ul.category.list-striped.list-condensed>li{margin:0;padding:.4rem .5rem;border:1px solid rgba(36,61,86,.14);border-radius:.54rem;background:linear-gradient(180deg,#fff 0,#f7fbff 100%);display:grid;grid-template-columns:minmax(190px,31%) 1fr;gap:.42rem;align-items:start;box-shadow:0 .14rem .42rem rgba(16,32,56,.04)}

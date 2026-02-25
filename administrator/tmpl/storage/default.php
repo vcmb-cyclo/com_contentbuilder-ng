@@ -33,7 +33,7 @@ $dataTableName = $storageName !== '' ? $storageName : '-';
 $createdBy = trim((string) ($this->item->created_by ?? ''));
 $modifiedBy = trim((string) ($this->item->modified_by ?? ''));
 $isPublished = ((int) ($this->item->published ?? 0) === 1);
-$publishedIconClass = $isPublished ? 'icon-publish text-success' : 'icon-unpublish text-danger';
+$publishedIconClass = $isPublished ? 'fa-solid fa-check text-success' : 'fa-solid fa-circle-xmark text-danger';
 $publishedIconTitle = $isPublished ? Text::_('JPUBLISHED') : Text::_('JUNPUBLISHED');
 $csvToggleTooltip = 'Show or hide CSV/Excel import options.';
 $addFieldTooltip = 'Add a new field to this storage.';
@@ -58,8 +58,8 @@ foreach ($sortFields as $field) {
 
     if ($isActive) {
         $indicator = ($listDirn === 'asc')
-            ? ' <span class="ms-1 icon-sort icon-sort-asc" aria-hidden="true"></span>'
-            : ' <span class="ms-1 icon-sort icon-sort-desc" aria-hidden="true"></span>';
+            ? ' <span class="ms-1 fa-solid fa-sort fa-solid fa-sort-up" aria-hidden="true"></span>'
+            : ' <span class="ms-1 fa-solid fa-sort fa-solid fa-sort-down" aria-hidden="true"></span>';
     }
 
     $sortLinks[$field] = [
@@ -92,7 +92,7 @@ $wa->addInlineStyle(
     . '.cb-storage-pagination .cb-storage-pages .pagination{margin:0!important;text-align:right!important}'
     . '.cb-storage-pagination .cb-storage-pages .pagination ul{display:flex;justify-content:flex-end;flex-wrap:wrap;gap:.35rem;margin:0;padding:0}'
     . '.cb-save-animate{background-color:var(--alert-heading-bg,var(--bs-success,#198754))!important;background-image:none!important;border-color:var(--bs-success,#198754)!important;color:#fff!important;filter:brightness(1.2)!important;box-shadow:0 0 0 .38rem rgba(25,135,84,.36)!important;transition:none!important}'
-    . '.cb-save-animate .icon-apply,.cb-save-animate .icon-save,.cb-save-animate .icon-save-new{color:#fff!important}'
+    . '.cb-save-animate .fa-check,.cb-save-animate .fa-xmark,.cb-save-animate .fa-xmark-new{color:#fff!important}'
 );
 
 ?>
@@ -218,10 +218,10 @@ function cbApplyAjaxToggleState(actionElement, task) {
         actionElement.classList.toggle('active', !!meta.enabled);
     }
 
-    var icon = actionElement.querySelector('span[class*="icon-"]');
+    var icon = actionElement.querySelector('span[class*="fa-"]');
     if (icon && icon.classList) {
-        icon.classList.remove('icon-publish', 'icon-unpublish');
-        icon.classList.add(meta.enabled ? 'icon-publish' : 'icon-unpublish');
+        icon.classList.remove('fa-solid fa-check', 'fa-solid fa-circle-xmark');
+        icon.classList.add(meta.enabled ? 'fa-solid fa-check' : 'fa-solid fa-circle-xmark');
     }
 
     var title = meta.enabled ? cbPublishedTitle : cbUnpublishedTitle;

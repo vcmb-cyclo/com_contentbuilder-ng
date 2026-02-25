@@ -76,8 +76,8 @@ $sortLink = function (string $label, string $field) use ($order, $orderDir, $lim
     $nextDir = ($isActive && $orderDir === 'asc') ? 'desc' : 'asc';
     $indicator = $isActive
         ? ($orderDir === 'asc'
-            ? ' <span class="ms-1 icon-sort icon-sort-asc" aria-hidden="true"></span>'
-            : ' <span class="ms-1 icon-sort icon-sort-desc" aria-hidden="true"></span>')
+            ? ' <span class="ms-1 fa-solid fa-sort fa-solid fa-sort-up" aria-hidden="true"></span>'
+            : ' <span class="ms-1 fa-solid fa-sort fa-solid fa-sort-down" aria-hidden="true"></span>')
         : '';
     $url = Route::_(
         'index.php?option=com_contentbuilder_ng&view=forms&list[start]=0&list[ordering]='
@@ -233,7 +233,7 @@ $sortLink = function (string $label, string $field) use ($order, $orderDir, $lim
                                     href="<?php echo htmlspecialchars($previewUrl, ENT_QUOTES, 'UTF-8'); ?>"
                                     title="<?php echo Text::_('COM_CONTENTBUILDER_NG_PREVIEW'); ?>"
                                 >
-                                    <span class="icon-eye" aria-hidden="true"></span>
+                                    <span class="fa-solid fa-eye" aria-hidden="true"></span>
                                     <span class="visually-hidden"><?php echo Text::_('COM_CONTENTBUILDER_NG_PREVIEW'); ?></span>
                                 </a>
                             <?php else : ?>

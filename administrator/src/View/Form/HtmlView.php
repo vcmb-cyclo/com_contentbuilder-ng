@@ -154,8 +154,8 @@ class HtmlView extends BaseHtmlView
             ->text('COM_CONTENTBUILDER_NG_NOT_EDITABLE')
             ->icon('fa fa-pen text-danger')
             ->listCheck(true);
-        $statusChildToolbar->publish('form.publish')->icon('icon-publish text-success')->listCheck(true);
-        $statusChildToolbar->unpublish('form.unpublish')->icon('icon-unpublish text-danger')->listCheck(true);
+        $statusChildToolbar->publish('form.publish')->icon('fa-solid fa-check text-success')->listCheck(true);
+        $statusChildToolbar->unpublish('form.unpublish')->icon('fa-solid fa-circle-xmark text-danger')->listCheck(true);
 
         // Keep Preview aligned with the right-side help button.
         $wa->addInlineStyle('.cb-toolbar-preview{margin-inline-start:auto!important;}');
@@ -250,7 +250,7 @@ class HtmlView extends BaseHtmlView
                         }
 
                         var shadow = host.shadowRoot;
-                        if (shadow && shadow.querySelector('.icon-eye, .fa-eye')) {
+                        if (shadow && shadow.querySelector('.fa-solid fa-eye, .fa-eye')) {
                             return host;
                         }
                     }

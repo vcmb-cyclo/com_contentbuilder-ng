@@ -37,7 +37,7 @@ $wa->addInlineStyle(
     . '.cb-elements-table .cb-col-editable{width:120px;min-width:120px}'
     . '.cb-wordwrap-input{width:8ch!important;min-width:8ch!important;max-width:8ch!important;text-align:center}'
     . '.cb-save-animate{background-color:var(--alert-heading-bg,var(--bs-success,#198754))!important;background-image:none!important;border-color:var(--bs-success,#198754)!important;color:#fff!important;filter:brightness(1.2)!important;box-shadow:0 0 0 .38rem rgba(25,135,84,.36)!important;transition:none!important}'
-    . '.cb-save-animate .icon-apply,.cb-save-animate .icon-save,.cb-save-animate .icon-save-new{color:#fff!important}'
+    . '.cb-save-animate .fa-check,.cb-save-animate .fa-xmark,.cb-save-animate .fa-xmark-new{color:#fff!important}'
     . '#view-pane .nav-tabs,#perm-pane .nav-tabs{display:flex;gap:.4rem;flex-wrap:wrap;padding:.42rem;margin-bottom:.9rem;border:1px solid #dbe1ea;border-bottom:1px solid #dbe1ea;border-radius:14px;background:linear-gradient(180deg,#f7f9fc,#eef3f9)}'
     . '#view-pane .nav-tabs .nav-link,#view-pane .nav-tabs [role="tab"],#perm-pane .nav-tabs .nav-link,#perm-pane .nav-tabs [role="tab"]{border:1px solid transparent;border-radius:10px;padding:.45rem .8rem;font-weight:600;color:#334155;background:transparent;transition:all .18s ease}'
     . '#view-pane .nav-tabs .nav-link:hover,#view-pane .nav-tabs [role="tab"]:hover,#perm-pane .nav-tabs .nav-link:hover,#perm-pane .nav-tabs [role="tab"]:hover{background:#fff;border-color:#cfd8e3;color:#0f172a;transform:translateY(-1px)}'
@@ -67,8 +67,8 @@ $sortLink = function (string $label, string $field) use ($listOrder, $listDirn, 
     $nextDir = ($isActive && $listDirn === 'asc') ? 'desc' : 'asc';
     $indicator = $isActive
         ? ($listDirn === 'asc'
-            ? ' <span class="ms-1 icon-sort icon-sort-asc" aria-hidden="true"></span>'
-            : ' <span class="ms-1 icon-sort icon-sort-desc" aria-hidden="true"></span>')
+            ? ' <span class="ms-1 fa-solid fa-sort fa-solid fa-sort-up" aria-hidden="true"></span>'
+            : ' <span class="ms-1 fa-solid fa-sort fa-solid fa-sort-down" aria-hidden="true"></span>')
         : '';
     $url = Route::_(
         'index.php?option=com_contentbuilder_ng&task=form.display&layout=edit&id=' . $formId
@@ -320,10 +320,10 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
             actionElement.classList.toggle('active', !!meta.enabled);
         }
 
-        var icon = actionElement.querySelector('span[class*="icon-"]');
+        var icon = actionElement.querySelector('span[class*="fa-"]');
         if (icon && icon.classList) {
-            icon.classList.remove('icon-publish', 'icon-unpublish');
-            icon.classList.add(meta.enabled ? 'icon-publish' : 'icon-unpublish');
+            icon.classList.remove('fa-solid fa-check', 'fa-solid fa-circle-xmark');
+            icon.classList.add(meta.enabled ? 'fa-solid fa-check' : 'fa-solid fa-circle-xmark');
         }
     }
 
@@ -1568,7 +1568,7 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
                                                     <?php echo $renderCheckbox('jform[show_preview_link]', 'show_preview_link', (bool) ($this->item->show_preview_link ?? 0)); ?>
                                                     <label class="form-check-label" for="show_preview_link">
                                                         <span class="editlinktip hasTip" title="<?php echo Text::_('COM_CONTENTBUILDER_NG_SHOW_PREVIEW_LINK_TIP'); ?>">
-                                                            <span class="icon-eye" aria-hidden="true"></span>
+                                                            <span class="fa-solid fa-eye" aria-hidden="true"></span>
                                                         </span>
                                                     </label>
                                                 </div>

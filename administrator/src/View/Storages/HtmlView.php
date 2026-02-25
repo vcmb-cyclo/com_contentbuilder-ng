@@ -92,8 +92,8 @@ class HtmlView extends BaseHtmlView
         $statusDropdown->listCheck(true);
 
         $statusChildToolbar = $statusDropdown->getChildToolbar();
-        $statusChildToolbar->publish('storages.publish')->icon('icon-publish text-success')->listCheck(true);
-        $statusChildToolbar->unpublish('storages.unpublish')->icon('icon-unpublish text-danger')->listCheck(true);
+        $statusChildToolbar->publish('storages.publish')->icon('fa-solid fa-check text-success')->listCheck(true);
+        $statusChildToolbar->unpublish('storages.unpublish')->icon('fa-solid fa-circle-xmark text-danger')->listCheck(true);
 
         ToolbarHelper::preferences('com_contentbuilder_ng');
         ToolbarHelper::help(

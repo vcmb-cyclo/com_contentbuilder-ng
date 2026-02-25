@@ -322,8 +322,8 @@ SELECT
                 return '';
             }
             return $current_dir === 'asc'
-                ? ' <span class="ms-1 icon-sort icon-sort-asc" aria-hidden="true"></span>'
-                : ' <span class="ms-1 icon-sort icon-sort-desc" aria-hidden="true"></span>';
+                ? ' <span class="ms-1 fa-solid fa-sort fa-solid fa-sort-up" aria-hidden="true"></span>'
+                : ' <span class="ms-1 fa-solid fa-sort fa-solid fa-sort-down" aria-hidden="true"></span>';
         };
         $formId = (int) ($this->form_id ?? Factory::getApplication()->input->getInt('id', 0));
         $itemId = (int) Factory::getApplication()->input->getInt('Itemid', 0);

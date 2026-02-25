@@ -330,7 +330,7 @@ if ($showColumnHeader) {
                 <?php echo Text::_('COM_CONTENTBUILDER_NG_PREVIEW_MODE') . ' - ' . Text::sprintf('COM_CONTENTBUILDER_NG_PREVIEW_CURRENT_FORM', $previewFormName) . ' - ' . Text::sprintf('COM_CONTENTBUILDER_NG_PREVIEW_CONFIG_TAB', Text::_('COM_CONTENTBUILDER_NG_PREVIEW_TAB_EDITABLE_TEMPLATE')); ?>
             </span>
             <a class="btn btn-sm btn-outline-secondary" href="<?php echo $adminReturnUrl; ?>">
-                <span class="icon-arrow-left me-1" aria-hidden="true"></span>
+                <span class="fa-solid fa-arrow-left me-1" aria-hidden="true"></span>
                 <?php echo Text::_('COM_CONTENTBUILDER_NG_BACK_TO_ADMIN'); ?>
             </a>
         </div>
@@ -358,14 +358,14 @@ if ($showColumnHeader) {
         if (($edit_allowed || $new_allowed) && !$this->edit_by_type) {
         ?>
             <button class="btn btn-sm btn-primary cbButton cbSaveButton" title="<?php echo Text::_('COM_CONTENTBUILDER_NG_SAVE'); ?>" onclick="<?php echo $this->latest ? "document.getElementById('contentbuilder_ng_task').value='edit.apply';" : '' ?>contentbuilder_ng.onSubmit();">
-                <span class="icon-save me-1" aria-hidden="true"></span>
+                <span class="fa-solid fa-xmark me-1" aria-hidden="true"></span>
                 <?php echo trim($this->save_button_title) != '' ? htmlentities($this->save_button_title, ENT_QUOTES, 'UTF-8') : Text::_('COM_CONTENTBUILDER_NG_SAVE') ?>
             </button>
         <?php
         } else if ($this->record_id && $edit_allowed && $this->create_articles && $this->edit_by_type && $fullarticle_allowed) {
         ?>
             <button class="btn btn-sm btn-primary cbButton cbArticleSettingsButton" onclick="document.getElementById('contentbuilder_ng_task').value='edit.apply';contentbuilder_ng.onSubmit();">
-                <span class="icon-apply me-1" aria-hidden="true"></span>
+                <span class="fa-solid fa-check me-1" aria-hidden="true"></span>
                 <?php echo Text::_('COM_CONTENTBUILDER_NG_APPLY_ARTICLE_SETTINGS') ?>
             </button>
         <?php }
@@ -373,7 +373,7 @@ if ($showColumnHeader) {
             <button class="btn btn-sm btn-outline-danger cbButton cbDeleteButton d-inline-flex align-items-center gap-1 rounded-pill"
                 onclick="contentbuilder_ng_delete();"
                 title="<?php echo Text::_('COM_CONTENTBUILDER_NG_DELETE'); ?>">
-                <span class="icon-trash" aria-hidden="true"></span>
+                <span class="fa-solid fa-trash" aria-hidden="true"></span>
                 <span><?php echo Text::_('COM_CONTENTBUILDER_NG_DELETE') ?></span>
             </button>
             <?php
@@ -382,14 +382,14 @@ if ($showColumnHeader) {
             if ($jsBack) {
             ?>
                 <button class="btn btn-sm btn-outline-secondary cbButton cbBackButton cbCloseButton" title="<?php echo Text::_('COM_CONTENTBUILDER_NG_CLOSE'); ?>" onclick="history.back(-1);void(0);">
-                    <span class="icon-times me-1" aria-hidden="true"></span>
+                    <span class="fa-solid fa-clocks me-1" aria-hidden="true"></span>
                     <?php echo Text::_('COM_CONTENTBUILDER_NG_CLOSE') ?>
                 </button>
             <?php
             } else {
             ?>
                 <a class="btn btn-sm btn-outline-secondary cbButton cbBackButton cbCloseButton" title="<?php echo Text::_('COM_CONTENTBUILDER_NG_CLOSE'); ?>" href="<?php echo $backHref; ?>">
-                    <span class="icon-times me-1" aria-hidden="true"></span>
+                    <span class="fa-solid fa-clocks me-1" aria-hidden="true"></span>
                     <?php echo Text::_('COM_CONTENTBUILDER_NG_CLOSE') ?>
                 </a>
         <?php

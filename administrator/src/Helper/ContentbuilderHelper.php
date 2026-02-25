@@ -519,7 +519,7 @@ class ContentbuilderHelper
         return $value;
     }
 
-    public static function listIncludeInList($domain, $row, $i, $publish_icon = 'icon-publish', $unpublish_icon = 'icon-unpublish', $prefix = '')
+    public static function listIncludeInList($domain, $row, $i, $publish_icon = 'fa-solid fa-check', $unpublish_icon = 'fa-solid fa-circle-xmark', $prefix = '')
     {
         return self::renderBooleanStateToggle(
             !empty($row->list_include),
@@ -532,7 +532,7 @@ class ContentbuilderHelper
         );
     }
 
-    public static function listIncludeInSearch($domain, $row, $i, $publish_icon = 'icon-publish', $unpublish_icon = 'icon-unpublish', $prefix = '')
+    public static function listIncludeInSearch($domain, $row, $i, $publish_icon = 'fa-solid fa-check', $unpublish_icon = 'fa-solid fa-circle-xmark', $prefix = '')
     {
         return self::renderBooleanStateToggle(
             !empty($row->search_include),
@@ -545,7 +545,7 @@ class ContentbuilderHelper
         );
     }
 
-    public static function listLinkable($domain, $row, $i, $publish_icon = 'icon-publish', $unpublish_icon = 'icon-unpublish', $prefix = '')
+    public static function listLinkable($domain, $row, $i, $publish_icon = 'fa-solid fa-check', $unpublish_icon = 'fa-solid fa-circle-xmark', $prefix = '')
     {
         return self::renderBooleanStateToggle(
             !empty($row->linkable),
@@ -558,7 +558,7 @@ class ContentbuilderHelper
         );
     }
 
-    public static function listEditable($domain, $row, $i, $publish_icon = 'icon-publish', $unpublish_icon = 'icon-unpublish',  $prefix = '')
+    public static function listEditable($domain, $row, $i, $publish_icon = 'fa-solid fa-check', $unpublish_icon = 'fa-solid fa-circle-xmark',  $prefix = '')
     {
         return self::renderBooleanStateToggle(
             !empty($row->editable),
@@ -571,7 +571,7 @@ class ContentbuilderHelper
         );
     }
 
-    public static function listVerifiedView($domain, $row, $i, $publish_icon = 'icon-publish', $unpublish_icon = 'icon-unpublish',  $prefix = '')
+    public static function listVerifiedView($domain, $row, $i, $publish_icon = 'fa-solid fa-check', $unpublish_icon = 'fa-solid fa-circle-xmark',  $prefix = '')
     {
         return self::renderBooleanStateToggle(
             !empty($row->verified_view),
@@ -584,7 +584,7 @@ class ContentbuilderHelper
         );
     }
 
-    public static function listVerifiedNew($domain, $row, $i, $publish_icon = 'icon-publish', $unpublish_icon = 'icon-unpublish',  $prefix = '')
+    public static function listVerifiedNew($domain, $row, $i, $publish_icon = 'fa-solid fa-check', $unpublish_icon = 'fa-solid fa-circle-xmark',  $prefix = '')
     {
         return self::renderBooleanStateToggle(
             !empty($row->verified_new),
@@ -597,7 +597,7 @@ class ContentbuilderHelper
         );
     }
 
-    public static function listVerifiedEdit($domain, $row, $i, $publish_icon = 'icon-publish', $unpublish_icon = 'icon-unpublish',  $prefix = '')
+    public static function listVerifiedEdit($domain, $row, $i, $publish_icon = 'fa-solid fa-check', $unpublish_icon = 'fa-solid fa-circle-xmark',  $prefix = '')
     {
         return self::renderBooleanStateToggle(
             !empty($row->verified_edit),
@@ -610,7 +610,7 @@ class ContentbuilderHelper
         );
     }
 
-    public static function listPublish($domain, $row, $i, $publish_icon = 'icon-publish', $unpublish_icon = 'icon-unpublish',  $prefix = '')
+    public static function listPublish($domain, $row, $i, $publish_icon = 'fa-solid fa-check', $unpublish_icon = 'fa-solid fa-circle-xmark',  $prefix = '')
     {
         return HTMLHelper::_(
             'jgrid.published',
@@ -628,7 +628,7 @@ class ContentbuilderHelper
         $url = $isPublished ? (string) $url_unpublish : (string) $url_publish;
         $action = $isPublished ? Text::_('COM_CONTENTBUILDER_NG_UNPUBLISH') : Text::_('COM_CONTENTBUILDER_NG_PUBLISH');
         $iconClass = $isPublished ? 'publish' : 'unpublish';
-        $iconHtml = '<span class="icon-' . $iconClass . '" aria-hidden="true"></span>'
+        $iconHtml = '<span class="fa-' . $iconClass . '" aria-hidden="true"></span>'
             . '<span class="visually-hidden">' . htmlspecialchars($action, ENT_QUOTES, 'UTF-8') . '</span>';
 
         if ($allowed) {

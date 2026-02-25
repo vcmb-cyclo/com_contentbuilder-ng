@@ -33,8 +33,8 @@ $sortLink = function (string $label, string $field) use ($ordering, $direction, 
     $nextDir = ($isActive && $direction === 'asc') ? 'desc' : 'asc';
     $indicator = $isActive
         ? ($direction === 'asc'
-            ? ' <span class="ms-1 icon-sort icon-sort-asc" aria-hidden="true"></span>'
-            : ' <span class="ms-1 icon-sort icon-sort-desc" aria-hidden="true"></span>')
+            ? ' <span class="ms-1 fa-solid fa-sort fa-solid fa-sort-up" aria-hidden="true"></span>'
+            : ' <span class="ms-1 fa-solid fa-sort fa-solid fa-sort-down" aria-hidden="true"></span>')
         : '';
     $tmplParam = $tmpl !== '' ? '&tmpl=' . $tmpl : '';
     $url = Route::_(
