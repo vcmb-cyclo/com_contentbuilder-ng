@@ -12,9 +12,14 @@
 \defined('_JEXEC') or die('Restricted access');
 
 use Joomla\CMS\Factory;
+use Joomla\CMS\Application\AdministratorApplication;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\HTML\HTMLHelper;
 use CB\Component\Contentbuilder_ng\Administrator\Helper\ContentbuilderHelper;
+
+/** @var AdministratorApplication $app */
+$app = Factory::getApplication();
+$session = $app->getSession();
 
 $listOrder = $this->state ? (string) $this->state->get('list.ordering', 'ordering') : 'ordering';
 $listDirn  = $this->state ? (string) $this->state->get('list.direction', 'asc') : 'asc';
@@ -82,7 +87,7 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
         . '" value="1"' . ($checked ? ' checked="checked"' : '') . ' /></span>';
 };
 
-$wa = Factory::getApplication()->getDocument()->getWebAssetManager();
+$wa = $app->getDocument()->getWebAssetManager();
 $wa->addInlineStyle(
     '.cb-storage-fields-table .cb-order-col{width:84px;min-width:84px;text-align:right;white-space:nowrap}'
     . '.cb-storage-fields-table .cb-order-icons{display:inline-flex;justify-content:flex-end;gap:.5rem;width:100%}'
@@ -1011,6 +1016,6 @@ echo HTMLHelper::_('uitab.addTab', 'view-pane', 'tab0', Text::_('COM_CONTENTBUIL
     <input type="hidden" name="list[direction]" value="<?php echo htmlspecialchars($listDirn, ENT_QUOTES, 'UTF-8'); ?>" />
     <input type="hidden" name="limitstart" value="<?php echo (int) Factory::getApplication()->input->getInt('limitstart', 0); ?>" />
     <input type="hidden" name="boxchecked" value="0" />
-    <input type="hidden" name="tabStartOffset" value="<?php echo Factory::getApplication()->getSession()->get('tabStartOffset', 0); ?>" />
+    <input type="hidden" name="tabStartOffset" value="<?php echo $session->get('tabStartOffset', 0); ?>" />
     <?php echo HTMLHelper::_('form.token'); ?>
 </form>

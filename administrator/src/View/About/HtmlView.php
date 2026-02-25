@@ -15,6 +15,7 @@ use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
 use Joomla\CMS\Toolbar\ToolbarHelper;
 use Joomla\CMS\Uri\Uri;
 use Joomla\CMS\Factory;
+use Joomla\CMS\Application\AdministratorApplication;
 use Joomla\Database\DatabaseInterface;
 
 class HtmlView extends BaseHtmlView
@@ -28,6 +29,9 @@ class HtmlView extends BaseHtmlView
 
     public function display($tpl = null)
     {
+        /** @var AdministratorApplication $app */
+        $app = Factory::getApplication();
+
         if ($this->getLayout() === 'help') {
             parent::display($tpl);
             return;
@@ -63,20 +67,17 @@ class HtmlView extends BaseHtmlView
             Text::_('COM_CONTENTBUILDER_NG') .' :: ' . Text::_('COM_CONTENTBUILDER_NG_ABOUT'),
             'logo_left'
         );
-        ToolbarHelper::custom(
-            'about.runAudit',
-            'search',
-            '',
-            Text::_('COM_CONTENTBUILDER_NG_ABOUT_AUDIT'),
-            false
-        );
-        ToolbarHelper::custom(
-            'about.migratePackedData',
-            'refresh',
-            '',
-            Text::_('COM_CONTENTBUILDER_NG_ABOUT_MIGRATE_PACKED_DATA'),
-            false
-        );
+        $toolbar = $app->getDocument()->getToolbar('toolbar');
+        $toolbar->standardButton('about_audit')
+            ->task('about.runAudit')
+            ->text('COM_CONTENTBUILDER_NG_ABOUT_AUDIT')
+            ->icon('fa fa-search')
+            ->listCheck(false);
+        $toolbar->standardButton('about_migrate_packed_data')
+            ->task('about.migratePackedData')
+            ->text('COM_CONTENTBUILDER_NG_ABOUT_MIGRATE_PACKED_DATA')
+            ->icon('fa fa-refresh')
+            ->listCheck(false);
         ToolbarHelper::preferences('com_contentbuilder_ng');
         ToolbarHelper::help(
             'COM_CONTENTBUILDER_NG_HELP_ABOUT_TITLE',
@@ -90,7 +91,6 @@ class HtmlView extends BaseHtmlView
         $this->componentAuthor = (string) ($versionInformation['author'] ?? '');
         $this->phpLibraries = $this->getInstalledPhpLibraries();
         $this->javascriptLibraries = $this->getInstalledJavascriptLibraries();
-        $app = Factory::getApplication();
         $auditReport = $app->getUserState('com_contentbuilder_ng.about.audit', []);
         $this->auditReport = is_array($auditReport) ? $auditReport : [];
         $app->setUserState('com_contentbuilder_ng.about.audit', []);
@@ -154,7 +154,7 @@ class HtmlView extends BaseHtmlView
 
     private function getInstalledPhpLibraries(): array
     {
-        $componentRoot = JPATH_COMPONENT;
+        $componentRoot = JPATH_ADMINISTRATOR . '/components/com_contentbuilder_ng';
         $libraries = $this->readInstalledLibrariesFromVendor($componentRoot);
 
         if ($libraries === []) {

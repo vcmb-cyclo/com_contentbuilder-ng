@@ -227,7 +227,31 @@ class HtmlView extends BaseHtmlView
 		//HTMLHelper::_('bootstrap.tooltip');
 
 		// Get data from the model
-		$subject = $this->get('Data');
+		$model = $this->getModel();
+		$subject = (is_object($model) && method_exists($model, 'getData')) ? $model->getData() : null;
+		if (!is_object($subject)) {
+			$subject = (object) [
+				'edit_by_type' => false,
+				'form_id' => 0,
+				'record_id' => 0,
+				'page_title' => '',
+				'template' => '',
+				'theme_plugin' => '',
+				'show_page_heading' => false,
+				'back_button' => false,
+				'latest' => false,
+				'limited_options' => false,
+				'frontend' => $this->frontend,
+				'create_articles' => false,
+				'id' => 0,
+				'created' => null,
+				'created_by' => null,
+				'modified' => null,
+				'modified_by' => null,
+				'save_button_title' => '',
+				'apply_button_title' => '',
+			];
+		}
 
 		$event = new \stdClass();
 		$event->afterDisplayTitle = '';

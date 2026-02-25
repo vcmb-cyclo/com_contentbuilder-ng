@@ -260,7 +260,7 @@ class ListController extends BaseController
 
         $msg = $this->input->getInt('list_publish', 0)
             ? Text::_('COM_CONTENTBUILDER_NG_PUBLISHED')
-            : Text::_('COM_CONTENTBUILDER_NG_PUNPUBLISHED');
+            : Text::_('COM_CONTENTBUILDER_NG_UNPUBLISHED');
         $msg .= ' (' . $changedCount . ')';
 
         $state = $this->resolveListState();

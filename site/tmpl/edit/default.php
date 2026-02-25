@@ -12,19 +12,22 @@
 \defined('_JEXEC') or die('Restricted access');
 
 use Joomla\CMS\Factory;
+use Joomla\CMS\Application\SiteApplication;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Router\Route;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Uri\Uri;
 use CB\Component\Contentbuilder_ng\Administrator\Helper\ContentbuilderLegacyHelper;
 
-$frontend = Factory::getApplication()->isClient('site');
+/** @var SiteApplication $app */
+$app = Factory::getApplication();
+$frontend = $app->isClient('site');
 $new_allowed = $frontend ? ContentbuilderLegacyHelper::authorizeFe('new') : ContentbuilderLegacyHelper::authorize('new');
 $edit_allowed = $frontend ? ContentbuilderLegacyHelper::authorizeFe('edit') : ContentbuilderLegacyHelper::authorize('edit');
 $delete_allowed = $frontend ? ContentbuilderLegacyHelper::authorizeFe('delete') : ContentbuilderLegacyHelper::authorize('delete');
 $view_allowed = $frontend ? ContentbuilderLegacyHelper::authorizeFe('view') : ContentbuilderLegacyHelper::authorize('view');
 $fullarticle_allowed = $frontend ? ContentbuilderLegacyHelper::authorizeFe('fullarticle') : ContentbuilderLegacyHelper::authorize('fullarticle');
-$isAdminPreview = Factory::getApplication()->input->getBool('cb_preview_ok', false);
+$isAdminPreview = $app->input->getBool('cb_preview_ok', false);
 
 if ($isAdminPreview) {
     // Admin preview should render the action bar even when frontend ACL checks fail.
@@ -32,7 +35,7 @@ if ($isAdminPreview) {
     $edit_allowed = true;
 }
 
-$input = Factory::getApplication()->input;
+$input = $app->input;
 $hasReturn = $input->getString('return', '') !== '';
 $backToList = $input->getInt('backtolist', 0) === 1;
 $jsBack = $input->getInt('jsback', 0) === 1;
@@ -45,7 +48,7 @@ $list = (array) $input->get('list', [], 'array');
 $listStart = isset($list['start']) ? $input->getInt('list[start]', 0) : 0;
 $listLimit = isset($list['limit']) ? $input->getInt('list[limit]', 0) : 0;
 if ($listLimit === 0) {
-    $listLimit = (int) Factory::getApplication()->get('list_limit');
+    $listLimit = (int) $app->get('list_limit');
 }
 $listOrdering = isset($list['ordering']) ? $input->getCmd('list[ordering]', '') : '';
 $listDirection = isset($list['direction']) ? $input->getCmd('list[direction]', '') : '';
@@ -165,12 +168,18 @@ if ($showColumnHeader) {
         . '</div>';
 }
 
+if (!empty($this->theme_css) || !empty($this->theme_js)) {
+    $wa = $app->getDocument()->getWebAssetManager();
+    if (!empty($this->theme_css)) {
+        $wa->addInlineStyle((string) $this->theme_css);
+    }
+    if (!empty($this->theme_js)) {
+        $wa->addInlineScript((string) $this->theme_js);
+    }
+}
 ?>
-<?php Factory::getApplication()->getDocument()->addStyleDeclaration($this->theme_css); ?>
-<?php Factory::getApplication()->getDocument()->addScriptDeclaration($this->theme_js); ?>
 <a name="article_up"></a>
 <script type="text/javascript">
-    <!--
     function contentbuilder_ng_delete() {
         var confirmed = confirm('<?php echo Text::_('COM_CONTENTBUILDER_NG_CONFIRM_DELETE_MESSAGE'); ?>');
         if (confirmed) {
@@ -320,8 +329,6 @@ if ($showColumnHeader) {
 
         return result;
     }
-    //
-    -->
 </script>
 <div class="cbEditableWrapper" id="cbEditableWrapper<?php echo $this->id; ?>">
     <?php if ($isAdminPreview): ?>
@@ -382,14 +389,14 @@ if ($showColumnHeader) {
             if ($jsBack) {
             ?>
                 <button class="btn btn-sm btn-outline-secondary cbButton cbBackButton cbCloseButton" title="<?php echo Text::_('COM_CONTENTBUILDER_NG_CLOSE'); ?>" onclick="history.back(-1);void(0);">
-                    <span class="fa-solid fa-clocks me-1" aria-hidden="true"></span>
+                    <span class="fa-solid fa-xmark me-1" aria-hidden="true"></span>
                     <?php echo Text::_('COM_CONTENTBUILDER_NG_CLOSE') ?>
                 </button>
             <?php
             } else {
             ?>
                 <a class="btn btn-sm btn-outline-secondary cbButton cbBackButton cbCloseButton" title="<?php echo Text::_('COM_CONTENTBUILDER_NG_CLOSE'); ?>" href="<?php echo $backHref; ?>">
-                    <span class="fa-solid fa-clocks me-1" aria-hidden="true"></span>
+                    <span class="fa-solid fa-xmark me-1" aria-hidden="true"></span>
                     <?php echo Text::_('COM_CONTENTBUILDER_NG_CLOSE') ?>
                 </a>
         <?php

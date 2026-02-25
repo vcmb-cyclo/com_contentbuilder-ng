@@ -12,14 +12,19 @@
 \defined('_JEXEC') or die('Restricted access');
 
 use Joomla\CMS\Factory;
+use Joomla\CMS\Application\AdministratorApplication;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Router\Route;
 use CB\Component\Contentbuilder_ng\Administrator\Helper\ContentbuilderLegacyHelper;
-use CB\Component\Contentbuilder_ng\Administrator\Helper\ContentbuilderHelper;
 ?>
 <?php
-$wa = Factory::getApplication()->getDocument()->getWebAssetManager();
+/** @var AdministratorApplication $app */
+$app = Factory::getApplication();
+$session = $app->getSession();
+$helperClass = 'CB\\Component\\Contentbuilder_ng\\Administrator\\Helper\\ContentbuilderHelper';
+$hasContentbuilderHelper = class_exists($helperClass);
+$wa = $app->getDocument()->getWebAssetManager();
 $wa->addInlineStyle(
     '.saveorder.btn{background-color:#fff;border-color:#ced4da;color:#1b1b1b}'
     . '.saveorder.btn:hover{background-color:#f8f9fa}'
@@ -1862,11 +1867,11 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
                         for ($i = 0; $i < $n; $i++) {
                             $row = $this->elements[$i];
                             $checked = HTMLHelper::_('grid.id', $i, $row->id);
-                            $published = ContentbuilderHelper::listPublish('form', $row, $i);
-                            $list_include = ContentbuilderHelper::listIncludeInList('form', $row, $i);
-                            $search_include = ContentbuilderHelper::listIncludeInSearch('form', $row, $i);
-                            $linkable = ContentbuilderHelper::listLinkable('form', $row, $i);
-                            $editable = ContentbuilderHelper::listEditable('form', $row, $i);
+                            $published = $hasContentbuilderHelper ? $helperClass::listPublish('form', $row, $i) : '';
+                            $list_include = $hasContentbuilderHelper ? $helperClass::listIncludeInList('form', $row, $i) : '';
+                            $search_include = $hasContentbuilderHelper ? $helperClass::listIncludeInSearch('form', $row, $i) : '';
+                            $linkable = $hasContentbuilderHelper ? $helperClass::listLinkable('form', $row, $i) : '';
+                            $editable = $hasContentbuilderHelper ? $helperClass::listEditable('form', $row, $i) : '';
                         ?>
                             <tr id="cb-row-<?php echo (int) $row->id; ?>" class="<?php echo "row$k"; ?>" data-cb-row-id="<?php echo (int) $row->id; ?>">
                                 <td valign="top">
@@ -2535,7 +2540,7 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
                 </h3>
             </div>
             <div id="email_admins_div"
-                style="display:<?php echo Factory::getApplication()->getSession()->get('email_admins', '', 'com_contentbuilder_ng'); ?>">
+                style="display:<?php echo $session->get('email_admins', '', 'com_contentbuilder_ng'); ?>">
                 <table width="100%" class="table table-striped">
                     <tr>
                         <td width="20%">
@@ -2749,7 +2754,7 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
         echo HTMLHelper::_('uitab.addTab', 'view-pane', 'tab8', Text::_('COM_CONTENTBUILDER_NG_PERMISSIONS'));
 
         // Démarrer les onglets
-        $activePermTab = Factory::getApplication()->getSession()->get('slideStartOffset', 'permtab1', 'com_contentbuilder_ng');
+        $activePermTab = $session->get('slideStartOffset', 'permtab1', 'com_contentbuilder_ng');
         echo HTMLHelper::_('uitab.startTabSet', 'perm-pane', ['active' => $activePermTab]);
 
 
@@ -3259,13 +3264,13 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
     <input type="hidden" name="list[direction]" value="<?php echo htmlspecialchars($listDirn, ENT_QUOTES, 'UTF-8'); ?>" />
     <input type="hidden" name="boxchecked" value="0" />
     <input type="hidden" name="hidemainmenu" value="0" />
-    <input type="hidden" name="tabStartOffset" value="<?php echo Factory::getApplication()->getSession()->get('tabStartOffset', 0); ?>" />
+    <input type="hidden" name="tabStartOffset" value="<?php echo $session->get('tabStartOffset', 0); ?>" />
     <input type="hidden" name="slideStartOffset"
-        value="<?php echo Factory::getApplication()->getSession()->get('slideStartOffset', 1); ?>" />
+        value="<?php echo $session->get('slideStartOffset', 1); ?>" />
     <input type="hidden" name="jform[email_users]"
-        value="<?php echo Factory::getApplication()->getSession()->get('email_users', 'none', 'com_contentbuilder_ng'); ?>" />
+        value="<?php echo $session->get('email_users', 'none', 'com_contentbuilder_ng'); ?>" />
     <input type="hidden" name="jform[email_admins]"
-        value="<?php echo Factory::getApplication()->getSession()->get('email_admins', '', 'com_contentbuilder_ng'); ?>" />
+        value="<?php echo $session->get('email_admins', '', 'com_contentbuilder_ng'); ?>" />
 
     <?php echo HTMLHelper::_('form.token'); ?>
 
@@ -3291,7 +3296,7 @@ $editModalParams = [
 ];
 echo HTMLHelper::_('bootstrap.renderModal', 'edit-modal', $editModalParams);
 
-$wa = Factory::getApplication()->getDocument()->getWebAssetManager();
+$wa = $app->getDocument()->getWebAssetManager();
 $wa->useScript('jquery');
 //$wa->useScript('bootstrap.tab');
 

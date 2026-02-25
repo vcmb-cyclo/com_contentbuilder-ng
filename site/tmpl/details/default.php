@@ -235,7 +235,7 @@ if ($this->show_page_heading && $this->page_title) {
                         class="btn btn-sm btn-outline-secondary cbButton cbBackButton cbCloseButton"
                         href="<?php echo $closeListLink; ?>"
                         title="<?php echo Text::_('COM_CONTENTBUILDER_NG_CLOSE'); ?>">
-                        <span class="fa-solid fa-clocks me-1" aria-hidden="true"></span>
+                        <span class="fa-solid fa-xmark me-1" aria-hidden="true"></span>
                         <?php echo Text::_('COM_CONTENTBUILDER_NG_CLOSE'); ?>
                     </a>
                 <?php endif; ?>
@@ -296,7 +296,7 @@ if ($showActionToolbar) {
             class="btn btn-sm btn-outline-secondary cbButton cbBackButton cbCloseButton"
             href="<?php echo $closeListLink; ?>"
             title="<?php echo Text::_('COM_CONTENTBUILDER_NG_CLOSE'); ?>">
-            <span class="fa-solid fa-clocks me-1" aria-hidden="true"></span>
+            <span class="fa-solid fa-xmark me-1" aria-hidden="true"></span>
             <?php echo Text::_('COM_CONTENTBUILDER_NG_CLOSE'); ?>
         </a>
     <?php endif; ?>
@@ -305,6 +305,7 @@ if ($showActionToolbar) {
         <a class="btn btn-sm btn-primary cbButton cbEditButton"
             href="<?php echo Route::_('index.php?option=com_contentbuilder_ng&task=edit.display&id=' . Factory::getApplication()->input->getInt('id', 0) . '&record_id=' . Factory::getApplication()->input->getCmd('record_id', 0) . (Factory::getApplication()->input->get('tmpl', '', 'string') != '' ? '&tmpl=' . Factory::getApplication()->input->get('tmpl', '', 'string') : '') . '&Itemid=' . Factory::getApplication()->input->getInt('Itemid', 0) . (Factory::getApplication()->input->get('layout', '', 'string') != '' ? '&layout=' . Factory::getApplication()->input->get('layout', '', 'string') : '') . ($listQuery !== '' ? '&' . $listQuery : '') . $previewQuery); ?>"
             title="<?php echo Text::_('COM_CONTENTBUILDER_NG_EDIT'); ?>">
+            <span class="fa-solid fa-pen me-1" aria-hidden="true"></span>
             <?php echo Text::_('COM_CONTENTBUILDER_NG_EDIT') ?>
         </a>
     <?php
@@ -323,7 +324,7 @@ if ($showActionToolbar) {
         <a class="btn btn-sm btn-outline-secondary cbButton cbBackButton"
             href="<?php echo $closeListLink; ?>"
             title="<?php echo Text::_('COM_CONTENTBUILDER_NG_CLOSE'); ?>">
-            <span class="fa-solid fa-clocks me-1" aria-hidden="true"></span>
+            <span class="fa-solid fa-xmark me-1" aria-hidden="true"></span>
             <?php echo Text::_('COM_CONTENTBUILDER_NG_CLOSE') ?>
         </a>
     <?php endif; ?>

@@ -146,17 +146,25 @@ foreach ($this->data->items as $item) {
             // Convertir $i en lettre de colonne
             $columnLetter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($i);
             $cell = $columnLetter . $row; // Ex. 'B2'
-            
-            // Retrait de la couleur dans l'export.
-            /*
+
+            // Éclaircir la couleur d'état à 50% vers le blanc pour l'export.
             if ($result[1] !== 'FFFFFF') { // !== pour cohérence avec chaînes
+                $baseColor = strtoupper($result[1]);
+                $lightColor = '';
+
+                for ($channelIndex = 0; $channelIndex < 3; $channelIndex++) {
+                    $channel = hexdec(substr($baseColor, $channelIndex * 2, 2));
+                    $lightChannel = (int) round(($channel + 255) / 2);
+                    $lightColor .= strtoupper(str_pad(dechex($lightChannel), 2, '0', STR_PAD_LEFT));
+                }
+
                 $worksheet1->getStyle($cell)->applyFromArray([
                     'fill' => [
                         'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
-                        'startColor' => ['rgb' => $result[1]]
+                        'startColor' => ['rgb' => $lightColor]
                     ]
                 ]);
-            }*/
+            }
             $worksheet1->setCellValue([$i++, $row], $result[0]);
         }
         else {

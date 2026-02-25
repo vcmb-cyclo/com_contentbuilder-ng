@@ -18,7 +18,6 @@ use Joomla\CMS\Router\Route;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Uri\Uri;
 use CB\Component\Contentbuilder_ng\Administrator\Helper\ContentbuilderLegacyHelper;
-use CB\Component\Contentbuilder_ng\Administrator\Helper\ContentbuilderHelper;
 use CB\Component\Contentbuilder_ng\Administrator\Helper\RatingHelper;
 
 /** @var SiteApplication $app */
@@ -32,6 +31,15 @@ $new_allowed = $frontend ? ContentbuilderLegacyHelper::authorizeFe('new') : Cont
 $state_allowed = $frontend ? ContentbuilderLegacyHelper::authorizeFe('state') : ContentbuilderLegacyHelper::authorize('state');
 $publish_allowed = $frontend ? ContentbuilderLegacyHelper::authorizeFe('publish') : ContentbuilderLegacyHelper::authorize('publish');
 $rating_allowed = $frontend ? ContentbuilderLegacyHelper::authorizeFe('rating') : ContentbuilderLegacyHelper::authorize('rating');
+$helperClass = 'CB\\Component\\Contentbuilder_ng\\Administrator\\Helper\\ContentbuilderHelper';
+$hasContentbuilderHelper = class_exists($helperClass);
+$wordwrapLabel = static function (string $label) use ($helperClass, $hasContentbuilderHelper): string {
+	if ($hasContentbuilderHelper) {
+		return (string) $helperClass::contentbuilder_ng_wordwrap($label, 20, "\n", true);
+	}
+
+	return wordwrap($label, 20, "\n", true);
+};
 
 $input = $app->input;
 $previewQuery = '';
@@ -391,7 +399,7 @@ by this block. -->
                 <?php echo $this->list_state && count($this->states) ? "if(document.getElementById('list_state_filter')) document.getElementById('list_state_filter').selectedIndex=0;" : ""; ?>
                 <?php echo $this->list_publish ? "if(document.getElementById('list_publish_filter')) document.getElementById('list_publish_filter').selectedIndex=0;" : ""; ?>
                 document.adminForm.submit();">
-											<span class="fa-solid fa-clocks" aria-hidden="true"></span>
+											<span class="fa-solid fa-rotate-left" aria-hidden="true"></span>
 											<?php echo Text::_('COM_CONTENTBUILDER_NG_RESET'); ?>
 										</button>
 									</div>
@@ -581,11 +589,11 @@ by this block. -->
 							} else {
 								$hidden = ' hidden-phone';
 							}
-						?>
-							<th class="table-light<?php echo $hidden; ?>">
-								<?php echo HTMLHelper::_('grid.sort', nl2br(htmlentities(ContentbuilderHelper::contentbuilder_ng_wordwrap($label, 20, "\n", true), ENT_QUOTES, 'UTF-8')), "col$reference_id", $this->lists['order_Dir'], $this->lists['order']); ?>
-							</th>
-					<?php
+							?>
+								<th class="table-light<?php echo $hidden; ?>">
+									<?php echo HTMLHelper::_('grid.sort', nl2br(htmlentities($wordwrapLabel((string) $label), ENT_QUOTES, 'UTF-8')), "col$reference_id", $this->lists['order_Dir'], $this->lists['order']); ?>
+								</th>
+						<?php
 							$label_count++;
 						}
 					}

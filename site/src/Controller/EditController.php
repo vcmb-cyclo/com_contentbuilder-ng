@@ -282,7 +282,7 @@ class EditController extends BaseController
         if (Factory::getApplication()->input->getInt('list_publish', 0)) {
             $msg = Text::_('COM_CONTENTBUILDER_NG_PUBLISHED');
         } else {
-            $msg = Text::_('COM_CONTENTBUILDER_NG_PUNPUBLISHED');
+            $msg = Text::_('COM_CONTENTBUILDER_NG_UNPUBLISHED');
         }
         $listQuery = $this->buildListQuery();
         $previewQuery = $this->buildPreviewQuery();
