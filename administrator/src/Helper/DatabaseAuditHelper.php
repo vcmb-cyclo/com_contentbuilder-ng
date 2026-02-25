@@ -26,6 +26,14 @@ final class DatabaseAuditHelper
      *   table_encoding_issues:array<int,array{table:string,collation:string,expected:string}>,
      *   column_encoding_issues:array<int,array{table:string,column:string,charset:string,collation:string}>,
      *   mixed_table_collations:array<int,array{collation:string,count:int,tables:array<int,string>}>,
+     *   missing_audit_columns_scanned:int,
+     *   missing_audit_columns:array<int,array{
+     *     table:string,
+     *     storage_id:int,
+     *     storage_name:string,
+     *     bytable:int,
+     *     missing:array<int,string>
+     *   }>,
      *   cb_tables:array{
      *     summary:array{
      *       tables_total:int,
@@ -58,6 +66,8 @@ final class DatabaseAuditHelper
      *     table_encoding_issues:int,
      *     column_encoding_issues:int,
      *     mixed_table_collations:int,
+     *     missing_audit_column_tables:int,
+     *     missing_audit_columns_total:int,
      *     issues_total:int
      *   },
      *   errors:array<int,string>
@@ -84,6 +94,19 @@ final class DatabaseAuditHelper
             self::inspectEncodingAndCollation($db, $tables, $prefix);
         $errors = array_merge($errors, $encodingErrors);
 
+        $auditColumnsSummary = StorageAuditColumnsHelper::audit($db);
+        $missingAuditColumns = (array) ($auditColumnsSummary['issues'] ?? []);
+        $errors = array_merge($errors, (array) ($auditColumnsSummary['warnings'] ?? []));
+        $missingAuditColumnsTotal = 0;
+
+        foreach ($missingAuditColumns as $missingAuditColumn) {
+            if (!is_array($missingAuditColumn)) {
+                continue;
+            }
+
+            $missingAuditColumnsTotal += count((array) ($missingAuditColumn['missing'] ?? []));
+        }
+
         $duplicateToDrop = 0;
         foreach ($duplicateIndexes as $duplicateIndex) {
             $duplicateToDrop += count((array) ($duplicateIndex['drop'] ?? []));
@@ -92,7 +115,8 @@ final class DatabaseAuditHelper
         $issuesTotal = count($duplicateIndexes)
             + count($legacyTables)
             + count($tableEncodingIssues)
-            + count($columnEncodingIssues);
+            + count($columnEncodingIssues)
+            + count($missingAuditColumns);
 
         if (count($mixedTableCollations) > 1) {
             $issuesTotal++;
@@ -110,6 +134,8 @@ final class DatabaseAuditHelper
             'table_encoding_issues' => $tableEncodingIssues,
             'column_encoding_issues' => $columnEncodingIssues,
             'mixed_table_collations' => $mixedTableCollations,
+            'missing_audit_columns_scanned' => (int) ($auditColumnsSummary['scanned'] ?? 0),
+            'missing_audit_columns' => $missingAuditColumns,
             'cb_tables' => $cbTableStats,
             'summary' => [
                 'duplicate_index_groups' => count($duplicateIndexes),
@@ -118,6 +144,8 @@ final class DatabaseAuditHelper
                 'table_encoding_issues' => count($tableEncodingIssues),
                 'column_encoding_issues' => count($columnEncodingIssues),
                 'mixed_table_collations' => count($mixedTableCollations),
+                'missing_audit_column_tables' => count($missingAuditColumns),
+                'missing_audit_columns_total' => $missingAuditColumnsTotal,
                 'issues_total' => $issuesTotal,
             ],
             'errors' => $errors,

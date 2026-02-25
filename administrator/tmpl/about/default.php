@@ -27,6 +27,17 @@ $legacyTables = (array) ($auditReport['legacy_tables'] ?? []);
 $tableEncodingIssues = (array) ($auditReport['table_encoding_issues'] ?? []);
 $columnEncodingIssues = (array) ($auditReport['column_encoding_issues'] ?? []);
 $mixedTableCollations = (array) ($auditReport['mixed_table_collations'] ?? []);
+$missingAuditColumns = (array) ($auditReport['missing_audit_columns'] ?? []);
+$missingAuditColumnsTotal = (int) ($auditSummary['missing_audit_columns_total'] ?? 0);
+if ($missingAuditColumnsTotal === 0 && $missingAuditColumns !== []) {
+    foreach ($missingAuditColumns as $missingAuditColumn) {
+        if (!is_array($missingAuditColumn)) {
+            continue;
+        }
+
+        $missingAuditColumnsTotal += count((array) ($missingAuditColumn['missing'] ?? []));
+    }
+}
 $cbTableStats = is_array($auditReport['cb_tables'] ?? null) ? $auditReport['cb_tables'] : [];
 $cbTableSummary = (array) ($cbTableStats['summary'] ?? []);
 $cbTableDetails = (array) ($cbTableStats['tables'] ?? []);
@@ -36,6 +47,8 @@ $hasAuditReport = $auditReport !== [];
 $dbRepairConfirmMessage = str_replace('\n', "\n", Text::_('COM_CONTENTBUILDER_NG_DB_REPAIR_CONFIRMATION'));
 $dbRepairPromptMessage = str_replace('\n', "\n", Text::_('COM_CONTENTBUILDER_NG_DB_REPAIR_CONFIRMATION_PROMPT'));
 $dbRepairPromptFailedMessage = str_replace('\n', "\n", Text::_('COM_CONTENTBUILDER_NG_DB_REPAIR_CONFIRMATION_FAILED'));
+$phpLibrariesCount = count((array) $this->phpLibraries);
+$javascriptLibrariesCount = count((array) $this->javascriptLibraries);
 $columnEncodingIssueLimit = 200;
 $columnEncodingIssuesDisplayed = array_slice($columnEncodingIssues, 0, $columnEncodingIssueLimit);
 $columnEncodingIssueHiddenCount = max(0, count($columnEncodingIssues) - count($columnEncodingIssuesDisplayed));
@@ -281,6 +294,14 @@ $formatBytes = static function (int $bytes): string {
                         <td><?php echo max(0, count($mixedTableCollations) - 1); ?></td>
                     </tr>
                     <tr>
+                        <th scope="row"><?php echo Text::_('COM_CONTENTBUILDER_NG_ABOUT_AUDIT_MISSING_AUDIT_COLUMNS_TABLES'); ?></th>
+                        <td><?php echo (int) ($auditSummary['missing_audit_column_tables'] ?? count($missingAuditColumns)); ?></td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><?php echo Text::_('COM_CONTENTBUILDER_NG_ABOUT_AUDIT_MISSING_AUDIT_COLUMNS_TOTAL'); ?></th>
+                        <td><?php echo $missingAuditColumnsTotal; ?></td>
+                    </tr>
+                    <tr>
                         <th scope="row"><?php echo Text::_('COM_CONTENTBUILDER_NG_ABOUT_AUDIT_CB_TABLES_TOTAL'); ?></th>
                         <td><?php echo (int) ($cbTableSummary['tables_total'] ?? 0); ?></td>
                     </tr>
@@ -359,6 +380,38 @@ $formatBytes = static function (int $bytes): string {
                         <li><?php echo htmlspecialchars((string) $legacyTable, ENT_QUOTES, 'UTF-8'); ?></li>
                     <?php endforeach; ?>
                 </ul>
+            <?php endif; ?>
+
+            <h4 class="h6 mt-3"><?php echo Text::_('COM_CONTENTBUILDER_NG_ABOUT_AUDIT_MISSING_AUDIT_COLUMNS'); ?></h4>
+            <?php if (empty($missingAuditColumns)) : ?>
+                <div class="alert cb-audit-ok-alert">
+                    <?php echo Text::_('COM_CONTENTBUILDER_NG_ABOUT_AUDIT_NO_MISSING_AUDIT_COLUMNS'); ?>
+                </div>
+            <?php else : ?>
+                <div class="table-responsive">
+                    <table class="table table-sm table-striped align-middle">
+                        <thead>
+                        <tr>
+                            <th scope="col"><?php echo Text::_('COM_CONTENTBUILDER_NG_ABOUT_AUDIT_TABLE'); ?></th>
+                            <th scope="col"><?php echo Text::_('COM_CONTENTBUILDER_NG_ABOUT_AUDIT_STORAGE_ID'); ?></th>
+                            <th scope="col"><?php echo Text::_('COM_CONTENTBUILDER_NG_ABOUT_AUDIT_STORAGE'); ?></th>
+                            <th scope="col"><?php echo Text::_('COM_CONTENTBUILDER_NG_ABOUT_AUDIT_BYTABLE'); ?></th>
+                            <th scope="col"><?php echo Text::_('COM_CONTENTBUILDER_NG_ABOUT_AUDIT_COLUMN'); ?></th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <?php foreach ($missingAuditColumns as $missingAuditColumn) : ?>
+                            <tr>
+                                <td><?php echo htmlspecialchars((string) ($missingAuditColumn['table'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></td>
+                                <td><?php echo (int) ($missingAuditColumn['storage_id'] ?? 0); ?></td>
+                                <td><?php echo htmlspecialchars((string) ($missingAuditColumn['storage_name'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></td>
+                                <td><?php echo Text::_((int) ($missingAuditColumn['bytable'] ?? 0) === 1 ? 'JYES' : 'JNO'); ?></td>
+                                <td><?php echo htmlspecialchars(implode(', ', (array) ($missingAuditColumn['missing'] ?? [])), ENT_QUOTES, 'UTF-8'); ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
             <?php endif; ?>
 
             <h4 class="h6 mt-3"><?php echo Text::_('COM_CONTENTBUILDER_NG_ABOUT_AUDIT_TABLE_ENCODING_ISSUES'); ?></h4>
@@ -551,7 +604,7 @@ $formatBytes = static function (int $bytes): string {
                         aria-expanded="false"
                         aria-controls="cb-about-php-libraries-collapse"
                     >
-                        <?php echo Text::_('COM_CONTENTBUILDER_NG_PHP_LIBRARIES'); ?>
+                        <?php echo (int) $phpLibrariesCount . ' ' . Text::_('COM_CONTENTBUILDER_NG_PHP_LIBRARIES'); ?>
                     </button>
                 </h3>
                 <div
@@ -566,9 +619,6 @@ $formatBytes = static function (int $bytes): string {
                                 <?php echo Text::_('COM_CONTENTBUILDER_NG_PHP_LIBRARIES_NOT_AVAILABLE'); ?>
                             </div>
                         <?php else : ?>
-                            <p class="text-muted small">
-                                <?php echo Text::sprintf('COM_CONTENTBUILDER_NG_PHP_LIBRARIES_COUNT', count($this->phpLibraries)); ?>
-                            </p>
                             <div class="table-responsive">
                                 <table class="table table-sm table-striped align-middle mb-0">
                                     <thead>
@@ -599,40 +649,60 @@ $formatBytes = static function (int $bytes): string {
     </div>
 </div>
 <div class="card mt-3">
-    <div class="card-body">
-        <h3 class="h6 card-title mb-3"><?php echo Text::_('COM_CONTENTBUILDER_NG_JS_LIBRARIES'); ?></h3>
-
-        <?php if (empty($this->javascriptLibraries)) : ?>
-            <div class="alert alert-info mb-0">
-                <?php echo Text::_('COM_CONTENTBUILDER_NG_JS_LIBRARIES_NOT_AVAILABLE'); ?>
+    <div class="card-body p-0">
+        <div class="accordion accordion-flush" id="cb-about-js-libraries-accordion">
+            <div class="accordion-item">
+                <h3 class="accordion-header" id="cb-about-js-libraries-heading">
+                    <button
+                        class="accordion-button collapsed fw-semibold"
+                        type="button"
+                        data-bs-toggle="collapse"
+                        data-bs-target="#cb-about-js-libraries-collapse"
+                        aria-expanded="false"
+                        aria-controls="cb-about-js-libraries-collapse"
+                    >
+                        <?php echo (int) $javascriptLibrariesCount . ' ' . Text::_('COM_CONTENTBUILDER_NG_JS_LIBRARIES'); ?>
+                    </button>
+                </h3>
+                <div
+                    id="cb-about-js-libraries-collapse"
+                    class="accordion-collapse collapse"
+                    aria-labelledby="cb-about-js-libraries-heading"
+                    data-bs-parent="#cb-about-js-libraries-accordion"
+                >
+                    <div class="accordion-body">
+                        <?php if (empty($this->javascriptLibraries)) : ?>
+                            <div class="alert alert-info mb-0">
+                                <?php echo Text::_('COM_CONTENTBUILDER_NG_JS_LIBRARIES_NOT_AVAILABLE'); ?>
+                            </div>
+                        <?php else : ?>
+                            <div class="table-responsive">
+                                <table class="table table-sm table-striped align-middle mb-0">
+                                    <thead>
+                                    <tr>
+                                        <th scope="col"><?php echo Text::_('COM_CONTENTBUILDER_NG_JS_LIBRARY'); ?></th>
+                                        <th scope="col"><?php echo Text::_('COM_CONTENTBUILDER_NG_JS_LIBRARY_VERSION'); ?></th>
+                                        <th scope="col"><?php echo Text::_('COM_CONTENTBUILDER_NG_JS_LIBRARY_ASSETS'); ?></th>
+                                        <th scope="col"><?php echo Text::_('COM_CONTENTBUILDER_NG_JS_LIBRARY_SOURCE'); ?></th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    <?php foreach ($this->javascriptLibraries as $library) : ?>
+                                        <tr>
+                                            <td><?php echo htmlspecialchars((string) ($library['name'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></td>
+                                            <td><?php echo htmlspecialchars((string) ($library['version'] ?? Text::_('COM_CONTENTBUILDER_NG_NOT_AVAILABLE')), ENT_QUOTES, 'UTF-8'); ?></td>
+                                            <td><?php echo htmlspecialchars((string) ($library['assets'] ?? Text::_('COM_CONTENTBUILDER_NG_NOT_AVAILABLE')), ENT_QUOTES, 'UTF-8'); ?></td>
+                                            <td><?php echo htmlspecialchars((string) ($library['source'] ?? Text::_('COM_CONTENTBUILDER_NG_NOT_AVAILABLE')), ENT_QUOTES, 'UTF-8'); ?></td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                    </tbody>
+                                </table>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                </div>
             </div>
-        <?php else : ?>
-            <p class="text-muted small">
-                <?php echo Text::sprintf('COM_CONTENTBUILDER_NG_JS_LIBRARIES_COUNT', count($this->javascriptLibraries)); ?>
-            </p>
-            <div class="table-responsive">
-                <table class="table table-sm table-striped align-middle mb-0">
-                    <thead>
-                    <tr>
-                        <th scope="col"><?php echo Text::_('COM_CONTENTBUILDER_NG_JS_LIBRARY'); ?></th>
-                        <th scope="col"><?php echo Text::_('COM_CONTENTBUILDER_NG_JS_LIBRARY_VERSION'); ?></th>
-                        <th scope="col"><?php echo Text::_('COM_CONTENTBUILDER_NG_JS_LIBRARY_ASSETS'); ?></th>
-                        <th scope="col"><?php echo Text::_('COM_CONTENTBUILDER_NG_JS_LIBRARY_SOURCE'); ?></th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    <?php foreach ($this->javascriptLibraries as $library) : ?>
-                        <tr>
-                            <td><?php echo htmlspecialchars((string) ($library['name'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></td>
-                            <td><?php echo htmlspecialchars((string) ($library['version'] ?? Text::_('COM_CONTENTBUILDER_NG_NOT_AVAILABLE')), ENT_QUOTES, 'UTF-8'); ?></td>
-                            <td><?php echo htmlspecialchars((string) ($library['assets'] ?? Text::_('COM_CONTENTBUILDER_NG_NOT_AVAILABLE')), ENT_QUOTES, 'UTF-8'); ?></td>
-                            <td><?php echo htmlspecialchars((string) ($library['source'] ?? Text::_('COM_CONTENTBUILDER_NG_NOT_AVAILABLE')), ENT_QUOTES, 'UTF-8'); ?></td>
-                        </tr>
-                    <?php endforeach; ?>
-                    </tbody>
-                </table>
-            </div>
-        <?php endif; ?>
+        </div>
     </div>
 </div>
 <script>

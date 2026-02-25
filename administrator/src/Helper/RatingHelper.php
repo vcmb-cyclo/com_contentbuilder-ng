@@ -98,7 +98,7 @@ final class RatingHelper
         if ($rating_allowed) {
             if (Factory::getApplication()->isClient('site')) {
                 $rating_link = Uri::root(true) . (Factory::getApplication()->isClient('administrator') ? '/administrator' : (Factory::getApplication()->input->getCmd('lang', '') && 
-                Factory::getConfig()->get('sef') && Factory::getConfig()->get('sef_rewrite') ? '/' . Factory::getApplication()->input->getCmd('lang', '') : '')) . '/?option=com_contentbuilder_ng&lang=' . $lang . '&view=ajax&format=raw&subject=rating&id=' . $form_id . '&record_id=' . $record_id;
+                Factory::getApplication()->getConfig()->get('sef') && Factory::getApplication()->getConfig()->get('sef_rewrite') ? '/' . Factory::getApplication()->input->getCmd('lang', '') : '')) . '/?option=com_contentbuilder_ng&lang=' . $lang . '&view=ajax&format=raw&subject=rating&id=' . $form_id . '&record_id=' . $record_id;
             } else {
                 $rating_link = 'index.php?option=com_contentbuilder_ng&lang=' . $lang . '&view=ajax&format=raw&subject=rating&id=' . $form_id . '&record_id=' . $record_id;
             }

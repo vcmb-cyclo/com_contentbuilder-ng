@@ -174,12 +174,12 @@ class contentbuilder_ng_com_contentbuilder_ng
         $data->modified = '';
         $data->modified_by = '';
         if ($obj) {
-            $data->created_id = $obj->user_id;
-            $data->created = $obj->created;
-            $data->created_by = strpos($this->bytable, '#__') !== 0 ? '' : $obj->created_by;
-            $data->modified_id = $obj->modified_user_id;
-            $data->modified = $obj->modified;
-            $data->modified_by = strpos($this->bytable, '#__') !== 0 ? '' : $obj->modified_by;
+            $data->created_id = (int) ($obj->user_id ?? 0);
+            $data->created = (string) ($obj->created ?? '');
+            $data->created_by = strpos($this->bytable, '#__') !== 0 ? '' : (string) ($obj->created_by ?? '');
+            $data->modified_id = (int) ($obj->modified_user_id ?? 0);
+            $data->modified = (string) ($obj->modified ?? '');
+            $data->modified_by = strpos($this->bytable, '#__') !== 0 ? '' : (string) ($obj->modified_by ?? '');
         }
         return $data;
     }

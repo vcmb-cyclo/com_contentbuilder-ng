@@ -187,7 +187,7 @@ $userTimezone = $input->get('user_timezone', null, 'string');
 
 // Si aucun fuseau horaire client n'est fourni, utiliser celui de Joomla
 if (!$userTimezone) {
-    $config = Factory::getConfig();
+    $config = Factory::getApplication()->getConfig();
     $userTimezone = $config->get('offset', 'UTC');
 }
 

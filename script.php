@@ -42,7 +42,7 @@ class com_contentbuilder_ngInstallerScript extends InstallerScript
   public function __construct()
   {
     // Logger personnalisé
-    $logPath = Factory::getConfig()->get('log_path') ?: JPATH_ROOT . '/logs';
+    $logPath = Factory::getApplication()->getConfig()->get('log_path') ?: JPATH_ROOT . '/logs';
     if (!Folder::exists($logPath)) {
       Folder::create($logPath);
     }
@@ -114,7 +114,7 @@ class com_contentbuilder_ngInstallerScript extends InstallerScript
 
     if ($timezoneName === '') {
       try {
-        $timezoneName = trim((string) Factory::getConfig()->get('offset', ''));
+        $timezoneName = trim((string) Factory::getApplication()->getConfig()->get('offset', ''));
       } catch (\Throwable) {
         $timezoneName = '';
       }
@@ -669,7 +669,7 @@ class com_contentbuilder_ngInstallerScript extends InstallerScript
     $installerInfo = $this->getInstallerPackageInfo($parent);
     $timezoneName = (string) Factory::getApplication()->get('offset', '');
     if ($timezoneName === '') {
-      $timezoneName = (string) Factory::getConfig()->get('offset', 'UTC');
+      $timezoneName = (string) Factory::getApplication()->getConfig()->get('offset', 'UTC');
     }
 
     try {

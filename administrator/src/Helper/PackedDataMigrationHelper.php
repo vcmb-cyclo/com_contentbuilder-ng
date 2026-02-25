@@ -68,6 +68,25 @@ final class PackedDataMigrationHelper
      *     errors:int,
      *     tables:array<int,array{table:string,from:string,to:string,status:string,error:string}>,
      *     warnings:array<int,string>
+     *   },
+     *   audit_columns:array{
+     *     scanned:int,
+     *     issues:int,
+     *     repaired:int,
+     *     unchanged:int,
+     *     errors:int,
+     *     tables:array<int,array{
+     *       table:string,
+     *       storage_id:int,
+     *       storage_name:string,
+     *       bytable:int,
+     *       missing:array<int,string>,
+     *       added:array<int,string>,
+     *       indexes_added:array<int,string>,
+     *       status:string,
+     *       error:string
+     *     }>,
+     *     warnings:array<int,string>
      *   }
      * }
      */
@@ -76,6 +95,7 @@ final class PackedDataMigrationHelper
         $db = Factory::getContainer()->get(DatabaseInterface::class);
         $summary = self::migratePackedPayloads($db);
         $summary['repair'] = self::repairTableCollations($db);
+        $summary['audit_columns'] = StorageAuditColumnsHelper::repair($db);
 
         return $summary;
     }

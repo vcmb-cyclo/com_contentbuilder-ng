@@ -320,7 +320,7 @@ class plgSystemContentbuilder_ng_system extends CMSPlugin implements SubscriberI
             $pluginParams = $this->params;
 
             if ($pluginParams->def('nocache', 1)) {
-                $this->caching = Factory::getConfig()->get(preg_replace("/^config./", '', 'config.caching', 1), null);
+                $this->caching = Factory::getApplication()->getConfig()->get(preg_replace("/^config./", '', 'config.caching', 1), null);
                 $this->app->getConfig()->set('config.caching', 0);
             }
         }

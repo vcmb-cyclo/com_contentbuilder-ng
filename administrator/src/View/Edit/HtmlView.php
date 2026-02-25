@@ -28,6 +28,7 @@ class HtmlView extends BaseHtmlView
 	protected $article_settings;
 	protected $article_options;
     private bool $frontend;
+    private array $breezingFormsRenderCache = [];
 
     private function toUnicodeSlug(string $string): string
     {
@@ -40,6 +41,183 @@ class HtmlView extends BaseHtmlView
         $str = preg_replace('#\x20+#', '-', $str) ?? $str;
 
         return $str;
+    }
+
+    private function hasBreezingFormsPlaceholder(string $markup): bool
+    {
+        return (bool) preg_match('/\{BreezingForms\s*:/i', $markup);
+    }
+
+    private function resolveBreezingFormsComponent(): ?array
+    {
+        static $resolved = false;
+        static $component = null;
+
+        if ($resolved) {
+            return $component;
+        }
+
+        $resolved = true;
+        $candidates = [
+            'com_breezingforms' => JPATH_ROOT . '/components/com_breezingforms/breezingforms.php',
+            'com_breezingforms_ng' => JPATH_ROOT . '/components/com_breezingforms_ng/breezingforms.php',
+        ];
+
+        try {
+            $db = Factory::getContainer()->get(DatabaseInterface::class);
+            $query = $db->getQuery(true)
+                ->select($db->quoteName('element'))
+                ->from($db->quoteName('#__extensions'))
+                ->where($db->quoteName('type') . ' = ' . $db->quote('component'))
+                ->where($db->quoteName('enabled') . ' = 1')
+                ->where(
+                    $db->quoteName('element') . ' IN ('
+                    . $db->quote('com_breezingforms') . ','
+                    . $db->quote('com_breezingforms_ng') . ')'
+                );
+
+            $db->setQuery($query);
+            $installed = (array) $db->loadColumn();
+
+            foreach ($installed as $option) {
+                if (isset($candidates[$option]) && is_file($candidates[$option])) {
+                    $component = ['option' => $option, 'entry' => $candidates[$option]];
+                    return $component;
+                }
+            }
+        } catch (\Throwable $e) {
+            // Fall back to file-based detection below.
+        }
+
+        foreach ($candidates as $option => $entry) {
+            if (is_file($entry)) {
+                $component = ['option' => $option, 'entry' => $entry];
+                return $component;
+            }
+        }
+
+        return null;
+    }
+
+    private function dispatchContentPrepare($dispatcher, \Joomla\CMS\Table\Content $table, Registry $registry, int $page): void
+    {
+        $dispatcher->dispatch(
+            'onContentPrepare',
+            new \Joomla\CMS\Event\Content\ContentPrepareEvent('onContentPrepare', [
+                'context' => 'com_content.article',
+                'subject' => $table,
+                'params'  => $registry,
+                'page'    => $page,
+            ])
+        );
+    }
+
+    private function renderBreezingFormsShortcodes(string $markup): string
+    {
+        if (!$this->hasBreezingFormsPlaceholder($markup)) {
+            return $markup;
+        }
+
+        $rendered = preg_replace_callback(
+            '/\{BreezingForms\s*:\s*([^}]+)\}/i',
+            function (array $matches): string {
+                $formReference = trim((string) ($matches[1] ?? ''));
+                if ($formReference === '') {
+                    return $matches[0];
+                }
+
+                $cacheKey = strtolower($formReference);
+                if (array_key_exists($cacheKey, $this->breezingFormsRenderCache)) {
+                    return $this->breezingFormsRenderCache[$cacheKey] !== ''
+                        ? $this->breezingFormsRenderCache[$cacheKey]
+                        : $matches[0];
+                }
+
+                $replacement = $this->renderBreezingFormsByComponent($formReference);
+                $this->breezingFormsRenderCache[$cacheKey] = $replacement;
+
+                return $replacement !== '' ? $replacement : $matches[0];
+            },
+            $markup
+        );
+
+        return $rendered ?? $markup;
+    }
+
+    private function renderBreezingFormsByComponent(string $formReference): string
+    {
+        $component = $this->resolveBreezingFormsComponent();
+        if (!is_array($component) || !isset($component['entry'], $component['option'])) {
+            return '';
+        }
+        $componentEntry = (string) $component['entry'];
+        $componentOption = (string) $component['option'];
+
+        $requestSnapshot = $_REQUEST;
+        $getSnapshot = $_GET;
+        $postSnapshot = $_POST;
+
+        $globalNames = ['ff_applic', 'plg_editable', 'plg_editable_override', 'xModuleId'];
+        $globalSnapshot = [];
+        foreach ($globalNames as $name) {
+            $globalSnapshot[$name . '_set'] = array_key_exists($name, $GLOBALS);
+            $globalSnapshot[$name] = $globalSnapshot[$name . '_set'] ? $GLOBALS[$name] : null;
+        }
+
+        try {
+            $_REQUEST['option'] = $componentOption;
+            $_GET['option'] = $componentOption;
+            $_REQUEST['ff_applic'] = 'plg_facileforms';
+            $_GET['ff_applic'] = 'plg_facileforms';
+            $_REQUEST['ff_task'] = 'view';
+            $_GET['ff_task'] = 'view';
+            $_REQUEST['ff_page'] = 1;
+            $_GET['ff_page'] = 1;
+            $_REQUEST['ff_target'] = 1;
+            $_GET['ff_target'] = 1;
+            $_REQUEST['ff_frame'] = 0;
+            $_GET['ff_frame'] = 0;
+            $_REQUEST['ff_module_id'] = 0;
+            $_GET['ff_module_id'] = 0;
+            $_REQUEST['ff_contentid'] = (int) $this->id;
+            $_GET['ff_contentid'] = (int) $this->id;
+
+            if (ctype_digit($formReference)) {
+                $_REQUEST['ff_form'] = (int) $formReference;
+                $_GET['ff_form'] = (int) $formReference;
+                unset($_REQUEST['ff_name'], $_GET['ff_name']);
+            } else {
+                $_REQUEST['ff_name'] = $formReference;
+                $_GET['ff_name'] = $formReference;
+                unset($_REQUEST['ff_form'], $_GET['ff_form']);
+            }
+
+            $GLOBALS['ff_applic'] = 'plg_facileforms';
+            $GLOBALS['plg_editable'] = 1;
+            // Keep override disabled to avoid destructive replacement of user records.
+            $GLOBALS['plg_editable_override'] = 0;
+            $GLOBALS['xModuleId'] = 0;
+
+            ob_start();
+            include $componentEntry;
+            $output = ob_get_clean();
+
+            return is_string($output) ? $output : '';
+        } catch (\Throwable $e) {
+            return '';
+        } finally {
+            $_REQUEST = $requestSnapshot;
+            $_GET = $getSnapshot;
+            $_POST = $postSnapshot;
+
+            foreach ($globalNames as $name) {
+                if (!empty($globalSnapshot[$name . '_set'])) {
+                    $GLOBALS[$name] = $globalSnapshot[$name];
+                } else {
+                    unset($GLOBALS[$name]);
+                }
+            }
+        }
     }
 
 	function display($tpl = null)
@@ -67,8 +245,12 @@ class HtmlView extends BaseHtmlView
 
 				$table = new \Joomla\CMS\Table\Content($db);
 
-			// required for pagebreak plugin
-			Factory::getApplication()->input->set('view', 'article');
+			// Required for content plugins that expect com_content/article context.
+			$input = Factory::getApplication()->input;
+			$previousOption = $input->getCmd('option', '');
+			$previousView = $input->getCmd('view', '');
+			$input->set('option', 'com_content');
+			$input->set('view', 'article');
 
 			$isNew = true;
 			if ($article > 0) {
@@ -91,22 +273,25 @@ class HtmlView extends BaseHtmlView
 			$registry = new Registry;
 			$registry->loadString($table->attribs ?? '');
 
-			PluginHelper::importPlugin('content', 'breezingforms');
-
 			// seems to be a joomla bug. if sef urls is enabled, "start" is used for paging in articles, else "limitstart" will be used
 			$limitstart = Factory::getApplication()->input->getInt('limitstart', 0);
 			$start = Factory::getApplication()->input->getInt('start', 0);
+			$page = $limitstart ? $limitstart : $start;
+			$hasBfShortcode = $this->hasBreezingFormsPlaceholder((string) ($table->text ?? ''));
 
 			$dispatcher = Factory::getApplication()->getDispatcher();
-			$dispatcher->dispatch(
-				'onContentPrepare',
-				new \Joomla\CMS\Event\Content\ContentPrepareEvent('onContentPrepare', [
-					'context' => 'com_content.article',
-					'subject' => $table,
-					'params'  => $registry,
-					'page'    => $limitstart ? $limitstart : $start,
-				])
-			);
+			try {
+				PluginHelper::importPlugin('content');
+
+				$this->dispatchContentPrepare($dispatcher, $table, $registry, $page);
+
+				if ($hasBfShortcode && $this->hasBreezingFormsPlaceholder((string) ($table->text ?? ''))) {
+					$table->text = $this->renderBreezingFormsShortcodes((string) ($table->text ?? ''));
+				}
+			} finally {
+				$input->set('option', $previousOption);
+				$input->set('view', $previousView);
+			}
 			$subject->template = $table->text;
 
 			$eventResult = $dispatcher->dispatch(

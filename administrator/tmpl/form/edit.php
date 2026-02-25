@@ -50,6 +50,15 @@ $listOrder = (string) ($this->listOrder ?? 'ordering');
 $listDirn  = strtolower((string) ($this->listDirn ?? 'asc'));
 $listDirn  = ($listDirn === 'desc') ? 'desc' : 'asc';
 $formId    = (int) ($this->item->id ?? 0);
+$isBreezingFormsType = in_array(
+    (string) ($this->item->type ?? ''),
+    ['com_breezingforms', 'com_breezingforms_ng'],
+    true
+);
+$breezingFormsProvidedMessage = '<div class="alert alert-success d-inline-flex align-items-center py-2 px-3 mb-2" role="status">'
+    . '<span class="badge bg-success me-2">&#10003;</span>'
+    . '<span>' . htmlspecialchars(Text::_('COM_CONTENTBUILDER_NG_EDITABLE_TEMPLATE_PROVIDED_BY_BREEZINGFORMS'), ENT_QUOTES, 'UTF-8') . '</span>'
+    . '</div>';
 
 $sortLink = function (string $label, string $field) use ($listOrder, $listDirn, $formId): string {
     $isActive = ($listOrder === $field);
@@ -2295,7 +2304,7 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
                 </td>
                 <td width="20%">
                     <?php
-                    if ($this->item->edit_by_type && $this->item->type == 'com_breezingforms') {
+                    if ($this->item->edit_by_type && $isBreezingFormsType) {
                     ?>
                         <label for="protect_upload_directory"><span class="editlinktip hasTip"
                                 title="<?php echo Text::_('COM_CONTENTBUILDER_NG_UPLOAD_DIRECTORY_TYPE_TIP'); ?>">
@@ -2307,7 +2316,7 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
                 </td>
                 <td>
                     <?php
-                    if ($this->item->edit_by_type && $this->item->type == 'com_breezingforms') {
+                    if ($this->item->edit_by_type && $isBreezingFormsType) {
                     ?>
                         <input type="hidden" name="jform[protect_upload_directory]" value="0" />
                         <?php echo $renderCheckbox('jform[protect_upload_directory]', 'protect_upload_directory', trim((string) $this->item->protect_upload_directory) !== ''); ?>
@@ -2349,8 +2358,8 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
         </h3>
         <?php
 
-        if ($this->item->edit_by_type && $this->item->type == 'com_breezingforms') {
-            echo Text::_('COM_CONTENTBUILDER_NG_EDITABLE_TEMPLATE_PROVIDED_BY_BREEZINGFORMS');
+        if ($this->item->edit_by_type && $isBreezingFormsType) {
+            echo $breezingFormsProvidedMessage;
             echo '<input type="hidden" name="jform[editable_template]" value="{BreezingForms: ' . (isset($this->item->type_name) ? $this->item->type_name : '') . '}"/>';
             //echo '<input type="hidden" name="jform[protect_upload_directory]" value="'.(trim($this->item->protect_upload_directory) ? 1 : 0).'"/>'; 
             echo '<input type="hidden" name="jform[upload_directory]" value="' . (trim($this->item->upload_directory) ? trim($this->item->upload_directory) : JPATH_SITE . '/media/com_contentbuilder_ng/upload') . '"/>';
@@ -2398,7 +2407,7 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
         <?php
 
         if ($this->item->edit_by_type) {
-            echo Text::_('COM_CONTENTBUILDER_NG_EDITABLE_TEMPLATE_PROVIDED_BY_BREEZINGFORMS');
+            echo $breezingFormsProvidedMessage;
             echo '<input type="hidden" name="jform[editable_prepare]" value="' . htmlentities($this->item->editable_prepare ?? '', ENT_QUOTES, 'UTF-8') . '"/>';
         } else {
             if (trim($this->item->editable_prepare ?? '') == '') {
@@ -2430,7 +2439,7 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
         <?php
 
         if ($this->item->edit_by_type) {
-            echo Text::_('COM_CONTENTBUILDER_NG_EDITABLE_TEMPLATE_PROVIDED_BY_BREEZINGFORMS');
+            echo $breezingFormsProvidedMessage;
             echo '<input type="hidden" name="jform[email_admin_template]" value="' . htmlentities($this->item->email_admin_template ?? '', ENT_QUOTES, 'UTF-8') . '"/>';
             echo '<input type="hidden" name="jform[email_template]" value="' . htmlentities($this->item->email_template ?? '', ENT_QUOTES, 'UTF-8') . '"/>';
             echo '<input type="hidden" name="jform[email_admin_subject]" value="' . htmlentities($this->item->email_admin_subject ?? '', ENT_QUOTES, 'UTF-8') . '"/>';

@@ -419,7 +419,7 @@ class VerifyModel extends BaseDatabaseModel
 
         Factory::getApplication()->getLanguage()->load('com_users', JPATH_SITE);
 
-        $config = Factory::getConfig();
+        $config = Factory::getApplication()->getConfig();
         $userParams = ComponentHelper::getParams('com_users');
         $db = $this->getDatabase();
 
@@ -455,7 +455,7 @@ class VerifyModel extends BaseDatabaseModel
         }
 
         $params = ComponentHelper::getParams('com_users');
-        $config = Factory::getConfig();
+        $config = Factory::getApplication()->getConfig();
 
         // Compile the notification mail values.
         $data = $user->getProperties();
@@ -502,7 +502,7 @@ class VerifyModel extends BaseDatabaseModel
     {
         $this->app->getLanguage()->load('com_users', JPATH_SITE);
 
-        $config = Factory::getConfig();
+        $config = Factory::getApplication()->getConfig();
         $userParams = ComponentHelper::getParams('com_users');
         $db = $this->getDatabase();
 
