@@ -145,7 +145,39 @@ class ListController extends BaseController
             );
         }
 
-        $model->change_list_states();
+        $selectedItems = array_values(
+            array_unique(
+                array_filter(
+                    array_map(static fn($id): string => trim((string) $id), (array) $this->input->get('cid', [], 'array')),
+                    static fn(string $id): bool => $id !== ''
+                )
+            )
+        );
+
+        if ($selectedItems === []) {
+            $state = $this->resolveListState();
+            $previewQuery = $this->buildPreviewQuery();
+            $link = Route::_(
+                'index.php?option=com_contentbuilder_ng&task=list.display&id='
+                . $this->input->getInt('id', 0)
+                . '&list[limit]=' . $state['limit']
+                . '&list[start]=' . $state['start']
+                . '&list[ordering]=' . $state['ordering']
+                . '&list[direction]=' . $state['direction']
+                . $previewQuery
+                . '&Itemid=' . $this->input->getInt('Itemid', 0),
+                false
+            );
+            $this->setRedirect($link, Text::_('JERROR_NO_ITEMS_SELECTED'), 'warning');
+
+            return;
+        }
+
+        $this->input->set('cid', $selectedItems);
+        Factory::getApplication()->input->set('cid', $selectedItems);
+
+        $changedCount = (int) $model->change_list_states();
+        $message = Text::_('COM_CONTENTBUILDER_NG_STATES_CHANGED') . ' (' . $changedCount . ')';
 
         $state = $this->resolveListState();
         $previewQuery = $this->buildPreviewQuery();
@@ -160,7 +192,7 @@ class ListController extends BaseController
             . '&Itemid=' . $this->input->getInt('Itemid', 0),
             false
         );
-        $this->setRedirect($link, Text::_('COM_CONTENTBUILDER_NG_STATES_CHANGED'), 'message');
+        $this->setRedirect($link, $message, 'message');
     }
 
     public function publish(): void
@@ -188,11 +220,43 @@ class ListController extends BaseController
             );
         }
 
-        $model->change_list_publish();
+        $selectedItems = array_values(
+            array_unique(
+                array_filter(
+                    array_map(static fn($id): string => trim((string) $id), (array) $this->input->get('cid', [], 'array')),
+                    static fn(string $id): bool => $id !== ''
+                )
+            )
+        );
+
+        if ($selectedItems === []) {
+            $state = $this->resolveListState();
+            $previewQuery = $this->buildPreviewQuery();
+            $link = Route::_(
+                'index.php?option=com_contentbuilder_ng&task=list.display&id='
+                . $this->input->getInt('id', 0)
+                . '&list[limit]=' . $state['limit']
+                . '&list[start]=' . $state['start']
+                . '&list[ordering]=' . $state['ordering']
+                . '&list[direction]=' . $state['direction']
+                . $previewQuery
+                . '&Itemid=' . $this->input->getInt('Itemid', 0),
+                false
+            );
+            $this->setRedirect($link, Text::_('JERROR_NO_ITEMS_SELECTED'), 'warning');
+
+            return;
+        }
+
+        $this->input->set('cid', $selectedItems);
+        Factory::getApplication()->input->set('cid', $selectedItems);
+
+        $changedCount = (int) $model->change_list_publish();
 
         $msg = $this->input->getInt('list_publish', 0)
             ? Text::_('COM_CONTENTBUILDER_NG_PUBLISHED')
             : Text::_('COM_CONTENTBUILDER_NG_PUNPUBLISHED');
+        $msg .= ' (' . $changedCount . ')';
 
         $state = $this->resolveListState();
         $previewQuery = $this->buildPreviewQuery();

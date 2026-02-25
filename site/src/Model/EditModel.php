@@ -2205,18 +2205,59 @@ var contentbuilder_ng = new function(){
         $this->getDatabase()->setQuery('Select reference_id From #__contentbuilder_ng_forms Where id = ' . intval($this->_id));
         $reference_id = $this->getDatabase()->loadResult();
         if (!$reference_id) {
-            return;
+            return 0;
+        }
+
+        $listState = Factory::getApplication()->input->getInt('list_state', 0);
+        $items = Factory::getApplication()->input->get('cid', [], 'array');
+        if (!count($items)) {
+            return 0;
+        }
+
+        $changedCount = 0;
+
+        if ($listState < 0) {
+            return 0;
+        }
+
+        if ($listState === 0) {
+            $quotedItems = array();
+
+            foreach ($items as $item) {
+                $quotedItems[] = $this->getDatabase()->quote((string) $item);
+            }
+
+            if (count($quotedItems)) {
+                $this->getDatabase()->setQuery(
+                    "Select Count(1) From #__contentbuilder_ng_list_records Where form_id = "
+                    . intval($this->_id)
+                    . " And record_id In ("
+                    . implode(',', $quotedItems)
+                    . ')'
+                );
+                $changedCount = (int) $this->getDatabase()->loadResult();
+
+                $this->getDatabase()->setQuery(
+                    "Delete From #__contentbuilder_ng_list_records Where form_id = "
+                    . intval($this->_id)
+                    . " And record_id In ("
+                    . implode(',', $quotedItems)
+                    . ')'
+                );
+                $this->getDatabase()->execute();
+            }
+
+            return $changedCount;
         }
 
         // prevent from changing to an unpublished state
-        $this->getDatabase()->setQuery("Select id, action From #__contentbuilder_ng_list_states Where published = 1 And id = " . Factory::getApplication()->input->getInt('list_state', 0) . " And form_id = " . $this->_id);
+        $this->getDatabase()->setQuery("Select id, action From #__contentbuilder_ng_list_states Where published = 1 And id = " . $listState . " And form_id = " . $this->_id);
         $res = $this->getDatabase()->loadAssoc();
         if (!is_array($res)) {
-            return;
+            return 0;
         }
 
         PluginHelper::importPlugin('contentbuilder_ng_listaction', $res['action']);
-        $items = Factory::getApplication()->input->get('cid', [], 'array');
 
         $dispatcher = Factory::getApplication()->getDispatcher();
         $eventResult = $dispatcher->dispatch('onBeforeAction', new \Joomla\Event\Event('onBeforeAction', array($this->_id, $items)));
@@ -2228,14 +2269,19 @@ var contentbuilder_ng = new function(){
         }
 
         foreach ($items as $item) {
-            $this->getDatabase()->setQuery("Select id From #__contentbuilder_ng_list_records Where form_id = " . $this->_id . " And record_id = " . $this->getDatabase()->quote($item));
-            $res = $this->getDatabase()->loadResult();
-            if (!$res) {
-                $this->getDatabase()->setQuery("Insert Into #__contentbuilder_ng_list_records (state_id, form_id, record_id, reference_id) Values (" . Factory::getApplication()->input->getInt('list_state', 0) . ", " . $this->_id . ", " . $this->getDatabase()->quote($item) . ", " . $this->getDatabase()->quote($reference_id) . ")");
+            $this->getDatabase()->setQuery("Select id, state_id From #__contentbuilder_ng_list_records Where form_id = " . $this->_id . " And record_id = " . $this->getDatabase()->quote($item));
+            $res = $this->getDatabase()->loadAssoc();
+            if (!is_array($res)) {
+                $this->getDatabase()->setQuery("Insert Into #__contentbuilder_ng_list_records (state_id, form_id, record_id, reference_id) Values (" . $listState . ", " . $this->_id . ", " . $this->getDatabase()->quote($item) . ", " . $this->getDatabase()->quote($reference_id) . ")");
                 $this->getDatabase()->execute();
+                $changedCount++;
             } else {
-                $this->getDatabase()->setQuery("Update #__contentbuilder_ng_list_records Set state_id = " . Factory::getApplication()->input->getInt('list_state', 0) . " Where form_id = " . $this->_id . " And record_id = " . $this->getDatabase()->quote($item));
+                if ((int) $res['state_id'] === $listState) {
+                    continue;
+                }
+                $this->getDatabase()->setQuery("Update #__contentbuilder_ng_list_records Set state_id = " . $listState . " Where form_id = " . $this->_id . " And record_id = " . $this->getDatabase()->quote($item));
                 $this->getDatabase()->execute();
+                $changedCount++;
             }
         }
 
@@ -2247,6 +2293,8 @@ var contentbuilder_ng = new function(){
         if ($error) {
             Factory::getApplication()->enqueueMessage($error);
         }
+
+        return $changedCount;
     }
 
     function change_list_language()
@@ -2291,13 +2339,19 @@ var contentbuilder_ng = new function(){
         $typeref = $this->getDatabase()->loadAssoc();
 
         if (!is_array($typeref)) {
-            return;
+            return 0;
         }
 
         $reference_id = $typeref['reference_id'];
         $type = $typeref['type'];
 
         $items = Factory::getApplication()->input->get('cid', [], 'array');
+        if (!count($items)) {
+            return 0;
+        }
+
+        $publish = Factory::getApplication()->input->getInt('list_publish', 0) ? 1 : 0;
+        $changedCount = 0;
 
         $this->getDatabase()->setQuery("SET @ids := null");
         $this->getDatabase()->execute();
@@ -2306,15 +2360,17 @@ var contentbuilder_ng = new function(){
         $created_up = $created_up->toSql();
 
         foreach ($items as $item) {
-            $this->getDatabase()->setQuery("Select id, publish_up From #__contentbuilder_ng_records Where `type` = " . $this->getDatabase()->quote($type) . " And `reference_id` = " . $this->getDatabase()->quote($reference_id) . " And record_id = " . $this->getDatabase()->quote($item));
+            $this->getDatabase()->setQuery("Select id, publish_up, published From #__contentbuilder_ng_records Where `type` = " . $this->getDatabase()->quote($type) . " And `reference_id` = " . $this->getDatabase()->quote($reference_id) . " And record_id = " . $this->getDatabase()->quote($item));
             $res = $this->getDatabase()->loadAssoc();
+            $currentPublished = is_array($res) ? (int) ($res['published'] ?? 0) : 0;
+            if ($currentPublished !== $publish) {
+                $changedCount++;
+            }
 
             if (!is_array($res)) {
-                $this->getDatabase()->setQuery("Insert Into #__contentbuilder_ng_records (`type`,published, record_id, reference_id) Values (" . $this->getDatabase()->quote($type) . "," . (Factory::getApplication()->input->getInt('list_publish', 0) ? 1 : 0) . ", " . $this->getDatabase()->quote($item) . ", " . $this->getDatabase()->quote($reference_id) . ")");
+                $this->getDatabase()->setQuery("Insert Into #__contentbuilder_ng_records (`type`,published, record_id, reference_id) Values (" . $this->getDatabase()->quote($type) . "," . $publish . ", " . $this->getDatabase()->quote($item) . ", " . $this->getDatabase()->quote($reference_id) . ")");
                 $this->getDatabase()->execute();
             } else {
-                $publish = Factory::getApplication()->input->getInt('list_publish', 0);
-
                 $this->getDatabase()->setQuery(
                     "UPDATE #__contentbuilder_ng_records 
                     SET 
@@ -2329,7 +2385,6 @@ var contentbuilder_ng = new function(){
                 $this->getDatabase()->execute();
             }
 
-            $publish = Factory::getApplication()->input->getInt('list_publish', 0);
             $publishUpValue = $publish
                 ? $this->getDatabase()->quote($created_up)
                 : $this->getDatabase()->quote(is_array($res) ? $res['publish_up'] : $created_up);
@@ -2352,7 +2407,7 @@ var contentbuilder_ng = new function(){
         $select_ids = $this->getDatabase()->loadResult();
         $affected_articles = [];
         if ($select_ids) {
-            $affected_articles = explode(',', $this->getDatabase()->loadResult());
+            $affected_articles = explode(',', $select_ids);
         }
         $this->cleanComponentCaches();
 
@@ -2367,5 +2422,7 @@ var contentbuilder_ng = new function(){
         ]);
         $eventResult = $dispatcher->dispatch('onContentChangeState', $event);
         $result = $eventResult->getArgument('result') ?: [];
+
+        return $changedCount;
     }
 }

@@ -311,10 +311,10 @@ if ($showActionToolbar) {
     }
     ?>
     <?php if ($delete_allowed) { ?>
-        <button class="btn btn-sm btn-primary cbButton cbDeleteButton" onclick="contentbuilder_ng_delete();"
+        <button class="btn btn-sm btn-outline-danger cbButton cbDeleteButton d-inline-flex align-items-center gap-1 rounded-pill" onclick="contentbuilder_ng_delete();"
             title="<?php echo Text::_('COM_CONTENTBUILDER_NG_DELETE'); ?>">
-            <i class="fa fa-trash" aria-hidden="true"></i>
-            <?php echo Text::_('COM_CONTENTBUILDER_NG_DELETE') ?>
+            <span class="icon-trash" aria-hidden="true"></span>
+            <span><?php echo Text::_('COM_CONTENTBUILDER_NG_DELETE') ?></span>
         </button>
     <?php
     }

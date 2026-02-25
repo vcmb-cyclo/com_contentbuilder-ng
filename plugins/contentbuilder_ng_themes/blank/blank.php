@@ -168,7 +168,15 @@ class plgContentbuilder_ng_themesBlank extends CMSPlugin implements SubscriberIn
             return;
         }
 
-        $out = '';
+        $out = <<<'CSS'
+.cb-list-filters .form-select:disabled,
+.cb-list-filters .form-control:disabled{
+    color:var(--bs-secondary-color,#6c757d);
+    background-color:var(--bs-secondary-bg,#e9ecef);
+    border-color:var(--bs-border-color,#dee2e6);
+    opacity:1;
+}
+CSS;
         if ($event instanceof Event) {
             $this->pushEventResult($event, $out);
             return;

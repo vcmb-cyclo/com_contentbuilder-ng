@@ -128,6 +128,39 @@ CSS
 		Joomla.submitform(task || '', form);
 	};
 
+	function contentbuilder_ng_selectedCount(form) {
+		if (!form) return 0;
+		var boxchecked = form.querySelector('input[name="boxchecked"]');
+		if (boxchecked) {
+			var value = parseInt(boxchecked.value, 10);
+			return isNaN(value) ? 0 : value;
+		}
+		return form.querySelectorAll('input[name="cid[]"]:checked').length;
+	}
+
+	function contentbuilder_ng_updateBulkActionsAvailability(form) {
+		if (!form) return;
+		var hasSelection = contentbuilder_ng_selectedCount(form) > 0;
+
+		var bulkStateSelect = form.querySelector('select[name="list_state"]');
+		if (bulkStateSelect) {
+			bulkStateSelect.disabled = !hasSelection;
+
+			if (!hasSelection && bulkStateSelect.value !== '-1') {
+				bulkStateSelect.value = '-1';
+			}
+		}
+
+		var bulkPublishSelect = form.querySelector('select[name="list_publish"]');
+		if (bulkPublishSelect) {
+			bulkPublishSelect.disabled = !hasSelection;
+
+			if (!hasSelection && bulkPublishSelect.value !== '-1') {
+				bulkPublishSelect.value = '-1';
+			}
+		}
+	}
+
 	function contentbuilder_ng_updateBoxchecked(form) {
 		if (!form) return;
 		var boxes = form.querySelectorAll('input[name="cid[]"]');
@@ -139,6 +172,7 @@ CSS
 		if (boxchecked) {
 			boxchecked.value = String(checked);
 		}
+		contentbuilder_ng_updateBulkActionsAvailability(form);
 	}
 
 	function contentbuilder_ng_selectAll(toggle) {
@@ -161,6 +195,15 @@ CSS
 
 	function contentbuilder_ng_state() {
 		var form = document.getElementById('adminForm');
+		if (!form) return;
+		if (contentbuilder_ng_selectedCount(form) < 1) {
+			var stateSelect = form.querySelector('select[name="list_state"]');
+			if (stateSelect) {
+				stateSelect.value = '-1';
+			}
+			contentbuilder_ng_updateBulkActionsAvailability(form);
+			return;
+		}
 		document.getElementById('task').value = 'list.state';
 		Joomla.submitform('list.state', form);
 	}
@@ -168,18 +211,20 @@ CSS
 	function contentbuilder_ng_state_single(stateId, recordId) {
 		var form = document.getElementById('adminForm');
 		if (!form) return;
-		if (stateId === undefined || stateId === null || String(stateId) === '') return;
+		if (stateId === undefined || stateId === null) return;
+		var normalizedStateId = String(stateId) === '' ? '0' : String(stateId);
 
 		// Ensure only the clicked record is selected.
 		var boxes = form.querySelectorAll('input[name="cid[]"]');
 		boxes.forEach(function (box) {
 			box.checked = String(box.value) === String(recordId);
 		});
+		contentbuilder_ng_updateBoxchecked(form);
 
 		// Prefer the bulk state select if present, otherwise create a hidden input.
 		var stateSelect = form.querySelector('select[name="list_state"]');
 		if (stateSelect) {
-			stateSelect.value = stateId;
+			stateSelect.value = normalizedStateId;
 		} else {
 			var hiddenState = document.getElementById('cb_list_state_value');
 			if (!hiddenState) {
@@ -189,7 +234,7 @@ CSS
 				hiddenState.id = 'cb_list_state_value';
 				form.appendChild(hiddenState);
 			}
-			hiddenState.value = stateId;
+			hiddenState.value = normalizedStateId;
 		}
 
 		document.getElementById('task').value = 'list.state';
@@ -198,6 +243,15 @@ CSS
 
 	function contentbuilder_ng_publish() {
 		var form = document.getElementById('adminForm');
+		if (!form) return;
+		if (contentbuilder_ng_selectedCount(form) < 1) {
+			var publishSelect = form.querySelector('select[name="list_publish"]');
+			if (publishSelect) {
+				publishSelect.value = '-1';
+			}
+			contentbuilder_ng_updateBulkActionsAvailability(form);
+			return;
+		}
 		document.getElementById('task').value = 'list.publish';
 		Joomla.submitform('list.publish', form);
 	}
@@ -249,8 +303,10 @@ CSS
 				contentbuilder_ng_updateBoxchecked(form);
 			});
 		});
-	});
-</script>
+
+		contentbuilder_ng_updateBoxchecked(form);
+		});
+	</script>
 
 <?php if ($this->page_title): ?>
 	<div class="cb-list-titlebar">
@@ -339,23 +395,24 @@ by this block. -->
 						<!-- GAUCHE : filtre + selects + boutons (optionnel) -->
 						<div class="d-flex flex-wrap align-items-center gap-2 flex-grow-1">
 
-							<?php if ($this->list_state && $state_allowed && count($this->states)) : ?>
-								<select class="form-select form-select-sm" style="max-width: 140px;"
-									name="list_state" title="<?php echo Text::_('COM_CONTENTBUILDER_NG_BULK_OPTIONS'); ?>: <?php echo Text::_('COM_CONTENTBUILDER_NG_EDIT_STATE'); ?>"
-									onchange="if (this.value !== '0') { contentbuilder_ng_state(); }">
-									<option value="0"> - <?php echo Text::_('COM_CONTENTBUILDER_NG_EDIT_STATE'); ?> -</option>
-									<?php foreach ($this->states as $state) : ?>
-										<option value="<?php echo $state['id']; ?>">
-											<?php echo $state['title']; ?>
+								<?php if ($this->list_state && $state_allowed && count($this->states)) : ?>
+									<select class="form-select form-select-sm" style="max-width: 140px;" disabled
+										name="list_state" title="<?php echo Text::_('COM_CONTENTBUILDER_NG_BULK_OPTIONS'); ?>: <?php echo Text::_('COM_CONTENTBUILDER_NG_EDIT_STATE'); ?>"
+										onchange="if (this.value !== '-1') { contentbuilder_ng_state(); }">
+										<option value="-1"> - <?php echo Text::_('COM_CONTENTBUILDER_NG_EDIT_STATE'); ?> -</option>
+										<option value="0">-</option>
+										<?php foreach ($this->states as $state) : ?>
+											<option value="<?php echo $state['id']; ?>">
+												<?php echo $state['title']; ?>
 										</option>
 									<?php endforeach; ?>
 								</select>
 							<?php endif; ?>
 
-							<?php if ($this->list_publish && $publish_allowed) : ?>
-								<select class="form-select form-select-sm" style="max-width: 160px;"
-									name="list_publish" title="<?php echo Text::_('COM_CONTENTBUILDER_NG_BULK_OPTIONS'); ?>: <?php echo Text::_('COM_CONTENTBUILDER_NG_PUBLISH'); ?>"
-									onchange="if (this.value !== '-1') { contentbuilder_ng_publish(); }">
+								<?php if ($this->list_publish && $publish_allowed) : ?>
+									<select class="form-select form-select-sm" style="max-width: 160px;" disabled
+										name="list_publish" title="<?php echo Text::_('COM_CONTENTBUILDER_NG_BULK_OPTIONS'); ?>: <?php echo Text::_('COM_CONTENTBUILDER_NG_PUBLISH'); ?>"
+										onchange="if (this.value !== '-1') { contentbuilder_ng_publish(); }">
 									<option value="-1"> - <?php echo Text::_('COM_CONTENTBUILDER_NG_UPDATE_STATUS'); ?> -</option>
 									<option value="1"><?php echo Text::_('COM_CONTENTBUILDER_NG_PUBLISH'); ?></option>
 									<option value="0"><?php echo Text::_('COM_CONTENTBUILDER_NG_UNPUBLISH'); ?></option>

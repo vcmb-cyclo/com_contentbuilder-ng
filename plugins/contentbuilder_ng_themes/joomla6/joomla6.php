@@ -207,9 +207,13 @@ class plgContentbuilder_ng_themesJoomla6 extends CMSPlugin implements Subscriber
     background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
 }
 
-.cbEditableWrapper .cbToolBar .cbDeleteButton.btn-primary {
-    border-color: #bb2d3b;
-    background: linear-gradient(135deg, #dc3545 0%, #b32635 100%);
+.cbEditableWrapper .cbToolBar .cbDeleteButton.btn-outline-danger {
+    box-shadow: none;
+}
+
+.cbEditableWrapper .cbToolBar .cbDeleteButton.btn-outline-danger .icon-trash,
+.cbEditableWrapper .cbToolBar .cbDeleteButton.btn-outline-danger .fa {
+    color: inherit;
 }
 
 .cbEditableWrapper .created-by {
@@ -446,8 +450,8 @@ class plgContentbuilder_ng_themesJoomla6 extends CMSPlugin implements Subscriber
     font-weight: 600;
     letter-spacing: 0.01em;
     font-size: 0.84rem;
-    padding: 0.32rem 0.76rem;
-    box-shadow: 0 0.2rem 0.56rem rgba(16, 32, 56, 0.11);
+    padding: 0.32rem 1rem;
+    box-shadow: none;
 }
 
 .cbDetailsWrapper .cbTitleRecordNav .cbButton.btn {
@@ -455,8 +459,8 @@ class plgContentbuilder_ng_themesJoomla6 extends CMSPlugin implements Subscriber
     font-weight: 600;
     letter-spacing: 0.01em;
     font-size: 0.84rem;
-    padding: 0.32rem 0.76rem;
-    box-shadow: 0 0.2rem 0.56rem rgba(16, 32, 56, 0.11);
+    padding: 0.32rem 1rem;
+    box-shadow: none;
     display: inline-flex;
     align-items: center;
 }
@@ -466,14 +470,37 @@ class plgContentbuilder_ng_themesJoomla6 extends CMSPlugin implements Subscriber
     color: #0d6efd;
 }
 
-.cbDetailsWrapper .cbToolBar .cbEditButton.btn-primary {
-    border-color: #0a58ca;
-    background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
+.cbDetailsWrapper .cbToolBar .cbButton.btn-primary,
+.cbDetailsWrapper .cbTitleRecordNav .cbButton.btn-primary {
+    border-color: #0d6efd;
+    background: #ffffff;
+    color: #0d6efd;
 }
 
-.cbDetailsWrapper .cbToolBar .cbDeleteButton.btn-primary {
-    border-color: #bb2d3b;
-    background: linear-gradient(135deg, #dc3545 0%, #b32635 100%);
+.cbDetailsWrapper .cbToolBar .cbButton.btn-primary:hover,
+.cbDetailsWrapper .cbToolBar .cbButton.btn-primary:focus,
+.cbDetailsWrapper .cbTitleRecordNav .cbButton.btn-primary:hover,
+.cbDetailsWrapper .cbTitleRecordNav .cbButton.btn-primary:focus {
+    border-color: #0d6efd;
+    background: #0d6efd;
+    color: #ffffff;
+}
+
+.cbDetailsWrapper .cbToolBar .cbButton.btn-primary .fa,
+.cbDetailsWrapper .cbTitleRecordNav .cbButton.btn-primary .fa {
+    color: inherit;
+}
+
+.cbDetailsWrapper .cbToolBar .cbDeleteButton.btn-outline-danger,
+.cbDetailsWrapper .cbTitleRecordNav .cbDeleteButton.btn-outline-danger {
+    box-shadow: none;
+}
+
+.cbDetailsWrapper .cbToolBar .cbDeleteButton.btn-outline-danger .icon-trash,
+.cbDetailsWrapper .cbToolBar .cbDeleteButton.btn-outline-danger .fa,
+.cbDetailsWrapper .cbTitleRecordNav .cbDeleteButton.btn-outline-danger .icon-trash,
+.cbDetailsWrapper .cbTitleRecordNav .cbDeleteButton.btn-outline-danger .fa {
+    color: inherit;
 }
 
 .cbDetailsWrapper .created-by {
@@ -496,12 +523,12 @@ class plgContentbuilder_ng_themesJoomla6 extends CMSPlugin implements Subscriber
 }
 
 .cbDetailsWrapper .cbDetailsBody {
-    margin: 0.24rem 0 0.4rem;
-    padding: 0.54rem 0.58rem 0.24rem;
-    border: 1px solid rgba(36, 61, 86, 0.14);
-    border-radius: 0.64rem;
-    background: #ffffff;
-    box-shadow: 0 0.24rem 0.62rem rgba(16, 32, 56, 0.05);
+    margin: 0.3rem 0 0.52rem;
+    padding: 0.74rem 0.8rem 0.5rem;
+    border: 1px solid rgba(36, 61, 86, 0.16);
+    border-radius: 0.76rem;
+    background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+    box-shadow: 0 0.35rem 0.92rem rgba(16, 32, 56, 0.06);
 }
 
 .cbDetailsWrapper .cbDetailsBody ul.category.list-striped.list-condensed {
@@ -509,41 +536,49 @@ class plgContentbuilder_ng_themesJoomla6 extends CMSPlugin implements Subscriber
     padding: 0;
     list-style: none;
     display: grid;
-    gap: 0.3rem;
+    gap: 0.46rem;
 }
 
 .cbDetailsWrapper .cbDetailsBody ul.category.list-striped.list-condensed > li {
     margin: 0;
-    padding: 0.4rem 0.5rem;
-    border: 1px solid rgba(36, 61, 86, 0.14);
-    border-radius: 0.54rem;
-    background: linear-gradient(180deg, #ffffff 0%, #f7fbff 100%);
+    padding: 0.56rem 0.62rem;
+    border: 1px solid rgba(36, 61, 86, 0.16);
+    border-radius: 0.62rem;
+    background: #ffffff;
     display: grid;
-    grid-template-columns: minmax(190px, 31%) 1fr;
-    gap: 0.42rem;
+    grid-template-columns: minmax(200px, 30%) minmax(0, 1fr);
+    gap: 0.6rem;
     align-items: start;
-    box-shadow: 0 0.14rem 0.42rem rgba(16, 32, 56, 0.04);
+    box-shadow: 0 0.18rem 0.52rem rgba(16, 32, 56, 0.04);
 }
 
 .cbDetailsWrapper .cbDetailsBody ul.category.list-striped.list-condensed > li:nth-child(odd) {
-    border-left: 0.22rem solid rgba(13, 110, 253, 0.4);
+    border-left-color: rgba(36, 61, 86, 0.16);
 }
 
 .cbDetailsWrapper .cbDetailsBody ul.category.list-striped.list-condensed > li strong.list-title {
+    display: block;
     margin: 0;
-    color: #2b4a70;
-    font-size: 0.72rem;
+    padding-top: 0.2rem;
+    color: #536987;
+    font-size: 0.76rem;
     font-weight: 700;
-    letter-spacing: 0.04em;
+    letter-spacing: 0.035em;
     text-transform: uppercase;
-    line-height: 1.22;
+    line-height: 1.3;
+    white-space: nowrap;
 }
 
 .cbDetailsWrapper .cbDetailsBody ul.category.list-striped.list-condensed > li > div {
     margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
     color: #162f4d;
-    font-size: 0.86rem;
-    line-height: 1.3;
+    font-size: 0.92rem;
+    line-height: 1.45;
+    min-height: 0;
     overflow-wrap: anywhere;
 }
 
@@ -551,54 +586,67 @@ class plgContentbuilder_ng_themesJoomla6 extends CMSPlugin implements Subscriber
     margin: 0;
     padding: 0;
     display: grid;
-    gap: 0.3rem;
+    gap: 0.46rem;
 }
 
 .cbDetailsWrapper .cbDetailsBody .list-group.list-group-flush > .list-group-item {
     margin: 0;
-    padding: 0.4rem 0.48rem;
-    border: 1px solid rgba(36, 61, 86, 0.14);
-    border-radius: 0.54rem;
-    background: linear-gradient(180deg, #ffffff 0%, #f7fbff 100%);
-    box-shadow: 0 0.14rem 0.42rem rgba(16, 32, 56, 0.04);
+    padding: 0.56rem 0.62rem;
+    border: 1px solid rgba(36, 61, 86, 0.16);
+    border-radius: 0.62rem;
+    background: #ffffff;
+    box-shadow: 0 0.18rem 0.52rem rgba(16, 32, 56, 0.04);
 }
 
 .cbDetailsWrapper .cbDetailsBody .list-group.list-group-flush > .list-group-item:nth-child(odd) {
-    border-left: 0.2rem solid rgba(13, 110, 253, 0.38);
+    border-left-color: rgba(36, 61, 86, 0.16);
 }
 
 .cbDetailsWrapper .cbDetailsBody .list-group.list-group-flush > .list-group-item .row {
-    --bs-gutter-x: 0.45rem;
-    --bs-gutter-y: 0.1rem;
+    --bs-gutter-x: 0;
+    --bs-gutter-y: 0;
     margin: 0;
-    align-items: center !important;
+    display: grid;
+    grid-template-columns: minmax(200px, 30%) minmax(0, 1fr);
+    gap: 0.6rem;
+    align-items: start !important;
 }
 
 .cbDetailsWrapper .cbDetailsBody .list-group.list-group-flush > .list-group-item .col-3 {
-    flex: 0 0 34%;
-    max-width: 34%;
+    flex: 0 0 auto;
+    max-width: none;
+    min-width: 0;
+    padding: 0;
 }
 
 .cbDetailsWrapper .cbDetailsBody .list-group.list-group-flush > .list-group-item .col {
     min-width: 0;
+    padding: 0;
 }
 
 .cbDetailsWrapper .cbDetailsBody .list-group.list-group-flush > .list-group-item .form-label {
+    display: block;
     margin: 0 !important;
-    color: #2b4a70;
-    font-size: 0.72rem;
+    padding-top: 0.2rem;
+    color: #536987;
+    font-size: 0.76rem;
     font-weight: 700;
-    letter-spacing: 0.04em;
+    letter-spacing: 0.035em;
     text-transform: uppercase;
-    line-height: 1.22;
+    line-height: 1.3;
+    white-space: nowrap;
 }
 
 .cbDetailsWrapper .cbDetailsBody .list-group.list-group-flush > .list-group-item .form-control-plaintext {
     margin: 0;
     padding: 0 !important;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
     color: #162f4d;
-    font-size: 0.86rem;
-    line-height: 1.3;
+    font-size: 0.92rem;
+    line-height: 1.45;
+    min-height: 0;
     overflow-wrap: anywhere;
 }
 
@@ -673,21 +721,26 @@ class plgContentbuilder_ng_themesJoomla6 extends CMSPlugin implements Subscriber
     }
 
     .cbDetailsWrapper .cbDetailsBody {
-        padding: 0.52rem 0.48rem 0.2rem;
+        padding: 0.62rem 0.56rem 0.34rem;
     }
 
     .cbDetailsWrapper .cbDetailsBody ul.category.list-striped.list-condensed > li {
         grid-template-columns: 1fr;
-        gap: 0.28rem;
-        padding: 0.44rem 0.48rem;
+        gap: 0.32rem;
+        padding: 0.5rem 0.52rem;
     }
 
     .cbDetailsWrapper .cbDetailsBody ul.category.list-striped.list-condensed > li strong.list-title {
-        font-size: 0.75rem;
+        font-size: 0.74rem;
     }
 
     .cbDetailsWrapper .cbDetailsBody .list-group.list-group-flush > .list-group-item {
-        padding: 0.4rem 0.44rem;
+        padding: 0.5rem 0.52rem;
+    }
+
+    .cbDetailsWrapper .cbDetailsBody .list-group.list-group-flush > .list-group-item .row {
+        grid-template-columns: 1fr;
+        gap: 0.32rem;
     }
 
     .cbDetailsWrapper .cbDetailsBody .list-group.list-group-flush > .list-group-item .col-3,
@@ -697,7 +750,9 @@ class plgContentbuilder_ng_themesJoomla6 extends CMSPlugin implements Subscriber
     }
 
     .cbDetailsWrapper .cbDetailsBody .list-group.list-group-flush > .list-group-item .form-control-plaintext {
-        font-size: 0.82rem;
+        font-size: 0.88rem;
+        min-height: 0;
+        padding: 0 !important;
     }
 }
 CSS;
@@ -750,6 +805,13 @@ CSS;
 .cb-list-sticky .cb-list-filters td{background:transparent}
 .cb-list-filters td{padding:.4rem .15rem .75rem}
 .cb-list-filters .form-select,.cb-list-filters .form-control{border-radius:.5rem}
+.cb-list-filters .form-select:disabled,
+.cb-list-filters .form-control:disabled{
+    color:var(--bs-secondary-color,#6c757d);
+    background-color:var(--bs-secondary-bg,#e9ecef);
+    border-color:var(--bs-border-color,#dee2e6);
+    opacity:1;
+}
 .cb-list-filters .input-group-text{border-radius:.5rem 0 0 .5rem;background:var(--bs-tertiary-bg,#f8f9fa)}
 .cb-list-table{margin-top:.35rem!important}
 .cb-list-table th{font-size:.875rem;letter-spacing:.01em}

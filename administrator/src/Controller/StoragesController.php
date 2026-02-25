@@ -104,7 +104,7 @@ final class StoragesController extends AdminController
 
             // Message Joomla standard (tu peux aussi faire tes propres Text::sprintf)
             $this->setMessage(
-                Text::plural('COM_CONTENTBUILDER_NG_COPIED'),
+                Text::plural('COM_CONTENTBUILDER_NG_COPIED', count($cid)),
                 'message'
             );
         } catch (\Throwable $e) {
