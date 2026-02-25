@@ -28,6 +28,7 @@ $tableEncodingIssues = (array) ($auditReport['table_encoding_issues'] ?? []);
 $columnEncodingIssues = (array) ($auditReport['column_encoding_issues'] ?? []);
 $mixedTableCollations = (array) ($auditReport['mixed_table_collations'] ?? []);
 $missingAuditColumns = (array) ($auditReport['missing_audit_columns'] ?? []);
+$bfFieldSyncIssues = (array) ($auditReport['bf_view_field_sync_issues'] ?? []);
 $missingAuditColumnsTotal = (int) ($auditSummary['missing_audit_columns_total'] ?? 0);
 if ($missingAuditColumnsTotal === 0 && $missingAuditColumns !== []) {
     foreach ($missingAuditColumns as $missingAuditColumn) {
@@ -36,6 +37,31 @@ if ($missingAuditColumnsTotal === 0 && $missingAuditColumns !== []) {
         }
 
         $missingAuditColumnsTotal += count((array) ($missingAuditColumn['missing'] ?? []));
+    }
+}
+$bfFieldSyncViews = (int) ($auditSummary['bf_view_field_sync_views'] ?? count($bfFieldSyncIssues));
+$bfFieldSyncMissingTotal = (int) ($auditSummary['bf_view_field_sync_missing_in_cb'] ?? 0);
+$bfFieldSyncOrphanTotal = (int) ($auditSummary['bf_view_field_sync_orphan_in_cb'] ?? 0);
+
+if (($bfFieldSyncMissingTotal === 0 || $bfFieldSyncOrphanTotal === 0) && $bfFieldSyncIssues !== []) {
+    $fallbackMissingTotal = 0;
+    $fallbackOrphanTotal = 0;
+
+    foreach ($bfFieldSyncIssues as $bfFieldSyncIssue) {
+        if (!is_array($bfFieldSyncIssue)) {
+            continue;
+        }
+
+        $fallbackMissingTotal += (int) ($bfFieldSyncIssue['missing_count'] ?? 0);
+        $fallbackOrphanTotal += (int) ($bfFieldSyncIssue['orphan_count'] ?? 0);
+    }
+
+    if ($bfFieldSyncMissingTotal === 0) {
+        $bfFieldSyncMissingTotal = $fallbackMissingTotal;
+    }
+
+    if ($bfFieldSyncOrphanTotal === 0) {
+        $bfFieldSyncOrphanTotal = $fallbackOrphanTotal;
     }
 }
 $cbTableStats = is_array($auditReport['cb_tables'] ?? null) ? $auditReport['cb_tables'] : [];
@@ -97,6 +123,31 @@ $formatBytes = static function (int $bytes): string {
     }
 
     return number_format($value, 2, '.', ' ') . ' ' . $units[$unitIndex];
+};
+$formatAuditIssueList = static function (array $values, int $limit = 8): string {
+    $clean = [];
+
+    foreach ($values as $value) {
+        $label = trim((string) $value);
+        if ($label !== '') {
+            $clean[] = $label;
+        }
+    }
+
+    $clean = array_values(array_unique($clean));
+    if ($clean === []) {
+        return '0';
+    }
+
+    $visible = array_slice($clean, 0, $limit);
+    $remaining = max(0, count($clean) - count($visible));
+    $rendered = implode(', ', $visible);
+
+    if ($remaining > 0) {
+        $rendered .= ' +' . $remaining;
+    }
+
+    return $rendered;
 };
 
 ?>
@@ -342,6 +393,18 @@ $formatBytes = static function (int $bytes): string {
                         <td><?php echo $missingAuditColumnsTotal; ?></td>
                     </tr>
                     <tr>
+                        <th scope="row"><?php echo Text::_('COM_CONTENTBUILDER_NG_ABOUT_AUDIT_BF_FIELD_SYNC_VIEWS'); ?></th>
+                        <td><?php echo $bfFieldSyncViews; ?></td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><?php echo Text::_('COM_CONTENTBUILDER_NG_ABOUT_AUDIT_BF_FIELD_SYNC_MISSING_IN_CB'); ?></th>
+                        <td><?php echo $bfFieldSyncMissingTotal; ?></td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><?php echo Text::_('COM_CONTENTBUILDER_NG_ABOUT_AUDIT_BF_FIELD_SYNC_EXTRA_IN_CB'); ?></th>
+                        <td><?php echo $bfFieldSyncOrphanTotal; ?></td>
+                    </tr>
+                    <tr>
                         <th scope="row"><?php echo Text::_('COM_CONTENTBUILDER_NG_ABOUT_AUDIT_CB_TABLES_TOTAL'); ?></th>
                         <td><?php echo (int) ($cbTableSummary['tables_total'] ?? 0); ?></td>
                     </tr>
@@ -447,6 +510,70 @@ $formatBytes = static function (int $bytes): string {
                                 <td><?php echo htmlspecialchars((string) ($missingAuditColumn['storage_name'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></td>
                                 <td><?php echo Text::_((int) ($missingAuditColumn['bytable'] ?? 0) === 1 ? 'JYES' : 'JNO'); ?></td>
                                 <td><?php echo htmlspecialchars(implode(', ', (array) ($missingAuditColumn['missing'] ?? [])), ENT_QUOTES, 'UTF-8'); ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            <?php endif; ?>
+
+            <h4 class="h6 mt-3"><?php echo Text::_('COM_CONTENTBUILDER_NG_ABOUT_AUDIT_BF_FIELD_SYNC'); ?></h4>
+            <?php if (empty($bfFieldSyncIssues)) : ?>
+                <div class="alert cb-audit-ok-alert">
+                    <?php echo Text::_('COM_CONTENTBUILDER_NG_ABOUT_AUDIT_BF_FIELD_SYNC_NO_ISSUES'); ?>
+                </div>
+            <?php else : ?>
+                <div class="table-responsive">
+                    <table class="table table-sm table-striped align-middle">
+                        <thead>
+                        <tr>
+                            <th scope="col"><?php echo Text::_('COM_CONTENTBUILDER_NG_ABOUT_AUDIT_BF_FIELD_SYNC_VIEW_ID'); ?></th>
+                            <th scope="col"><?php echo Text::_('COM_CONTENTBUILDER_NG_ABOUT_AUDIT_BF_FIELD_SYNC_VIEW'); ?></th>
+                            <th scope="col"><?php echo Text::_('COM_CONTENTBUILDER_NG_ABOUT_AUDIT_BF_FIELD_SYNC_SOURCE'); ?></th>
+                            <th scope="col"><?php echo Text::_('COM_CONTENTBUILDER_NG_ABOUT_AUDIT_BF_FIELD_SYNC_MISSING'); ?></th>
+                            <th scope="col"><?php echo Text::_('COM_CONTENTBUILDER_NG_ABOUT_AUDIT_BF_FIELD_SYNC_ORPHAN'); ?></th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <?php foreach ($bfFieldSyncIssues as $bfFieldSyncIssue) : ?>
+                            <?php
+                            $sourceExists = (int) ($bfFieldSyncIssue['source_exists'] ?? 0) === 1;
+                            $sourceDisplay = trim((string) ($bfFieldSyncIssue['type'] ?? ''))
+                                . ' #' . (int) ($bfFieldSyncIssue['reference_id'] ?? 0);
+                            $sourceName = trim((string) ($bfFieldSyncIssue['source_name'] ?? ''));
+                            if ($sourceName !== '') {
+                                $sourceDisplay .= ' (' . $sourceName . ')';
+                            }
+
+                            $missingCount = (int) ($bfFieldSyncIssue['missing_count'] ?? 0);
+                            $missingList = (array) ($bfFieldSyncIssue['missing_in_cb'] ?? []);
+                            $orphanCount = (int) ($bfFieldSyncIssue['orphan_count'] ?? 0);
+                            $orphanList = (array) ($bfFieldSyncIssue['orphan_in_cb'] ?? []);
+                            ?>
+                            <tr>
+                                <td><?php echo (int) ($bfFieldSyncIssue['form_id'] ?? 0); ?></td>
+                                <td><?php echo htmlspecialchars((string) ($bfFieldSyncIssue['form_name'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></td>
+                                <td>
+                                    <?php if ($sourceExists) : ?>
+                                        <?php echo htmlspecialchars($sourceDisplay, ENT_QUOTES, 'UTF-8'); ?>
+                                    <?php else : ?>
+                                        <span class="text-warning"><?php echo Text::_('COM_CONTENTBUILDER_NG_ABOUT_AUDIT_BF_FIELD_SYNC_SOURCE_MISSING'); ?></span>
+                                    <?php endif; ?>
+                                </td>
+                                <td>
+                                    <?php echo $missingCount; ?>
+                                    <?php if ($missingCount > 0) : ?>
+                                        <br>
+                                        <small><?php echo htmlspecialchars($formatAuditIssueList($missingList), ENT_QUOTES, 'UTF-8'); ?></small>
+                                    <?php endif; ?>
+                                </td>
+                                <td>
+                                    <?php echo $orphanCount; ?>
+                                    <?php if ($orphanCount > 0) : ?>
+                                        <br>
+                                        <small><?php echo htmlspecialchars($formatAuditIssueList($orphanList), ENT_QUOTES, 'UTF-8'); ?></small>
+                                    <?php endif; ?>
+                                </td>
                             </tr>
                         <?php endforeach; ?>
                         </tbody>

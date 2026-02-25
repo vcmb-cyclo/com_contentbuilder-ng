@@ -873,15 +873,36 @@ final class ContentbuilderLegacyHelper
         return $out;
     }
 
-    public static function synchElements($contentbuilder_ng_form_id, $form)
+    public static function synchElements($contentbuilder_ng_form_id, $form): array
     {
+        $report = array(
+            'added' => array(),
+            'removed' => array(),
+            'added_count' => 0,
+            'removed_count' => 0,
+        );
+
         if (!$contentbuilder_ng_form_id || !is_object($form)) {
-            return;
+            return $report;
         }
 
         $db = Factory::getContainer()->get(DatabaseInterface::class);
         $ids = array();
-        $elements = $form->getElementLabels();
+        $elements = (array) $form->getElementLabels();
+
+        $db->setQuery(
+            "Select reference_id, label"
+            . " From #__contentbuilder_ng_elements"
+            . " Where form_id = " . intval($contentbuilder_ng_form_id)
+        );
+        $existingRows = (array) $db->loadAssocList();
+        $existingByReference = array();
+        foreach ($existingRows as $row) {
+            $referenceId = (string) ($row['reference_id'] ?? '');
+            if ($referenceId !== '') {
+                $existingByReference[$referenceId] = $row;
+            }
+        }
 
         foreach ($elements as $reference_id => $title) {
             // TODO: auto-type-recognition
@@ -902,13 +923,27 @@ final class ContentbuilderLegacyHelper
 
                 $db->setQuery("Insert Into #__contentbuilder_ng_elements (`label`,`form_id`,`reference_id`,`type`,`options`, `ordering`) Values (" . $db->quote($title) . "," . $db->quote($contentbuilder_ng_form_id) . "," . $db->quote($reference_id) . ",'text','" . self::encodePackedData($options) . "', " . ($ordering ? $ordering : 0) . ")");
                 $db->execute();
+                $report['added'][] = trim((string) $title) !== '' ? trim((string) $title) : (string) $reference_id;
             }
+
+            unset($existingByReference[(string) $reference_id]);
         }
         // delete missing elements
         if (count($ids)) {
             $db->setQuery("Delete From #__contentbuilder_ng_elements Where form_id = " . intval($contentbuilder_ng_form_id) . " And reference_id Not In (" . implode(',', $ids) . ")");
             $db->execute();
         }
+
+        foreach ($existingByReference as $removedRow) {
+            $removedLabel = trim((string) ($removedRow['label'] ?? ''));
+            $removedRef = (string) ($removedRow['reference_id'] ?? '');
+            $report['removed'][] = $removedLabel !== '' ? $removedLabel : $removedRef;
+        }
+
+        $report['added_count'] = count($report['added']);
+        $report['removed_count'] = count($report['removed']);
+
+        return $report;
     }
 
     public static function getTypes()

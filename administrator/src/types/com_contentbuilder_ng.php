@@ -143,7 +143,13 @@ class contentbuilder_ng_com_contentbuilder_ng
     {
         $data = new \stdClass();
         $db = Factory::getContainer()->get(DatabaseInterface::class);
-        $db->setQuery("Select metakey, metadesc, author, robots, rights, xreference From #__contentbuilder_ng_records Where `type` = 'com_contentbuilder_ng' And reference_id = " . $db->quote($this->properties->id) . " And record_id = " . $db->quote($record_id));
+        $db->setQuery(
+            "Select metakey, metadesc, author, robots, rights, xreference, edited, last_update"
+            . " From #__contentbuilder_ng_records"
+            . " Where `type` = 'com_contentbuilder_ng'"
+            . " And reference_id = " . $db->quote($this->properties->id)
+            . " And record_id = " . $db->quote($record_id)
+        );
         $metadata = $db->loadObject();
 
         $data->metadesc = '';
@@ -152,6 +158,8 @@ class contentbuilder_ng_com_contentbuilder_ng
         $data->rights = '';
         $data->robots = '';
         $data->xreference = '';
+        $data->last_update = '';
+        $data->edited = 0;
         if ($metadata) {
             $data->metadesc = $metadata->metadesc;
             $data->metakey = $metadata->metakey;
@@ -159,6 +167,8 @@ class contentbuilder_ng_com_contentbuilder_ng
             $data->rights = $metadata->rights;
             $data->robots = $metadata->robots;
             $data->xreference = $metadata->xreference;
+            $data->last_update = (string) ($metadata->last_update ?? '');
+            $data->edited = (int) ($metadata->edited ?? 0);
         }
         $obj = null;
         try {
@@ -180,6 +190,17 @@ class contentbuilder_ng_com_contentbuilder_ng
             $data->modified_id = (int) ($obj->modified_user_id ?? 0);
             $data->modified = (string) ($obj->modified ?? '');
             $data->modified_by = strpos($this->bytable, '#__') !== 0 ? '' : (string) ($obj->modified_by ?? '');
+        }
+
+        // Fallback: if the storage table does not track modified fields,
+        // rely on CB record tracker when at least one edit occurred.
+        if (
+            $data->modified === ''
+            && (int) $data->edited > 0
+            && $data->last_update !== ''
+            && $data->last_update !== '0000-00-00 00:00:00'
+        ) {
+            $data->modified = $data->last_update;
         }
         return $data;
     }

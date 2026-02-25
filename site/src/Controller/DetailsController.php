@@ -12,6 +12,7 @@ namespace CB\Component\Contentbuilder_ng\Site\Controller;
 \defined('_JEXEC') or die('Restricted access');
 
 use Joomla\CMS\Application\CMSApplicationInterface;
+use Joomla\CMS\Application\SiteApplication;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Router\Route;
@@ -28,6 +29,7 @@ class DetailsController extends BaseController
     // ✅ IMPORTANT : force le prefix PSR-4 des vues
     protected $viewPrefix = 'CB\\Component\\Contentbuilder_ng\\Site\\View';
 
+    private SiteApplication $siteApp;
     private bool $frontend;
     private $_show_back_button = true;
 
@@ -40,27 +42,30 @@ class DetailsController extends BaseController
             // IMPORTANT : on transmet factory/app/input à BaseController
         parent::__construct($config, $factory, $app, $input);
 
-        $this->frontend = Factory::getApplication()->isClient('site');
+        if (!$app instanceof SiteApplication) {
+            throw new \RuntimeException('Unexpected application instance');
+        }
 
-        if ($this->frontend && Factory::getApplication()->input->getInt('Itemid', 0)) {
+        $this->siteApp = $app;
+        $this->frontend = $this->siteApp->isClient('site');
 
-            $option = 'com_contentbuilder_ng';
+        if ($this->frontend && $this->siteApp->input->getInt('Itemid', 0)) {
 
             // try menu item
-            $menu = Factory::getApplication()->getMenu();
+            $menu = $this->siteApp->getMenu();
             $item = $menu->getActive();
             if (is_object($item)) {
                 if ($item->getParams()->get('record_id', null) !== null) {
-                    Factory::getApplication()->input->set('record_id', $item->getParams()->get('record_id', null));
+                    $this->siteApp->input->set('record_id', $item->getParams()->get('record_id', null));
                     $this->_show_back_button = $item->getParams()->get('show_back_button', null);
                 }
             }
         }
 
-        if (Factory::getApplication()->input->getWord('view', '') == 'latest') {
+        if ($this->siteApp->input->getWord('view', '') == 'latest') {
             $db = Factory::getContainer()->get(DatabaseInterface::class);
 
-            $db->setQuery('Select `type`, `reference_id` From #__contentbuilder_ng_forms Where id = ' . intval(Factory::getApplication()->input->getInt('id', 0)) . ' And published = 1');
+            $db->setQuery('Select `type`, `reference_id` From #__contentbuilder_ng_forms Where id = ' . intval($this->siteApp->input->getInt('id', 0)) . ' And published = 1');
             $form = $db->loadAssoc();
             $form = ContentbuilderLegacyHelper::getForm($form['type'], $form['reference_id']);
 
@@ -71,7 +76,7 @@ class DetailsController extends BaseController
             }
 
             if (count($ids)) {
-                $db->setQuery("Select Distinct `label`, reference_id From #__contentbuilder_ng_elements Where form_id = " . intval(Factory::getApplication()->input->getInt('id', 0)) . " And reference_id In (" . implode(',', $ids) . ") And published = 1 Order By ordering");
+                $db->setQuery("Select Distinct `label`, reference_id From #__contentbuilder_ng_elements Where form_id = " . intval($this->siteApp->input->getInt('id', 0)) . " And reference_id In (" . implode(',', $ids) . ") And published = 1 Order By ordering");
                 $rows = $db->loadAssocList();
                 $ids = array();
                 foreach ($rows as $row) {
@@ -79,19 +84,19 @@ class DetailsController extends BaseController
                 }
             }
 
-            $rec = $form->getListRecords($ids, '', array(), 0, 1, '', array(), 'desc', 0, false, (int) (Factory::getApplication()->getIdentity()->id ?? 0), 0, -1, -1, -1, -1, array(), true, null);
+            $rec = $form->getListRecords($ids, '', array(), 0, 1, '', array(), 'desc', 0, false, (int) ($this->siteApp->getIdentity()->id ?? 0), 0, -1, -1, -1, -1, array(), true, null);
 
             if (count($rec) > 0) {
                 $rec = $rec[0];
                 $rec2 = $form->getRecord($rec->colRecord, false, -1, true);
 
                 $record_id = $rec->colRecord;
-                Factory::getApplication()->input->set('record_id', $record_id);
+                $this->siteApp->input->set('record_id', $record_id);
             }
 
-            if (!Factory::getApplication()->input->getCmd('record_id', '')) {
-                Factory::getApplication()->input->set('cbIsNew', 1);
-                ContentbuilderLegacyHelper::setPermissions(Factory::getApplication()->input->getInt('id', 0), 0, $this->frontend ? '_fe' : '');
+            if (!$this->siteApp->input->getCmd('record_id', '')) {
+                $this->siteApp->input->set('cbIsNew', 1);
+                ContentbuilderLegacyHelper::setPermissions($this->siteApp->input->getInt('id', 0), 0, $this->frontend ? '_fe' : '');
                 $auth = $this->frontend ? ContentbuilderLegacyHelper::authorizeFe('new') : ContentbuilderLegacyHelper::authorize('new');
 
                 if ($auth) {
@@ -103,15 +108,15 @@ class DetailsController extends BaseController
                         'direction' => $state['direction'],
                     ]]);
 
-                    Factory::getApplication()->redirect(Route::_('index.php?option=com_contentbuilder_ng&task=edit.display&latest=1&backtolist=' . Factory::getApplication()->input->getInt('backtolist', 0) . '&id=' . Factory::getApplication()->input->getInt('id', 0) . (Factory::getApplication()->input->get('tmpl', '', 'string') != '' ? '&tmpl=' . Factory::getApplication()->input->get('tmpl', '', 'string') : '') . (Factory::getApplication()->input->get('layout', '', 'string') != '' ? '&layout=' . Factory::getApplication()->input->get('layout', '', 'string') : '') . '&record_id=' . ($listQuery !== '' ? '' : '') . ($listQuery !== '' ? '&' . $listQuery : ''), false));
+                    $this->siteApp->redirect(Route::_('index.php?option=com_contentbuilder_ng&task=edit.display&latest=1&backtolist=' . $this->siteApp->input->getInt('backtolist', 0) . '&id=' . $this->siteApp->input->getInt('id', 0) . ($this->siteApp->input->get('tmpl', '', 'string') != '' ? '&tmpl=' . $this->siteApp->input->get('tmpl', '', 'string') : '') . ($this->siteApp->input->get('layout', '', 'string') != '' ? '&layout=' . $this->siteApp->input->get('layout', '', 'string') : '') . '&record_id=' . ($listQuery !== '' ? '' : '') . ($listQuery !== '' ? '&' . $listQuery : ''), false));
                 } else {
-                    Factory::getApplication()->enqueueMessage(Text::_('COM_CONTENTBUILDER_NG_ADD_ENTRY_FIRST'));
-                    Factory::getApplication()->redirect(Route::_('index.php'));
+                    $this->siteApp->enqueueMessage(Text::_('COM_CONTENTBUILDER_NG_ADD_ENTRY_FIRST'));
+                    $this->siteApp->redirect(Route::_('index.php'));
                 }
             }
         }
 
-        ContentbuilderLegacyHelper::setPermissions(Factory::getApplication()->input->getInt('id', 0), Factory::getApplication()->input->getCmd('record_id', 0), $this->frontend ? '_fe' : '');
+        ContentbuilderLegacyHelper::setPermissions($this->siteApp->input->getInt('id', 0), $this->siteApp->input->getCmd('record_id', 0), $this->frontend ? '_fe' : '');
     }
 
     function display($cachable = false, $urlparams = array())
@@ -119,7 +124,7 @@ class DetailsController extends BaseController
         $this->input->set('view', 'details');
 
         // Si tu gardes le suffixe pour compat legacy :
-        //$frontend = Factory::getApplication()->isClient('site');
+        //$frontend = $this->siteApp->isClient('site');
         $suffix = '_fe';
 
         // 1) d'abord depuis l'URL
@@ -127,7 +132,7 @@ class DetailsController extends BaseController
 
         // 2) sinon depuis les params du menu actif
         if (!$form_id) {
-            $menu = $this->app->getMenu()->getActive();
+            $menu = $this->siteApp->getMenu()->getActive();
             if ($menu) {
                 $form_id = (int) $menu->getParams()->get('form_id', 0);
             }
@@ -135,32 +140,32 @@ class DetailsController extends BaseController
 
         // Synchroniser l'input pour les appels legacy encore présents.
         $this->input->set('id', $form_id);
-        Factory::getApplication()->input->set('id', $form_id);
+        $this->siteApp->input->set('id', $form_id);
 
         $recordId = (int) $this->input->getInt('record_id', 0);
         if (!$recordId) {
-            $menu = $this->app->getMenu()->getActive();
+            $menu = $this->siteApp->getMenu()->getActive();
             if ($menu) {
                 $recordId = (int) $menu->getParams()->get('record_id', 0);
             }
         }
         if ($recordId) {
             $this->input->set('record_id', $recordId);
-            Factory::getApplication()->input->set('record_id', $recordId);
+            $this->siteApp->input->set('record_id', $recordId);
         }
 
         ContentbuilderLegacyHelper::setPermissions($form_id, $recordId, $suffix);
         $isAdminPreview = $this->isValidAdminPreviewRequest($form_id);
         $this->input->set('cb_preview_ok', $isAdminPreview ? 1 : 0);
-        Factory::getApplication()->input->set('cb_preview_ok', $isAdminPreview ? 1 : 0);
+        $this->siteApp->input->set('cb_preview_ok', $isAdminPreview ? 1 : 0);
         if (!$isAdminPreview) {
             ContentbuilderLegacyHelper::checkPermissions('view', Text::_('COM_CONTENTBUILDER_NG_PERMISSIONS_VIEW_NOT_ALLOWED'), $this->frontend ? '_fe' : '');
         }
 
-        Factory::getApplication()->input->set('tmpl', Factory::getApplication()->input->getWord('tmpl', null));
-        Factory::getApplication()->input->set('layout', Factory::getApplication()->input->getWord('layout', null) == 'latest' ? null : Factory::getApplication()->input->getWord('layout', null));
-        if (Factory::getApplication()->input->getWord('view', '') == 'latest') {
-            Factory::getApplication()->input->set('cb_latest', 1);
+        $this->siteApp->input->set('tmpl', $this->siteApp->input->getWord('tmpl', null));
+        $this->siteApp->input->set('layout', $this->siteApp->input->getWord('layout', null) == 'latest' ? null : $this->siteApp->input->getWord('layout', null));
+        if ($this->siteApp->input->getWord('view', '') == 'latest') {
+            $this->siteApp->input->set('cb_latest', 1);
         }
 
         parent::display();
@@ -168,7 +173,7 @@ class DetailsController extends BaseController
 
     private function resolveListState(): array
     {
-        $app = Factory::getApplication();
+        $app = $this->siteApp;
         $option = 'com_contentbuilder_ng';
         $list = (array) $app->input->get('list', [], 'array');
         $stateKeyPrefix = $this->getPaginationStateKeyPrefix();
@@ -202,7 +207,7 @@ class DetailsController extends BaseController
 
     private function getPaginationStateKeyPrefix(): string
     {
-        $app = Factory::getApplication();
+        $app = $this->siteApp;
         $option = 'com_contentbuilder_ng';
 
         $formId = (int) $app->input->getInt('id', 0);
@@ -241,7 +246,7 @@ class DetailsController extends BaseController
             return false;
         }
 
-        $secret = (string) Factory::getApplication()->get('secret');
+        $secret = (string) $this->siteApp->get('secret');
         if ($secret === '') {
             return false;
         }
@@ -254,16 +259,16 @@ class DetailsController extends BaseController
         if (($actorId > 0 || $actorName !== '') && hash_equals($actorExpected, $sig)) {
             $this->input->set('cb_preview_actor_id', $actorId);
             $this->input->set('cb_preview_actor_name', $actorName);
-            Factory::getApplication()->input->set('cb_preview_actor_id', $actorId);
-            Factory::getApplication()->input->set('cb_preview_actor_name', $actorName);
+            $this->siteApp->input->set('cb_preview_actor_id', $actorId);
+            $this->siteApp->input->set('cb_preview_actor_name', $actorName);
             return true;
         }
 
         if (hash_equals($expected, $sig)) {
             $this->input->set('cb_preview_actor_id', 0);
             $this->input->set('cb_preview_actor_name', '');
-            Factory::getApplication()->input->set('cb_preview_actor_id', 0);
-            Factory::getApplication()->input->set('cb_preview_actor_name', '');
+            $this->siteApp->input->set('cb_preview_actor_id', 0);
+            $this->siteApp->input->set('cb_preview_actor_name', '');
             return true;
         }
 

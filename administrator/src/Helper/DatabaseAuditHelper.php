@@ -34,6 +34,20 @@ final class DatabaseAuditHelper
      *     bytable:int,
      *     missing:array<int,string>
      *   }>,
+     *   bf_view_field_sync_issues:array<int,array{
+     *     form_id:int,
+     *     form_name:string,
+     *     type:string,
+     *     reference_id:int,
+     *     source_name:string,
+     *     source_exists:int,
+     *     source_total:int,
+     *     cb_total:int,
+     *     missing_count:int,
+     *     orphan_count:int,
+     *     missing_in_cb:array<int,string>,
+     *     orphan_in_cb:array<int,string>
+     *   }>,
      *   cb_tables:array{
      *     summary:array{
      *       tables_total:int,
@@ -68,6 +82,9 @@ final class DatabaseAuditHelper
      *     mixed_table_collations:int,
      *     missing_audit_column_tables:int,
      *     missing_audit_columns_total:int,
+     *     bf_view_field_sync_views:int,
+     *     bf_view_field_sync_missing_in_cb:int,
+     *     bf_view_field_sync_orphan_in_cb:int,
      *     issues_total:int
      *   },
      *   errors:array<int,string>
@@ -98,6 +115,9 @@ final class DatabaseAuditHelper
         $missingAuditColumns = (array) ($auditColumnsSummary['issues'] ?? []);
         $errors = array_merge($errors, (array) ($auditColumnsSummary['warnings'] ?? []));
         $missingAuditColumnsTotal = 0;
+        $bfFieldSyncIssues = [];
+        $bfMissingInCbTotal = 0;
+        $bfOrphanInCbTotal = 0;
 
         foreach ($missingAuditColumns as $missingAuditColumn) {
             if (!is_array($missingAuditColumn)) {
@@ -105,6 +125,18 @@ final class DatabaseAuditHelper
             }
 
             $missingAuditColumnsTotal += count((array) ($missingAuditColumn['missing'] ?? []));
+        }
+
+        [$bfFieldSyncIssues, $bfFieldSyncErrors] = self::inspectBfViewFieldSync($db);
+        $errors = array_merge($errors, $bfFieldSyncErrors);
+
+        foreach ($bfFieldSyncIssues as $bfFieldSyncIssue) {
+            if (!is_array($bfFieldSyncIssue)) {
+                continue;
+            }
+
+            $bfMissingInCbTotal += (int) ($bfFieldSyncIssue['missing_count'] ?? 0);
+            $bfOrphanInCbTotal += (int) ($bfFieldSyncIssue['orphan_count'] ?? 0);
         }
 
         $duplicateToDrop = 0;
@@ -116,7 +148,8 @@ final class DatabaseAuditHelper
             + count($legacyTables)
             + count($tableEncodingIssues)
             + count($columnEncodingIssues)
-            + count($missingAuditColumns);
+            + count($missingAuditColumns)
+            + count($bfFieldSyncIssues);
 
         if (count($mixedTableCollations) > 1) {
             $issuesTotal++;
@@ -136,6 +169,7 @@ final class DatabaseAuditHelper
             'mixed_table_collations' => $mixedTableCollations,
             'missing_audit_columns_scanned' => (int) ($auditColumnsSummary['scanned'] ?? 0),
             'missing_audit_columns' => $missingAuditColumns,
+            'bf_view_field_sync_issues' => $bfFieldSyncIssues,
             'cb_tables' => $cbTableStats,
             'summary' => [
                 'duplicate_index_groups' => count($duplicateIndexes),
@@ -146,6 +180,9 @@ final class DatabaseAuditHelper
                 'mixed_table_collations' => count($mixedTableCollations),
                 'missing_audit_column_tables' => count($missingAuditColumns),
                 'missing_audit_columns_total' => $missingAuditColumnsTotal,
+                'bf_view_field_sync_views' => count($bfFieldSyncIssues),
+                'bf_view_field_sync_missing_in_cb' => $bfMissingInCbTotal,
+                'bf_view_field_sync_orphan_in_cb' => $bfOrphanInCbTotal,
                 'issues_total' => $issuesTotal,
             ],
             'errors' => $errors,
@@ -604,6 +641,162 @@ final class DatabaseAuditHelper
         );
 
         return [$tableIssues, $columnIssues, $mixedCollations, $errors];
+    }
+
+    /**
+     * @return array{
+     *   0:array<int,array{
+     *     form_id:int,
+     *     form_name:string,
+     *     type:string,
+     *     reference_id:int,
+     *     source_name:string,
+     *     source_exists:int,
+     *     source_total:int,
+     *     cb_total:int,
+     *     missing_count:int,
+     *     orphan_count:int,
+     *     missing_in_cb:array<int,string>,
+     *     orphan_in_cb:array<int,string>
+     *   }>,
+     *   1:array<int,string>
+     * }
+     */
+    private static function inspectBfViewFieldSync(DatabaseInterface $db): array
+    {
+        $issues = [];
+        $errors = [];
+
+        try {
+            $query = $db->getQuery(true)
+                ->select($db->quoteName(['id', 'name', 'type', 'reference_id']))
+                ->from($db->quoteName('#__contentbuilder_ng_forms'))
+                ->where(
+                    $db->quoteName('type') . ' IN ('
+                    . $db->quote('com_breezingforms') . ','
+                    . $db->quote('com_breezingforms_ng') . ')'
+                )
+                ->where($db->quoteName('reference_id') . ' > 0');
+
+            $db->setQuery($query);
+            $forms = $db->loadAssocList() ?: [];
+        } catch (\Throwable $e) {
+            $errors[] = 'Could not inspect CB views linked to BF sources: ' . $e->getMessage();
+            return [[], $errors];
+        }
+
+        foreach ($forms as $formRow) {
+            $formId = (int) ($formRow['id'] ?? 0);
+            $formName = trim((string) ($formRow['name'] ?? ''));
+            $type = trim((string) ($formRow['type'] ?? ''));
+            $referenceId = (int) ($formRow['reference_id'] ?? 0);
+
+            if ($formId < 1 || $referenceId < 1 || $type === '') {
+                continue;
+            }
+
+            $cbByReference = [];
+
+            try {
+                $query = $db->getQuery(true)
+                    ->select($db->quoteName(['reference_id', 'label']))
+                    ->from($db->quoteName('#__contentbuilder_ng_elements'))
+                    ->where($db->quoteName('form_id') . ' = ' . $formId);
+
+                $db->setQuery($query);
+                $cbElements = $db->loadAssocList() ?: [];
+
+                foreach ($cbElements as $cbElement) {
+                    $refId = trim((string) ($cbElement['reference_id'] ?? ''));
+                    if ($refId === '') {
+                        continue;
+                    }
+
+                    $label = trim((string) ($cbElement['label'] ?? ''));
+                    $cbByReference[$refId] = $label !== '' ? $label : $refId;
+                }
+            } catch (\Throwable $e) {
+                $errors[] = 'Could not inspect CB elements for view #' . $formId . ': ' . $e->getMessage();
+                continue;
+            }
+
+            try {
+                $sourceForm = ContentbuilderLegacyHelper::getForm($type, (string) $referenceId);
+            } catch (\Throwable $e) {
+                $errors[] = 'Could not load source form for view #' . $formId . ': ' . $e->getMessage();
+                continue;
+            }
+
+            if (!is_object($sourceForm) || empty($sourceForm->exists)) {
+                $issues[] = [
+                    'form_id' => $formId,
+                    'form_name' => $formName,
+                    'type' => $type,
+                    'reference_id' => $referenceId,
+                    'source_name' => '',
+                    'source_exists' => 0,
+                    'source_total' => 0,
+                    'cb_total' => count($cbByReference),
+                    'missing_count' => 0,
+                    'orphan_count' => 0,
+                    'missing_in_cb' => [],
+                    'orphan_in_cb' => [],
+                ];
+                continue;
+            }
+
+            $sourceName = '';
+            if (isset($sourceForm->properties) && isset($sourceForm->properties->name)) {
+                $sourceName = trim((string) $sourceForm->properties->name);
+            }
+
+            $sourceElements = (array) $sourceForm->getElementLabels();
+            $sourceByReference = [];
+
+            foreach ($sourceElements as $reference => $label) {
+                $refId = trim((string) $reference);
+                if ($refId === '') {
+                    continue;
+                }
+
+                $sourceLabel = trim((string) $label);
+                $sourceByReference[$refId] = $sourceLabel !== '' ? $sourceLabel : $refId;
+            }
+
+            $missingRefs = array_diff_key($sourceByReference, $cbByReference);
+            $orphanRefs = array_diff_key($cbByReference, $sourceByReference);
+
+            if ($missingRefs === [] && $orphanRefs === []) {
+                continue;
+            }
+
+            $missingLabels = array_values(array_unique(array_values($missingRefs)));
+            $orphanLabels = array_values(array_unique(array_values($orphanRefs)));
+            sort($missingLabels, SORT_NATURAL | SORT_FLAG_CASE);
+            sort($orphanLabels, SORT_NATURAL | SORT_FLAG_CASE);
+
+            $issues[] = [
+                'form_id' => $formId,
+                'form_name' => $formName,
+                'type' => $type,
+                'reference_id' => $referenceId,
+                'source_name' => $sourceName,
+                'source_exists' => 1,
+                'source_total' => count($sourceByReference),
+                'cb_total' => count($cbByReference),
+                'missing_count' => count($missingLabels),
+                'orphan_count' => count($orphanLabels),
+                'missing_in_cb' => $missingLabels,
+                'orphan_in_cb' => $orphanLabels,
+            ];
+        }
+
+        usort(
+            $issues,
+            static fn(array $a, array $b): int => (int) ($a['form_id'] ?? 0) <=> (int) ($b['form_id'] ?? 0)
+        );
+
+        return [$issues, $errors];
     }
 
     /**

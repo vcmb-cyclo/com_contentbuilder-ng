@@ -23,7 +23,8 @@ use Joomla\CMS\User\UserHelper;
 use Joomla\CMS\Application\ApplicationHelper;
 use Joomla\CMS\Mail\MailerFactoryInterface;
 use Joomla\CMS\MVC\Model\BaseDatabaseModel;
-use Joomla\CMS\Application\CMSApplication;
+use Joomla\CMS\Application\AdministratorApplication;
+use Joomla\CMS\Application\SiteApplication;
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
 use Joomla\Input\Input;
 use CB\Component\Contentbuilder_ng\Administrator\Helper\ContentbuilderLegacyHelper;
@@ -32,7 +33,7 @@ class VerifyModel extends BaseDatabaseModel
 {
 
     private $frontend = false;
-    private CMSApplication $app;
+    private AdministratorApplication|SiteApplication $app;
 
     private function decodePackedQueryString(string $encoded): array
     {
@@ -80,7 +81,7 @@ class VerifyModel extends BaseDatabaseModel
         parent::__construct($config, $factory);
 
         $app = Factory::getApplication();
-        if (!$app instanceof CMSApplication) {
+        if (!$app instanceof AdministratorApplication && !$app instanceof SiteApplication) {
             throw new \RuntimeException('Unexpected application instance');
         }
         $this->app = $app;

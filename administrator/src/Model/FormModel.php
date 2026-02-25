@@ -171,6 +171,66 @@ class FormModel extends AdminModel
         }
     }
 
+    private function formatSyncFieldList(array $labels, int $totalCount, int $maxPreview = 8): string
+    {
+        $clean = array();
+        foreach ($labels as $label) {
+            $value = trim(strip_tags((string) $label));
+            if ($value !== '') {
+                $clean[] = $value;
+            }
+        }
+
+        $clean = array_values(array_unique($clean));
+        if (!$clean) {
+            return (string) $totalCount;
+        }
+
+        $visible = array_slice($clean, 0, $maxPreview);
+        $remaining = max(0, $totalCount - count($visible));
+        $list = implode(', ', $visible);
+
+        if ($remaining > 0) {
+            $list .= ' +' . $remaining;
+        }
+
+        return $list;
+    }
+
+    private function enqueueSourceSchemaSyncWarning(array $syncReport): void
+    {
+        $added = (array) ($syncReport['added'] ?? array());
+        $removed = (array) ($syncReport['removed'] ?? array());
+        $addedCount = (int) ($syncReport['added_count'] ?? count($added));
+        $removedCount = (int) ($syncReport['removed_count'] ?? count($removed));
+
+        if ($addedCount < 1 && $removedCount < 1) {
+            return;
+        }
+
+        $msg = Text::sprintf(
+            'COM_CONTENTBUILDER_NG_SOURCE_FIELDS_SYNC_CHANGED',
+            $addedCount,
+            $removedCount
+        );
+
+        if ($addedCount > 0) {
+            $msg .= ' ' . Text::sprintf(
+                'COM_CONTENTBUILDER_NG_SOURCE_FIELDS_SYNC_ADDED',
+                $this->formatSyncFieldList($added, $addedCount)
+            );
+        }
+
+        if ($removedCount > 0) {
+            $msg .= ' ' . Text::sprintf(
+                'COM_CONTENTBUILDER_NG_SOURCE_FIELDS_SYNC_REMOVED',
+                $this->formatSyncFieldList($removed, $removedCount)
+            );
+        }
+
+        Factory::getApplication()->enqueueMessage($msg, 'warning');
+    }
+
     public function saveElementListSettingsFromRequest(int $formId): bool
     {
         if ($formId <= 0) {
@@ -674,9 +734,10 @@ class FormModel extends AdminModel
 
                 // En charge de la sauvegarde de la partie Element
                 if (is_object($data->form)) {
-                    ContentbuilderLegacyHelper::synchElements($data->id, $data->form);
+                    $syncReport = ContentbuilderLegacyHelper::synchElements($data->id, $data->form);
                     $elements_table = $this->getTable('Elementoptions');
                     $elements_table->reorder('form_id=' . $data->id);
+                    $this->enqueueSourceSchemaSyncWarning($syncReport);
                 }
             }
         }

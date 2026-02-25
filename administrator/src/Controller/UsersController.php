@@ -18,9 +18,45 @@ use Joomla\CMS\Factory;
 use Joomla\CMS\Application\CMSApplicationInterface;
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
 use Joomla\Input\Input;
+use CB\Component\Contentbuilder_ng\Administrator\Model\UserModel;
+use CB\Component\Contentbuilder_ng\Administrator\Model\UsersModel;
 
 class UsersController extends BaseController
 {
+    private function getUserModelForListActions(): UserModel
+    {
+        $model = $this->getModel('User');
+
+        if (!$model instanceof UserModel) {
+            throw new \RuntimeException('User model not found');
+        }
+
+        return $model;
+    }
+
+    private function getUsersModelForPublishActions(): UsersModel
+    {
+        $model = $this->getModel('users');
+
+        if (!$model instanceof UsersModel) {
+            throw new \RuntimeException('Users model not found');
+        }
+
+        return $model;
+    }
+
+    private function getUserModelForSave(): UserModel
+    {
+        $model = $this->getModel('User', 'Administrator', ['ignore_request' => true])
+            ?: $this->getModel('User', 'Contentbuilder_ng', ['ignore_request' => true]);
+
+        if (!$model instanceof UserModel) {
+            throw new \RuntimeException('UserModel not found');
+        }
+
+        return $model;
+    }
+
     public function __construct(
         $config,
         MVCFactoryInterface $factory,
@@ -37,7 +73,7 @@ class UsersController extends BaseController
     public function verified_view() {
         $cid = Factory::getApplication()->input->get('cid', [], 'array');
 
-        $model = $this->getModel( 'User' );
+        $model = $this->getUserModelForListActions();
         $model->setListVerifiedView();
 
         Factory::getApplication()->input->set( 'view', 'users' );
@@ -53,7 +89,7 @@ class UsersController extends BaseController
     public function not_verified_view() {
         $cid = Factory::getApplication()->input->get('cid', [], 'array');
 
-        $model = $this->getModel( 'User' );
+        $model = $this->getUserModelForListActions();
         $model->setListNotVerifiedView();
 
         Factory::getApplication()->input->set( 'view', 'users' );
@@ -69,7 +105,7 @@ class UsersController extends BaseController
     public function verified_new() {
         $cid = Factory::getApplication()->input->get('cid', [], 'array');
 
-        $model = $this->getModel( 'User' );
+        $model = $this->getUserModelForListActions();
         $model->setListVerifiedNew();
 
         Factory::getApplication()->input->set( 'view', 'users' );
@@ -85,7 +121,7 @@ class UsersController extends BaseController
     public function not_verified_new() {
         $cid = Factory::getApplication()->input->get('cid', [], 'array');
 
-        $model = $this->getModel( 'User' );
+        $model = $this->getUserModelForListActions();
         $model->setListNotVerifiedNew();
 
         Factory::getApplication()->input->set( 'view', 'users' );
@@ -101,7 +137,7 @@ class UsersController extends BaseController
     public function verified_edit() {
         $cid = Factory::getApplication()->input->get('cid', [], 'array');
 
-        $model = $this->getModel( 'User' );
+        $model = $this->getUserModelForListActions();
         $model->setListVerifiedEdit();
 
         Factory::getApplication()->input->set( 'view', 'users' );
@@ -117,7 +153,7 @@ class UsersController extends BaseController
     public function not_verified_edit() {
         $cid = Factory::getApplication()->input->get('cid', [], 'array');
 
-        $model = $this->getModel( 'User' );
+        $model = $this->getUserModelForListActions();
         $model->setListNotVerifiedEdit();
 
         Factory::getApplication()->input->set( 'view', 'users' );
@@ -150,12 +186,12 @@ class UsersController extends BaseController
 
         if(count($cid) == 1)
         {
-            $model = $this->getModel( 'users' );
+            $model = $this->getUsersModelForPublishActions();
             $model->setPublished();
         }
         else if(count($cid) > 1)
         {
-            $model = $this->getModel( 'users' );
+            $model = $this->getUsersModelForPublishActions();
             $model->setPublished();
         }
 
@@ -167,12 +203,12 @@ class UsersController extends BaseController
 
         if(count($cid) == 1)
         {
-            $model = $this->getModel( 'users' );
+            $model = $this->getUsersModelForPublishActions();
             $model->setUnpublished();
         }
         else if(count($cid) > 1)
         {
-            $model = $this->getModel( 'users' );
+            $model = $this->getUsersModelForPublishActions();
             $model->setUnpublished();
         }
 
@@ -181,11 +217,7 @@ class UsersController extends BaseController
     
     public function save($keep_task = false)
     {
-        $model = $this->getModel('User', 'Administrator', ['ignore_request' => true])
-            ?: $this->getModel('User', 'Contentbuilder_ng', ['ignore_request' => true]);
-        if (!$model) {
-            throw new \RuntimeException('UserModel not found');
-        }
+        $model = $this->getUserModelForSave();
         $id = $model->store();
         
         if ($id) {
