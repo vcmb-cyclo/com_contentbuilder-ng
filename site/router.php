@@ -136,17 +136,20 @@ function ContentbuilderParseRoute(&$segments) {
 
             case 'details':
 
-	            $vars['controller']   = $controller;
-	            $vars['id']           = $segments[1];
-	            $vars['record_id']    = isset($segments[2]) ? $segments[2] == 'entry' ? '' : $segments[2] : '';
-	            $vars['title']        = isset($segments[3]) ? $segments[3] : '';
-	            $vars['view']         =  'details';
+                $vars['controller']   = $controller;
+                $vars['id']           = $segments[1];
+                $vars['record_id']    = '';
+                if (isset($segments[2]) && $segments[2] !== 'entry') {
+                    $vars['record_id'] = $segments[2];
+                }
+                $vars['title']        = isset($segments[3]) ? $segments[3] : '';
+                $vars['view']         =  'details';
 
-	            Factory::getApplication()->input->set('controller', $controller);
-	            Factory::getApplication()->input->set('id', $vars['id']);
-	            Factory::getApplication()->input->set('record_id', $vars['record_id']);
-	            Factory::getApplication()->input->set('title', $vars['title']);
-	            Factory::getApplication()->input->set('view', 'details');
+                Factory::getApplication()->input->set('controller', $controller);
+                Factory::getApplication()->input->set('id', $vars['id']);
+                Factory::getApplication()->input->set('record_id', $vars['record_id']);
+                Factory::getApplication()->input->set('title', $vars['title']);
+                Factory::getApplication()->input->set('view', 'details');
 
                 break;
 
@@ -154,17 +157,20 @@ function ContentbuilderParseRoute(&$segments) {
 
                 $vars['controller']   = $controller;
                 $vars['id']           = $segments[1];
-                $vars['record_id']    = isset($segments[2]) ? $segments[2] == 'entry' ? '' : $segments[2] : '';
+                $vars['record_id']    = '';
+                if (isset($segments[2]) && $segments[2] !== 'entry') {
+                    $vars['record_id'] = $segments[2];
+                }
                 $vars['title']        = isset($segments[3]) ? $segments[3] : '';
-	            $vars['view']         =  'edit';
+                $vars['view']         =  'edit';
 
-		        Factory::getApplication()->input->set('controller', $controller);
-	            Factory::getApplication()->input->set('id', $vars['id']);
-		        Factory::getApplication()->input->set('record_id', $vars['record_id']);
-	            Factory::getApplication()->input->set('title', $vars['title']);
-	            Factory::getApplication()->input->set('view', 'edit');
+                Factory::getApplication()->input->set('controller', $controller);
+                Factory::getApplication()->input->set('id', $vars['id']);
+                Factory::getApplication()->input->set('record_id', $vars['record_id']);
+                Factory::getApplication()->input->set('title', $vars['title']);
+                Factory::getApplication()->input->set('view', 'edit');
 
-	        break;
+                break;
         }
 
 	    $segments = array();

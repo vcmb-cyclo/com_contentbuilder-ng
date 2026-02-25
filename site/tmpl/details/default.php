@@ -165,6 +165,9 @@ CSS
 <?php
 $prevRecordId = property_exists($this, 'prev_record_id') ? (int) $this->prev_record_id : 0;
 $nextRecordId = property_exists($this, 'next_record_id') ? (int) $this->next_record_id : 0;
+$currentRecordLabel = trim((string) $input->getCmd('record_id', ''));
+$showCurrentRecordLabel = !in_array($currentRecordLabel, ['', '0'], true);
+$showCurrentRecordLabel = $showCurrentRecordLabel && (int) ($this->show_id_column ?? 0) === 1;
 $detailsNavBaseLink = 'index.php?option=com_contentbuilder_ng&title=' . $input->get('title', '', 'string')
     . '&task=details.display&id=' . $input->getInt('id', 0)
     . (Factory::getApplication()->input->get('tmpl', '', 'string') != '' ? '&tmpl=' . Factory::getApplication()->input->get('tmpl', '', 'string') : '')
@@ -211,7 +214,10 @@ if ($this->show_page_heading && $this->page_title) {
 ?>
     <h1 class="display-6 mb-4">
         <?php if (!$showTopBar && ($prevRecordId > 0 || $nextRecordId > 0 || $showCloseButton)): ?>
-            <span class="cbTitleRecordNav d-inline-flex flex-wrap gap-2 float-end ms-2 mb-2">
+            <span class="cbTitleRecordNav d-inline-flex flex-wrap gap-2 float-start me-2 mb-2">
+                <?php if ($showCurrentRecordLabel): ?>
+                    <span class="small text-muted align-self-center px-1 cbCurrentRecordId">#<?php echo htmlspecialchars($currentRecordLabel, ENT_QUOTES, 'UTF-8'); ?></span>
+                <?php endif; ?>
                 <?php if ($prevRecordId > 0): ?>
                     <a
                         class="btn btn-sm btn-outline-secondary cbButton cbBackButton cbPrevButton"
@@ -261,6 +267,33 @@ if ($showActionToolbar) {
 }
     ?>
 
+    <?php if ($showTopBar && ($prevRecordId > 0 || $nextRecordId > 0)): ?>
+        <span class="cbRecordNavGroup d-inline-flex flex-wrap gap-2 me-auto">
+            <?php if ($showCurrentRecordLabel): ?>
+                <span class="small text-muted align-self-center px-1 cbCurrentRecordId">#<?php echo htmlspecialchars($currentRecordLabel, ENT_QUOTES, 'UTF-8'); ?></span>
+            <?php endif; ?>
+            <?php if ($prevRecordId > 0): ?>
+                <a
+                    class="btn btn-sm btn-outline-secondary cbButton cbBackButton cbPrevButton"
+                    href="<?php echo Route::_($detailsNavBaseLink . '&record_id=' . $prevRecordId); ?>"
+                    title="<?php echo Text::_('JPREVIOUS'); ?>">
+                    <span class="fa-solid fa-arrow-left me-1" aria-hidden="true"></span>
+                    <?php echo Text::_('JPREVIOUS'); ?>
+                </a>
+            <?php endif; ?>
+
+            <?php if ($nextRecordId > 0): ?>
+                <a
+                    class="btn btn-sm btn-outline-secondary cbButton cbBackButton cbNextButton"
+                    href="<?php echo Route::_($detailsNavBaseLink . '&record_id=' . $nextRecordId); ?>"
+                    title="<?php echo Text::_('JNEXT'); ?>">
+                    <?php echo Text::_('JNEXT'); ?>
+                    <span class="fa-solid fa-arrow-right ms-1" aria-hidden="true"></span>
+                </a>
+            <?php endif; ?>
+        </span>
+    <?php endif; ?>
+
     <?php if ($showTopBar && $this->print_button): ?>
         <a
             class="hidden-phone btn btn-sm btn-outline-secondary cbButton cbPrintButton"
@@ -268,36 +301,6 @@ if ($showActionToolbar) {
             title="<?php echo Text::_('JGLOBAL_PRINT'); ?>">
             <i class="fa fa-print" aria-hidden="true"></i>
             <?php echo Text::_('JGLOBAL_PRINT'); ?>
-        </a>
-    <?php endif; ?>
-
-    <?php if ($showTopBar && $prevRecordId > 0): ?>
-        <a
-            class="btn btn-sm btn-outline-secondary cbButton cbBackButton cbPrevButton"
-            href="<?php echo Route::_($detailsNavBaseLink . '&record_id=' . $prevRecordId); ?>"
-            title="<?php echo Text::_('JPREVIOUS'); ?>">
-            <span class="fa-solid fa-arrow-left me-1" aria-hidden="true"></span>
-            <?php echo Text::_('JPREVIOUS'); ?>
-        </a>
-    <?php endif; ?>
-
-    <?php if ($showTopBar && $nextRecordId > 0): ?>
-        <a
-            class="btn btn-sm btn-outline-secondary cbButton cbBackButton cbNextButton"
-            href="<?php echo Route::_($detailsNavBaseLink . '&record_id=' . $nextRecordId); ?>"
-            title="<?php echo Text::_('JNEXT'); ?>">
-            <?php echo Text::_('JNEXT'); ?>
-            <span class="fa-solid fa-arrow-right ms-1" aria-hidden="true"></span>
-        </a>
-    <?php endif; ?>
-
-    <?php if ($showTopBar && $showCloseButton): ?>
-        <a
-            class="btn btn-sm btn-outline-secondary cbButton cbBackButton cbCloseButton"
-            href="<?php echo $closeListLink; ?>"
-            title="<?php echo Text::_('COM_CONTENTBUILDER_NG_CLOSE'); ?>">
-            <span class="fa-solid fa-xmark me-1" aria-hidden="true"></span>
-            <?php echo Text::_('COM_CONTENTBUILDER_NG_CLOSE'); ?>
         </a>
     <?php endif; ?>
 
@@ -320,8 +323,8 @@ if ($showActionToolbar) {
     <?php
     }
     ?>
-    <?php if (!$showTopBar && $showCloseButton && (!$this->show_page_heading || !$this->page_title)): ?>
-        <a class="btn btn-sm btn-outline-secondary cbButton cbBackButton"
+    <?php if ($showCloseButton && ($showTopBar || (!$showTopBar && (!$this->show_page_heading || !$this->page_title)))): ?>
+        <a class="btn btn-sm btn-outline-secondary cbButton cbBackButton cbCloseButton"
             href="<?php echo $closeListLink; ?>"
             title="<?php echo Text::_('COM_CONTENTBUILDER_NG_CLOSE'); ?>">
             <span class="fa-solid fa-xmark me-1" aria-hidden="true"></span>

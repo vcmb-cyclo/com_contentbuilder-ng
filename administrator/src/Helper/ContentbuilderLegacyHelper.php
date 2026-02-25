@@ -14,6 +14,7 @@ namespace CB\Component\Contentbuilder_ng\Administrator\Helper;
 \defined('_JEXEC') or die('Direct Access to this location is not allowed.');
 
 use Joomla\CMS\Factory;
+use Joomla\CMS\Application\CMSApplication;
 use Joomla\CMS\Access\Access;
 use Joomla\CMS\Editor\Editor;
 use Joomla\CMS\Event\Content\ContentPrepareEvent;
@@ -29,7 +30,6 @@ use Joomla\Database\DatabaseInterface;
 use Joomla\Filesystem\File;
 use Joomla\Filesystem\Folder;
 use Joomla\Registry\Registry;
-use CB\Component\Contentbuilder_ng\Administrator\Helper\ContentbuilderHelper;
 use CB\Component\Contentbuilder_ng\Administrator\Helper\Logger;
 
 final class ContentbuilderLegacyHelper
@@ -54,6 +54,22 @@ final class ContentbuilderLegacyHelper
         $path = str_replace('\\', '/', $path);
         $path = preg_replace('#/+#', '/', $path) ?? $path;
         return $path;
+    }
+
+    private static function helperClassName(): string
+    {
+        return __NAMESPACE__ . '\\ContentbuilderHelper';
+    }
+
+    private static function callContentbuilderHelper(string $method, ...$arguments)
+    {
+        $helperClass = self::helperClassName();
+
+        if (!class_exists($helperClass) || !method_exists($helperClass, $method)) {
+            throw new \RuntimeException('Missing ContentbuilderHelper::' . $method);
+        }
+
+        return $helperClass::$method(...$arguments);
     }
 
     private static function containsIncompleteClass($value): bool
@@ -459,9 +475,9 @@ final class ContentbuilderLegacyHelper
                         }
 
                         if ($wrapper['wordwrap'] && !$allow_html) {
-                            $new_value = self::allhtmlentities(ContentbuilderHelper::contentbuilder_ng_wordwrap(ContentbuilderHelper::cbinternal($value), $wrapper['wordwrap'], "\n", true));
+                            $new_value = self::allhtmlentities(self::callContentbuilderHelper('contentbuilder_ng_wordwrap', self::callContentbuilderHelper('cbinternal', $value), $wrapper['wordwrap'], "\n", true));
                         } else {
-                            $new_value = $allow_html ? self::cleanString(ContentbuilderHelper::cbinternal($value)) : self::allhtmlentities(ContentbuilderHelper::cbinternal($value));
+                            $new_value = $allow_html ? self::cleanString(self::callContentbuilderHelper('cbinternal', $value)) : self::allhtmlentities(self::callContentbuilderHelper('cbinternal', $value));
                         }
 
                         if (strpos(trim($wrapper['item_wrapper'] ?? ''), '<?php') === 0) {
@@ -1267,7 +1283,7 @@ final class ContentbuilderLegacyHelper
                 if (!isset($item['label']) || !isset($item['id']))
                     continue;
                 $items[$key]['label'] = htmlentities($item['label'], ENT_QUOTES, 'UTF-8');
-                $items[$key]['value'] = isset($allow_html[$item['id']]) ? self::cleanString($item['value']) : nl2br(self::allhtmlentities(ContentbuilderHelper::cbinternal($item['value'])));
+                $items[$key]['value'] = isset($allow_html[$item['id']]) ? self::cleanString($item['value']) : nl2br(self::allhtmlentities(self::callContentbuilderHelper('cbinternal', $item['value'])));
             }
             $detailsPrepare = $result['details_prepare'] ?? '';
             TemplatePrepareHelper::execute(
@@ -1435,7 +1451,7 @@ final class ContentbuilderLegacyHelper
 
             foreach ($items as $key => $item) {
                 $template = str_replace('{' . $key . ':label}', $html ? htmlentities($item['label'], ENT_QUOTES, 'UTF-8') : $item['label'], $template);
-                $template = str_replace('{' . $key . ':value}', isset($allow_html[$item['id']]) && $html ? (ontentbuilderHelper::is_internal_path($item['value']) ? basename($item['value']) : $item['value']) : nl2br(strip_tags((ontentbuilderHelper::is_internal_path($item['value']) ? basename($item['value']) : $item['value']))), $template);
+                $template = str_replace('{' . $key . ':value}', isset($allow_html[$item['id']]) && $html ? (self::callContentbuilderHelper('is_internal_path', $item['value']) ? basename($item['value']) : $item['value']) : nl2br(strip_tags((self::callContentbuilderHelper('is_internal_path', $item['value']) ? basename($item['value']) : $item['value']))), $template);
                 $template = str_replace('{webpath ' . $key . '}', str_replace(array('{CBSite}', '{cbsite}', JPATH_SITE), Uri::getInstance()->getScheme() . '://' . Uri::getInstance()->getHost() . (Uri::getInstance()->getPort() == 80 ? '' : ':' . Uri::getInstance()->getPort()) . Uri::root(true), $item['value']), $template);
             }
 
@@ -1449,11 +1465,14 @@ final class ContentbuilderLegacyHelper
 
     public static function getEditableTemplate($contentbuilder_ng_form_id, $record_id, array $record, array $elements_allowed, $execPrepare = true)
     {
+        /** @var CMSApplication $app */
+        $app = Factory::getApplication();
+        $session = $app->getSession();
 
-        $failed_values = Factory::getApplication()->getSession()->get('cb_failed_values', null, 'com_contentbuilder_ng.' . $contentbuilder_ng_form_id);
+        $failed_values = $session->get('cb_failed_values', null, 'com_contentbuilder_ng.' . $contentbuilder_ng_form_id);
 
         if ($failed_values !== null) {
-            Factory::getApplication()->getSession()->clear('cb_failed_values', 'com_contentbuilder_ng.' . $contentbuilder_ng_form_id);
+            $session->clear('cb_failed_values', 'com_contentbuilder_ng.' . $contentbuilder_ng_form_id);
         }
 
         $db = Factory::getContainer()->get(DatabaseInterface::class);
@@ -1845,7 +1864,7 @@ final class ContentbuilderLegacyHelper
                             }
 
                             $calval = htmlentities($failed_values !== null && isset($failed_values[$element['reference_id']]) ? $failed_values[$element['reference_id']] : ($hasRecords ? $item['value'] : $element['default_value']), ENT_QUOTES, 'UTF-8');
-                            $calval = ContentbuilderHelper::convertDate($calval, $options->transfer_format, $options->format);
+                            $calval = self::callContentbuilderHelper('convertDate', $calval, $options->transfer_format, $options->format);
 
                             $calAttr = [
                                 'class' => 'cb_' . $item['id'],
@@ -1992,7 +2011,7 @@ final class ContentbuilderLegacyHelper
                                 }
                 }
 
-                $label = ContentbuilderHelper::cbinternal($rec->recValue);
+                $label = self::callContentbuilderHelper('cbinternal', $rec->recValue);
                 break;
             }
         }
@@ -2001,7 +2020,7 @@ final class ContentbuilderLegacyHelper
         if (!$label && !count($record)) {
             $label = 'Unnamed';
         } else if (!$label && count($record)) {
-            $label = ContentbuilderHelper::cbinternal($record[0]->recValue);
+            $label = self::callContentbuilderHelper('cbinternal', $record[0]->recValue);
         }
 
         // Clean text for xhtml transitional compliance
@@ -2464,7 +2483,9 @@ final class ContentbuilderLegacyHelper
 
         // cleaning cache
         // Trigger the onContentCleanCache event.
-        $conf = Factory::getApplication()->getConfig();
+        /** @var CMSApplication $app */
+        $app = Factory::getApplication();
+        $conf = $app->getConfig();
         $options = array(
             'defaultgroup' => 'com_content',
             'cachebase' => $conf->get('cache_path', JPATH_SITE . '/cache')
@@ -2516,6 +2537,7 @@ final class ContentbuilderLegacyHelper
 
     public static function setPermissions($form_id, $record_id = 0, $suffix = '')
     {
+        /** @var CMSApplication $app */
         $app     = Factory::getApplication();
         $session = $app->getSession();
         $key     = 'com_contentbuilder_ng.permissions' . $suffix;
@@ -2928,7 +2950,10 @@ final class ContentbuilderLegacyHelper
     {
 
         $allowed = false;
-        $session = Factory::getApplication()->getSession();
+        /** @var CMSApplication $app */
+        $app = Factory::getApplication();
+        $session = $app->getSession();
+        $currentSessionId = $session->getId();
         $key = 'com_contentbuilder_ng.permissions' . $suffix;
 
 
@@ -2993,7 +3018,7 @@ final class ContentbuilderLegacyHelper
                         }
                     } else if (is_string($verify_return)) {
                         if (!$auth) {
-                            Factory::getApplication()->redirect($verify_return);
+                            $app->redirect($verify_return);
                         } else {
                             return false;
                         }
@@ -3044,7 +3069,7 @@ final class ContentbuilderLegacyHelper
                                 foreach ($user_return['record_id'] as $recid) {
                                     $db->setQuery("Select session_id From #__contentbuilder_ng_records Where `record_id` = " . $db->quote($recid) . " And `type` = " . $db->quote($typerefid['type']) . " And `reference_id` = " . $db->quote($typerefid['reference_id']) . "");
                                     $session_id = $db->loadResult();
-                                    if ($form && $session_id != Factory::getApplication()->getSession()->getId() && !$form->isOwner((int) (Factory::getApplication()->getIdentity()->id ?? 0), $recid)) {
+                                    if ($form && $session_id != $currentSessionId && !$form->isOwner((int) (Factory::getApplication()->getIdentity()->id ?? 0), $recid)) {
                                         $allowed = false;
                                         break;
                                     } else {
@@ -3056,7 +3081,7 @@ final class ContentbuilderLegacyHelper
                                 $db->setQuery("Select session_id From #__contentbuilder_ng_records Where `record_id` = " . $db->quote($user_return['record_id']) . " And `type` = " . $db->quote($typerefid['type']) . " And `reference_id` = " . $db->quote($typerefid['reference_id']) . "");
                                 $session_id = $db->loadResult();
 
-                                if ($form && ($user_return['record_id'] == false || $session_id == Factory::getApplication()->getSession()->getId() || ($form->isOwner((int) (Factory::getApplication()->getIdentity()->id ?? 0), $user_return['record_id'])))) {
+                                if ($form && ($user_return['record_id'] == false || $session_id == $currentSessionId || ($form->isOwner((int) (Factory::getApplication()->getIdentity()->id ?? 0), $user_return['record_id'])))) {
                                     $allowed = true;
                                 }
                             }

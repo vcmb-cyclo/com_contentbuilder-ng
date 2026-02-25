@@ -13,6 +13,9 @@
 
 use Joomla\CMS\Language\Text;
 use Joomla\Database\DatabaseInterface;
+use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 @ob_end_clean();
 
@@ -26,6 +29,14 @@ use Joomla\CMS\Factory;
 //Font::setAutoSizeMethod(Font::AUTOSIZE_METHOD_EXACT);
 
 $db = Factory::getContainer()->get(DatabaseInterface::class);
+/** @var \Joomla\CMS\Application\CMSApplication $app */
+$app = Factory::getApplication();
+$input = $app->input;
+
+// Pourcentage de mélange de la couleur d'état vers le blanc (0-100), paramétrable via la requête.
+$stateColorMixPercent = (float) $input->get('state_color_mix_percent', 75, 'float');
+$stateColorMixPercent = max(0.0, min(100.0, $stateColorMixPercent));
+$stateColorMixRatio = $stateColorMixPercent / 100.0;
 
 $spreadsheet = new Spreadsheet();
 $spreadsheet->getProperties()->setCreator("ContentBuilder_ng")->setLastModifiedBy("ContentBuilder_ng");
@@ -144,23 +155,23 @@ foreach ($this->data->items as $item) {
             }
 
             // Convertir $i en lettre de colonne
-            $columnLetter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($i);
+            $columnLetter = Coordinate::stringFromColumnIndex($i);
             $cell = $columnLetter . $row; // Ex. 'B2'
 
-            // Éclaircir la couleur d'état à 50% vers le blanc pour l'export.
+            // Éclaircir la couleur d'état selon le pourcentage configuré vers le blanc pour l'export.
             if ($result[1] !== 'FFFFFF') { // !== pour cohérence avec chaînes
                 $baseColor = strtoupper($result[1]);
                 $lightColor = '';
 
                 for ($channelIndex = 0; $channelIndex < 3; $channelIndex++) {
                     $channel = hexdec(substr($baseColor, $channelIndex * 2, 2));
-                    $lightChannel = (int) round(($channel + 255) / 2);
+                    $lightChannel = (int) round($channel + ((255 - $channel) * $stateColorMixRatio));
                     $lightColor .= strtoupper(str_pad(dechex($lightChannel), 2, '0', STR_PAD_LEFT));
                 }
 
                 $worksheet1->getStyle($cell)->applyFromArray([
                     'fill' => [
-                        'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                        'fillType' => Fill::FILL_SOLID,
                         'startColor' => ['rgb' => $lightColor]
                     ]
                 ]);
@@ -190,13 +201,11 @@ $spreadsheet->getDefaultStyle()->getAlignment()->setWrapText(true);
 
 // Name file.
 // Récupérer le fuseau horaire du client (via POST, GET, ou autre)
-$input = Factory::getApplication()->input;
 $userTimezone = $input->get('user_timezone', null, 'string');
 
 // Si aucun fuseau horaire client n'est fourni, utiliser celui de Joomla
 if (!$userTimezone) {
-    $config = Factory::getApplication()->getConfig();
-    $userTimezone = $config->get('offset', 'UTC');
+    $userTimezone = (string) $app->get('offset', 'UTC');
 }
 
 // Créer la date avec le fuseau horaire
@@ -265,7 +274,7 @@ ob_start();
 
 
 
-$objWriter = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+$objWriter = new Xlsx($spreadsheet);
 $objWriter->save('php://output');
 
 exit;

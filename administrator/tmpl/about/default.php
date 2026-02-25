@@ -43,6 +43,32 @@ $cbTableSummary = (array) ($cbTableStats['summary'] ?? []);
 $cbTableDetails = (array) ($cbTableStats['tables'] ?? []);
 $cbMissingNgTables = (array) ($cbTableStats['missing_ng_tables'] ?? []);
 $auditErrors = (array) ($auditReport['errors'] ?? []);
+$auditWarnings = [];
+foreach ($auditErrors as $auditError) {
+    $warningText = trim((string) $auditError);
+
+    if ($warningText === '') {
+        continue;
+    }
+
+    $warningDetail = '';
+    $storageTableNotFoundMatch = [];
+    if (preg_match('/^Storage #(\d+)\s+\((.*?)\)\s+table not found\.?$/i', $warningText, $storageTableNotFoundMatch) === 1) {
+        $storageIdLabel = (int) ($storageTableNotFoundMatch[1] ?? 0);
+        $storageNameLabel = trim((string) ($storageTableNotFoundMatch[2] ?? ''));
+        $warningText = Text::sprintf(
+            'COM_CONTENTBUILDER_NG_ABOUT_AUDIT_WARNING_STORAGE_TABLE_NOT_FOUND',
+            $storageIdLabel,
+            $storageNameLabel
+        );
+        $warningDetail = Text::_('COM_CONTENTBUILDER_NG_ABOUT_AUDIT_WARNING_STORAGE_TABLE_NOT_FOUND_DETAIL');
+    }
+
+    $auditWarnings[] = [
+        'summary' => $warningText,
+        'detail' => $warningDetail,
+    ];
+}
 $hasAuditReport = $auditReport !== [];
 $dbRepairConfirmMessage = str_replace('\n', "\n", Text::_('COM_CONTENTBUILDER_NG_DB_REPAIR_CONFIRMATION'));
 $dbRepairPromptMessage = str_replace('\n', "\n", Text::_('COM_CONTENTBUILDER_NG_DB_REPAIR_CONFIRMATION_PROMPT'));
@@ -219,6 +245,20 @@ $formatBytes = static function (int $bytes): string {
         font-size: .78rem;
         line-height: 1;
         flex: 0 0 auto;
+    }
+    .cb-audit-warning-alert {
+        border-color: #ffda9f;
+        background-color: #fff4df;
+        color: #664d03;
+    }
+    .cb-audit-warning-alert .cb-audit-warning-title {
+        font-weight: 600;
+    }
+    .cb-audit-warning-alert .cb-audit-warning-help {
+        display: block;
+        margin-top: .35rem;
+        font-size: .88rem;
+        line-height: 1.35;
     }
 </style>
 <form
@@ -546,13 +586,18 @@ $formatBytes = static function (int $bytes): string {
                 </ul>
             <?php endif; ?>
 
-            <?php if (!empty($auditErrors)) : ?>
+            <?php if (!empty($auditWarnings)) : ?>
                 <h4 class="h6 mt-3"><?php echo Text::_('COM_CONTENTBUILDER_NG_ABOUT_AUDIT_ERRORS'); ?></h4>
-                <ul class="mb-0">
-                    <?php foreach ($auditErrors as $auditError) : ?>
-                        <li><?php echo htmlspecialchars((string) $auditError, ENT_QUOTES, 'UTF-8'); ?></li>
+                <div class="d-flex flex-column gap-2">
+                    <?php foreach ($auditWarnings as $auditWarning) : ?>
+                        <div class="alert alert-warning cb-audit-warning-alert mb-0">
+                            <span class="cb-audit-warning-title"><?php echo htmlspecialchars((string) ($auditWarning['summary'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></span>
+                            <?php if (!empty($auditWarning['detail'])) : ?>
+                                <span class="cb-audit-warning-help"><?php echo htmlspecialchars((string) $auditWarning['detail'], ENT_QUOTES, 'UTF-8'); ?></span>
+                            <?php endif; ?>
+                        </div>
                     <?php endforeach; ?>
-                </ul>
+                </div>
             <?php endif; ?>
         <?php endif; ?>
     </div>

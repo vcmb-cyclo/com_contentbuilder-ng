@@ -116,8 +116,24 @@ $listHref = Route::_(
 );
 
 $hasRecord = !in_array((string) $recordId, ['', '0'], true);
+$currentRecordLabel = trim((string) $recordId);
+$showCurrentRecordLabel = !in_array($currentRecordLabel, ['', '0'], true);
+$showCurrentRecordLabel = $showCurrentRecordLabel && (int) ($this->show_id_column ?? 0) === 1;
 $backHref = ($backToList || !$hasRecord) ? $listHref : $detailsHref;
 $showBack = $this->back_button && !$hasReturn;
+$prevRecordId = property_exists($this, 'prev_record_id') ? (int) $this->prev_record_id : 0;
+$nextRecordId = property_exists($this, 'next_record_id') ? (int) $this->next_record_id : 0;
+$navReturn = $hasReturn ? '&return=' . rawurlencode($input->getString('return', '')) : '';
+$editNavBaseLink = 'index.php?option=com_contentbuilder_ng&task=edit.display'
+    . ($layout !== '' ? '&layout=' . $layout : '')
+    . '&id=' . $id
+    . ($tmpl !== '' ? '&tmpl=' . $tmpl : '')
+    . '&Itemid=' . $itemId
+    . ($listQuery !== '' ? '&' . $listQuery : '')
+    . ($backToList ? '&backtolist=1' : '')
+    . ($jsBack ? '&jsback=1' : '')
+    . $navReturn
+    . $previewQuery;
 $showColumnHeader = $input->getInt('cb_show_column_header', 1) === 1;
 $columnHeaderHtml = '';
 $showAuditTrail = $input->getInt('cb_show_author', 1) === 1;
@@ -329,6 +345,103 @@ if (!empty($this->theme_css) || !empty($this->theme_js)) {
 
         return result;
     }
+
+    var cbInitialEditFormState = "";
+    var cbUnsavedChangesWarning = <?php echo json_encode(Text::_('COM_CONTENTBUILDER_NG_UNSAVED_CHANGES_WARNING')); ?>;
+
+    function cbShouldTrackFieldForDirtyState(field) {
+        if (!field || field.disabled) {
+            return false;
+        }
+
+        var type = (field.type || "").toLowerCase();
+        if (type === "hidden" || type === "submit" || type === "button" || type === "reset" || type === "image") {
+            return false;
+        }
+
+        var name = field.name || field.id || "";
+        if (name === "") {
+            return false;
+        }
+
+        return true;
+    }
+
+    function cbCaptureEditFormState(root) {
+        if (!root) {
+            return "";
+        }
+
+        var parts = [];
+        var fields = root.querySelectorAll("input, select, textarea");
+        for (var i = 0; i < fields.length; i++) {
+            var field = fields[i];
+            if (!cbShouldTrackFieldForDirtyState(field)) {
+                continue;
+            }
+
+            var name = field.name || field.id || "";
+            var tag = (field.tagName || "").toLowerCase();
+            var type = (field.type || "").toLowerCase();
+
+            if (type === "checkbox" || type === "radio") {
+                parts.push(name + "=" + (field.checked ? "1" : "0"));
+                continue;
+            }
+
+            if (tag === "select" && field.multiple) {
+                var selected = [];
+                for (var j = 0; j < field.options.length; j++) {
+                    if (field.options[j].selected) {
+                        selected.push(field.options[j].value);
+                    }
+                }
+                parts.push(name + "=" + selected.join(","));
+                continue;
+            }
+
+            parts.push(name + "=" + field.value);
+        }
+
+        return parts.join("&");
+    }
+
+    function cbHasUnsavedEditChanges(root) {
+        return cbCaptureEditFormState(root) !== cbInitialEditFormState;
+    }
+
+    function cbAttachEditNavigationWarning() {
+        var form = document.getElementById("adminForm");
+        var wrapper = document.getElementById("cbEditableWrapper<?php echo (int) $this->id; ?>");
+        var stateRoot = form || wrapper;
+        if (!stateRoot) {
+            return;
+        }
+
+        cbInitialEditFormState = cbCaptureEditFormState(stateRoot);
+        window.addEventListener("load", function() {
+            cbInitialEditFormState = cbCaptureEditFormState(stateRoot);
+        });
+
+        var navButtons = document.querySelectorAll(".cbPrevButton, .cbNextButton");
+        for (var i = 0; i < navButtons.length; i++) {
+            navButtons[i].addEventListener("click", function(event) {
+                if (!cbHasUnsavedEditChanges(stateRoot)) {
+                    return;
+                }
+
+                if (!confirm(cbUnsavedChangesWarning)) {
+                    event.preventDefault();
+                }
+            });
+        }
+    }
+
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", cbAttachEditNavigationWarning);
+    } else {
+        cbAttachEditNavigationWarning();
+    }
 </script>
 <div class="cbEditableWrapper" id="cbEditableWrapper<?php echo $this->id; ?>">
     <?php if ($isAdminPreview): ?>
@@ -357,6 +470,31 @@ if (!empty($this->theme_css) || !empty($this->theme_js)) {
     ?>
     <div class="cbToolBar mb-5 d-flex flex-wrap justify-content-end gap-2">
         <?php
+        if ($prevRecordId > 0 || $nextRecordId > 0) {
+        ?>
+            <span class="cbRecordNavGroup d-inline-flex flex-wrap gap-2 me-auto">
+                <?php if ($showCurrentRecordLabel) { ?>
+                    <span class="small text-muted align-self-center px-1 cbCurrentRecordId">#<?php echo htmlspecialchars($currentRecordLabel, ENT_QUOTES, 'UTF-8'); ?></span>
+                <?php } ?>
+                <?php if ($prevRecordId > 0) { ?>
+                    <a class="btn btn-sm btn-outline-secondary cbButton cbBackButton cbPrevButton"
+                        href="<?php echo Route::_($editNavBaseLink . '&record_id=' . $prevRecordId); ?>"
+                        title="<?php echo Text::_('JPREVIOUS'); ?>">
+                        <span class="fa-solid fa-arrow-left me-1" aria-hidden="true"></span>
+                        <?php echo Text::_('JPREVIOUS'); ?>
+                    </a>
+                <?php } ?>
+                <?php if ($nextRecordId > 0) { ?>
+                    <a class="btn btn-sm btn-outline-secondary cbButton cbBackButton cbNextButton"
+                        href="<?php echo Route::_($editNavBaseLink . '&record_id=' . $nextRecordId); ?>"
+                        title="<?php echo Text::_('JNEXT'); ?>">
+                        <?php echo Text::_('JNEXT'); ?>
+                        <span class="fa-solid fa-arrow-right ms-1" aria-hidden="true"></span>
+                    </a>
+                <?php } ?>
+            </span>
+        <?php
+        }
         if ($this->record_id && $edit_allowed && $this->create_articles && $fullarticle_allowed) {
         ?>
             <button class="btn btn-sm btn-primary cbButton cbArticleSettingsButton" onclick="if(document.getElementById('cbArticleOptions').style.display == 'none'){document.getElementById('cbArticleOptions').style.display='block'}else{document.getElementById('cbArticleOptions').style.display='none'};"><?php echo Text::_('COM_CONTENTBUILDER_NG_SHOW_ARTICLE_SETTINGS') ?></button>
@@ -369,7 +507,8 @@ if (!empty($this->theme_css) || !empty($this->theme_js)) {
                 <?php echo trim($this->save_button_title) != '' ? htmlentities($this->save_button_title, ENT_QUOTES, 'UTF-8') : Text::_('COM_CONTENTBUILDER_NG_SAVE') ?>
             </button>
         <?php
-        } else if ($this->record_id && $edit_allowed && $this->create_articles && $this->edit_by_type && $fullarticle_allowed) {
+        }
+        if ($this->record_id && $edit_allowed && $this->create_articles && $this->edit_by_type && $fullarticle_allowed) {
         ?>
             <button class="btn btn-sm btn-primary cbButton cbArticleSettingsButton" onclick="document.getElementById('contentbuilder_ng_task').value='edit.apply';contentbuilder_ng.onSubmit();">
                 <span class="fa-solid fa-check me-1" aria-hidden="true"></span>

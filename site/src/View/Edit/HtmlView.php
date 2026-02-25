@@ -51,13 +51,150 @@ class HtmlView extends BaseHtmlView
     public $article_options = null;
     public $article_settings = null;
     public $limited_options = false;
+    public $show_id_column = 0;
     public $toc = null;
     public $tpl = null;
+    public $prev_record_id = 0;
+    public $next_record_id = 0;
 
     protected $state;
     protected $item;
     protected $form;
     private array $breezingFormsRenderCache = [];
+
+    private function resolveSiblingRecordIdsByRecordId(object $subject, int $currentRecordId): array
+    {
+        if (
+            $currentRecordId < 1
+            || !isset($subject->type)
+            || trim((string) $subject->type) === ''
+            || !isset($subject->reference_id)
+            || trim((string) $subject->reference_id) === ''
+        ) {
+            return ['previous' => 0, 'next' => 0];
+        }
+
+        $db = Factory::getContainer()->get(DatabaseInterface::class);
+        $isAdminPreview = Factory::getApplication()->input->getBool('cb_preview_ok', false);
+
+        $baseWhere = [
+            $db->quoteName('type') . ' = ' . $db->quote((string) $subject->type),
+            $db->quoteName('reference_id') . ' = ' . $db->quote((string) $subject->reference_id),
+        ];
+
+        if (!$isAdminPreview && !empty($subject->published_only)) {
+            $baseWhere[] = $db->quoteName('published') . ' = 1';
+        }
+
+        try {
+            $prevQuery = $db->getQuery(true)
+                ->select($db->quoteName('record_id'))
+                ->from($db->quoteName('#__contentbuilder_ng_records'))
+                ->where($baseWhere)
+                ->where($db->quoteName('record_id') . ' < ' . (int) $currentRecordId)
+                ->order($db->quoteName('record_id') . ' DESC');
+
+            $db->setQuery($prevQuery, 0, 1);
+            $previous = (int) $db->loadResult();
+
+            $nextQuery = $db->getQuery(true)
+                ->select($db->quoteName('record_id'))
+                ->from($db->quoteName('#__contentbuilder_ng_records'))
+                ->where($baseWhere)
+                ->where($db->quoteName('record_id') . ' > ' . (int) $currentRecordId)
+                ->order($db->quoteName('record_id') . ' ASC');
+
+            $db->setQuery($nextQuery, 0, 1);
+            $next = (int) $db->loadResult();
+        } catch (\Throwable $e) {
+            return ['previous' => 0, 'next' => 0];
+        }
+
+        return ['previous' => $previous, 'next' => $next];
+    }
+
+    private function getListPaginationStateKeys(int $formId): array
+    {
+        $app = Factory::getApplication();
+        $option = 'com_contentbuilder_ng';
+        $layout = (string) $app->input->getCmd('layout', 'default');
+
+        if ($layout === '') {
+            $layout = 'default';
+        }
+
+        $itemId = (int) $app->input->getInt('Itemid', 0);
+        $prefix = $option . '.liststate.' . $formId . '.' . $layout . '.' . $itemId;
+
+        return [
+            'limit' => $prefix . '.limit',
+            'start' => $prefix . '.start',
+        ];
+    }
+
+    private function resolveSiblingRecordIds(object $subject): array
+    {
+        $app = Factory::getApplication();
+        $currentRecordId = (int) $app->input->getInt('record_id', 0);
+        $fallback = $this->resolveSiblingRecordIdsByRecordId($subject, $currentRecordId);
+
+        if ($currentRecordId < 1) {
+            return $fallback;
+        }
+
+        $originalList = (array) $app->input->get('list', [], 'array');
+        $formId = (int) $app->input->getInt('id', 0);
+        $paginationKeys = $this->getListPaginationStateKeys($formId);
+        $limitStateBackup = $app->getUserState($paginationKeys['limit'], null);
+        $startStateBackup = $app->getUserState($paginationKeys['start'], null);
+
+        try {
+            // Reuse list ordering/filtering so Previous/Next matches the active list context.
+            $listForNavigation = $originalList;
+            $listForNavigation['start'] = 0;
+            $listForNavigation['limit'] = 1000000;
+            $app->input->set('list', $listForNavigation);
+
+            $factory = $app->bootComponent('com_contentbuilder_ng')->getMVCFactory();
+            $listModel = $factory->createModel('List', 'Site', ['ignore_request' => false]);
+
+            if (!$listModel || !method_exists($listModel, 'getData')) {
+                return $fallback;
+            }
+
+            $listData = $listModel->getData();
+            $items = (is_object($listData) && isset($listData->items) && is_array($listData->items))
+                ? $listData->items
+                : [];
+
+            if (!$items) {
+                return $fallback;
+            }
+
+            $recordIds = [];
+            foreach ($items as $row) {
+                if (is_object($row) && isset($row->colRecord)) {
+                    $recordIds[] = (int) $row->colRecord;
+                }
+            }
+
+            $position = array_search($currentRecordId, $recordIds, true);
+            if ($position === false) {
+                return $fallback;
+            }
+
+            return [
+                'previous' => $position > 0 ? (int) $recordIds[$position - 1] : 0,
+                'next' => ($position + 1) < count($recordIds) ? (int) $recordIds[$position + 1] : 0,
+            ];
+        } catch (\Throwable $e) {
+            return $fallback;
+        } finally {
+            $app->input->set('list', $originalList);
+            $app->setUserState($paginationKeys['limit'], $limitStateBackup);
+            $app->setUserState($paginationKeys['start'], $startStateBackup);
+        }
+    }
 
     private function toUnicodeSlug(string $string): string
     {
@@ -460,7 +597,7 @@ CSS;
                     'edit_by_type', 'latest', 'back_button', 'created', 'created_by',
                     'modified', 'modified_by', 'create_articles', 'apply_button_title',
                     'save_button_title', 'id', 'article_options', 'article_settings',
-                    'limited_options', 'toc', 'tpl',
+                    'limited_options', 'show_id_column', 'toc', 'tpl',
                 ];
 
                 foreach ($props as $prop) {
@@ -485,6 +622,10 @@ CSS;
                 if ($this->record_id === 0 && property_exists($this->item, 'record_id')) {
                     $this->record_id = (int) $this->item->record_id;
                 }
+
+                $siblings = $this->resolveSiblingRecordIds($this->item);
+                $this->prev_record_id = (int) ($siblings['previous'] ?? 0);
+                $this->next_record_id = (int) ($siblings['next'] ?? 0);
 
                 $this->applyEditByTypeRendering();
 

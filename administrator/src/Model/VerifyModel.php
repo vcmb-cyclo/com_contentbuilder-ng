@@ -23,7 +23,7 @@ use Joomla\CMS\User\UserHelper;
 use Joomla\CMS\Application\ApplicationHelper;
 use Joomla\CMS\Mail\MailerFactoryInterface;
 use Joomla\CMS\MVC\Model\BaseDatabaseModel;
-use Joomla\CMS\Application\CMSApplicationInterface;
+use Joomla\CMS\Application\CMSApplication;
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
 use Joomla\Input\Input;
 use CB\Component\Contentbuilder_ng\Administrator\Helper\ContentbuilderLegacyHelper;
@@ -32,7 +32,7 @@ class VerifyModel extends BaseDatabaseModel
 {
 
     private $frontend = false;
-    var $app;
+    private CMSApplication $app;
 
     private function decodePackedQueryString(string $encoded): array
     {
@@ -79,7 +79,11 @@ class VerifyModel extends BaseDatabaseModel
         // IMPORTANT : on transmet factory/app/input à ListModel
         parent::__construct($config, $factory);
 
-        $this->app = Factory::getApplication();
+        $app = Factory::getApplication();
+        if (!$app instanceof CMSApplication) {
+            throw new \RuntimeException('Unexpected application instance');
+        }
+        $this->app = $app;
         $this->frontend = $this->app->isClient('site');
 
         $option = 'com_contentbuilder_ng';
@@ -417,9 +421,8 @@ class VerifyModel extends BaseDatabaseModel
             throw new \Exception('You are not allowed to perform this action.', 500);
         }
 
-        Factory::getApplication()->getLanguage()->load('com_users', JPATH_SITE);
+        $this->app->getLanguage()->load('com_users', JPATH_SITE);
 
-        $config = Factory::getApplication()->getConfig();
         $userParams = ComponentHelper::getParams('com_users');
         $db = $this->getDatabase();
 
@@ -458,13 +461,12 @@ class VerifyModel extends BaseDatabaseModel
         }
 
         $params = ComponentHelper::getParams('com_users');
-        $config = Factory::getApplication()->getConfig();
 
         // Compile the notification mail values.
         $data = $user->getProperties();
-        $data['fromname'] = $config->get('fromname');
-        $data['mailfrom'] = $config->get('mailfrom');
-        $data['sitename'] = $config->get('sitename');
+        $data['fromname'] = (string) $this->app->get('fromname');
+        $data['mailfrom'] = (string) $this->app->get('mailfrom');
+        $data['sitename'] = (string) $this->app->get('sitename');
         $data['siteurl'] = Uri::root();
 
         $sendpassword = $params->get('sendpassword', 1);
@@ -505,7 +507,6 @@ class VerifyModel extends BaseDatabaseModel
     {
         $this->app->getLanguage()->load('com_users', JPATH_SITE);
 
-        $config = Factory::getApplication()->getConfig();
         $userParams = ComponentHelper::getParams('com_users');
         $db = $this->getDatabase();
 
@@ -549,9 +550,9 @@ class VerifyModel extends BaseDatabaseModel
                 $data['activate'] = substr_replace($data['activate'], '', $adminPos, 14);
             }
 
-            $data['fromname'] = $config->get('fromname');
-            $data['mailfrom'] = $config->get('mailfrom');
-            $data['sitename'] = $config->get('sitename');
+            $data['fromname'] = (string) $this->app->get('fromname');
+            $data['mailfrom'] = (string) $this->app->get('mailfrom');
+            $data['sitename'] = (string) $this->app->get('sitename');
             $user->setParam('activate', 1);
             $emailSubject = Text::sprintf(
                 'COM_USERS_EMAIL_ACTIVATE_WITH_ADMIN_ACTIVATION_SUBJECT',
@@ -608,9 +609,9 @@ class VerifyModel extends BaseDatabaseModel
             // Compile the user activated notification mail values.
             $data = $user->getProperties();
             $user->setParam('activate', 0);
-            $data['fromname'] = $config->get('fromname');
-            $data['mailfrom'] = $config->get('mailfrom');
-            $data['sitename'] = $config->get('sitename');
+            $data['fromname'] = (string) $this->app->get('fromname');
+            $data['mailfrom'] = (string) $this->app->get('mailfrom');
+            $data['sitename'] = (string) $this->app->get('sitename');
             $data['siteurl'] = Uri::root();
             $emailSubject = Text::sprintf(
                 'COM_USERS_EMAIL_ACTIVATED_BY_ADMIN_ACTIVATION_SUBJECT',

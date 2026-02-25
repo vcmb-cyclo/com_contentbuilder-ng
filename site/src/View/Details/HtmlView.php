@@ -421,6 +421,7 @@ CSS;
 
 		$this->print_button = $subject->print_button;
 		$this->show_back_button = $subject->show_back_button;
+		$this->show_id_column = (int) ($subject->show_id_column ?? 0);
 		$siblings = $this->resolveSiblingRecordIds($subject);
 		$this->prev_record_id = (int) ($siblings['previous'] ?? 0);
 		$this->next_record_id = (int) ($siblings['next'] ?? 0);
