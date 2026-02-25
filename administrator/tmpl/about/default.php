@@ -189,6 +189,43 @@ $formatAuditIssueList = static function (array $values, int $limit = 8): string 
         padding: 0;
         text-align: left;
     }
+    .cb-about-intro-links {
+        margin-top: .55rem;
+        display: flex;
+        gap: .5rem;
+        flex-wrap: wrap;
+    }
+    .cb-about-intro-link {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: .35rem;
+        font-size: .78rem;
+        font-weight: 700;
+        line-height: 1;
+        letter-spacing: .01em;
+        text-decoration: none;
+        border-radius: 999px;
+        padding: .45rem .8rem;
+        transition: transform .16s ease, box-shadow .16s ease, opacity .16s ease;
+    }
+    .cb-about-intro-link:hover,
+    .cb-about-intro-link:focus {
+        transform: translateY(-1px);
+        opacity: .95;
+        text-decoration: none;
+    }
+    .cb-about-intro-link--vcmb {
+        color: #0d6efd;
+        background: #eaf2ff;
+        border: 1px solid #b9d2ff;
+    }
+    .cb-about-intro-link--github {
+        color: #ffffff;
+        background: linear-gradient(135deg, #0f172a 0%, #1f2937 100%);
+        border: 1px solid #111827;
+        box-shadow: 0 .35rem .9rem rgba(15, 23, 42, .26);
+    }
     @media (max-width: 767.98px) {
         .cb-about-intro {
             flex-wrap: wrap;
@@ -351,8 +388,21 @@ $formatAuditIssueList = static function (array $values, int $limit = 8): string 
     <div class="cb-about-intro-content">
         <p class="mb-0">
             <?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_DESC'); ?>
-            <a href="https://breezingforms-ng.vcmb.fr" target="_blank" rel="noopener noreferrer">VCMB migration</a>
         </p>
+        <div class="cb-about-intro-links">
+            <a
+                class="cb-about-intro-link cb-about-intro-link--vcmb"
+                href="https://breezingforms-ng.vcmb.fr"
+                target="_blank"
+                rel="noopener noreferrer"
+            >VCMB migration</a>
+            <a
+                class="cb-about-intro-link cb-about-intro-link--github"
+                href="https://github.com/vcmb-cyclo/com_contentbuilder-ng"
+                target="_blank"
+                rel="noopener noreferrer"
+            >GitHub repository</a>
+        </div>
     </div>
 </div>
 
