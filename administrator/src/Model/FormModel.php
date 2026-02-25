@@ -1078,6 +1078,34 @@ class FormModel extends AdminModel
             $jform['email_template'] = ContentbuilderLegacyHelper::createEmailSample($id, $formObj, Factory::getApplication()->input->getBool('email_html', false));
         }
 
+        $isBreezingFormsType = in_array(
+            (string) ($jform['type'] ?? ''),
+            ['com_breezingforms', 'com_breezingforms_ng'],
+            true
+        );
+        $editByTypeEnabled = !empty($jform['edit_by_type']);
+
+        if ($isBreezingFormsType && $editByTypeEnabled) {
+            $typeName = trim((string) ($jform['type_name'] ?? ''));
+
+            if ($typeName === '' && is_object($formObj) && isset($formObj->properties->name)) {
+                $typeName = trim((string) $formObj->properties->name);
+                $jform['type_name'] = $typeName;
+            }
+
+            if ($typeName !== '') {
+                $jform['editable_template'] = '{BreezingForms: ' . $typeName . '}';
+            }
+        }
+
+        if (
+            !$editByTypeEnabled
+            && isset($jform['editable_template'])
+            && preg_match('/^\s*\{BreezingForms\s*:[^}]+\}\s*$/i', (string) $jform['editable_template'])
+        ) {
+            $jform['editable_template'] = '';
+        }
+
         // Config legacy
         $jform['config'] = PackedDataHelper::encodePackedData($config);
 

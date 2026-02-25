@@ -55,6 +55,8 @@ $isBreezingFormsType = in_array(
     ['com_breezingforms', 'com_breezingforms_ng'],
     true
 );
+$canEditByType = (string) ($this->item->type ?? '') !== 'com_contentbuilder_ng';
+$breezingFormsEditableToken = '{BreezingForms: ' . (isset($this->item->type_name) ? (string) $this->item->type_name : '') . '}';
 $breezingFormsProvidedMessage = '<div class="alert alert-success d-inline-flex align-items-center py-2 px-3 mb-2" role="status">'
     . '<span class="badge bg-success me-2">&#10003;</span>'
     . '<span>' . htmlspecialchars(Text::_('COM_CONTENTBUILDER_NG_EDITABLE_TEMPLATE_PROVIDED_BY_BREEZINGFORMS'), ENT_QUOTES, 'UTF-8') . '</span>'
@@ -137,6 +139,9 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
 <script type="text/javascript">
     const cbViewportStateKey = 'cbng.form.viewport.<?php echo (int) ($this->item->id ?? 0); ?>';
     const cbSaveAnimationDurationMs = 500;
+    const cbIsBreezingFormsType = <?php echo $isBreezingFormsType ? 'true' : 'false'; ?>;
+    const cbBreezingFormsEditableToken = <?php echo json_encode($breezingFormsEditableToken, JSON_UNESCAPED_UNICODE); ?>;
+    const cbEditByTypeEnableConfirm = <?php echo json_encode(Text::_('COM_CONTENTBUILDER_NG_TYPE_EDIT_ENABLE_BF_CONFIRM'), JSON_UNESCAPED_UNICODE); ?>;
     let cbLastRowId = '';
     let cbAjaxBusy = false;
     let cbSaveButtonTimer = null;
@@ -571,6 +576,7 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
             case 'form.save':
             case 'form.save2new':
             case 'form.apply':
+                cbNormalizeEditableTemplateForEditByType();
                 var error = false;
                 var nodes = document.adminForm['cid[]'];
 
@@ -696,6 +702,66 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
         return String(value || '');
     }
 
+    function cbSetEditorFieldValue(fieldName, value) {
+        var stringValue = String(value || '');
+        var editorId = 'jform_' + fieldName;
+
+        if (window.Joomla && Joomla.editors && Joomla.editors.instances) {
+            var instance = Joomla.editors.instances[editorId] || Joomla.editors.instances[fieldName];
+
+            if (instance) {
+                if (typeof instance.setValue === 'function') {
+                    instance.setValue(stringValue);
+                } else if (typeof instance.setContent === 'function') {
+                    instance.setContent(stringValue);
+                }
+            }
+        }
+
+        document.querySelectorAll('textarea[name="jform[' + fieldName + ']"], input[name="jform[' + fieldName + ']"]').forEach(function(input) {
+            input.value = stringValue;
+        });
+    }
+
+    function cbIsBreezingFormsPlaceholder(value) {
+        return /^\s*\{BreezingForms\s*:[^}]+\}\s*$/i.test(String(value || ''));
+    }
+
+    function cbNormalizeEditableTemplateForEditByType() {
+        var checkbox = document.getElementById('edit_by_type');
+        if (!checkbox) {
+            return;
+        }
+
+        if (checkbox.checked) {
+            if (cbIsBreezingFormsType && cbBreezingFormsEditableToken.trim() !== '') {
+                cbSetEditorFieldValue('editable_template', cbBreezingFormsEditableToken);
+            }
+            return;
+        }
+
+        var currentTemplate = cbGetEditorFieldValue('editable_template');
+        if (cbIsBreezingFormsPlaceholder(currentTemplate)) {
+            cbSetEditorFieldValue('editable_template', '');
+        }
+    }
+
+    function cbHandleEditByTypeToggle(checkbox) {
+        if (!checkbox) {
+            return;
+        }
+
+        if (checkbox.checked && cbIsBreezingFormsType) {
+            var confirmed = confirm(cbEditByTypeEnableConfirm);
+            if (!confirmed) {
+                checkbox.checked = false;
+                return;
+            }
+        }
+
+        cbNormalizeEditableTemplateForEditByType();
+    }
+
     function cbTemplateHasContent(rawValue) {
         if (typeof rawValue !== 'string' || !rawValue.trim()) {
             return false;
@@ -804,6 +870,13 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
             return;
         }
 
+        var editByTypeCheckbox = document.getElementById('edit_by_type');
+        if (editByTypeCheckbox) {
+            editByTypeCheckbox.addEventListener('change', function() {
+                cbHandleEditByTypeToggle(editByTypeCheckbox);
+            });
+        }
+
         form.addEventListener('click', function(event) {
             var target = event.target;
             if (!target || typeof target.closest !== 'function') {
@@ -854,6 +927,7 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
         });
 
         form.addEventListener('submit', function() {
+            cbNormalizeEditableTemplateForEditByType();
             cbRememberViewport();
         });
     });
@@ -1279,23 +1353,6 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
                                 <input type="hidden" name="jform[type]" value="<?php echo $this->item->type ?>" />
                                 <input type="hidden" name="jform[type_name]"
                                     value="<?php echo isset($this->item->type_name) ? $this->item->type_name : ''; ?>" />
-                                <?php
-                                if ($this->item->type != 'com_contentbuilder_ng') {
-                                ?>
-                                    <input type="hidden" name="jform[edit_by_type]" value="0" />
-                                    <?php echo $renderCheckbox('jform[edit_by_type]', 'edit_by_type', (bool) $this->item->edit_by_type); ?>
-                                    <label class="form-check-label" for="edit_by_type">
-                                        <span class="editlinktip hasTip" title="<?php echo Text::_('COM_CONTENTBUILDER_NG_TYPE_EDIT_TIP'); ?>">
-                                            <?php echo Text::_('COM_CONTENTBUILDER_NG_TYPE_EDIT'); ?>
-                                        </span>
-                                    </label>
-                                <?php
-                                } else {
-                                ?>
-                                    <input type="hidden" name="jform[edit_by_type]" value="0" />
-                                <?php
-                                }
-                                ?>
                             </div>
 
                             <div></div>
@@ -2356,11 +2413,22 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
         <h3 class="mb-3">
             <?php echo Text::_('COM_CONTENTBUILDER_NG_EDITABLE_TEMPLATE_MODE_TITLE'); ?>
         </h3>
+        <input type="hidden" name="jform[edit_by_type]" value="0" />
+        <?php if ($canEditByType) : ?>
+            <div class="form-check mb-3">
+                <?php echo $renderCheckbox('jform[edit_by_type]', 'edit_by_type', (bool) $this->item->edit_by_type); ?>
+                <label class="form-check-label" for="edit_by_type">
+                    <span class="editlinktip hasTip" title="<?php echo Text::_('COM_CONTENTBUILDER_NG_TYPE_EDIT_TIP'); ?>">
+                        <?php echo Text::_('COM_CONTENTBUILDER_NG_TYPE_EDIT'); ?>
+                    </span>
+                </label>
+            </div>
+        <?php endif; ?>
         <?php
 
         if ($this->item->edit_by_type && $isBreezingFormsType) {
             echo $breezingFormsProvidedMessage;
-            echo '<input type="hidden" name="jform[editable_template]" value="{BreezingForms: ' . (isset($this->item->type_name) ? $this->item->type_name : '') . '}"/>';
+            echo '<input type="hidden" name="jform[editable_template]" value="' . htmlspecialchars($breezingFormsEditableToken, ENT_QUOTES, 'UTF-8') . '"/>';
             //echo '<input type="hidden" name="jform[protect_upload_directory]" value="'.(trim($this->item->protect_upload_directory) ? 1 : 0).'"/>'; 
             echo '<input type="hidden" name="jform[upload_directory]" value="' . (trim($this->item->upload_directory) ? trim($this->item->upload_directory) : JPATH_SITE . '/media/com_contentbuilder_ng/upload') . '"/>';
         } else {
