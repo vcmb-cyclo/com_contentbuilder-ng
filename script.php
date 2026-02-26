@@ -1413,6 +1413,105 @@ class com_contentbuilderngInstallerScript extends InstallerScript
     ];
   }
 
+  private function normalizeLegacyMenuTitleKey(string $title): string
+  {
+    $title = strtoupper(trim($title));
+
+    if ($title === 'COM_CONTENTBUILDER' || $title === 'COM_CONTENTBUILDER_NG') {
+      return 'COM_CONTENTBUILDERNG';
+    }
+
+    if (str_starts_with($title, 'COM_CONTENTBUILDER_NG_')) {
+      return 'COM_CONTENTBUILDERNG_' . substr($title, strlen('COM_CONTENTBUILDER_NG_'));
+    }
+
+    if (str_starts_with($title, 'COM_CONTENTBUILDER_')) {
+      return 'COM_CONTENTBUILDERNG_' . substr($title, strlen('COM_CONTENTBUILDER_'));
+    }
+
+    return $title;
+  }
+
+  private function repairLegacyMenuTitleKeys(): void
+  {
+    $db = Factory::getContainer()->get(DatabaseInterface::class);
+
+    try {
+      $rows = $db->setQuery(
+        $db->getQuery(true)
+          ->select($db->quoteName(['id', 'title', 'link', 'alias', 'path']))
+          ->from($db->quoteName('#__menu'))
+          ->where($db->quoteName('client_id') . ' = 1')
+          ->where($db->quoteName('type') . ' = ' . $db->quote('component'))
+          ->where($db->quoteName('title') . ' LIKE ' . $db->quote('COM_CONTENTBUILDER%'))
+          ->where(
+            '('
+            . $db->quoteName('link') . ' LIKE ' . $db->quote('%option=com_contentbuilder%')
+            . ' OR '
+            . $db->quoteName('alias') . ' LIKE ' . $db->quote('contentbuilder%')
+            . ' OR '
+            . $db->quoteName('alias') . ' LIKE ' . $db->quote('com-contentbuilder%')
+            . ' OR '
+            . $db->quoteName('path') . ' LIKE ' . $db->quote('contentbuilder%')
+            . ')'
+          )
+          ->order($db->quoteName('id') . ' ASC')
+      )->loadAssocList() ?: [];
+    } catch (\Throwable $e) {
+      $this->log('[WARNING] Failed reading legacy menu title keys: ' . $e->getMessage(), Log::WARNING);
+      return;
+    }
+
+    $detected = 0;
+    $updated = 0;
+    $failed = 0;
+
+    foreach ($rows as $row) {
+      $menuId = (int) ($row['id'] ?? 0);
+      $oldTitle = strtoupper(trim((string) ($row['title'] ?? '')));
+
+      if ($menuId < 1 || $oldTitle === '' || str_starts_with($oldTitle, 'COM_CONTENTBUILDERNG')) {
+        continue;
+      }
+
+      $newTitle = $this->normalizeLegacyMenuTitleKey($oldTitle);
+      if ($newTitle === $oldTitle) {
+        continue;
+      }
+
+      $detected++;
+
+      try {
+        $db->setQuery(
+          $db->getQuery(true)
+            ->update($db->quoteName('#__menu'))
+            ->set($db->quoteName('title') . ' = ' . $db->quote($newTitle))
+            ->where($db->quoteName('id') . ' = ' . $menuId)
+        )->execute();
+        $updated++;
+      } catch (\Throwable $e) {
+        $failed++;
+        $this->log(
+          '[WARNING] Failed normalizing legacy menu title key for menu #' . $menuId . ': ' . $e->getMessage(),
+          Log::WARNING
+        );
+      }
+    }
+
+    if ($detected === 0) {
+      $this->log('[INFO] No legacy menu title key detected for ContentBuilder menu entries.');
+      return;
+    }
+
+    if ($updated > 0) {
+      $this->log('[OK] Normalized ' . $updated . ' legacy menu title key(s).');
+    }
+
+    if ($failed > 0) {
+      $this->log('[WARNING] Legacy menu title key normalization finished with ' . $failed . ' failure(s).', Log::WARNING);
+    }
+  }
+
   private function normalizeBrokenTargetMenuLinks(): void
   {
     $db = Factory::getContainer()->get(DatabaseInterface::class);
@@ -3024,6 +3123,7 @@ class com_contentbuilderngInstallerScript extends InstallerScript
     $this->normalizeBrokenTargetMenuLinks();
     $this->ensureAdministrationMainMenuEntry();
     $this->ensureSubmenuQuickTasks();
+    $this->repairLegacyMenuTitleKeys();
 
     // On ne fait ça que sur update (et éventuellement discover_install si tu veux)
     if ($type === 'update') {

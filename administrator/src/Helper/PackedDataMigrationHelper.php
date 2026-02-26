@@ -104,6 +104,22 @@ final class PackedDataMigrationHelper
      *       error:string
      *     }>,
      *     warnings:array<int,string>
+     *   },
+     *   legacy_menu_entries:array{
+     *     scanned:int,
+     *     issues:int,
+     *     repaired:int,
+     *     unchanged:int,
+     *     errors:int,
+     *     entries:array<int,array{
+     *       menu_id:int,
+     *       old_title:string,
+     *       new_title:string,
+     *       link:string,
+     *       status:string,
+     *       error:string
+     *     }>,
+     *     warnings:array<int,string>
      *   }
      * }
      */
@@ -114,6 +130,7 @@ final class PackedDataMigrationHelper
         $summary['repair'] = self::repairTableCollations($db);
         $summary['audit_columns'] = StorageAuditColumnsHelper::repair($db);
         $summary['plugin_duplicates'] = PluginExtensionDedupHelper::repair($db);
+        $summary['legacy_menu_entries'] = self::repairLegacyMenuEntries($db);
 
         return $summary;
     }
@@ -484,5 +501,181 @@ final class PackedDataMigrationHelper
         }
 
         return $tableName;
+    }
+
+    /**
+     * @return array{
+     *   scanned:int,
+     *   issues:int,
+     *   repaired:int,
+     *   unchanged:int,
+     *   errors:int,
+     *   entries:array<int,array{
+     *     menu_id:int,
+     *     old_title:string,
+     *     new_title:string,
+     *     link:string,
+     *     status:string,
+     *     error:string
+     *   }>,
+     *   warnings:array<int,string>
+     * }
+     */
+    private static function repairLegacyMenuEntries(DatabaseInterface $db): array
+    {
+        $summary = [
+            'scanned' => 0,
+            'issues' => 0,
+            'repaired' => 0,
+            'unchanged' => 0,
+            'errors' => 0,
+            'entries' => [],
+            'warnings' => [],
+        ];
+
+        [$legacyEntries, $warnings] = self::collectLegacyMenuEntries($db);
+
+        if ($warnings !== []) {
+            $summary['warnings'] = $warnings;
+            $summary['errors'] += count($warnings);
+        }
+
+        if ($legacyEntries === []) {
+            return $summary;
+        }
+
+        $summary['scanned'] = count($legacyEntries);
+        $summary['issues'] = count($legacyEntries);
+
+        foreach ($legacyEntries as $legacyEntry) {
+            $menuId = (int) ($legacyEntry['menu_id'] ?? 0);
+            $oldTitle = (string) ($legacyEntry['title'] ?? '');
+            $newTitle = (string) ($legacyEntry['normalized_title'] ?? '');
+            $link = trim((string) ($legacyEntry['link'] ?? ''));
+
+            if ($menuId < 1 || $oldTitle === '' || $newTitle === '' || $newTitle === $oldTitle) {
+                $summary['unchanged']++;
+                $summary['entries'][] = [
+                    'menu_id' => $menuId,
+                    'old_title' => $oldTitle,
+                    'new_title' => $newTitle,
+                    'link' => $link,
+                    'status' => 'unchanged',
+                    'error' => '',
+                ];
+                continue;
+            }
+
+            try {
+                $query = $db->getQuery(true)
+                    ->update($db->quoteName('#__menu'))
+                    ->set($db->quoteName('title') . ' = ' . $db->quote($newTitle))
+                    ->where($db->quoteName('id') . ' = ' . $menuId);
+
+                $db->setQuery($query);
+                $db->execute();
+
+                $summary['repaired']++;
+                $summary['entries'][] = [
+                    'menu_id' => $menuId,
+                    'old_title' => $oldTitle,
+                    'new_title' => $newTitle,
+                    'link' => $link,
+                    'status' => 'repaired',
+                    'error' => '',
+                ];
+            } catch (\Throwable $e) {
+                $summary['errors']++;
+                $summary['entries'][] = [
+                    'menu_id' => $menuId,
+                    'old_title' => $oldTitle,
+                    'new_title' => $newTitle,
+                    'link' => $link,
+                    'status' => 'error',
+                    'error' => $e->getMessage(),
+                ];
+            }
+        }
+
+        return $summary;
+    }
+
+    /**
+     * @return array{0:array<int,array{menu_id:int,title:string,normalized_title:string,link:string}>,1:array<int,string>}
+     */
+    private static function collectLegacyMenuEntries(DatabaseInterface $db): array
+    {
+        $warnings = [];
+
+        try {
+            $query = $db->getQuery(true)
+                ->select($db->quoteName(['id', 'title', 'link', 'alias', 'path']))
+                ->from($db->quoteName('#__menu'))
+                ->where($db->quoteName('client_id') . ' = 1')
+                ->where($db->quoteName('type') . ' = ' . $db->quote('component'))
+                ->where($db->quoteName('title') . ' LIKE ' . $db->quote('COM_CONTENTBUILDER%'))
+                ->where(
+                    '('
+                    . $db->quoteName('link') . ' LIKE ' . $db->quote('%option=com_contentbuilder%')
+                    . ' OR '
+                    . $db->quoteName('alias') . ' LIKE ' . $db->quote('contentbuilder%')
+                    . ' OR '
+                    . $db->quoteName('alias') . ' LIKE ' . $db->quote('com-contentbuilder%')
+                    . ' OR '
+                    . $db->quoteName('path') . ' LIKE ' . $db->quote('contentbuilder%')
+                    . ')'
+                )
+                ->order($db->quoteName('id') . ' ASC');
+
+            $db->setQuery($query);
+            $rows = $db->loadAssocList() ?: [];
+        } catch (\Throwable $e) {
+            $warnings[] = 'Could not inspect legacy menu entries: ' . $e->getMessage();
+            return [[], $warnings];
+        }
+
+        $entries = [];
+
+        foreach ($rows as $row) {
+            $title = strtoupper(trim((string) ($row['title'] ?? '')));
+
+            if ($title === '' || str_starts_with($title, 'COM_CONTENTBUILDERNG')) {
+                continue;
+            }
+
+            $normalizedTitle = self::normalizeLegacyMenuTitle($title);
+
+            if ($normalizedTitle === $title) {
+                continue;
+            }
+
+            $entries[] = [
+                'menu_id' => (int) ($row['id'] ?? 0),
+                'title' => $title,
+                'normalized_title' => $normalizedTitle,
+                'link' => trim((string) ($row['link'] ?? '')),
+            ];
+        }
+
+        return [$entries, $warnings];
+    }
+
+    private static function normalizeLegacyMenuTitle(string $title): string
+    {
+        $title = strtoupper(trim($title));
+
+        if ($title === 'COM_CONTENTBUILDER' || $title === 'COM_CONTENTBUILDER_NG') {
+            return 'COM_CONTENTBUILDERNG';
+        }
+
+        if (str_starts_with($title, 'COM_CONTENTBUILDER_NG_')) {
+            return 'COM_CONTENTBUILDERNG_' . substr($title, strlen('COM_CONTENTBUILDER_NG_'));
+        }
+
+        if (str_starts_with($title, 'COM_CONTENTBUILDER_')) {
+            return 'COM_CONTENTBUILDERNG_' . substr($title, strlen('COM_CONTENTBUILDER_'));
+        }
+
+        return $title;
     }
 }

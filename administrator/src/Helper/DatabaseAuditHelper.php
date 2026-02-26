@@ -23,6 +23,15 @@ final class DatabaseAuditHelper
      *   tables:array<int,string>,
      *   duplicate_indexes:array<int,array{table:string,indexes:array<int,string>,keep:string,drop:array<int,string>}>,
      *   legacy_tables:array<int,string>,
+     *   legacy_menu_entries:array<int,array{
+     *     menu_id:int,
+     *     title:string,
+     *     normalized_title:string,
+     *     alias:string,
+     *     path:string,
+     *     link:string,
+     *     parent_id:int
+     *   }>,
      *   table_encoding_issues:array<int,array{table:string,collation:string,expected:string}>,
      *   column_encoding_issues:array<int,array{table:string,column:string,charset:string,collation:string}>,
      *   mixed_table_collations:array<int,array{collation:string,count:int,tables:array<int,string>}>,
@@ -90,6 +99,7 @@ final class DatabaseAuditHelper
      *     duplicate_index_groups:int,
      *     duplicate_indexes_to_drop:int,
      *     legacy_tables:int,
+     *     legacy_menu_entries:int,
      *     table_encoding_issues:int,
      *     column_encoding_issues:int,
      *     mixed_table_collations:int,
@@ -119,6 +129,8 @@ final class DatabaseAuditHelper
         $errors = array_merge($errors, $duplicateErrors);
 
         $legacyTables = self::findLegacyContentbuilderTables($tables, $prefix);
+        [$legacyMenuEntries, $legacyMenuErrors] = self::findLegacyMenuEntries($db);
+        $errors = array_merge($errors, $legacyMenuErrors);
         [$cbTableStats, $cbTableStatsErrors] = self::collectCbTableStats($db, $tables, $prefix, $legacyTables);
         $errors = array_merge($errors, $cbTableStatsErrors);
 
@@ -165,6 +177,7 @@ final class DatabaseAuditHelper
 
         $issuesTotal = count($duplicateIndexes)
             + count($legacyTables)
+            + count($legacyMenuEntries)
             + count($tableEncodingIssues)
             + count($columnEncodingIssues)
             + count($missingAuditColumns)
@@ -184,6 +197,7 @@ final class DatabaseAuditHelper
             ),
             'duplicate_indexes' => $duplicateIndexes,
             'legacy_tables' => $legacyTables,
+            'legacy_menu_entries' => $legacyMenuEntries,
             'table_encoding_issues' => $tableEncodingIssues,
             'column_encoding_issues' => $columnEncodingIssues,
             'mixed_table_collations' => $mixedTableCollations,
@@ -196,6 +210,7 @@ final class DatabaseAuditHelper
                 'duplicate_index_groups' => count($duplicateIndexes),
                 'duplicate_indexes_to_drop' => $duplicateToDrop,
                 'legacy_tables' => count($legacyTables),
+                'legacy_menu_entries' => count($legacyMenuEntries),
                 'table_encoding_issues' => count($tableEncodingIssues),
                 'column_encoding_issues' => count($columnEncodingIssues),
                 'mixed_table_collations' => count($mixedTableCollations),
@@ -360,6 +375,95 @@ final class DatabaseAuditHelper
         sort($legacy, SORT_NATURAL | SORT_FLAG_CASE);
 
         return $legacy;
+    }
+
+    /**
+     * @return array{0:array<int,array{
+     *   menu_id:int,
+     *   title:string,
+     *   normalized_title:string,
+     *   alias:string,
+     *   path:string,
+     *   link:string,
+     *   parent_id:int
+     * }>,1:array<int,string>}
+     */
+    private static function findLegacyMenuEntries(DatabaseInterface $db): array
+    {
+        $entries = [];
+        $errors = [];
+
+        try {
+            $query = $db->getQuery(true)
+                ->select($db->quoteName(['id', 'title', 'alias', 'path', 'link', 'parent_id']))
+                ->from($db->quoteName('#__menu'))
+                ->where($db->quoteName('client_id') . ' = 1')
+                ->where($db->quoteName('type') . ' = ' . $db->quote('component'))
+                ->where($db->quoteName('title') . ' LIKE ' . $db->quote('COM_CONTENTBUILDER%'))
+                ->where(
+                    '('
+                    . $db->quoteName('link') . ' LIKE ' . $db->quote('%option=com_contentbuilder%')
+                    . ' OR '
+                    . $db->quoteName('alias') . ' LIKE ' . $db->quote('contentbuilder%')
+                    . ' OR '
+                    . $db->quoteName('alias') . ' LIKE ' . $db->quote('com-contentbuilder%')
+                    . ' OR '
+                    . $db->quoteName('path') . ' LIKE ' . $db->quote('contentbuilder%')
+                    . ')'
+                )
+                ->order($db->quoteName('id') . ' ASC');
+
+            $db->setQuery($query);
+            $rows = $db->loadAssocList() ?: [];
+        } catch (\Throwable $e) {
+            $errors[] = 'Could not inspect legacy menu entries: ' . $e->getMessage();
+            return [[], $errors];
+        }
+
+        foreach ($rows as $row) {
+            $title = strtoupper(trim((string) ($row['title'] ?? '')));
+
+            if ($title === '' || str_starts_with($title, 'COM_CONTENTBUILDERNG')) {
+                continue;
+            }
+
+            $normalizedTitle = self::normalizeLegacyMenuTitle($title);
+
+            if ($normalizedTitle === $title) {
+                continue;
+            }
+
+            $entries[] = [
+                'menu_id' => (int) ($row['id'] ?? 0),
+                'title' => $title,
+                'normalized_title' => $normalizedTitle,
+                'alias' => trim((string) ($row['alias'] ?? '')),
+                'path' => trim((string) ($row['path'] ?? '')),
+                'link' => trim((string) ($row['link'] ?? '')),
+                'parent_id' => (int) ($row['parent_id'] ?? 0),
+            ];
+        }
+
+        return [$entries, $errors];
+    }
+
+    private static function normalizeLegacyMenuTitle(string $title): string
+    {
+        $title = strtoupper(trim($title));
+
+        if ($title === 'COM_CONTENTBUILDER' || $title === 'COM_CONTENTBUILDER_NG') {
+            return 'COM_CONTENTBUILDERNG';
+        }
+
+        if (str_starts_with($title, 'COM_CONTENTBUILDER_NG_')) {
+            return 'COM_CONTENTBUILDERNG_' . substr($title, strlen('COM_CONTENTBUILDER_NG_'));
+        }
+
+        if (str_starts_with($title, 'COM_CONTENTBUILDER_')) {
+            return 'COM_CONTENTBUILDERNG_' . substr($title, strlen('COM_CONTENTBUILDER_'));
+        }
+
+        return $title;
     }
 
     /**

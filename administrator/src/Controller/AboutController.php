@@ -73,6 +73,15 @@ final class AboutController extends BaseController
             $pluginDuplicateWarnings = is_array($pluginDuplicates['warnings'] ?? null)
                 ? $pluginDuplicates['warnings']
                 : [];
+            $legacyMenuEntries = is_array($summary['legacy_menu_entries'] ?? null) ? $summary['legacy_menu_entries'] : [];
+            $legacyMenuScanned = (int) ($legacyMenuEntries['scanned'] ?? 0);
+            $legacyMenuIssues = (int) ($legacyMenuEntries['issues'] ?? 0);
+            $legacyMenuRepaired = (int) ($legacyMenuEntries['repaired'] ?? 0);
+            $legacyMenuUnchanged = (int) ($legacyMenuEntries['unchanged'] ?? 0);
+            $legacyMenuErrors = (int) ($legacyMenuEntries['errors'] ?? 0);
+            $legacyMenuWarnings = is_array($legacyMenuEntries['warnings'] ?? null)
+                ? $legacyMenuEntries['warnings']
+                : [];
 
             if (
                 $migrated === 0
@@ -84,6 +93,8 @@ final class AboutController extends BaseController
                 && $auditErrors === 0
                 && $pluginDuplicateIssues === 0
                 && $pluginDuplicateErrors === 0
+                && $legacyMenuIssues === 0
+                && $legacyMenuErrors === 0
             ) {
                 $message = Text::sprintf(
                     'COM_CONTENTBUILDERNG_PACKED_MIGRATION_UP_TO_DATE',
@@ -97,6 +108,10 @@ final class AboutController extends BaseController
                 $message .= ' ' . Text::sprintf(
                     'COM_CONTENTBUILDERNG_PLUGIN_DUPLICATES_REPAIR_UP_TO_DATE',
                     $pluginDuplicateScanned
+                );
+                $message .= ' ' . Text::sprintf(
+                    'COM_CONTENTBUILDERNG_LEGACY_MENU_REPAIR_UP_TO_DATE',
+                    $legacyMenuScanned
                 );
                 $this->setMessage($message, 'message');
                 $this->setRedirect(Route::_('index.php?option=com_contentbuilderng&view=about', false));
@@ -132,6 +147,14 @@ final class AboutController extends BaseController
                 $pluginDuplicateUnchanged,
                 $pluginDuplicateRowsRemoved,
                 $pluginDuplicateErrors
+            );
+            $message .= ' ' . Text::sprintf(
+                'COM_CONTENTBUILDERNG_LEGACY_MENU_REPAIR_SUMMARY',
+                $legacyMenuScanned,
+                $legacyMenuIssues,
+                $legacyMenuRepaired,
+                $legacyMenuUnchanged,
+                $legacyMenuErrors
             );
 
             $tableMessages = [];
@@ -292,6 +315,41 @@ final class AboutController extends BaseController
                 }
             }
 
+            $legacyMenuRows = $legacyMenuEntries['entries'] ?? [];
+            if (is_array($legacyMenuRows)) {
+                foreach ($legacyMenuRows as $legacyMenuRow) {
+                    if (!is_array($legacyMenuRow)) {
+                        continue;
+                    }
+
+                    $status = (string) ($legacyMenuRow['status'] ?? '');
+                    $menuId = (int) ($legacyMenuRow['menu_id'] ?? 0);
+                    $oldTitle = trim((string) ($legacyMenuRow['old_title'] ?? ''));
+                    $newTitle = trim((string) ($legacyMenuRow['new_title'] ?? ''));
+                    $errorMessage = trim((string) ($legacyMenuRow['error'] ?? ''));
+
+                    if ($status === 'repaired') {
+                        $tableMessages[] = Text::sprintf(
+                            'COM_CONTENTBUILDERNG_LEGACY_MENU_REPAIR_ENTRY_REPAIRED',
+                            $menuId,
+                            $oldTitle !== '' ? $oldTitle : Text::_('COM_CONTENTBUILDERNG_NOT_AVAILABLE'),
+                            $newTitle !== '' ? $newTitle : Text::_('COM_CONTENTBUILDERNG_NOT_AVAILABLE')
+                        );
+                        continue;
+                    }
+
+                    if ($status === 'error') {
+                        $tableMessages[] = Text::sprintf(
+                            'COM_CONTENTBUILDERNG_LEGACY_MENU_REPAIR_ENTRY_ERROR',
+                            $menuId,
+                            $oldTitle !== '' ? $oldTitle : Text::_('COM_CONTENTBUILDERNG_NOT_AVAILABLE'),
+                            $newTitle !== '' ? $newTitle : Text::_('COM_CONTENTBUILDERNG_NOT_AVAILABLE'),
+                            $errorMessage
+                        );
+                    }
+                }
+            }
+
             if (!$repairSupported) {
                 $tableMessages[] = Text::sprintf(
                     'COM_CONTENTBUILDERNG_COLLATION_REPAIR_UNSUPPORTED',
@@ -338,11 +396,31 @@ final class AboutController extends BaseController
                 );
             }
 
+            foreach ($legacyMenuWarnings as $legacyMenuWarning) {
+                $legacyMenuWarning = trim((string) $legacyMenuWarning);
+
+                if ($legacyMenuWarning === '') {
+                    continue;
+                }
+
+                $tableMessages[] = Text::sprintf(
+                    'COM_CONTENTBUILDERNG_LEGACY_MENU_REPAIR_WARNING',
+                    $legacyMenuWarning
+                );
+            }
+
             if ($tableMessages !== []) {
                 $message .= '<br>' . implode('<br>', $tableMessages);
             }
 
-            $level = ($errors > 0 || $repairErrors > 0 || !$repairSupported || $auditErrors > 0 || $pluginDuplicateErrors > 0)
+            $level = (
+                $errors > 0
+                || $repairErrors > 0
+                || !$repairSupported
+                || $auditErrors > 0
+                || $pluginDuplicateErrors > 0
+                || $legacyMenuErrors > 0
+            )
                 ? 'warning'
                 : 'message';
             $this->setMessage($message, $level);

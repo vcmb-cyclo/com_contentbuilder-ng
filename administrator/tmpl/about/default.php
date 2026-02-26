@@ -39,6 +39,7 @@ $auditReport = is_array($this->auditReport ?? null) ? $this->auditReport : [];
 $auditSummary = (array) ($auditReport['summary'] ?? []);
 $duplicateIndexes = (array) ($auditReport['duplicate_indexes'] ?? []);
 $legacyTables = (array) ($auditReport['legacy_tables'] ?? []);
+$legacyMenuEntries = (array) ($auditReport['legacy_menu_entries'] ?? []);
 $tableEncodingIssues = (array) ($auditReport['table_encoding_issues'] ?? []);
 $columnEncodingIssues = (array) ($auditReport['column_encoding_issues'] ?? []);
 $mixedTableCollations = (array) ($auditReport['mixed_table_collations'] ?? []);
@@ -69,6 +70,7 @@ if ($missingAuditColumnsTotal === 0 && $missingAuditColumns !== []) {
 $bfFieldSyncViews = (int) ($auditSummary['bf_view_field_sync_views'] ?? count($bfFieldSyncIssues));
 $bfFieldSyncMissingTotal = (int) ($auditSummary['bf_view_field_sync_missing_in_cb'] ?? 0);
 $bfFieldSyncOrphanTotal = (int) ($auditSummary['bf_view_field_sync_orphan_in_cb'] ?? 0);
+$legacyMenuEntriesCount = (int) ($auditSummary['legacy_menu_entries'] ?? count($legacyMenuEntries));
 
 if (($bfFieldSyncMissingTotal === 0 || $bfFieldSyncOrphanTotal === 0) && $bfFieldSyncIssues !== []) {
     $fallbackMissingTotal = 0;
@@ -488,6 +490,10 @@ $formatAuditIssueList = static function (array $values, int $limit = 8): string 
                         <td><?php echo (int) ($auditSummary['legacy_tables'] ?? 0); ?></td>
                     </tr>
                     <tr>
+                        <th scope="row"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_LEGACY_MENU_ENTRIES'); ?></th>
+                        <td><?php echo $legacyMenuEntriesCount; ?></td>
+                    </tr>
+                    <tr>
                         <th scope="row"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_TABLE_ENCODING_ISSUES'); ?></th>
                         <td><?php echo (int) ($auditSummary['table_encoding_issues'] ?? 0); ?></td>
                     </tr>
@@ -664,6 +670,36 @@ $formatAuditIssueList = static function (array $values, int $limit = 8): string 
                         <li><?php echo htmlspecialchars((string) $legacyTable, ENT_QUOTES, 'UTF-8'); ?></li>
                     <?php endforeach; ?>
                 </ul>
+            <?php endif; ?>
+
+            <h4 class="h6 mt-3"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_LEGACY_MENU_ENTRIES'); ?></h4>
+            <?php if (empty($legacyMenuEntries)) : ?>
+                <div class="alert cb-audit-ok-alert">
+                    <?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_NO_LEGACY_MENU_ENTRIES'); ?>
+                </div>
+            <?php else : ?>
+                <div class="table-responsive">
+                    <table class="table table-sm table-striped align-middle">
+                        <thead>
+                        <tr>
+                            <th scope="col"><?php echo Text::_('COM_CONTENTBUILDERNG_ID'); ?></th>
+                            <th scope="col"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_MENU_TITLE'); ?></th>
+                            <th scope="col"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_MENU_NORMALIZED_TITLE'); ?></th>
+                            <th scope="col"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_MENU_LINK'); ?></th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <?php foreach ($legacyMenuEntries as $legacyMenuEntry) : ?>
+                            <tr>
+                                <td><?php echo (int) ($legacyMenuEntry['menu_id'] ?? 0); ?></td>
+                                <td><?php echo htmlspecialchars((string) ($legacyMenuEntry['title'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></td>
+                                <td><?php echo htmlspecialchars((string) ($legacyMenuEntry['normalized_title'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></td>
+                                <td><?php echo htmlspecialchars((string) ($legacyMenuEntry['link'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
             <?php endif; ?>
 
             <h4 class="h6 mt-3"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_MISSING_AUDIT_COLUMNS'); ?></h4>
