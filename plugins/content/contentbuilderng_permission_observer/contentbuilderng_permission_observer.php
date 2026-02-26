@@ -3,7 +3,7 @@
  * @version 6.0
  * @package ContentBuilder NG Permission observer
  * @copyright (C) 2011 by Markus Bopp
- * @copyright   Copyright (C) 2026 by XDA+GIL
+ * @copyright   Copyright © 2026 by XDA+GIL
  * @license Released under the terms of the GNU General Public License
  **/
 

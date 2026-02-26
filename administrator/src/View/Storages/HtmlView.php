@@ -2,7 +2,7 @@
 /**
  * @package     ContentBuilder NG
  * @author      Markus Bopp / XDA+GIL
- * @copyright   Copyright (C) 2026 by XDA+GIL
+ * @copyright   Copyright © 2026 by XDA+GIL
  * @license     GNU/GPL
  */
 

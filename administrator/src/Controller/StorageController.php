@@ -8,7 +8,7 @@
  * @package     ContentBuilder NG
  * @subpackage  Administrator.Controller
  * @author      Xavier DANO
- * @copyright   Copyright (C) 2011–2026 by XDA+GIL
+ * @copyright   Copyright © 2011–2026 by XDA+GIL
  * @license     GNU/GPL v2 or later
  * @link        https://breezingforms-ng.vcmb.fr
  * @since       6.0.0  Joomla 6 compatibility rewrite.
@@ -291,6 +291,30 @@ class StorageController extends BaseFormController
     public function apply($key = null, $urlVar = null)
     {
         return $this->save($key, $urlVar);
+    }
+
+    /**
+     * Ajax: preview CSV/XLSX headers to create storage fields.
+     */
+    public function previewHeaders(): void
+    {
+        $this->checkToken('post');
+
+        $file = $this->input->files->get('csv_file', null, 'array');
+        $delimiter = $this->input->post->getString('csv_delimiter', ',');
+
+        /** @var StorageModel $model */
+        $model = $this->getModel('Storage', 'Administrator', ['ignore_request' => true]);
+        $headers = [];
+
+        if ($model && is_array($file) && !empty($file['name'])) {
+            $headers = $model->extractHeaderColumnsFromUpload($file, $delimiter);
+        }
+
+        $app = Factory::getApplication();
+        $app->setHeader('Content-Type', 'application/json', true);
+        echo new JsonResponse($headers);
+        $app->close();
     }
 
 

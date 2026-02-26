@@ -4,7 +4,7 @@
  * @package     BreezingCommerce
  * @author      Markus Bopp / XDA+GIL
  * @link        https://breezingforms-ng.vcmb.fr
- * @Copyright (C) 2026 by XDA+GIL
+ * @Copyright © 2026 by XDA+GIL
  * @license     GNU/GPL
  */
 

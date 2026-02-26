@@ -4,7 +4,7 @@
  * @package     Extension
  * @author      Xavier DANO
  * @link        
- * @copyright   Copyright (C) 2026 by XDA+GIL
+ * @copyright   Copyright © 2026 by XDA+GIL
  * @license     GNU/GPL
  */
 

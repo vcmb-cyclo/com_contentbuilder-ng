@@ -4,7 +4,7 @@
  * @package     ContentBuilder NG
  * @author      Markus Bopp / XDA+GIL
  * @link        https://breezingforms-ng.vcmb.fr
- * @copyright   Copyright (C) 2026 by XDA+GIL 
+ * @copyright   Copyright © 2026 by XDA+GIL 
  * @license     GNU/GPL
  */
 
@@ -17,6 +17,7 @@ use Joomla\CMS\Editor\Editor;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Router\Route;
+use Joomla\CMS\Uri\Uri;
 use CB\Component\Contentbuilderng\Administrator\Helper\ContentbuilderLegacyHelper;
 ?>
 <?php
@@ -57,6 +58,126 @@ $listOrder = (string) ($this->listOrder ?? 'ordering');
 $listDirn  = strtolower((string) ($this->listDirn ?? 'asc'));
 $listDirn  = ($listDirn === 'desc') ? 'desc' : 'asc';
 $formId    = (int) ($this->item->id ?? 0);
+$apiEndpointBase = Uri::root() . 'index.php?option=com_contentbuilderng&task=api.display&id=' . $formId;
+$apiPreviewQuery = '';
+$apiPreviewUntil = time() + 600;
+$apiPreviewActorId = (int) ($app->getIdentity()->id ?? 0);
+$apiPreviewActorName = trim((string) ($app->getIdentity()->name ?? ''));
+if ($apiPreviewActorName === '') {
+    $apiPreviewActorName = trim((string) ($app->getIdentity()->username ?? ''));
+}
+if ($apiPreviewActorName !== '') {
+    $apiPreviewPayload = $formId . '|' . $apiPreviewUntil . '|' . $apiPreviewActorId . '|' . $apiPreviewActorName;
+    $apiPreviewSig = hash_hmac('sha256', $apiPreviewPayload, (string) $app->get('secret'));
+    if ($apiPreviewSig !== '') {
+        $apiPreviewQuery = '&cb_preview=1'
+            . '&cb_preview_until=' . $apiPreviewUntil
+            . '&cb_preview_actor_id=' . $apiPreviewActorId
+            . '&cb_preview_actor_name=' . rawurlencode($apiPreviewActorName)
+            . '&cb_preview_sig=' . $apiPreviewSig;
+    }
+}
+$apiExampleRecordId = 123;
+$apiExampleFields = [
+    'Email' => 'john@example.com',
+    'Amount' => '125.50',
+];
+
+try {
+    $formType = trim((string) ($this->item->type ?? ''));
+    $formReferenceId = trim((string) ($this->item->reference_id ?? ''));
+
+    if ($formId > 0 && $formType !== '' && $formReferenceId !== '') {
+        $db = Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
+        $query = $db->getQuery(true)
+            ->select($db->quoteName('record_id'))
+            ->from($db->quoteName('#__contentbuilderng_records'))
+            ->where($db->quoteName('type') . ' = ' . $db->quote($formType))
+            ->where($db->quoteName('reference_id') . ' = ' . $db->quote($formReferenceId))
+            ->order($db->quoteName('record_id') . ' DESC');
+        $db->setQuery($query, 0, 30);
+        $candidateRecordIds = array_map('intval', (array) $db->loadColumn());
+
+        $apiForm = $this->item->form ?? null;
+        if (!is_object($apiForm)) {
+            $apiForm = ContentbuilderLegacyHelper::getForm($formType, $formReferenceId);
+        }
+
+        if (is_object($apiForm) && method_exists($apiForm, 'getRecord')) {
+            $bestExampleRecordId = 0;
+            $bestExampleFields = [];
+            $bestExampleScore = -1;
+
+            foreach ($candidateRecordIds as $candidateRecordId) {
+                if ($candidateRecordId < 1) {
+                    continue;
+                }
+
+                $recordItems = $apiForm->getRecord($candidateRecordId, false, -1, true);
+                if (!is_array($recordItems) || empty($recordItems)) {
+                    continue;
+                }
+
+                $detectedFields = [];
+                $nonEmptyValues = 0;
+
+                foreach ($recordItems as $recordItem) {
+                    if (!is_object($recordItem)) {
+                        continue;
+                    }
+
+                    $fieldName = trim((string) ($recordItem->recName ?? ''));
+                    if ($fieldName === '' || isset($detectedFields[$fieldName])) {
+                        continue;
+                    }
+
+                    $fieldValue = (string) ($recordItem->recValue ?? '');
+                    if (trim($fieldValue) !== '') {
+                        $nonEmptyValues++;
+                    }
+
+                    $detectedFields[$fieldName] = $fieldValue;
+                    if (count($detectedFields) >= 4) {
+                        break;
+                    }
+                }
+
+                if (empty($detectedFields)) {
+                    continue;
+                }
+
+                // Prefer rows with real non-empty values and more available fields.
+                $candidateScore = ($nonEmptyValues * 100) + count($detectedFields);
+                if ($candidateScore <= $bestExampleScore) {
+                    continue;
+                }
+
+                $bestExampleRecordId = $candidateRecordId;
+                $bestExampleFields = $detectedFields;
+                $bestExampleScore = $candidateScore;
+            }
+
+            if ($bestExampleRecordId > 0 && !empty($bestExampleFields)) {
+                $apiExampleRecordId = $bestExampleRecordId;
+                $apiExampleFields = $bestExampleFields;
+            }
+        }
+    }
+} catch (\Throwable $e) {
+    // Keep static fallback examples when dynamic extraction is not possible.
+}
+
+$apiExamplePayloadJson = (string) json_encode(
+    ['fields' => $apiExampleFields],
+    JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES
+);
+$apiExampleDetailDisplayUrl = $apiEndpointBase . '&record_id=' . (int) $apiExampleRecordId;
+$apiExampleListDisplayUrl = $apiEndpointBase . '&list[limit]=20&list[start]=0';
+$apiExampleDetailUrl = $apiExampleDetailDisplayUrl . $apiPreviewQuery;
+$apiExampleListUrl = $apiExampleListDisplayUrl . $apiPreviewQuery;
+$apiExampleUpdateUrl = $apiEndpointBase . '&record_id=' . (int) $apiExampleRecordId;
+$apiExampleVerboseDisplayUrl = $apiExampleDetailDisplayUrl . '&verbose=1';
+$apiExampleVerboseUrl = $apiExampleVerboseDisplayUrl . $apiPreviewQuery;
 $isBreezingFormsType = in_array(
     (string) ($this->item->type ?? ''),
     ['com_breezingforms', 'com_breezingforms_ng'],
@@ -105,6 +226,7 @@ $permissionColumns = [
     ['key' => 'fullarticle', 'label' => 'COM_CONTENTBUILDERNG_PERM_FULL_ARTICLE', 'tip' => 'COM_CONTENTBUILDERNG_PERM_FULL_ARTICLE_TIP'],
     ['key' => 'language', 'label' => 'COM_CONTENTBUILDERNG_PERM_CHANGE_LANGUAGE', 'tip' => 'COM_CONTENTBUILDERNG_PERM_CHANGE_LANGUAGE_TIP'],
     ['key' => 'rating', 'label' => 'COM_CONTENTBUILDERNG_PERM_RATING', 'tip' => 'COM_CONTENTBUILDERNG_PERM_RATING_TIP'],
+    ['key' => 'api', 'label' => 'COM_CONTENTBUILDERNG_PERM_API', 'tip' => 'COM_CONTENTBUILDERNG_PERM_API_TIP'],
 ];
 
 $defaultCheckedForNewPermissions = ['listaccess' => true, 'view' => true, 'new' => true];
@@ -3046,6 +3168,60 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
         }
 
         echo HTMLHelper::_('uitab.endTab');
+        echo HTMLHelper::_('uitab.addTab', 'view-pane', 'tab6', Text::_('COM_CONTENTBUILDERNG_API_TAB_TITLE'));
+        ?>
+        <h3 class="mb-3"><?php echo Text::_('COM_CONTENTBUILDERNG_API_TAB_TITLE'); ?></h3>
+        <p class="text-muted mb-3">
+            <?php echo Text::_('COM_CONTENTBUILDERNG_API_TAB_INTRO'); ?>
+        </p>
+        <div class="alert alert-info mb-3">
+            <?php echo Text::_('COM_CONTENTBUILDERNG_API_TAB_PERMISSION_HINT'); ?>
+        </div>
+        <table class="table table-striped">
+            <tr>
+                <th style="width:180px;"><?php echo Text::_('COM_CONTENTBUILDERNG_API_METHOD'); ?></th>
+                <th><?php echo Text::_('COM_CONTENTBUILDERNG_API_ENDPOINT'); ?></th>
+                <th><?php echo Text::_('COM_CONTENTBUILDERNG_API_DESCRIPTION'); ?></th>
+            </tr>
+            <tr>
+                <td><code>GET</code></td>
+                <td>
+                    <a href="<?php echo htmlspecialchars($apiExampleDetailUrl, ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener noreferrer">
+                        <code><?php echo htmlspecialchars($apiExampleDetailDisplayUrl, ENT_QUOTES, 'UTF-8'); ?></code>
+                    </a>
+                </td>
+                <td><?php echo Text::_('COM_CONTENTBUILDERNG_API_GET_DETAIL_DESC'); ?></td>
+            </tr>
+            <tr>
+                <td><code>GET</code></td>
+                <td>
+                    <a href="<?php echo htmlspecialchars($apiExampleListUrl, ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener noreferrer">
+                        <code><?php echo htmlspecialchars($apiExampleListDisplayUrl, ENT_QUOTES, 'UTF-8'); ?></code>
+                    </a>
+                </td>
+                <td><?php echo Text::_('COM_CONTENTBUILDERNG_API_GET_LIST_DESC'); ?></td>
+            </tr>
+            <tr>
+                <td><code>PUT</code> / <code>PATCH</code> / <code>POST</code></td>
+                <td>
+                    <a href="<?php echo htmlspecialchars($apiExampleUpdateUrl, ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener noreferrer">
+                        <code><?php echo htmlspecialchars($apiExampleUpdateUrl, ENT_QUOTES, 'UTF-8'); ?></code>
+                    </a>
+                </td>
+                <td><?php echo Text::_('COM_CONTENTBUILDERNG_API_UPDATE_DESC'); ?></td>
+            </tr>
+        </table>
+        <div class="alert alert-secondary py-2 mb-3">
+            <strong><?php echo Text::_('COM_CONTENTBUILDERNG_API_VERBOSE_OPTION_TITLE'); ?></strong>
+            <?php echo Text::_('COM_CONTENTBUILDERNG_API_VERBOSE_OPTION_TEXT'); ?>
+            <a href="<?php echo htmlspecialchars($apiExampleVerboseUrl, ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener noreferrer">
+                <code><?php echo htmlspecialchars($apiExampleVerboseDisplayUrl, ENT_QUOTES, 'UTF-8'); ?></code>
+            </a>
+        </div>
+        <label for="cb_api_example_payload" class="form-label"><strong>JSON</strong></label>
+        <textarea id="cb_api_example_payload" class="form-control" rows="7" readonly="readonly"><?php echo htmlspecialchars($apiExamplePayloadJson, ENT_QUOTES, 'UTF-8'); ?></textarea>
+        <?php
+        echo HTMLHelper::_('uitab.endTab');
         echo HTMLHelper::_('uitab.addTab', 'view-pane', 'tab7', Text::_('COM_CONTENTBUILDERNG_EMAIL_TEMPLATES'));
         ?>
         <div class="mb-3">
@@ -3858,6 +4034,7 @@ $viewTabTooltips = [
     'tab1' => Text::_('COM_CONTENTBUILDERNG_TAB_TIP_LIST_STATES'),
     'tab3' => Text::_('COM_CONTENTBUILDERNG_TAB_TIP_DETAILS_TEMPLATE') . ' + ' . Text::_('COM_CONTENTBUILDERNG_TAB_TIP_DETAILS_PREPARE'),
     'tab5' => Text::_('COM_CONTENTBUILDERNG_TAB_TIP_EDITABLE_TEMPLATE'),
+    'tab6' => Text::_('COM_CONTENTBUILDERNG_TAB_TIP_API'),
     'tab7' => Text::_('COM_CONTENTBUILDERNG_TAB_TIP_EMAIL_TEMPLATES'),
     'tab8' => Text::_('COM_CONTENTBUILDERNG_TAB_TIP_PERMISSIONS'),
 ];

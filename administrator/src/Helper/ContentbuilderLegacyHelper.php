@@ -4,7 +4,7 @@
  * @author      Markus Bopp / XDA+GIL
  * @link        https://breezingforms-ng.vcmb.fr
  * @license     GNU/GPL
- * @copyright   Copyright (C) 2026 by XDA+GIL
+ * @copyright   Copyright © 2026 by XDA+GIL
  */
 
 
@@ -2845,6 +2845,12 @@ final class ContentbuilderLegacyHelper
             }
             $permissions['own' . $suffix]['rating'] = array('own' => true, 'form_id' => $form_id);
         }
+        if (isset($config['own' . $suffix]) && isset($config['own' . $suffix]['api']) && $config['own' . $suffix]['api']) {
+            if (!isset($permissions['own' . $suffix])) {
+                $permissions['own' . $suffix] = array();
+            }
+            $permissions['own' . $suffix]['api'] = array('own' => true, 'form_id' => $form_id, 'record_id' => $record_id);
+        }
         //}
 
         $db->setQuery("Select id From #__usergroups");
@@ -2911,6 +2917,12 @@ final class ContentbuilderLegacyHelper
                     $permissions[$group['id']] = array();
                 }
                 $permissions[$group['id']]['rating'] = true;
+            }
+            if (isset($config['permissions' . $suffix][$group['id']]) && isset($config['permissions' . $suffix][$group['id']]['api']) && $config['permissions' . $suffix][$group['id']]['api']) {
+                if (!isset($permissions[$group['id']])) {
+                    $permissions[$group['id']] = array();
+                }
+                $permissions[$group['id']]['api'] = true;
             }
         }
 

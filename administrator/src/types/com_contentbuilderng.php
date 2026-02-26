@@ -4,7 +4,7 @@
  * @author      Markus Bopp / XDA+GIL
  * @link        https://breezingforms-ng.vcmb.fr
  * @license     GNU/GPL
- * @copyright   Copyright (C) 2026 by XDA+GIL
+ * @copyright   Copyright © 2026 by XDA+GIL
  */
 
 namespace CB\Component\Contentbuilderng\Administrator\types;

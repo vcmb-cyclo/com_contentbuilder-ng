@@ -4,7 +4,7 @@
  * @package     ContentBuilder NG
  * @author      Markus Bopp / XDA+GIL
  * @link        https://breezingforms-ng.vcmb.fr
- * @copyright   Copyright (C) 2026 by XDA+GIL 
+ * @copyright   Copyright © 2026 by XDA+GIL 
  * @license     GNU/GPL
  */
 
@@ -15,6 +15,7 @@ use Joomla\CMS\Factory;
 use Joomla\CMS\Application\AdministratorApplication;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\HTML\HTMLHelper;
+use Joomla\CMS\Session\Session;
 use CB\Component\Contentbuilderng\Administrator\Helper\ContentbuilderngHelper;
 
 /** @var AdministratorApplication $app */
@@ -98,6 +99,10 @@ $wa->addInlineStyle(
     . '.cb-storage-pagination .cb-storage-pages .pagination ul{display:flex;justify-content:flex-end;flex-wrap:wrap;gap:.35rem;margin:0;padding:0}'
     . '.cb-save-animate{background-color:var(--alert-heading-bg,var(--bs-success,#198754))!important;background-image:none!important;border-color:var(--bs-success,#198754)!important;color:#fff!important;filter:brightness(1.2)!important;box-shadow:0 0 0 .38rem rgba(25,135,84,.36)!important;transition:none!important}'
     . '.cb-save-animate .fa-check,.cb-save-animate .fa-xmark,.cb-save-animate .fa-xmark-new{color:#fff!important}'
+    . '.cb-csv-preview-panel{margin-top:1rem;border:1px solid #dbe3ee;border-radius:.5rem;background:#fff}'
+    . '.cb-csv-preview-panel .cb-csv-preview-head{padding:.5rem .75rem;border-bottom:1px solid #edf1f6;font-weight:600}'
+    . '.cb-csv-preview-panel .table{margin-bottom:0}'
+    . '.cb-csv-preview-panel .table td,.cb-csv-preview-panel .table th{vertical-align:middle}'
 );
 
 ?>
@@ -665,9 +670,18 @@ echo HTMLHelper::_('uitab.addTab', 'view-pane', 'tab0', Text::_('COM_CONTENTBUIL
                                     data-bs-placement="top"
                                     aria-controls="csvUpload"
                                     aria-expanded="false"
+                                    data-cb-default-text="<?php echo htmlspecialchars(Text::_('COM_CONTENTBUILDERNG_STORAGE_UPDATE_FROM_CSV'), ENT_QUOTES, 'UTF-8'); ?>"
+                                    data-cb-create-text="<?php echo htmlspecialchars(Text::_('COM_CONTENTBUILDERNG_STORAGE_CREATE_FROM_FILE'), ENT_QUOTES, 'UTF-8'); ?>"
+                                    data-cb-new-storage="<?php echo ((int) $storageId === 0) ? '1' : '0'; ?>"
+                                    data-cb-preview-label="<?php echo htmlspecialchars(Text::_('COM_CONTENTBUILDERNG_STORAGE_PREVIEW_FROM_FILE'), ENT_QUOTES, 'UTF-8'); ?>"
+                                    data-cb-token="<?php echo Session::getFormToken(); ?>"
                                 >
                                     <i class="fa fa-file-excel me-1" aria-hidden="true"></i>
-                                    <?php echo Text::_('COM_CONTENTBUILDERNG_STORAGE_UPDATE_FROM_CSV'); ?>
+                                    <span class="cb-csv-button-label">
+                                        <?php echo ((int) $storageId === 0)
+                                            ? Text::_('COM_CONTENTBUILDERNG_STORAGE_CREATE_FROM_FILE')
+                                            : Text::_('COM_CONTENTBUILDERNG_STORAGE_UPDATE_FROM_CSV'); ?>
+                                    </span>
                                 </button>
                             </td>
                         </tr>
@@ -767,6 +781,19 @@ echo HTMLHelper::_('uitab.addTab', 'view-pane', 'tab0', Text::_('COM_CONTENTBUIL
                                     <option value="KOI8-RU">KOI8-RU</option>
                                     <option value="EUC-JP">EUC-JP</option>
                                 </select>
+                                <div id="cbCsvPreviewPanel" class="cb-csv-preview-panel" style="display:none;">
+                                    <div class="cb-csv-preview-head"><?php echo Text::_('COM_CONTENTBUILDERNG_STORAGE_PREVIEW_FROM_FILE'); ?></div>
+                                    <table class="table table-sm table-striped">
+                                        <thead>
+                                            <tr>
+                                                <th style="width:40%;"><?php echo Text::_('COM_CONTENTBUILDERNG_NAME'); ?></th>
+                                                <th style="width:45%;"><?php echo Text::_('COM_CONTENTBUILDERNG_STORAGE_TITLE'); ?></th>
+                                                <th style="width:15%;"><?php echo Text::_('JSTATUS'); ?></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="cbCsvPreviewBody"></tbody>
+                                    </table>
+                                </div>
                             </td>
                         </tr>
                     </table>
@@ -1091,3 +1118,166 @@ echo HTMLHelper::_('uitab.addTab', 'view-pane', 'tab0', Text::_('COM_CONTENTBUIL
     <input type="hidden" name="tabStartOffset" value="<?php echo $session->get('tabStartOffset', 0); ?>" />
     <?php echo HTMLHelper::_('form.token'); ?>
 </form>
+<script>
+(function () {
+    var fileInput = document.getElementById('csv_file');
+    var toggleButton = document.getElementById('csvToggleButton');
+    var fieldsTable = document.querySelector('.cb-storage-fields-table');
+    var previewPanel = document.getElementById('cbCsvPreviewPanel');
+    var previewBody = document.getElementById('cbCsvPreviewBody');
+    if (!fileInput || !toggleButton || !fieldsTable || !previewPanel || !previewBody) {
+        return;
+    }
+
+    var delimiterInput = document.getElementById('csv_delimiter');
+    var labelElement = toggleButton.querySelector('.cb-csv-button-label');
+    var defaultText = toggleButton.dataset.cbDefaultText || (labelElement ? labelElement.textContent : toggleButton.textContent);
+    var createText = toggleButton.dataset.cbCreateText || defaultText;
+    var isNewStorage = toggleButton.dataset.cbNewStorage === '1';
+    var tokenName = toggleButton.dataset.cbToken || '';
+    var previewUrl = 'index.php?option=com_contentbuilderng&task=storage.previewHeaders&format=json';
+
+    var previewNames = new Set();
+
+    function updateButtonLabel(hasFile) {
+        if (!labelElement) {
+            return;
+        }
+
+        var text = defaultText;
+        if (isNewStorage) {
+            text = createText;
+        }
+
+        labelElement.textContent = text;
+        toggleButton.setAttribute('title', text);
+        toggleButton.setAttribute('data-bs-original-title', text);
+        toggleButton.dataset.bsOriginalTitle = text;
+    }
+
+    function removePreviewRows() {
+        previewBody.innerHTML = '';
+        previewPanel.style.display = 'none';
+        previewNames.clear();
+    }
+
+    function getExistingFieldNames() {
+        var inputs = fieldsTable.querySelectorAll('input[name^="itemNames"]');
+        var names = new Set();
+        inputs.forEach(function (input) {
+            var val = (input.value || '').trim();
+            if (val !== '') {
+                names.add(val.toLowerCase());
+            }
+        });
+        return names;
+    }
+
+    function sanitizeName(value) {
+        var name = value.replace(/[^a-zA-Z0-9_\s]/g, '_');
+        name = name.replace(/[\s\r\n\t]+/g, '_');
+        name = name.replace(/^([0-9\s])/, function (match) {
+            return 'field' + match;
+        });
+        if (name === '') {
+            name = 'field' + Math.floor(Math.random() * 1000000);
+        }
+        return name;
+    }
+
+    function appendPreviewRow(name, title, statusText) {
+        var row = document.createElement('tr');
+        row.className = 'table-info';
+        var cells = [
+            '<code>' + name + '</code>',
+            '<span>' + (title || name) + '</span>',
+            '<span class="text-muted small">' + statusText + '</span>'
+        ];
+
+        row.innerHTML = cells.map(function (cell) {
+            return '<td>' + cell + '</td>';
+        }).join('');
+        previewBody.appendChild(row);
+    }
+
+    function renderPreview(columns) {
+        if (!Array.isArray(columns) || !columns.length) {
+            removePreviewRows();
+            return;
+        }
+        var existing = getExistingFieldNames();
+
+        removePreviewRows();
+        previewPanel.style.display = '';
+
+        columns.forEach(function (raw) {
+            var column = (raw || '').replace(/\uFEFF/g, '').trim();
+            if (column === '') {
+                return;
+            }
+
+            var sanitized = sanitizeName(column);
+            var key = sanitized.toLowerCase();
+            if (existing.has(key) || previewNames.has(key)) {
+                appendPreviewRow(sanitized, column, '<?php echo addslashes(Text::_('COM_CONTENTBUILDERNG_SKIPPED')); ?>');
+                return;
+            }
+
+            previewNames.add(key);
+            existing.add(key);
+
+            appendPreviewRow(sanitized, column, '<?php echo addslashes(Text::_('COM_CONTENTBUILDERNG_NEW')); ?>');
+        });
+
+        if (!previewBody.children.length) {
+            removePreviewRows();
+        }
+    }
+
+    function handleFileChange() {
+        var hasFile = fileInput.files && fileInput.files.length > 0;
+        updateButtonLabel(hasFile);
+        if (!hasFile) {
+            removePreviewRows();
+            return;
+        }
+        if (!tokenName) {
+            removePreviewRows();
+            return;
+        }
+
+        var file = fileInput.files[0];
+        var formData = new FormData();
+        formData.append('csv_file', file, file.name || 'import.csv');
+        formData.append('csv_delimiter', (delimiterInput && delimiterInput.value) ? delimiterInput.value : ',');
+        formData.append(tokenName, '1');
+
+        fetch(previewUrl, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+            .then(function (response) {
+                if (!response.ok) {
+                    throw new Error('preview failed');
+                }
+                return response.json();
+            })
+            .then(function (payload) {
+                if (payload && payload.success && Array.isArray(payload.data)) {
+                    renderPreview(payload.data);
+                } else {
+                    removePreviewRows();
+                }
+            })
+            .catch(function () {
+                removePreviewRows();
+            });
+    }
+
+    fileInput.addEventListener('change', handleFileChange);
+    updateButtonLabel(fileInput.files && fileInput.files.length > 0);
+})();
+</script>

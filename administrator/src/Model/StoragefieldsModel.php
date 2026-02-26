@@ -4,7 +4,7 @@
  *
  * @package     ContentBuilder NG
  * @subpackage  Administrator.Model
- * @copyright   Copyright (C) 2011–2026 by XDA+GIL
+ * @copyright   Copyright © 2011–2026 by XDA+GIL
  * @license     GNU/GPL v2 or later
  */
 

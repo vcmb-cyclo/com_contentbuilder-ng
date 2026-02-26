@@ -8,7 +8,7 @@
  * @package     ContentBuilder NG
  * @subpackage  Administrator.Model
  * @author      Markus Bopp / XDA+GIL
- * @copyright   Copyright (C) 2011–2026 by XDA+GIL
+ * @copyright   Copyright © 2011–2026 by XDA+GIL
  * @license     GNU/GPL v2 or later
  * @link        https://breezingforms-ng.vcmb.fr
  * @since       6.0.0  Joomla 6 compatibility rewrite.
@@ -1010,6 +1010,76 @@ class StorageModel extends AdminModel
                 $spreadsheet->disconnectWorksheets();
             }
         }
+    }
+
+    /**
+     * Extract header columns from an uploaded CSV/XLS/XLSX file.
+     *
+     * @param array<string,mixed> $file
+     * @return array<int,string>
+     */
+    public function extractHeaderColumnsFromUpload(array $file, string $delimiter = ','): array
+    {
+        if (empty($file['name']) || empty($file['tmp_name'])) {
+            return [];
+        }
+
+        $safeName = File::makeSafe((string) $file['name']);
+        $extension = strtolower((string) pathinfo($safeName, PATHINFO_EXTENSION));
+        if (!in_array($extension, ['csv', 'xlsx', 'xls'], true)) {
+            return [];
+        }
+
+        $dest = JPATH_SITE . '/tmp/' . md5(mt_rand(0, mt_getrandmax())) . '_' . $safeName;
+        $uploaded = File::upload((string) $file['tmp_name'], $dest, false, true);
+        if (!$uploaded) {
+            return [];
+        }
+
+        $columns = [];
+
+        try {
+            if ($extension === 'csv') {
+                $handle = fopen($dest, 'rb');
+                if ($handle !== false) {
+                    $sep = ($delimiter !== '') ? $delimiter : ',';
+                    $sep = $sep[0] ?? ',';
+                    $columns = fgetcsv($handle, 1000000, $sep, '"') ?: [];
+                    fclose($handle);
+                }
+            } else {
+                VendorHelper::load();
+                $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($dest);
+                $sheet = $spreadsheet->getActiveSheet();
+                $highestColumn = $sheet->getHighestColumn();
+                $row = $sheet->rangeToArray('A1:' . $highestColumn . '1', null, true, false);
+                if (!empty($row) && isset($row[0]) && is_array($row[0])) {
+                    $columns = $row[0];
+                }
+                $spreadsheet->disconnectWorksheets();
+            }
+        } catch (\Throwable $e) {
+            Logger::exception($e);
+            $columns = [];
+        } finally {
+            if (is_file($dest)) {
+                File::delete($dest);
+            }
+        }
+
+        $normalized = [];
+        foreach ($columns as $column) {
+            $value = trim((string) $column);
+            if ($value !== '') {
+                $normalized[] = $value;
+            }
+        }
+
+        if (!empty($normalized)) {
+            $normalized[0] = preg_replace('/^\xEF\xBB\xBF/', '', $normalized[0]);
+        }
+
+        return $normalized;
     }
 
     function utf8_fopen_read($fileName, $encoding)
