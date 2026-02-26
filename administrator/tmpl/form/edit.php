@@ -107,6 +107,88 @@ $permissionColumns = [
 
 $defaultCheckedForNewPermissions = ['listaccess' => true, 'view' => true, 'new' => true];
 
+$editablePrepareSnippetOptions = [];
+$availableEditablePrepareElements = is_array($this->all_elements ?? null) ? $this->all_elements : [];
+$sourceElementNamesByReference = [];
+
+if (is_object($this->item->form ?? null) && method_exists($this->item->form, 'getElementNames')) {
+    try {
+        $sourceElementNames = (array) $this->item->form->getElementNames();
+    } catch (\Throwable $e) {
+        $sourceElementNames = [];
+    }
+
+    foreach ($sourceElementNames as $referenceId => $itemName) {
+        $itemName = trim((string) $itemName);
+
+        if ($itemName !== '') {
+            $sourceElementNamesByReference[(string) $referenceId] = $itemName;
+        }
+    }
+}
+
+$hasPublishedEditableElements = false;
+foreach ($availableEditablePrepareElements as $elementRow) {
+    if (!is_object($elementRow)) {
+        continue;
+    }
+
+    if ((int) ($elementRow->published ?? 0) !== 1) {
+        continue;
+    }
+
+    if (strtolower((string) ($elementRow->type ?? '')) === 'hidden') {
+        continue;
+    }
+
+    if ((int) ($elementRow->editable ?? 0) === 1) {
+        $hasPublishedEditableElements = true;
+        break;
+    }
+}
+
+$seenPrepareItemNames = [];
+foreach ($availableEditablePrepareElements as $elementRow) {
+    if (!is_object($elementRow)) {
+        continue;
+    }
+
+    if ((int) ($elementRow->published ?? 0) !== 1) {
+        continue;
+    }
+
+    if (strtolower((string) ($elementRow->type ?? '')) === 'hidden') {
+        continue;
+    }
+
+    if ($hasPublishedEditableElements && (int) ($elementRow->editable ?? 0) !== 1) {
+        continue;
+    }
+
+    $referenceId = (string) ($elementRow->reference_id ?? '');
+    if ($referenceId === '') {
+        continue;
+    }
+
+    $itemName = trim((string) ($sourceElementNamesByReference[$referenceId] ?? $referenceId));
+    if ($itemName === '' || isset($seenPrepareItemNames[$itemName])) {
+        continue;
+    }
+    $seenPrepareItemNames[$itemName] = true;
+
+    $itemNameEscaped = str_replace(['\\', '"'], ['\\\\', '\\"'], $itemName);
+    $itemLabel = trim((string) ($elementRow->label ?? ''));
+    $optionPrefix = $itemLabel !== '' ? ($itemLabel . ' [' . $itemName . ']') : $itemName;
+
+    foreach (['value', 'label'] as $slot) {
+        $path = '$items["' . $itemNameEscaped . '"]["' . $slot . '"]';
+        $editablePrepareSnippetOptions[] = [
+            'text' => $optionPrefix . ' -> ' . $slot,
+            'snippet' => $path . ' = ' . $path . ';',
+        ];
+    }
+}
+
 $renderCheckbox = static function (string $name, string $id, bool $checked = false, string $value = '1', array $attributes = []): string {
     $html = '<span class="form-check d-inline-block mb-0">';
     $html .= '<input class="form-check-input" type="checkbox"';
@@ -147,9 +229,55 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
     const cbIsBreezingFormsType = <?php echo $isBreezingFormsType ? 'true' : 'false'; ?>;
     const cbBreezingFormsEditableToken = <?php echo json_encode($breezingFormsEditableToken, JSON_UNESCAPED_UNICODE); ?>;
     const cbEditByTypeEnableConfirm = <?php echo json_encode(Text::_('COM_CONTENTBUILDERNG_TYPE_EDIT_ENABLE_BF_CONFIRM'), JSON_UNESCAPED_UNICODE); ?>;
+    const cbFirefoxVersionMatch = String(window.navigator.userAgent || '').match(/\bfirefox\/(\d+)/i);
+    const cbFirefoxMajorVersion = cbFirefoxVersionMatch ? parseInt(cbFirefoxVersionMatch[1], 10) : 0;
     let cbLastRowId = '';
     let cbAjaxBusy = false;
     let cbSaveButtonTimer = null;
+
+    function cbSetupFirefoxTinyMceIframeReloadGuard() {
+        if (cbFirefoxMajorVersion < 148) {
+            return;
+        }
+
+        var iframeProto = window.HTMLIFrameElement && window.HTMLIFrameElement.prototype;
+        if (!iframeProto || typeof iframeProto.addEventListener !== 'function') {
+            return;
+        }
+
+        if (iframeProto.addEventListener.__cbTinyMceReloadGuardApplied === true) {
+            return;
+        }
+
+        var originalAddEventListener = iframeProto.addEventListener;
+        iframeProto.addEventListener = function(type, listener, options) {
+            try {
+                if (type === 'load' && typeof listener === 'function') {
+                    var listenerCode = Function.prototype.toString.call(listener);
+                    var stack = String((new Error()).stack || '').toLowerCase();
+                    var looksLikeJoomlaTinyReloadListener =
+                        listenerCode.indexOf('debounceReInit') !== -1
+                        || stack.indexOf('/media/plg_editors_tinymce/js/tinymce.js') !== -1;
+
+                    if (looksLikeJoomlaTinyReloadListener) {
+                        return;
+                    }
+                }
+            } catch (e) {
+                // no-op: keep default registration path
+            }
+
+            return originalAddEventListener.call(this, type, listener, options);
+        };
+
+        iframeProto.addEventListener.__cbTinyMceReloadGuardApplied = true;
+    }
+
+    // TODO: Remove this workaround once the upstream issue is fixed.
+    // Reference (observed on Firefox 148+): repeated TinyMCE re-init loop on Joomla admin form edit
+    // via media/plg_editors_tinymce/js/tinymce.js (listenIframeReload -> debounceReInit),
+    // with recursive editor init path also crossing media/vendor/tinymce/plugins/wordcount/plugin.js setup.
+    cbSetupFirefoxTinyMceIframeReloadGuard();
 
     function cbRememberViewport(rowId) {
         var payload = {
@@ -778,22 +906,38 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
     function cbSetEditorFieldValue(fieldName, value) {
         var stringValue = String(value || '');
         var editorId = 'jform_' + fieldName;
+        var updatedViaEditor = false;
 
         if (window.Joomla && Joomla.editors && Joomla.editors.instances) {
             var instance = Joomla.editors.instances[editorId] || Joomla.editors.instances[fieldName];
 
             if (instance) {
-                if (typeof instance.setValue === 'function') {
-                    instance.setValue(stringValue);
-                } else if (typeof instance.setContent === 'function') {
-                    instance.setContent(stringValue);
+                var currentValue = '';
+                if (typeof instance.getValue === 'function') {
+                    currentValue = String(instance.getValue() || '');
+                } else if (typeof instance.getContent === 'function') {
+                    currentValue = String(instance.getContent() || '');
+                }
+
+                if (currentValue !== stringValue) {
+                    if (typeof instance.setValue === 'function') {
+                        instance.setValue(stringValue);
+                        updatedViaEditor = true;
+                    } else if (typeof instance.setContent === 'function') {
+                        instance.setContent(stringValue);
+                        updatedViaEditor = true;
+                    }
                 }
             }
         }
 
-        document.querySelectorAll('textarea[name="jform[' + fieldName + ']"], input[name="jform[' + fieldName + ']"]').forEach(function(input) {
-            input.value = stringValue;
-        });
+        if (!updatedViaEditor) {
+            document.querySelectorAll('textarea[name="jform[' + fieldName + ']"], input[name="jform[' + fieldName + ']"]').forEach(function(input) {
+                if (String(input.value || '') !== stringValue) {
+                    input.value = stringValue;
+                }
+            });
+        }
     }
 
     function cbIsBreezingFormsPlaceholder(value) {
@@ -808,7 +952,10 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
 
         if (checkbox.checked) {
             if (cbIsBreezingFormsType && cbBreezingFormsEditableToken.trim() !== '') {
-                cbSetEditorFieldValue('editable_template', cbBreezingFormsEditableToken);
+                var currentEditableTemplate = cbGetEditorFieldValue('editable_template');
+                if (String(currentEditableTemplate || '') !== String(cbBreezingFormsEditableToken || '')) {
+                    cbSetEditorFieldValue('editable_template', cbBreezingFormsEditableToken);
+                }
             }
             return;
         }
@@ -930,6 +1077,45 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
         }
 
         var hint = document.getElementById('cb_email_create_sample_hint');
+        if (hint) {
+            hint.classList.remove('d-none');
+        }
+    }
+
+    function cbAppendLineToEditorField(fieldName, line) {
+        var current = cbGetEditorFieldValue(fieldName);
+        var next = String(current || '');
+
+        if (next && !/(\r\n|\r|\n)$/.test(next)) {
+            next += '\n';
+        }
+
+        next += String(line || '');
+        cbSetEditorFieldValue(fieldName, next);
+    }
+
+    function cbInsertEditablePrepareSnippet() {
+        cbInsertPrepareSnippet('editable_prepare', 'cb_editable_prepare_snippet_select', 'cb_editable_prepare_snippet_hint');
+    }
+
+    function cbInsertDetailsPrepareSnippet() {
+        cbInsertPrepareSnippet('details_prepare', 'cb_details_prepare_snippet_select', 'cb_details_prepare_snippet_hint');
+    }
+
+    function cbInsertPrepareSnippet(fieldName, selectId, hintId) {
+        var select = document.getElementById(selectId);
+        if (!select) {
+            return;
+        }
+
+        var snippet = String(select.value || '').trim();
+        if (!snippet) {
+            return;
+        }
+
+        cbAppendLineToEditorField(fieldName, snippet);
+
+        var hint = document.getElementById(hintId);
         if (hint) {
             hint.classList.remove('d-none');
         }
@@ -2474,6 +2660,37 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
             $this->item->details_prepare .= '// $items["ITEMNAME"]["label"] = "<i>".$items["ITEMNAME"]["label"]."</i>";' . "\n";
         }
 
+        ?>
+        <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+            <label class="form-label mb-0" for="cb_details_prepare_snippet_select">
+                <?php echo Text::_('COM_CONTENTBUILDERNG_EDITABLE_PREPARE_SNIPPET_LABEL'); ?>
+            </label>
+            <select class="form-select form-select-sm" id="cb_details_prepare_snippet_select" style="min-width: 320px; max-width: 680px;">
+                <?php if (!empty($editablePrepareSnippetOptions)) : ?>
+                    <option value=""><?php echo Text::_('COM_CONTENTBUILDERNG_EDITABLE_PREPARE_SNIPPET_PLACEHOLDER'); ?></option>
+                    <?php foreach ($editablePrepareSnippetOptions as $snippetOption) : ?>
+                        <option value="<?php echo htmlspecialchars((string) ($snippetOption['snippet'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>">
+                            <?php echo htmlspecialchars((string) ($snippetOption['text'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>
+                        </option>
+                    <?php endforeach; ?>
+                <?php else : ?>
+                    <option value=""><?php echo Text::_('COM_CONTENTBUILDERNG_EDITABLE_PREPARE_SNIPPET_EMPTY'); ?></option>
+                <?php endif; ?>
+            </select>
+            <button
+                type="button"
+                class="btn btn-sm btn-outline-secondary"
+                id="cb_add_details_prepare_snippet"
+                onclick="cbInsertDetailsPrepareSnippet();"
+                <?php echo empty($editablePrepareSnippetOptions) ? 'disabled="disabled"' : ''; ?>>
+                <?php echo Text::_('COM_CONTENTBUILDERNG_DETAILS_PREPARE_SNIPPET_ADD'); ?>
+            </button>
+            <small id="cb_details_prepare_snippet_hint" class="text-success d-none">
+                <?php echo Text::_('COM_CONTENTBUILDERNG_EDITABLE_PREPARE_SNIPPET_HINT'); ?>
+            </small>
+        </div>
+        <?php
+
         $params = array('syntax' => 'php');
         echo $this->form->renderField('details_prepare', null, $this->item->details_prepare);
 
@@ -2557,6 +2774,37 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
                 $this->item->editable_prepare .= '// $items["ITEMNAME"]["value"] = $items["ITEMNAME"]["value"];' . "\n";
                 $this->item->editable_prepare .= '// $items["ITEMNAME"]["label"] = "<i>".$items["ITEMNAME"]["label"]."</i>";' . "\n";
             }
+
+            ?>
+            <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+                <label class="form-label mb-0" for="cb_editable_prepare_snippet_select">
+                    <?php echo Text::_('COM_CONTENTBUILDERNG_EDITABLE_PREPARE_SNIPPET_LABEL'); ?>
+                </label>
+                <select class="form-select form-select-sm" id="cb_editable_prepare_snippet_select" style="min-width: 320px; max-width: 680px;">
+                    <?php if (!empty($editablePrepareSnippetOptions)) : ?>
+                        <option value=""><?php echo Text::_('COM_CONTENTBUILDERNG_EDITABLE_PREPARE_SNIPPET_PLACEHOLDER'); ?></option>
+                        <?php foreach ($editablePrepareSnippetOptions as $snippetOption) : ?>
+                            <option value="<?php echo htmlspecialchars((string) ($snippetOption['snippet'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>">
+                                <?php echo htmlspecialchars((string) ($snippetOption['text'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    <?php else : ?>
+                        <option value=""><?php echo Text::_('COM_CONTENTBUILDERNG_EDITABLE_PREPARE_SNIPPET_EMPTY'); ?></option>
+                    <?php endif; ?>
+                </select>
+                <button
+                    type="button"
+                    class="btn btn-sm btn-outline-secondary"
+                    id="cb_add_editable_prepare_snippet"
+                    onclick="cbInsertEditablePrepareSnippet();"
+                    <?php echo empty($editablePrepareSnippetOptions) ? 'disabled="disabled"' : ''; ?>>
+                    <?php echo Text::_('COM_CONTENTBUILDERNG_EDITABLE_PREPARE_SNIPPET_ADD'); ?>
+                </button>
+                <small id="cb_editable_prepare_snippet_hint" class="text-success d-none">
+                    <?php echo Text::_('COM_CONTENTBUILDERNG_EDITABLE_PREPARE_SNIPPET_HINT'); ?>
+                </small>
+            </div>
+            <?php
 
             $params = array('syntax' => 'php');
             echo $this->form->renderField('editable_prepare', null, $this->item->editable_prepare);

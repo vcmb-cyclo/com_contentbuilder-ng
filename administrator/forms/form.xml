@@ -114,7 +114,13 @@
     <field name="editable_template" type="editor"
            hiddenLabel="true"
            label="COM_CONTENTBUILDERNG_FIELD_EDITABLE_TEMPLATE"
-           filter="raw" rows="12" />
+           filter="raw"
+           buttons="true"
+           width="100%"
+           height="550"
+           rows="20"
+           cols="75"
+    />
 
     <field name="editable_prepare" type="editor"
            editor="none"
@@ -122,10 +128,6 @@
            label="COM_CONTENTBUILDERNG_FIELD_EDITABLE_PREPARE"
            filter="raw"
            buttons="false"
-           width="100%"
-           height="550"
-           rows="20"
-           cols="75"
     />
 
   </fieldset>

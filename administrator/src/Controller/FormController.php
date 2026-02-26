@@ -25,6 +25,9 @@ use Joomla\CMS\Factory;
 use Joomla\CMS\Response\JsonResponse;
 use Joomla\Utilities\ArrayHelper;
 use Joomla\CMS\MVC\Model\BaseDatabaseModel;
+use CB\Component\Contentbuilderng\Administrator\Model\FormModel;
+use CB\Component\Contentbuilderng\Administrator\Model\ElementsModel;
+use CB\Component\Contentbuilderng\Administrator\Model\ElementoptionsModel;
 
 class FormController extends BaseFormController
 {
@@ -33,6 +36,43 @@ class FormController extends BaseFormController
      */
     protected $view_list = 'forms';
     protected $view_item = 'form';
+
+    private function getFormModelForSaveActions(): FormModel
+    {
+        $model = $this->getModel('Form', 'Administrator', ['ignore_request' => true])
+            ?: $this->getModel('Form', 'Contentbuilderng', ['ignore_request' => true]);
+
+        if (!$model instanceof FormModel) {
+            throw new \RuntimeException('FormModel introuvable');
+        }
+
+        return $model;
+    }
+
+    private function getElementsModelForListActions(bool $ignoreRequest = false): ElementsModel
+    {
+        $config = $ignoreRequest ? ['ignore_request' => true] : [];
+        $model = $this->getModel('Elements', 'Administrator', $config)
+            ?: $this->getModel('Elements', 'Contentbuilderng', $config);
+
+        if (!$model instanceof ElementsModel) {
+            throw new \RuntimeException('ElementsModel introuvable');
+        }
+
+        return $model;
+    }
+
+    private function getElementoptionsModelForListActions(): ElementoptionsModel
+    {
+        $model = $this->getModel('Elementoptions', 'Administrator', ['ignore_request' => true])
+            ?: $this->getModel('Elementoptions', 'Contentbuilderng', ['ignore_request' => true]);
+
+        if (!$model instanceof ElementoptionsModel) {
+            throw new \RuntimeException('ElementoptionsModel introuvable');
+        }
+
+        return $model;
+    }
 
     public function edit($key = null, $urlVar = null)
     {
@@ -209,15 +249,15 @@ class FormController extends BaseFormController
      */
     public function save2new($key = null, $urlVar = null)
     {
-        $model = $this->getModel('Form', '', ['ignore_request' => true]);
-        if (!$model) {
-            throw new \RuntimeException('FormModel introuvable');
-        }
+        $model = $this->getFormModelForSaveActions();
 
         try {
-            $id = $model->store(); // legacy
+            $jform = (array) $this->input->post->get('jform', [], 'array');
+            $jform['id'] = (int) ($jform['id'] ?? $this->input->getInt('id', 0));
+            $ok = $model->save($jform);
+            $id = (int) $model->getState($model->getName() . '.id', 0);
 
-            if (!$id) {
+            if (!$ok || !$id) {
                 throw new \RuntimeException('Store failed (no id returned)');
             }
 
@@ -253,7 +293,7 @@ class FormController extends BaseFormController
             return;
         }
 
-        $model = $this->getModel('Elements', 'Administrator');
+        $model = $this->getElementsModelForListActions();
         $model->move(-1); // ou utilise reorder si tu préfères
         $this->setRedirect($this->getEditRedirectUrl($formId));
     }
@@ -265,7 +305,7 @@ class FormController extends BaseFormController
             return;
         }
 
-        $model = $this->getModel('Elements', 'Administrator');
+        $model = $this->getElementsModelForListActions();
         $model->move(1);
         $this->setRedirect($this->getEditRedirectUrl($formId));
     }
@@ -297,10 +337,7 @@ class FormController extends BaseFormController
         ArrayHelper::toInteger($pks);
         ArrayHelper::toInteger($order);
 
-        $model = $this->getModel('Elements', 'Administrator', ['ignore_request' => true]);
-        if (!$model) {
-            throw new \RuntimeException('ElementsModel introuvable');
-        }
+        $model = $this->getElementsModelForListActions(true);
 
         $model->setFormId($formId);
 
@@ -321,7 +358,7 @@ class FormController extends BaseFormController
  
     protected function postSaveHook(BaseDatabaseModel $model, $validData = [])
     {
-        $model = $this->getModel('Elements', 'Administrator', ['ignore_request' => true]);
+        $elementsModel = $this->getElementsModelForListActions(true);
 
         $orderMap = $this->input->post->get('order', [], 'array'); // [id => ordering]
         if (empty($orderMap)) {
@@ -334,8 +371,8 @@ class FormController extends BaseFormController
         ArrayHelper::toInteger($pks);
         ArrayHelper::toInteger($order);
 
-        if (!$model->saveorder($pks, $order)) {
-            $this->enqueueMessage(Text::_('JLIB_APPLICATION_ERROR_SAVE_FAILED'), 'warning');
+        if (!$elementsModel->saveorder($pks, $order)) {
+            $this->setMessage(Text::_('JLIB_APPLICATION_ERROR_SAVE_FAILED'), 'warning');
         }
     }
 
@@ -389,7 +426,7 @@ class FormController extends BaseFormController
 
         if (!$this->persistInlineElementSettings($formId)) {
             if ($this->isAjaxCall()) {
-                $this->respondAjax(false, $this->getMessage() ?: Text::_('JLIB_APPLICATION_ERROR_SAVE_FAILED'));
+                $this->respondAjax(false, Text::_('JLIB_APPLICATION_ERROR_SAVE_FAILED'));
             }
             return false;
         }
@@ -460,12 +497,12 @@ class FormController extends BaseFormController
 
             if (!$this->persistInlineElementSettings($formId)) {
                 if ($this->isAjaxCall()) {
-                    $this->respondAjax(false, $this->getMessage() ?: Text::_('JLIB_APPLICATION_ERROR_SAVE_FAILED'));
+                    $this->respondAjax(false, Text::_('JLIB_APPLICATION_ERROR_SAVE_FAILED'));
                 }
                 return false;
             }
 
-            $model = $this->getModel('Elementoptions', 'Administrator', ['ignore_request' => true]);
+            $model = $this->getElementoptionsModelForListActions();
             if (!$model->fieldUpdate($cids, $field, $value)) {
                 $error = Text::_('JLIB_APPLICATION_ERROR_SAVE_FAILED');
                 $this->setMessage($error, 'error');
@@ -519,12 +556,12 @@ class FormController extends BaseFormController
 
             if (!$this->persistInlineElementSettings($formId)) {
                 if ($this->isAjaxCall()) {
-                    $this->respondAjax(false, $this->getMessage() ?: Text::_('JLIB_APPLICATION_ERROR_SAVE_FAILED'));
+                    $this->respondAjax(false, Text::_('JLIB_APPLICATION_ERROR_SAVE_FAILED'));
                 }
                 return false;
             }
 
-            $model = $this->getModel('Elementoptions', 'Administrator', ['ignore_request' => true]);
+            $model = $this->getElementoptionsModelForListActions();
             if (!$model->publish($cids, $state)) {
                 $error = Text::_('JLIB_APPLICATION_ERROR_SAVE_FAILED');
                 $this->setMessage($error, 'error');
@@ -580,9 +617,9 @@ class FormController extends BaseFormController
                 return false;
             }
 
-            $model = $this->getModel('Form', 'Administrator', ['ignore_request' => true]);
+            $model = $this->getFormModelForSaveActions();
             $pks = [$formId];
-            if (!$model || !$model->publish($pks, (int) $state)) {
+            if (!$model->publish($pks, (int) $state)) {
                 $error = Text::_('JLIB_APPLICATION_ERROR_SAVE_FAILED');
                 $this->setMessage($error, 'error');
                 if ($this->isAjaxCall()) {
@@ -648,10 +685,7 @@ class FormController extends BaseFormController
             return true;
         }
 
-        $formModel = $this->getModel('Form', 'Administrator', ['ignore_request' => true]);
-        if (!$formModel || !method_exists($formModel, 'saveElementListSettingsFromRequest')) {
-            return true;
-        }
+        $formModel = $this->getFormModelForSaveActions();
 
         if (!$formModel->saveElementListSettingsFromRequest($formId)) {
             $this->setMessage(Text::_('JLIB_APPLICATION_ERROR_SAVE_FAILED'), 'error');

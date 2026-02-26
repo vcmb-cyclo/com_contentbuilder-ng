@@ -16,9 +16,21 @@ use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Router\Route;
 use Joomla\CMS\MVC\Controller\AdminController;
+use CB\Component\Contentbuilderng\Administrator\Model\ElementoptionsModel;
 
 class ElementoptionsController extends AdminController
 {
+    private function getElementoptionsModelForSave(): ElementoptionsModel
+    {
+        $model = $this->getModel('Elementoptions', 'Administrator', ['ignore_request' => true])
+            ?: $this->getModel('Elementoptions', 'Contentbuilderng', ['ignore_request' => true]);
+
+        if (!$model instanceof ElementoptionsModel) {
+            throw new \RuntimeException('ElementoptionsModel not found');
+        }
+
+        return $model;
+    }
 
     function display($cachable = false, $urlparams = array())
     {
@@ -31,11 +43,7 @@ class ElementoptionsController extends AdminController
 
     function save()
     {
-        $model = $this->getModel('Elementoptions', 'Administrator', ['ignore_request' => true])
-            ?: $this->getModel('Elementoptions', 'Contentbuilderng', ['ignore_request' => true]);
-        if (!$model) {
-            throw new \RuntimeException('ElementoptionsModel not found');
-        }
+        $model = $this->getElementoptionsModelForSave();
         $id = $model->store();
 
         if ($id) {

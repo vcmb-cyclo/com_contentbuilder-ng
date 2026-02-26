@@ -107,8 +107,10 @@ foreach ($auditErrors as $auditError) {
     }
 
     $warningDetail = '';
+    $warningLinkUrl = '';
+    $warningLinkLabel = '';
     $storageTableNotFoundMatch = [];
-    if (preg_match('/^Storage #(\d+)\s+\((.*?)\)\s+table not found\.?$/i', $warningText, $storageTableNotFoundMatch) === 1) {
+    if (preg_match('/^Storage\s+#(\d+)\s+\((.*?)\)\s*:?\s*table not found\.?(?:\s+.*)?$/i', $warningText, $storageTableNotFoundMatch) === 1) {
         $storageIdLabel = (int) ($storageTableNotFoundMatch[1] ?? 0);
         $storageNameLabel = trim((string) ($storageTableNotFoundMatch[2] ?? ''));
         $warningText = Text::sprintf(
@@ -117,11 +119,23 @@ foreach ($auditErrors as $auditError) {
             $storageNameLabel
         );
         $warningDetail = Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_WARNING_STORAGE_TABLE_NOT_FOUND_DETAIL');
+        if ($storageIdLabel > 0) {
+            $warningLinkUrl = Route::_(
+                'index.php?option=com_contentbuilderng&view=storage&layout=edit&id=' . $storageIdLabel,
+                false
+            );
+            $warningLinkLabel = Text::sprintf(
+                'COM_CONTENTBUILDERNG_ABOUT_AUDIT_WARNING_STORAGE_TABLE_NOT_FOUND_LINK',
+                $storageIdLabel
+            );
+        }
     }
 
     $auditWarnings[] = [
         'summary' => $warningText,
         'detail' => $warningDetail,
+        'link_url' => $warningLinkUrl,
+        'link_label' => $warningLinkLabel,
     ];
 }
 $hasAuditReport = $auditReport !== [];
@@ -131,6 +145,13 @@ $logFileName = (string) ($logReport['file'] ?? Text::_('COM_CONTENTBUILDERNG_NOT
 $logSize = (int) ($logReport['size'] ?? 0);
 $logLoadedAt = (string) ($logReport['loaded_at'] ?? Text::_('COM_CONTENTBUILDERNG_NOT_AVAILABLE'));
 $logContent = (string) ($logReport['content'] ?? '');
+$logDisplayContent = $logContent;
+if ($logDisplayContent !== '') {
+    $logLines = preg_split('/\r\n|\r|\n/', $logDisplayContent);
+    if (is_array($logLines) && $logLines !== []) {
+        $logDisplayContent = implode(PHP_EOL, array_reverse($logLines));
+    }
+}
 $logTruncated = (int) ($logReport['truncated'] ?? 0) === 1;
 $logTailBytes = (int) ($logReport['tail_bytes'] ?? 0);
 $dbRepairConfirmMessage = str_replace('\n', "\n", Text::_('COM_CONTENTBUILDERNG_DB_REPAIR_CONFIRMATION'));
@@ -402,6 +423,17 @@ $formatAuditIssueList = static function (array $values, int $limit = 8): string 
         margin-top: .35rem;
         font-size: .88rem;
         line-height: 1.35;
+    }
+    .cb-audit-warning-alert .cb-audit-warning-link {
+        color: inherit;
+        font-weight: 600;
+        text-decoration: underline;
+        text-underline-offset: 2px;
+    }
+    .cb-audit-warning-alert .cb-audit-warning-link:hover,
+    .cb-audit-warning-alert .cb-audit-warning-link:focus {
+        color: inherit;
+        text-decoration-thickness: 2px;
     }
 </style>
 <form
@@ -959,8 +991,18 @@ $formatAuditIssueList = static function (array $values, int $limit = 8): string 
                     <?php foreach ($auditWarnings as $auditWarning) : ?>
                         <div class="alert alert-warning cb-audit-warning-alert mb-0">
                             <span class="cb-audit-warning-title"><?php echo htmlspecialchars((string) ($auditWarning['summary'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></span>
-                            <?php if (!empty($auditWarning['detail'])) : ?>
-                                <span class="cb-audit-warning-help"><?php echo htmlspecialchars((string) $auditWarning['detail'], ENT_QUOTES, 'UTF-8'); ?></span>
+                            <?php if (!empty($auditWarning['detail']) || !empty($auditWarning['link_url'])) : ?>
+                                <span class="cb-audit-warning-help">
+                                    <?php if (!empty($auditWarning['detail'])) : ?>
+                                        <?php echo htmlspecialchars((string) $auditWarning['detail'], ENT_QUOTES, 'UTF-8'); ?>
+                                    <?php endif; ?>
+                                    <?php if (!empty($auditWarning['link_url'])) : ?>
+                                        <?php if (!empty($auditWarning['detail'])) : ?><br><?php endif; ?>
+                                        <a class="cb-audit-warning-link" href="<?php echo htmlspecialchars((string) $auditWarning['link_url'], ENT_QUOTES, 'UTF-8'); ?>">
+                                            <?php echo htmlspecialchars((string) ($auditWarning['link_label'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>
+                                        </a>
+                                    <?php endif; ?>
+                                </span>
                             <?php endif; ?>
                         </div>
                     <?php endforeach; ?>
@@ -994,12 +1036,12 @@ $formatAuditIssueList = static function (array $values, int $limit = 8): string 
                 </div>
             <?php endif; ?>
 
-            <?php if ($logContent === '') : ?>
+            <?php if ($logDisplayContent === '') : ?>
                 <div class="alert alert-info mb-0">
                     <?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_LOG_NO_CONTENT'); ?>
                 </div>
             <?php else : ?>
-                <pre class="bg-light p-3 border rounded small mb-0" style="max-height: 420px; overflow: auto;"><?php echo htmlspecialchars($logContent, ENT_QUOTES, 'UTF-8'); ?></pre>
+                <pre class="bg-light p-3 border rounded small mb-0" style="max-height: 420px; overflow: auto;"><?php echo htmlspecialchars($logDisplayContent, ENT_QUOTES, 'UTF-8'); ?></pre>
             <?php endif; ?>
         <?php endif; ?>
     </div>
