@@ -13,6 +13,7 @@
 
 use Joomla\CMS\Factory;
 use Joomla\CMS\Application\AdministratorApplication;
+use Joomla\CMS\Editor\Editor;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Router\Route;
@@ -177,17 +178,32 @@ foreach ($availableEditablePrepareElements as $elementRow) {
     $seenPrepareItemNames[$itemName] = true;
 
     $itemNameEscaped = str_replace(['\\', '"'], ['\\\\', '\\"'], $itemName);
-    $itemLabel = trim((string) ($elementRow->label ?? ''));
-    $optionPrefix = $itemLabel !== '' ? ($itemLabel . ' [' . $itemName . ']') : $itemName;
-
-    foreach (['value', 'label'] as $slot) {
-        $path = '$items["' . $itemNameEscaped . '"]["' . $slot . '"]';
-        $editablePrepareSnippetOptions[] = [
-            'text' => $optionPrefix . ' -> ' . $slot,
-            'snippet' => $path . ' = ' . $path . ';',
-        ];
-    }
+    $itemPath = '$items["' . $itemNameEscaped . '"]';
+    $editablePrepareSnippetOptions[] = [
+        'text' => $itemName,
+        'item_path' => $itemPath,
+    ];
 }
+
+if (!empty($editablePrepareSnippetOptions)) {
+    usort(
+        $editablePrepareSnippetOptions,
+        static fn(array $a, array $b): int => strnatcasecmp((string) ($a['text'] ?? ''), (string) ($b['text'] ?? ''))
+    );
+}
+
+$prepareEffectOptions = [
+    ['value' => 'none', 'text' => Text::_('COM_CONTENTBUILDERNG_PREPARE_EFFECT_NONE')],
+    ['value' => 'bold', 'text' => Text::_('COM_CONTENTBUILDERNG_PREPARE_EFFECT_BOLD')],
+    ['value' => 'red', 'text' => Text::_('COM_CONTENTBUILDERNG_PREPARE_EFFECT_RED')],
+    ['value' => 'italic', 'text' => Text::_('COM_CONTENTBUILDERNG_PREPARE_EFFECT_ITALIC')],
+    ['value' => 'gray', 'text' => Text::_('COM_CONTENTBUILDERNG_PREPARE_EFFECT_GRAY')],
+    ['value' => 'negativeRed', 'text' => Text::_('COM_CONTENTBUILDERNG_PREPARE_EFFECT_NEGATIVE_RED')],
+    ['value' => 'euroSuffix', 'text' => Text::_('COM_CONTENTBUILDERNG_PREPARE_EFFECT_EURO_SUFFIX')],
+    ['value' => 'upper', 'text' => Text::_('COM_CONTENTBUILDERNG_PREPARE_EFFECT_UPPER')],
+    ['value' => 'lower', 'text' => Text::_('COM_CONTENTBUILDERNG_PREPARE_EFFECT_LOWER')],
+    ['value' => 'truncate10', 'text' => Text::_('COM_CONTENTBUILDERNG_PREPARE_EFFECT_TRUNCATE_10')],
+];
 
 $renderCheckbox = static function (string $name, string $id, bool $checked = false, string $value = '1', array $attributes = []): string {
     $html = '<span class="form-check d-inline-block mb-0">';
@@ -1097,30 +1113,117 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
     }
 
     function cbInsertEditablePrepareSnippet() {
-        cbInsertPrepareSnippet('editable_prepare', 'cb_editable_prepare_snippet_select', 'cb_editable_prepare_snippet_hint');
+        cbInsertPrepareSnippet('editable_prepare', 'cb_editable_prepare_snippet_select', 'cb_editable_prepare_slot', 'cb_editable_prepare_effect_select', 'cb_editable_prepare_snippet_hint');
     }
 
     function cbInsertDetailsPrepareSnippet() {
-        cbInsertPrepareSnippet('details_prepare', 'cb_details_prepare_snippet_select', 'cb_details_prepare_snippet_hint');
+        cbInsertPrepareSnippet('details_prepare', 'cb_details_prepare_snippet_select', 'cb_details_prepare_slot', 'cb_details_prepare_effect_select', 'cb_details_prepare_snippet_hint');
     }
 
-    function cbInsertPrepareSnippet(fieldName, selectId, hintId) {
+    function cbGetPrepareSnippetSlot(radioName) {
+        if (!radioName) {
+            return 'value';
+        }
+
+        var checked = document.querySelector('input[name="' + radioName + '"]:checked');
+        if (!checked) {
+            return 'value';
+        }
+
+        return String(checked.value || '').toLowerCase() === 'label' ? 'label' : 'value';
+    }
+
+    function cbBuildPrepareSnippetWithEffect(sourcePath, effectName) {
+        var effect = String(effectName || 'none').toLowerCase();
+        var expression = sourcePath;
+
+        switch (effect) {
+            case 'bold':
+                expression = '"<b>".' + sourcePath + '."</b>"';
+                break;
+            case 'red':
+                expression = '"<span style=\\"color:#dc3545\\">".' + sourcePath + '."</span>"';
+                break;
+            case 'italic':
+                expression = '"<i>".' + sourcePath + '."</i>"';
+                break;
+            case 'gray':
+                expression = '"<span style=\\"color:#6c757d\\">".' + sourcePath + '."</span>"';
+                break;
+            case 'negativered':
+                expression = '(is_numeric((string) ' + sourcePath + ') && (float) ' + sourcePath + ' < 0) ? "<span style=\\"color:#dc3545\\">".' + sourcePath + '."</span>" : ' + sourcePath;
+                break;
+            case 'eurosuffix':
+                expression = '((string) ' + sourcePath + ') . " €"';
+                break;
+            case 'upper':
+                expression = 'strtoupper((string) ' + sourcePath + ')';
+                break;
+            case 'lower':
+                expression = 'strtolower((string) ' + sourcePath + ')';
+                break;
+            case 'truncate10':
+                expression = '(mb_strlen((string) ' + sourcePath + ') > 10) ? mb_substr((string) ' + sourcePath + ', 0, 10) . "..." : (string) ' + sourcePath;
+                break;
+            case 'none':
+            default:
+                expression = sourcePath;
+                break;
+        }
+
+        return sourcePath + ' = ' + expression + ';';
+    }
+
+    function cbInsertPrepareSnippet(fieldName, selectId, slotRadioName, effectSelectId, hintId) {
         var select = document.getElementById(selectId);
         if (!select) {
             return;
         }
 
-        var snippet = String(select.value || '').trim();
-        if (!snippet) {
+        var baseItemPath = String(select.value || '').trim();
+        if (!baseItemPath) {
             return;
         }
 
+        var slot = cbGetPrepareSnippetSlot(slotRadioName);
+        var sourcePath = baseItemPath + '["' + slot + '"]';
+        var effect = 'none';
+        var effectSelect = effectSelectId ? document.getElementById(effectSelectId) : null;
+        if (effectSelect) {
+            effect = String(effectSelect.value || 'none');
+        }
+
+        var snippet = cbBuildPrepareSnippetWithEffect(sourcePath, effect);
         cbAppendLineToEditorField(fieldName, snippet);
 
         var hint = document.getElementById(hintId);
         if (hint) {
             hint.classList.remove('d-none');
         }
+    }
+
+    function cbAutoSizeSelectToContent(selectId) {
+        var select = document.getElementById(selectId);
+        if (!select || !select.options) {
+            return;
+        }
+
+        var maxChars = 0;
+        Array.prototype.forEach.call(select.options, function(option) {
+            var length = String((option && option.text) ? option.text : '').trim().length;
+            if (length > maxChars) {
+                maxChars = length;
+            }
+        });
+
+        if (maxChars < 1) {
+            return;
+        }
+
+        var widthCh = Math.min(Math.max(maxChars + 4, 12), 42);
+        select.style.width = widthCh + 'ch';
+        select.style.minWidth = '12ch';
+        select.style.maxWidth = '42ch';
     }
 
     document.addEventListener('DOMContentLoaded', function() {
@@ -1130,6 +1233,9 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
         if (!form) {
             return;
         }
+
+        cbAutoSizeSelectToContent('cb_details_prepare_snippet_select');
+        cbAutoSizeSelectToContent('cb_editable_prepare_snippet_select');
 
         var editByTypeCheckbox = document.getElementById('edit_by_type');
         if (editByTypeCheckbox) {
@@ -2657,9 +2763,6 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
         <?php
         if (trim($this->item->details_prepare ?? '') == '') {
             $this->item->details_prepare = '// Here you may alter labels and values for each item before it gets rendered through your details template.' . "\n";
-            $this->item->details_prepare .= '// For example:' . "\n";
-            $this->item->details_prepare .= '// $items["ITEMNAME"]["value"] = "<b>".$items["ITEMNAME"]["value"]."</b>";' . "\n";
-            $this->item->details_prepare .= '// $items["ITEMNAME"]["label"] = "<i>".$items["ITEMNAME"]["label"]."</i>";' . "\n";
         }
 
         ?>
@@ -2667,11 +2770,11 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
             <label class="form-label mb-0" for="cb_details_prepare_snippet_select">
                 <?php echo Text::_('COM_CONTENTBUILDERNG_EDITABLE_PREPARE_SNIPPET_LABEL'); ?>
             </label>
-            <select class="form-select form-select-sm" id="cb_details_prepare_snippet_select" style="min-width: 320px; max-width: 680px;">
+            <select class="form-select form-select-sm" id="cb_details_prepare_snippet_select" style="display:inline-block;width:auto;min-width:12ch;max-width:42ch;flex:0 0 auto;">
                 <?php if (!empty($editablePrepareSnippetOptions)) : ?>
                     <option value=""><?php echo Text::_('COM_CONTENTBUILDERNG_EDITABLE_PREPARE_SNIPPET_PLACEHOLDER'); ?></option>
                     <?php foreach ($editablePrepareSnippetOptions as $snippetOption) : ?>
-                        <option value="<?php echo htmlspecialchars((string) ($snippetOption['snippet'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>">
+                        <option value="<?php echo htmlspecialchars((string) ($snippetOption['item_path'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>">
                             <?php echo htmlspecialchars((string) ($snippetOption['text'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>
                         </option>
                     <?php endforeach; ?>
@@ -2679,6 +2782,17 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
                     <option value=""><?php echo Text::_('COM_CONTENTBUILDERNG_EDITABLE_PREPARE_SNIPPET_EMPTY'); ?></option>
                 <?php endif; ?>
             </select>
+            <span class="d-inline-flex align-items-center gap-2">
+                <span class="form-label mb-0"><?php echo Text::_('COM_CONTENTBUILDERNG_PREPARE_TARGET_LABEL'); ?></span>
+                <span class="form-check form-check-inline mb-0">
+                    <input class="form-check-input" type="radio" name="cb_details_prepare_slot" id="cb_details_prepare_slot_value" value="value" checked="checked" <?php echo empty($editablePrepareSnippetOptions) ? 'disabled="disabled"' : ''; ?> />
+                    <label class="form-check-label" for="cb_details_prepare_slot_value"><?php echo Text::_('COM_CONTENTBUILDERNG_PREPARE_TARGET_VALUE_OPTION'); ?></label>
+                </span>
+                <span class="form-check form-check-inline mb-0">
+                    <input class="form-check-input" type="radio" name="cb_details_prepare_slot" id="cb_details_prepare_slot_label" value="label" <?php echo empty($editablePrepareSnippetOptions) ? 'disabled="disabled"' : ''; ?> />
+                    <label class="form-check-label" for="cb_details_prepare_slot_label"><?php echo Text::_('COM_CONTENTBUILDERNG_PREPARE_TARGET_LABEL_OPTION'); ?></label>
+                </span>
+            </span>
             <button
                 type="button"
                 class="btn btn-sm btn-outline-secondary"
@@ -2687,6 +2801,16 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
                 <?php echo empty($editablePrepareSnippetOptions) ? 'disabled="disabled"' : ''; ?>>
                 <?php echo Text::_('COM_CONTENTBUILDERNG_DETAILS_PREPARE_SNIPPET_ADD'); ?>
             </button>
+            <label class="form-label mb-0" for="cb_details_prepare_effect_select">
+                <?php echo Text::_('COM_CONTENTBUILDERNG_PREPARE_EFFECT_LABEL'); ?>
+            </label>
+            <select class="form-select form-select-sm" id="cb_details_prepare_effect_select" style="min-width: 170px; max-width: 240px;" <?php echo empty($editablePrepareSnippetOptions) ? 'disabled="disabled"' : ''; ?>>
+                <?php foreach ($prepareEffectOptions as $effectOption) : ?>
+                    <option value="<?php echo htmlspecialchars((string) ($effectOption['value'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>">
+                        <?php echo htmlspecialchars((string) ($effectOption['text'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
             <small id="cb_details_prepare_snippet_hint" class="text-success d-none">
                 <?php echo Text::_('COM_CONTENTBUILDERNG_EDITABLE_PREPARE_SNIPPET_HINT'); ?>
             </small>
@@ -2694,7 +2818,20 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
         <?php
 
         $params = array('syntax' => 'php');
-        echo $this->form->renderField('details_prepare', null, $this->item->details_prepare);
+        $editor = Editor::getInstance('codemirror');
+        echo $editor->display(
+            'jform[details_prepare]',
+            (string) ($this->item->details_prepare ?? ''),
+            '100%',
+            '550',
+            '75',
+            '20',
+            false,
+            'jform_details_prepare',
+            null,
+            null,
+            $params
+        );
 
         //echo '<textarea name="jform[details_prepare]" style="width:100%;height: 500px;">'.htmlentities($this->item->details_prepare, ENT_QUOTES, 'UTF-8').'</textarea>';
         ?>
@@ -2772,9 +2909,6 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
         } else {
             if (trim($this->item->editable_prepare ?? '') == '') {
                 $this->item->editable_prepare = '// Here you may alter labels and values for each item before it gets rendered through your editable template.' . "\n";
-                $this->item->editable_prepare .= '// For example:' . "\n";
-                $this->item->editable_prepare .= '// $items["ITEMNAME"]["value"] = $items["ITEMNAME"]["value"];' . "\n";
-                $this->item->editable_prepare .= '// $items["ITEMNAME"]["label"] = "<i>".$items["ITEMNAME"]["label"]."</i>";' . "\n";
             }
 
             ?>
@@ -2782,11 +2916,11 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
                 <label class="form-label mb-0" for="cb_editable_prepare_snippet_select">
                     <?php echo Text::_('COM_CONTENTBUILDERNG_EDITABLE_PREPARE_SNIPPET_LABEL'); ?>
                 </label>
-                <select class="form-select form-select-sm" id="cb_editable_prepare_snippet_select" style="min-width: 320px; max-width: 680px;">
+                <select class="form-select form-select-sm" id="cb_editable_prepare_snippet_select" style="display:inline-block;width:auto;min-width:12ch;max-width:42ch;flex:0 0 auto;">
                     <?php if (!empty($editablePrepareSnippetOptions)) : ?>
                         <option value=""><?php echo Text::_('COM_CONTENTBUILDERNG_EDITABLE_PREPARE_SNIPPET_PLACEHOLDER'); ?></option>
                         <?php foreach ($editablePrepareSnippetOptions as $snippetOption) : ?>
-                            <option value="<?php echo htmlspecialchars((string) ($snippetOption['snippet'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>">
+                            <option value="<?php echo htmlspecialchars((string) ($snippetOption['item_path'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>">
                                 <?php echo htmlspecialchars((string) ($snippetOption['text'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>
                             </option>
                         <?php endforeach; ?>
@@ -2794,6 +2928,17 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
                         <option value=""><?php echo Text::_('COM_CONTENTBUILDERNG_EDITABLE_PREPARE_SNIPPET_EMPTY'); ?></option>
                     <?php endif; ?>
                 </select>
+                <span class="d-inline-flex align-items-center gap-2">
+                    <span class="form-label mb-0"><?php echo Text::_('COM_CONTENTBUILDERNG_PREPARE_TARGET_LABEL'); ?></span>
+                    <span class="form-check form-check-inline mb-0">
+                        <input class="form-check-input" type="radio" name="cb_editable_prepare_slot" id="cb_editable_prepare_slot_value" value="value" checked="checked" <?php echo empty($editablePrepareSnippetOptions) ? 'disabled="disabled"' : ''; ?> />
+                        <label class="form-check-label" for="cb_editable_prepare_slot_value"><?php echo Text::_('COM_CONTENTBUILDERNG_PREPARE_TARGET_VALUE_OPTION'); ?></label>
+                    </span>
+                    <span class="form-check form-check-inline mb-0">
+                        <input class="form-check-input" type="radio" name="cb_editable_prepare_slot" id="cb_editable_prepare_slot_label" value="label" <?php echo empty($editablePrepareSnippetOptions) ? 'disabled="disabled"' : ''; ?> />
+                        <label class="form-check-label" for="cb_editable_prepare_slot_label"><?php echo Text::_('COM_CONTENTBUILDERNG_PREPARE_TARGET_LABEL_OPTION'); ?></label>
+                    </span>
+                </span>
                 <button
                     type="button"
                     class="btn btn-sm btn-outline-secondary"
@@ -2802,6 +2947,16 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
                     <?php echo empty($editablePrepareSnippetOptions) ? 'disabled="disabled"' : ''; ?>>
                     <?php echo Text::_('COM_CONTENTBUILDERNG_EDITABLE_PREPARE_SNIPPET_ADD'); ?>
                 </button>
+                <label class="form-label mb-0" for="cb_editable_prepare_effect_select">
+                    <?php echo Text::_('COM_CONTENTBUILDERNG_PREPARE_EFFECT_LABEL'); ?>
+                </label>
+                <select class="form-select form-select-sm" id="cb_editable_prepare_effect_select" style="min-width: 170px; max-width: 240px;" <?php echo empty($editablePrepareSnippetOptions) ? 'disabled="disabled"' : ''; ?>>
+                    <?php foreach ($prepareEffectOptions as $effectOption) : ?>
+                        <option value="<?php echo htmlspecialchars((string) ($effectOption['value'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>">
+                            <?php echo htmlspecialchars((string) ($effectOption['text'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
                 <small id="cb_editable_prepare_snippet_hint" class="text-success d-none">
                     <?php echo Text::_('COM_CONTENTBUILDERNG_EDITABLE_PREPARE_SNIPPET_HINT'); ?>
                 </small>
@@ -2809,7 +2964,20 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
             <?php
 
             $params = array('syntax' => 'php');
-            echo $this->form->renderField('editable_prepare', null, $this->item->editable_prepare);
+            $editor = Editor::getInstance('codemirror');
+            echo $editor->display(
+                'jform[editable_prepare]',
+                (string) ($this->item->editable_prepare ?? ''),
+                '100%',
+                '550',
+                '75',
+                '20',
+                false,
+                'jform_editable_prepare',
+                null,
+                null,
+                $params
+            );
         }
 
         echo HTMLHelper::_('uitab.endTab');
