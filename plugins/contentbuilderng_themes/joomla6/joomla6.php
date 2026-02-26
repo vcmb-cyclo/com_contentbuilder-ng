@@ -5,7 +5,7 @@
  * @package     ContentBuilder NG
  * @author      Xavier DANO / XDA+GIL
  * @link        https://breezingforms-ng.vcmb.fr
- * @license     GNU/GPL
+ * @license     GNU General Public License version 2 or later; see LICENSE.txt
  */
 
 

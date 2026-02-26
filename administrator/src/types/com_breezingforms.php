@@ -4,7 +4,7 @@
  * @package     ContentBuilder NG
  * @author      Markus Bopp / XDA+GIL
  * @link        https://breezingforms-ng.vcmb.fr
- * @license     GNU/GPL
+ * @license     GNU General Public License version 2 or later; see LICENSE.txt
  * @copyright   Copyright © 2026 by XDA+GIL 
  */
 

@@ -5,7 +5,7 @@
  * @author      Xavier DANO
  * @link        
  * @copyright   Copyright © 2026 by XDA+GIL
- * @license     GNU/GPL
+ * @license     GNU General Public License version 2 or later; see LICENSE.txt
  */
 
 // administrator/src/Controller/DisplayController.php

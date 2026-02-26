@@ -5,7 +5,7 @@
  * @package     ContentBuilder NG
  * @subpackage  Administrator.Model
  * @copyright   Copyright © 2011–2026 by XDA+GIL
- * @license     GNU/GPL v2 or later
+ * @license     GNU General Public License version 2 or later; see LICENSE.txt
  */
 
 namespace CB\Component\Contentbuilderng\Administrator\Model;

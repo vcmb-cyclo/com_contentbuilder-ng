@@ -6,7 +6,7 @@
  * @author      Xavier DANO
  * @link        https://breezingforms-ng.vcmb.fr
  * @copyright   (C) 2026 by XDA+GIL
- * @license     GNU/GPL
+ * @license     GNU General Public License version 2 or later; see LICENSE.txt
  */
 
 namespace CB\Component\Contentbuilderng\Administrator\Service;
