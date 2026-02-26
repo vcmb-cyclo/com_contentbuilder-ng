@@ -112,6 +112,12 @@ class ElementsModel extends ListModel
 
 
         $context = $this->context ?: 'com_contentbuilderng.elements';
+        $referrer = (string) ($_SERVER['HTTP_REFERER'] ?? '');
+        $isContentbuilderReferrer = str_contains($referrer, 'option=com_contentbuilderng');
+        $isFormEditReferrer = str_contains($referrer, 'view=form') && str_contains($referrer, 'layout=edit');
+        $isFormTaskReferrer = str_contains($referrer, 'task=form.');
+        $fromSameFormEdit = $isContentbuilderReferrer && ($isFormEditReferrer || $isFormTaskReferrer);
+        $enteredFromOtherView = !$fromSameFormEdit;
 
         // Filtre sur published
         $published = $app->getUserStateFromRequest('com_contentbuilderng.elements.filter.published', 'filter_published', '', 'string');
@@ -125,7 +131,8 @@ class ElementsModel extends ListModel
         $limit = $app->getUserStateFromRequest($context . '.list.limit', 'limit', $app->get('list_limit'), 'uint');
         $this->setState('list.limit', $limit);
 
-        $value = $app->getUserStateFromRequest($context . '.list.start', 'limitstart', 0, 'int');
+        $startDefault = $enteredFromOtherView ? 0 : (int) $app->getUserState($context . '.list.start', 0);
+        $value = $app->getUserStateFromRequest($context . '.list.start', 'limitstart', $startDefault, 'int');
         $limitstart = ($limit != 0 ? (floor($value / $limit) * $limit) : 0);
         $this->setState('list.start', $limitstart);
 
@@ -152,6 +159,8 @@ class ElementsModel extends ListModel
             $effectiveLimit = (int) $listInput['limit'];
         } elseif ($app->input->get('limit', null, 'raw') !== null) {
             $effectiveLimit = (int) $app->input->getInt('limit', (int) $limit);
+        } elseif ($enteredFromOtherView) {
+            $effectiveLimit = (int) ($limit ?: $app->get('list_limit'));
         } else {
             $effectiveLimit = (int) $app->getUserState($context . '.list.limit', (int) ($limit ?: $app->get('list_limit')));
         }
@@ -163,6 +172,8 @@ class ElementsModel extends ListModel
             $requestedStart = (int) $app->input->getInt('start', 0);
         } elseif ($app->input->get('limitstart', null, 'raw') !== null) {
             $requestedStart = (int) $app->input->getInt('limitstart', 0);
+        } elseif ($enteredFromOtherView) {
+            $requestedStart = 0;
         } else {
             $requestedStart = (int) $app->getUserState($context . '.list.start', 0);
         }

@@ -16,6 +16,7 @@ ini_set('display_errors', 1);
 error_reporting(E_ALL);
 
 use Joomla\CMS\Uri\Uri;
+use CB\Component\Contentbuilderng\Administrator\Model\ElementoptionsModel;
 use CB\Component\Contentbuilderng\Administrator\View\Contentbuilderng\HtmlView as BaseHtmlView;
 
 class HtmlView extends BaseHtmlView
@@ -23,11 +24,13 @@ class HtmlView extends BaseHtmlView
     function display($tpl = null)
     {
         // Get data from the model
-        $element = $this->get('Data');
-        $validations = $this->get('ValidationPlugins');
+        /** @var ElementoptionsModel $model */
+        $model = $this->getModel();
+        $element = $model->getData();
+        $validations = $model->getValidationPlugins();
         $this->validations = $validations;
         $this->element = $element;
-        $groupdef = $this->get('GroupDefinition');
+        $groupdef = $model->getGroupDefinition();
         $this->group_definition = $groupdef;
         parent::display($tpl);
     }

@@ -18,7 +18,11 @@ use Joomla\CMS\Language\Text;
 use Joomla\CMS\Toolbar\ToolbarHelper;
 use Joomla\CMS\Uri\Uri;
 use Joomla\Database\DatabaseInterface;
+use Joomla\CMS\Application\CMSApplication;
 use CB\Component\Contentbuilderng\Administrator\Helper\PackedDataHelper;
+use CB\Component\Contentbuilderng\Administrator\Model\FormModel;
+use CB\Component\Contentbuilderng\Administrator\Model\ElementsModel;
+use CB\Component\Contentbuilderng\Administrator\Extension\ContentbuilderngComponent;
 use CB\Component\Contentbuilderng\Administrator\View\Contentbuilderng\HtmlView as BaseHtmlView;
 
 class HtmlView extends BaseHtmlView
@@ -30,11 +34,14 @@ class HtmlView extends BaseHtmlView
             return;
         }
 
+        /** @var CMSApplication $app */
         $app = Factory::getApplication();
         $app->input->set('hidemainmenu', true);
 
         // JS
-        $wa = $app->getDocument()->getWebAssetManager();
+        /** @var \Joomla\CMS\Document\AdminDocument $document */
+        $document = $app->getDocument();
+        $wa = $document->getWebAssetManager();
         $wa->getRegistry()->addExtensionRegistryFile('com_contentbuilderng');
         $wa->useStyle('com_contentbuilderng.coloris.css');
         $wa->useScript('com_contentbuilderng.coloris.js');
@@ -47,10 +54,12 @@ class HtmlView extends BaseHtmlView
 
 
         // Formulaire JForm
-        $this->form = $this->getModel()->getForm();
+        /** @var FormModel $model */
+        $model = $this->getModel();
+        $this->form = $model->getForm();
 
         // Données (l’item)
-        $this->item = $this->getModel()->getItem();
+        $this->item = $model->getItem();
 
         // Chargement sécurisé des éléments
         $formId = (int) ($this->item->id ?? $app->input->getInt('id', 0));
@@ -63,7 +72,13 @@ class HtmlView extends BaseHtmlView
         try {
             $formId = (int) ($formId ?? 0);
             if ($formId > 0) {
-                $factory = $app->bootComponent('com_contentbuilderng')->getMVCFactory();
+                /** @var ContentbuilderngComponent $component */
+                $component = $app->bootComponent('com_contentbuilderng');
+                if (!$component instanceof ContentbuilderngComponent) {
+                    throw new \RuntimeException('Composant com_contentbuilderng introuvable (factory)');
+                }
+                $factory = $component->getMVCFactory();
+                /** @var ElementsModel $elementsModel */
                 $elementsModel = $factory->createModel('Elements', 'Administrator');
 
                 if (!$elementsModel) {
@@ -80,10 +95,10 @@ class HtmlView extends BaseHtmlView
                 $this->state      = $elementsModel->getState();
             }
         } catch (\Throwable $e) {
-            Factory::getApplication()->enqueueMessage(
-                'Erreur lors du chargement des éléments : ' . $e->getMessage(),
-                'warning'
-            );
+                $app->enqueueMessage(
+                    'Erreur lors du chargement des éléments : ' . $e->getMessage(),
+                    'warning'
+                );
         }
 
         $isNew = ($formId < 1);
@@ -104,7 +119,9 @@ class HtmlView extends BaseHtmlView
             'btn-success'
         );
 
-        $toolbar = $app->getDocument()->getToolbar('toolbar');
+        /** @var \Joomla\CMS\Toolbar\Toolbar $toolbar */
+        /** @var \Joomla\CMS\Toolbar\Toolbar $toolbar */
+        $toolbar = $document->getToolbar('toolbar');
 
         $statusDropdown = $toolbar->dropdownButton('form-status-group');
         $statusDropdown->text('Actions');
@@ -366,9 +383,9 @@ class HtmlView extends BaseHtmlView
         $config = PackedDataHelper::decodePackedData($this->item->config ?? null, null, true);
         $this->item->config = is_array($config) ? $config : null;
 
-        $this->list_states_action_plugins = $this->get('ListStatesActionPlugins') ?? [];
-        $this->verification_plugins       = $this->get('VerificationPlugins') ?? [];
-        $this->theme_plugins              = $this->get('ThemePlugins') ?? [];
+        $this->list_states_action_plugins = $model->getListStatesActionPlugins();
+        $this->verification_plugins       = $model->getVerificationPlugins();
+        $this->theme_plugins              = $model->getThemePlugins();
 
         HTMLHelper::_('behavior.keepalive');
         $this->setLayout('edit');

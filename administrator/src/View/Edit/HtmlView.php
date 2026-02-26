@@ -18,6 +18,7 @@ use Joomla\CMS\Router\Route;
 use Joomla\Database\DatabaseInterface;
 use Joomla\CMS\Toolbar\ToolbarHelper;
 use Joomla\CMS\Plugin\PluginHelper;
+use CB\Component\Contentbuilderng\Administrator\Model\EditModel;
 use CB\Component\Contentbuilderng\Administrator\View\Contentbuilderng\HtmlView as BaseHtmlView;
 
 class HtmlView extends BaseHtmlView
@@ -227,6 +228,7 @@ class HtmlView extends BaseHtmlView
 		//HTMLHelper::_('bootstrap.tooltip');
 
 		// Get data from the model
+		/** @var EditModel $model */
 		$model = $this->getModel();
 		$subject = (is_object($model) && method_exists($model, 'getData')) ? $model->getData() : null;
 		if (!is_object($subject)) {
