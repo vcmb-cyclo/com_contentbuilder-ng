@@ -488,8 +488,8 @@ $formatAuditIssueList = static function (array $values, int $limit = 8): string 
         text-decoration-thickness: 2px;
     }
     .cb-config-sections-scroll {
-        max-height: 320px;
-        min-height: 240px;
+        max-height: 400px;
+        min-height: 280px;
         overflow-y: auto;
         border: 1px solid #e2e8f0;
         border-radius: .5rem;
