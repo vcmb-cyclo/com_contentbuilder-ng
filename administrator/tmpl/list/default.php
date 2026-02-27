@@ -11,6 +11,7 @@
 \defined('_JEXEC') or die('Restricted access');
 
 use Joomla\CMS\Factory;
+use Joomla\CMS\Application\AdministratorApplication;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Uri\Uri;
 use Joomla\CMS\Router\Route;
@@ -31,7 +32,10 @@ $state_allowed = ContentbuilderLegacyHelper::authorize('state');
 $publish_allowed = ContentbuilderLegacyHelper::authorize('publish');
 $rating_allowed = ContentbuilderLegacyHelper::authorize('rating');
 
-$wa = Factory::getApplication()->getDocument()->getWebAssetManager();
+/** @var AdministratorApplication $app */
+$app = Factory::getApplication();
+$document = $app->getDocument();
+$wa = $document->getWebAssetManager();
 
 // Charge le manifeste joomla.asset.json du composant
 $wa->getRegistry()->addExtensionRegistryFile('com_contentbuilderng');
@@ -41,8 +45,8 @@ $wa->useScript('com_contentbuilderng.contentbuilderng');
 
 
 ?>
-<?php Factory::getApplication()->getDocument()->addStyleDeclaration($this->theme_css); ?>
-<?php Factory::getApplication()->getDocument()->addScriptDeclaration($this->theme_js); ?>
+<?php $document->addStyleDeclaration($this->theme_css); ?>
+<?php $document->addScriptDeclaration($this->theme_js); ?>
 
 <script type="text/javascript">
 <!--

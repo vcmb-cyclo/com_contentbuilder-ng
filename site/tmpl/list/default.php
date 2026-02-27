@@ -18,6 +18,7 @@ use Joomla\CMS\Router\Route;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Uri\Uri;
 use CB\Component\Contentbuilderng\Administrator\Helper\ContentbuilderLegacyHelper;
+use CB\Component\Contentbuilderng\Administrator\Helper\ContentbuilderngHelper;
 use CB\Component\Contentbuilderng\Administrator\Helper\RatingHelper;
 
 /** @var SiteApplication $app */
@@ -31,14 +32,8 @@ $new_allowed = $frontend ? ContentbuilderLegacyHelper::authorizeFe('new') : Cont
 $state_allowed = $frontend ? ContentbuilderLegacyHelper::authorizeFe('state') : ContentbuilderLegacyHelper::authorize('state');
 $publish_allowed = $frontend ? ContentbuilderLegacyHelper::authorizeFe('publish') : ContentbuilderLegacyHelper::authorize('publish');
 $rating_allowed = $frontend ? ContentbuilderLegacyHelper::authorizeFe('rating') : ContentbuilderLegacyHelper::authorize('rating');
-$helperClass = 'CB\\Component\\Contentbuilderng\\Administrator\\Helper\\ContentbuilderngHelper';
-$hasContentbuilderngHelper = class_exists($helperClass);
-$wordwrapLabel = static function (string $label) use ($helperClass, $hasContentbuilderngHelper): string {
-	if ($hasContentbuilderngHelper) {
-		return (string) $helperClass::contentbuilderng_wordwrap($label, 20, "\n", true);
-	}
-
-	return wordwrap($label, 20, "\n", true);
+$wordwrapLabel = static function (string $label): string {
+	return (string) ContentbuilderngHelper::contentbuilderng_wordwrap($label, 20, "\n", true);
 };
 
 $input = $app->input;

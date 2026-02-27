@@ -19,39 +19,38 @@ use Joomla\CMS\Language\Text;
 use Joomla\CMS\Router\Route;
 use Joomla\CMS\Uri\Uri;
 use CB\Component\Contentbuilderng\Administrator\Helper\ContentbuilderLegacyHelper;
+use CB\Component\Contentbuilderng\Administrator\Helper\ContentbuilderngHelper;
 ?>
 <?php
 /** @var AdministratorApplication $app */
 $app = Factory::getApplication();
 $session = $app->getSession();
-$helperClass = 'CB\\Component\\Contentbuilderng\\Administrator\\Helper\\ContentbuilderngHelper';
-$hasContentbuilderngHelper = class_exists($helperClass);
 $wa = $app->getDocument()->getWebAssetManager();
 $wa->addInlineStyle(
     '.saveorder.btn{background-color:#fff;border-color:#ced4da;color:#1b1b1b}'
-    . '.saveorder.btn:hover{background-color:#f8f9fa}'
-    . '.cb-display-in-row{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap}'
-    . '.cb-order-slot{display:inline-block;width:24px;text-align:center}'
-    . '.cb-order-placeholder{visibility:hidden}'
-    . '.cb-order-input{margin-left:6px}'
-    . '.cb-order-head{vertical-align:middle;white-space:nowrap}'
-    . '.cb-order-head .saveorder{float:none!important;margin-left:6px}'
-    . '.cb-item-label-cell{display:flex;flex-direction:column;gap:4px}'
-    . '.cb-item-label-display{cursor:pointer;width:100%;display:block}'
-    . '.cb-item-order-type{min-width:170px;max-width:190px}'
-    . '.cb-elements-table .cb-col-label{width:340px;min-width:340px}'
-    . '.cb-elements-table .cb-col-toggle{white-space:nowrap}'
-    . '.cb-elements-table .cb-col-editable{width:120px;min-width:120px}'
-    . '.cb-wordwrap-input{width:8ch!important;min-width:8ch!important;max-width:8ch!important;text-align:center}'
-    . '.cb-save-animate{background-color:var(--alert-heading-bg,var(--bs-success,#198754))!important;background-image:none!important;border-color:var(--bs-success,#198754)!important;color:#fff!important;filter:brightness(1.2)!important;box-shadow:0 0 0 .38rem rgba(25,135,84,.36)!important;transition:none!important}'
-    . '.cb-save-animate .fa-check,.cb-save-animate .fa-xmark,.cb-save-animate .fa-xmark-new{color:#fff!important}'
-    . '#view-pane .nav-tabs,#perm-pane .nav-tabs{display:flex;gap:.4rem;flex-wrap:wrap;padding:.42rem;margin-bottom:.9rem;border:1px solid #dbe1ea;border-bottom:1px solid #dbe1ea;border-radius:14px;background:linear-gradient(180deg,#f7f9fc,#eef3f9)}'
-    . '#view-pane .nav-tabs .nav-link,#view-pane .nav-tabs [role="tab"],#perm-pane .nav-tabs .nav-link,#perm-pane .nav-tabs [role="tab"]{border:1px solid transparent;border-radius:10px;padding:.45rem .8rem;font-weight:600;color:#334155;background:transparent;transition:all .18s ease}'
-    . '#view-pane .nav-tabs .nav-link:hover,#view-pane .nav-tabs [role="tab"]:hover,#perm-pane .nav-tabs .nav-link:hover,#perm-pane .nav-tabs [role="tab"]:hover{background:#fff;border-color:#cfd8e3;color:#0f172a;transform:translateY(-1px)}'
-    . '#view-pane .nav-tabs .nav-link:focus-visible,#view-pane .nav-tabs [role="tab"]:focus-visible,#perm-pane .nav-tabs .nav-link:focus-visible,#perm-pane .nav-tabs [role="tab"]:focus-visible{outline:2px solid #1d4ed8;outline-offset:1px}'
-    . '#view-pane .nav-tabs .nav-link.active,#view-pane .nav-tabs [role="tab"][aria-selected="true"],#perm-pane .nav-tabs .nav-link.active,#perm-pane .nav-tabs [role="tab"][aria-selected="true"]{color:#fff;background:linear-gradient(135deg,#0f4db8,#0ea5e9);border-color:#0f4db8;box-shadow:0 4px 12px rgba(15,77,184,.28)}'
-    . '@media (max-width:991.98px){#view-pane .nav-tabs,#perm-pane .nav-tabs{flex-wrap:nowrap;overflow:auto;-webkit-overflow-scrolling:touch}#view-pane .nav-tabs .nav-link,#view-pane .nav-tabs [role="tab"],#perm-pane .nav-tabs .nav-link,#perm-pane .nav-tabs [role="tab"]{white-space:nowrap}}'
-    . '@keyframes cb-blink{50%{opacity:0}}'
+        . '.saveorder.btn:hover{background-color:#f8f9fa}'
+        . '.cb-display-in-row{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap}'
+        . '.cb-order-slot{display:inline-block;width:24px;text-align:center}'
+        . '.cb-order-placeholder{visibility:hidden}'
+        . '.cb-order-input{margin-left:6px}'
+        . '.cb-order-head{vertical-align:middle;white-space:nowrap}'
+        . '.cb-order-head .saveorder{float:none!important;margin-left:6px}'
+        . '.cb-item-label-cell{display:flex;flex-direction:column;gap:4px}'
+        . '.cb-item-label-display{cursor:pointer;width:100%;display:block}'
+        . '.cb-wordwrap-input{width:8ch!important;min-width:8ch!important;max-width:8ch!important;text-align:center}'
+        . '.cb-prepare-tools{row-gap:.5rem}'
+        . '.cb-prepare-tools .btn{text-wrap:nowrap}'
+        . '.cb-prepare-tools .cb-snippet-select{display:inline-block;width:auto;min-width:12ch;max-width:42ch;flex:0 0 auto}'
+        . '.cb-prepare-tools .cb-effect-select{min-width:170px;max-width:240px}'
+        . '.cb-save-animate{background-color:var(--alert-heading-bg,var(--bs-success,#198754))!important;background-image:none!important;border-color:var(--bs-success,#198754)!important;color:#fff!important;filter:brightness(1.2)!important;box-shadow:0 0 0 .38rem rgba(25,135,84,.36)!important;transition:none!important}'
+        . '.cb-save-animate .fa-check,.cb-save-animate .fa-xmark,.cb-save-animate .fa-xmark-new{color:#fff!important}'
+        . '#view-pane .nav-tabs,#perm-pane .nav-tabs{display:flex;gap:.4rem;flex-wrap:wrap;padding:.42rem;margin-bottom:.9rem;border:1px solid #dbe1ea;border-bottom:1px solid #dbe1ea;border-radius:14px;background:linear-gradient(180deg,#f7f9fc,#eef3f9)}'
+        . '#view-pane .nav-tabs .nav-link,#view-pane .nav-tabs [role="tab"],#perm-pane .nav-tabs .nav-link,#perm-pane .nav-tabs [role="tab"]{border:1px solid transparent;border-radius:10px;padding:.45rem .8rem;font-weight:600;color:#334155;background:transparent;transition:all .18s ease}'
+        . '#view-pane .nav-tabs .nav-link:hover,#view-pane .nav-tabs [role="tab"]:hover,#perm-pane .nav-tabs .nav-link:hover,#perm-pane .nav-tabs [role="tab"]:hover{background:#fff;border-color:#cfd8e3;color:#0f172a;transform:translateY(-1px)}'
+        . '#view-pane .nav-tabs .nav-link:focus-visible,#view-pane .nav-tabs [role="tab"]:focus-visible,#perm-pane .nav-tabs .nav-link:focus-visible,#perm-pane .nav-tabs [role="tab"]:focus-visible{outline:2px solid #1d4ed8;outline-offset:1px}'
+        . '#view-pane .nav-tabs .nav-link.active,#view-pane .nav-tabs [role="tab"][aria-selected="true"],#perm-pane .nav-tabs .nav-link.active,#perm-pane .nav-tabs [role="tab"][aria-selected="true"]{color:#fff;background:linear-gradient(135deg,#0f4db8,#0ea5e9);border-color:#0f4db8;box-shadow:0 4px 12px rgba(15,77,184,.28)}'
+        . '@media (max-width:991.98px){#view-pane .nav-tabs,#perm-pane .nav-tabs{flex-wrap:nowrap;overflow:auto;-webkit-overflow-scrolling:touch}#view-pane .nav-tabs .nav-link,#view-pane .nav-tabs [role="tab"],#perm-pane .nav-tabs .nav-link,#perm-pane .nav-tabs [role="tab"]{white-space:nowrap}}'
+        . '@keyframes cb-blink{50%{opacity:0}}'
 );
 
 $listOrder = (string) ($this->listOrder ?? 'ordering');
@@ -419,8 +418,8 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
                     var listenerCodeLower = listenerCode.toLowerCase();
                     var stack = String((new Error()).stack || '').toLowerCase();
                     var looksLikeJoomlaTinyReloadListener =
-                        listenerCodeLower.indexOf('debouncereinit') !== -1
-                        || /\/media\/plg_editors_tinymce\/js\/tinymce(?:\.min)?\.js/.test(stack);
+                        listenerCodeLower.indexOf('debouncereinit') !== -1 ||
+                        /\/media\/plg_editors_tinymce\/js\/tinymce(?:\.min)?\.js/.test(stack);
 
                     if (looksLikeJoomlaTinyReloadListener) {
                         return;
@@ -566,16 +565,46 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
 
     function cbGetToggleTaskMeta(task) {
         var map = {
-            'form.list_include': { nextTask: 'form.no_list_include', enabled: true },
-            'form.no_list_include': { nextTask: 'form.list_include', enabled: false },
-            'form.search_include': { nextTask: 'form.no_search_include', enabled: true },
-            'form.no_search_include': { nextTask: 'form.search_include', enabled: false },
-            'form.linkable': { nextTask: 'form.not_linkable', enabled: true },
-            'form.not_linkable': { nextTask: 'form.linkable', enabled: false },
-            'form.editable': { nextTask: 'form.not_editable', enabled: true },
-            'form.not_editable': { nextTask: 'form.editable', enabled: false },
-            'form.listpublish': { nextTask: 'form.listunpublish', enabled: true },
-            'form.listunpublish': { nextTask: 'form.listpublish', enabled: false }
+            'form.list_include': {
+                nextTask: 'form.no_list_include',
+                enabled: true
+            },
+            'form.no_list_include': {
+                nextTask: 'form.list_include',
+                enabled: false
+            },
+            'form.search_include': {
+                nextTask: 'form.no_search_include',
+                enabled: true
+            },
+            'form.no_search_include': {
+                nextTask: 'form.search_include',
+                enabled: false
+            },
+            'form.linkable': {
+                nextTask: 'form.not_linkable',
+                enabled: true
+            },
+            'form.not_linkable': {
+                nextTask: 'form.linkable',
+                enabled: false
+            },
+            'form.editable': {
+                nextTask: 'form.not_editable',
+                enabled: true
+            },
+            'form.not_editable': {
+                nextTask: 'form.editable',
+                enabled: false
+            },
+            'form.listpublish': {
+                nextTask: 'form.listunpublish',
+                enabled: true
+            },
+            'form.listunpublish': {
+                nextTask: 'form.listpublish',
+                enabled: false
+            }
         };
 
         return map[String(task || '')] || null;
@@ -730,10 +759,10 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
         }
 
         var dataTask = String(
-            actionElement.getAttribute('data-item-task')
-            || actionElement.getAttribute('data-submit-task')
-            || actionElement.getAttribute('data-task')
-            || ''
+            actionElement.getAttribute('data-item-task') ||
+            actionElement.getAttribute('data-submit-task') ||
+            actionElement.getAttribute('data-task') ||
+            ''
         ).trim();
 
         if (dataTask === '') {
@@ -797,13 +826,13 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
 
         var endpoint = form.getAttribute('action') || 'index.php';
         fetch(endpoint, {
-            method: 'POST',
-            body: formData,
-            credentials: 'same-origin',
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-        })
+                method: 'POST',
+                body: formData,
+                credentials: 'same-origin',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
             .then(function(response) {
                 return response.text().then(function(text) {
                     var payload = null;
@@ -1189,6 +1218,15 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
         if (hint) {
             hint.classList.remove('d-none');
         }
+    }
+
+    function cbOpenPrepareExamples() {
+        var modalElement = document.getElementById('cb-prepare-examples-modal');
+        if (!modalElement || !window.bootstrap || typeof window.bootstrap.Modal !== 'function') {
+            return;
+        }
+
+        window.bootstrap.Modal.getOrCreateInstance(modalElement).show();
     }
 
     function cbQueueEmailAdminSampleGeneration(button) {
@@ -2338,31 +2376,31 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
                             <th width="20">
                                 <?php echo HTMLHelper::_('grid.checkall'); ?>
                             </th>
-                            <th class="cb-col-label">
+                            <th>
                                 <span class="editlinktip hasTip"
                                     title="<?php echo Text::_('COM_CONTENTBUILDERNG_LABEL_TIP'); ?>">
                                     <?php echo $sortLink(Text::_('COM_CONTENTBUILDERNG_LABEL'), 'label'); ?>
                                 </span>
                             </th>
-                            <th class="cb-col-toggle">
+                            <th>
                                 <span class="editlinktip hasTip"
                                     title="<?php echo Text::_('COM_CONTENTBUILDERNG_LIST_INCLUDE_TIP'); ?>">
                                     <?php echo $sortLink(Text::_('COM_CONTENTBUILDERNG_LIST_INCLUDE'), 'list_include'); ?>
                                 </span>
                             </th>
-                            <th class="cb-col-toggle">
+                            <th>
                                 <span class="editlinktip hasTip"
                                     title="<?php echo Text::_('COM_CONTENTBUILDERNG_SEARCH_INCLUDE_TIP'); ?>">
                                     <?php echo $sortLink(Text::_('COM_CONTENTBUILDERNG_SEARCH_INCLUDE'), 'search_include'); ?>
                                 </span>
                             </th>
-                            <th class="cb-col-toggle">
+                            <th>
                                 <span class="editlinktip hasTip"
                                     title="<?php echo Text::_('COM_CONTENTBUILDERNG_LINKABLE_TIP'); ?>">
                                     <?php echo $sortLink(Text::_('COM_CONTENTBUILDERNG_LINKABLE'), 'linkable'); ?>
                                 </span>
                             </th>
-                            <th class="cb-col-editable">
+                            <th>
                                 <span class="editlinktip hasTip"
                                     title="<?php echo Text::_('COM_CONTENTBUILDERNG_EDITABLE_TIP'); ?>">
                                     <?php echo $sortLink(Text::_('COM_CONTENTBUILDERNG_EDITABLE'), 'editable'); ?>
@@ -2380,7 +2418,7 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
                                     <?php echo Text::_('COM_CONTENTBUILDERNG_LIST_ITEM_WRAPPER'); ?>
                                 </span>
                             </th>
-                            <th class="cb-col-toggle">
+                            <th>
                                 <?php echo $sortLink(Text::_('COM_CONTENTBUILDERNG_PUBLISHED'), 'published'); ?>
                             </th>
                             <th width="120" class="cb-order-head">
@@ -2401,11 +2439,11 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
                         for ($i = 0; $i < $n; $i++) {
                             $row = $this->elements[$i];
                             $checked = HTMLHelper::_('grid.id', $i, $row->id);
-                            $published = $hasContentbuilderngHelper ? $helperClass::listPublish('form', $row, $i) : '';
-                            $list_include = $hasContentbuilderngHelper ? $helperClass::listIncludeInList('form', $row, $i) : '';
-                            $search_include = $hasContentbuilderngHelper ? $helperClass::listIncludeInSearch('form', $row, $i) : '';
-                            $linkable = $hasContentbuilderngHelper ? $helperClass::listLinkable('form', $row, $i) : '';
-                            $editable = $hasContentbuilderngHelper ? $helperClass::listEditable('form', $row, $i) : '';
+                            $published = ContentbuilderngHelper::listPublish('form', $row, $i);
+                            $list_include = ContentbuilderngHelper::listIncludeInList('form', $row, $i);
+                            $search_include = ContentbuilderngHelper::listIncludeInSearch('form', $row, $i);
+                            $linkable = ContentbuilderngHelper::listLinkable('form', $row, $i);
+                            $editable = ContentbuilderngHelper::listEditable('form', $row, $i);
                         ?>
                             <tr id="cb-row-<?php echo (int) $row->id; ?>" class="<?php echo "row$k"; ?>" data-cb-row-id="<?php echo (int) $row->id; ?>">
                                 <td valign="top">
@@ -2414,60 +2452,60 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
                                 <td valign="top">
                                     <?php echo $checked; ?>
                                 </td>
-                                <td class="cb-col-label" valign="top">
+                                <td valign="top">
                                     <div class="cb-item-label-cell">
-                                    <div class="cb-item-label-display"
-                                        id="itemLabels_<?php echo $row->id ?>"
-                                        onclick="document.getElementById('itemLabels<?php echo $row->id ?>').style.display='block';this.style.display='none';document.getElementById('itemLabels<?php echo $row->id ?>').focus();">
-                                        <b>
-                                            <?php echo htmlentities($row->label ?? '', ENT_QUOTES, 'UTF-8'); ?>
-                                        </b>
-                                    </div>
-                                    <input class="form-control form-control-sm"
-                                        onblur="cbHandleItemLabelBlur(this, <?php echo (int) $row->id; ?>);"
-                                        onkeydown="if (event.key === 'Enter') { event.preventDefault(); this.blur(); }"
-                                        id="itemLabels<?php echo $row->id ?>" type="text" style="display:none; width: 100%;"
-                                        name="jform[itemLabels][<?php echo $row->id ?>]"
-                                        data-cb-last-saved="<?php echo htmlentities($row->label ?? '', ENT_QUOTES, 'UTF-8'); ?>"
-                                        value="<?php echo htmlentities($row->label ?? '', ENT_QUOTES, 'UTF-8') ?>" />
+                                        <div class="cb-item-label-display"
+                                            id="itemLabels_<?php echo $row->id ?>"
+                                            onclick="document.getElementById('itemLabels<?php echo $row->id ?>').style.display='block';this.style.display='none';document.getElementById('itemLabels<?php echo $row->id ?>').focus();">
+                                            <b>
+                                                <?php echo htmlentities($row->label ?? '', ENT_QUOTES, 'UTF-8'); ?>
+                                            </b>
+                                        </div>
+                                        <input class="form-control form-control-sm"
+                                            onblur="cbHandleItemLabelBlur(this, <?php echo (int) $row->id; ?>);"
+                                            onkeydown="if (event.key === 'Enter') { event.preventDefault(); this.blur(); }"
+                                            id="itemLabels<?php echo $row->id ?>" type="text" style="display:none; width: 100%;"
+                                            name="jform[itemLabels][<?php echo $row->id ?>]"
+                                            data-cb-last-saved="<?php echo htmlentities($row->label ?? '', ENT_QUOTES, 'UTF-8'); ?>"
+                                            value="<?php echo htmlentities($row->label ?? '', ENT_QUOTES, 'UTF-8') ?>" />
 
-                                    <select class="form-select form-select-sm cb-item-order-type"
-                                        id="itemOrderTypes<?php echo $row->id ?>" name="jform[itemOrderTypes][<?php echo $row->id ?>]">
-                                        <option value=""> -
-                                            <?php echo Text::_('COM_CONTENTBUILDERNG_ORDER_TYPES'); ?> -
-                                        </option>
-                                        <option value="CHAR" <?php echo $row->order_type == 'CHAR' ? ' selected="selected"' : '' ?>>
-                                            <?php echo Text::_('COM_CONTENTBUILDERNG_ORDER_TYPES_TEXT'); ?>
-                                        </option>
-                                        <option value="DATETIME" <?php echo $row->order_type == 'DATETIME' ? ' selected="selected"' : '' ?>>
-                                            <?php echo Text::_('COM_CONTENTBUILDERNG_ORDER_TYPES_DATETIME'); ?>
-                                        </option>
-                                        <option value="DATE" <?php echo $row->order_type == 'DATE' ? ' selected="selected"' : '' ?>>
-                                            <?php echo Text::_('COM_CONTENTBUILDERNG_ORDER_TYPES_DATE'); ?>
-                                        </option>
-                                        <option value="TIME" <?php echo $row->order_type == 'TIME' ? ' selected="selected"' : '' ?>>
-                                            <?php echo Text::_('COM_CONTENTBUILDERNG_ORDER_TYPES_TIME'); ?>
-                                        </option>
-                                        <option value="UNSIGNED" <?php echo $row->order_type == 'UNSIGNED' ? ' selected="selected"' : '' ?>>
-                                            <?php echo Text::_('COM_CONTENTBUILDERNG_ORDER_TYPES_INTEGER'); ?>
-                                        </option>
-                                        <option value="DECIMAL" <?php echo $row->order_type == 'DECIMAL' ? ' selected="selected"' : '' ?>>
-                                            <?php echo Text::_('COM_CONTENTBUILDERNG_ORDER_TYPES_DECIMAL'); ?>
-                                        </option>
-                                    </select>
+                                        <select class="form-select form-select-sm d-inline-block w-auto"
+                                            id="itemOrderTypes<?php echo $row->id ?>" name="jform[itemOrderTypes][<?php echo $row->id ?>]">
+                                            <option value=""> -
+                                                <?php echo Text::_('COM_CONTENTBUILDERNG_ORDER_TYPES'); ?> -
+                                            </option>
+                                            <option value="CHAR" <?php echo $row->order_type == 'CHAR' ? ' selected="selected"' : '' ?>>
+                                                <?php echo Text::_('COM_CONTENTBUILDERNG_ORDER_TYPES_TEXT'); ?>
+                                            </option>
+                                            <option value="DATETIME" <?php echo $row->order_type == 'DATETIME' ? ' selected="selected"' : '' ?>>
+                                                <?php echo Text::_('COM_CONTENTBUILDERNG_ORDER_TYPES_DATETIME'); ?>
+                                            </option>
+                                            <option value="DATE" <?php echo $row->order_type == 'DATE' ? ' selected="selected"' : '' ?>>
+                                                <?php echo Text::_('COM_CONTENTBUILDERNG_ORDER_TYPES_DATE'); ?>
+                                            </option>
+                                            <option value="TIME" <?php echo $row->order_type == 'TIME' ? ' selected="selected"' : '' ?>>
+                                                <?php echo Text::_('COM_CONTENTBUILDERNG_ORDER_TYPES_TIME'); ?>
+                                            </option>
+                                            <option value="UNSIGNED" <?php echo $row->order_type == 'UNSIGNED' ? ' selected="selected"' : '' ?>>
+                                                <?php echo Text::_('COM_CONTENTBUILDERNG_ORDER_TYPES_INTEGER'); ?>
+                                            </option>
+                                            <option value="DECIMAL" <?php echo $row->order_type == 'DECIMAL' ? ' selected="selected"' : '' ?>>
+                                                <?php echo Text::_('COM_CONTENTBUILDERNG_ORDER_TYPES_DECIMAL'); ?>
+                                            </option>
+                                        </select>
                                     </div>
 
                                 </td>
-                                <td class="cb-col-toggle" valign="top">
+                                <td valign="top">
                                     <?php echo $list_include; ?>
                                 </td>
-                                <td class="cb-col-toggle" valign="top">
+                                <td valign="top">
                                     <?php echo $search_include; ?>
                                 </td>
-                                <td class="cb-col-toggle" valign="top">
+                                <td valign="top">
                                     <?php echo $linkable; ?>
                                 </td>
-                                <td class="cb-col-editable" valign="top">
+                                <td valign="top">
                                     <?php echo $editable; ?>
                                     <?php
                                     if ($row->editable && !$this->item->edit_by_type) {
@@ -2485,7 +2523,7 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
                                         name="jform[itemWrapper][<?php echo $row->id ?>]"
                                         value="<?php echo htmlentities($row->item_wrapper ?? '', ENT_QUOTES, 'UTF-8') ?>" />
                                 </td>
-                                <td class="cb-col-toggle" valign="top">
+                                <td valign="top">
                                     <?php echo $published; ?>
                                 </td>
                                 <td class="order" width="150" valign="top">
@@ -2677,8 +2715,10 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
                     <input type="hidden" name="jform[create_sample]" id="cb_create_sample_flag" value="0" />
                     <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
                         <button type="button" class="btn btn-sm btn-outline-secondary" id="create_sample"
+                            title="<?php echo Text::_('COM_CONTENTBUILDERNG_CREATE_TEMPLATE_TIP'); ?>"
+                            aria-label="<?php echo Text::_('COM_CONTENTBUILDERNG_CREATE_TEMPLATE_TIP'); ?>"
                             onclick="cbQueueDetailsSampleGeneration(this);">
-                            <?php echo Text::_('COM_CONTENTBUILDERNG_INITIALISE'); ?>
+                            <?php echo Text::_('COM_CONTENTBUILDERNG_CREATE_TEMPLATE'); ?>
                         </button>
                         <small id="cb_create_sample_hint" class="text-success d-none">
                             <?php echo Text::_('COM_CONTENTBUILDERNG_INITIALISE_WILL_APPLY_ON_SAVE'); ?>
@@ -2741,9 +2781,9 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
                             <option value="<?php echo $sortable->reference_id; ?>" <?php echo $this->item->title_field == $sortable->reference_id ? ' selected="selected"' : ''; ?>>
                                 <?php echo htmlentities($sortable->label ?? '', ENT_QUOTES, 'UTF-8'); ?>
                             </option>
-                            <?php
+                        <?php
                         }
-                            ?>
+                        ?>
                     </select>
                 </td>
                 <td width="20%">
@@ -2951,13 +2991,32 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
         if (trim($this->item->details_prepare ?? '') == '') {
             $this->item->details_prepare = '// Here you may alter labels and values for each item before it gets rendered through your details template.' . "\n";
         }
+        $prepareExamplesText = <<<'TXT'
+// Here you may alter labels and values for each item before it gets rendered through your editable template.
+
+// Adapt with PHP code value and label
+// The data are stored in the $items array.
+
+// For an example, the field value "NAME" will be displayed in uppercase, bold and red.
+$items["NAME"]["value"] = strtoupper((string) $items["NAME"]["value"]);
+$items["NAME"]["value"] = "<b>" . $items["NAME"]["value"] . "</b>";
+$items["NAME"]["value"] = "<span style=\"color:#dc3545\">" . $items["NAME"]["value"] . "</span>";
+
+// For an example, the field value "COUNT" will be displayed in red if < 0.
+$items["COUNT"]["value"] = (is_numeric((string) $items["COUNT"]["value"]) && (float) $items["COUNT"]["value"] < 0)
+    ? "<span style=\"color:#dc3545\">" . $items["COUNT"]["value"] . "</span>"
+    : $items["COUNT"]["value"];
+
+// Example: add the current date to a label field.
+$items["DATE_LABEL"]["label"] = (string) $items["DATE_LABEL"]["label"] . " (" . date("Y-m-d") . ")";
+TXT;
 
         ?>
-        <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+        <div class="d-flex flex-wrap align-items-center gap-2 mb-3 cb-prepare-tools">
             <label class="form-label mb-0" for="cb_details_prepare_snippet_select">
                 <?php echo Text::_('COM_CONTENTBUILDERNG_EDITABLE_PREPARE_SNIPPET_LABEL'); ?>
             </label>
-            <select class="form-select form-select-sm" id="cb_details_prepare_snippet_select" style="display:inline-block;width:auto;min-width:12ch;max-width:42ch;flex:0 0 auto;">
+            <select class="form-select form-select-sm cb-snippet-select" id="cb_details_prepare_snippet_select">
                 <?php if (!empty($editablePrepareSnippetOptions)) : ?>
                     <option value=""><?php echo Text::_('COM_CONTENTBUILDERNG_EDITABLE_PREPARE_SNIPPET_PLACEHOLDER'); ?></option>
                     <?php foreach ($editablePrepareSnippetOptions as $snippetOption) : ?>
@@ -2970,7 +3029,6 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
                 <?php endif; ?>
             </select>
             <span class="d-inline-flex align-items-center gap-2">
-                <span class="form-label mb-0"><?php echo Text::_('COM_CONTENTBUILDERNG_PREPARE_TARGET_LABEL'); ?></span>
                 <span class="form-check form-check-inline mb-0">
                     <input class="form-check-input" type="radio" name="cb_details_prepare_slot" id="cb_details_prepare_slot_value" value="value" checked="checked" <?php echo empty($editablePrepareSnippetOptions) ? 'disabled="disabled"' : ''; ?> />
                     <label class="form-check-label" for="cb_details_prepare_slot_value"><?php echo Text::_('COM_CONTENTBUILDERNG_PREPARE_TARGET_VALUE_OPTION'); ?></label>
@@ -2980,27 +3038,50 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
                     <label class="form-check-label" for="cb_details_prepare_slot_label"><?php echo Text::_('COM_CONTENTBUILDERNG_PREPARE_TARGET_LABEL_OPTION'); ?></label>
                 </span>
             </span>
-            <button
-                type="button"
-                class="btn btn-sm btn-outline-secondary"
-                id="cb_add_details_prepare_snippet"
-                onclick="cbInsertDetailsPrepareSnippet();"
-                <?php echo empty($editablePrepareSnippetOptions) ? 'disabled="disabled"' : ''; ?>>
-                <?php echo Text::_('COM_CONTENTBUILDERNG_DETAILS_PREPARE_SNIPPET_ADD'); ?>
-            </button>
             <label class="form-label mb-0" for="cb_details_prepare_effect_select">
                 <?php echo Text::_('COM_CONTENTBUILDERNG_PREPARE_EFFECT_LABEL'); ?>
             </label>
-            <select class="form-select form-select-sm" id="cb_details_prepare_effect_select" style="min-width: 170px; max-width: 240px;" <?php echo empty($editablePrepareSnippetOptions) ? 'disabled="disabled"' : ''; ?>>
+            <select class="form-select form-select-sm cb-effect-select" id="cb_details_prepare_effect_select" <?php echo empty($editablePrepareSnippetOptions) ? 'disabled="disabled"' : ''; ?>>
                 <?php foreach ($prepareEffectOptions as $effectOption) : ?>
                     <option value="<?php echo htmlspecialchars((string) ($effectOption['value'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>">
                         <?php echo htmlspecialchars((string) ($effectOption['text'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>
                     </option>
                 <?php endforeach; ?>
             </select>
+            <button
+                type="button"
+                class="btn btn-sm btn-outline-secondary text-nowrap"
+                id="cb_add_details_prepare_snippet"
+                onclick="cbInsertDetailsPrepareSnippet();"
+                <?php echo empty($editablePrepareSnippetOptions) ? 'disabled="disabled"' : ''; ?>>
+                <?php echo Text::_('COM_CONTENTBUILDERNG_DETAILS_PREPARE_SNIPPET_ADD'); ?>
+            </button>
+            <button
+                type="button"
+                class="btn btn-sm px-2"
+                data-bs-toggle="tooltip"
+                data-bs-placement="top"
+                data-bs-title="<?php echo Text::_('COM_CONTENTBUILDERNG_PREPARE_EXAMPLES_BUTTON_TIP'); ?>"
+                aria-label="<?php echo Text::_('COM_CONTENTBUILDERNG_PREPARE_EXAMPLES_BUTTON_TIP'); ?>"
+                onclick="cbOpenPrepareExamples();">
+                <span class="fa-solid fa-circle-question" aria-hidden="true"></span>
+            </button>
             <small id="cb_details_prepare_snippet_hint" class="text-success d-none">
                 <?php echo Text::_('COM_CONTENTBUILDERNG_EDITABLE_PREPARE_SNIPPET_HINT'); ?>
             </small>
+        </div>
+        <div class="modal fade" id="cb-prepare-examples-modal" tabindex="-1" aria-labelledby="cb-prepare-examples-modal-label" aria-hidden="true">
+            <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="cb-prepare-examples-modal-label"><?php echo Text::_('COM_CONTENTBUILDERNG_PREPARE_EXAMPLES_TITLE'); ?></h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="<?php echo Text::_('JCLOSE'); ?>"></button>
+                    </div>
+                    <div class="modal-body">
+                        <pre class="mb-0"><code><?php echo htmlspecialchars($prepareExamplesText, ENT_QUOTES, 'UTF-8'); ?></code></pre>
+                    </div>
+                </div>
+            </div>
         </div>
         <?php
 
@@ -3054,23 +3135,25 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
                     title="<?php echo Text::_('COM_CONTENTBUILDERNG_UPLOAD_DIRECTORY_TIP'); ?>">
                     <?php echo Text::_('COM_CONTENTBUILDERNG_UPLOAD_DIRECTORY'); ?>
                 </span></label>
-            <br />
-            <input class="form-control form-control-sm" style="width: 50%;" type="text"
-                value="<?php echo trim($this->item->upload_directory) ? trim($this->item->upload_directory) : JPATH_SITE . '/media/com_contentbuilderng/upload'; ?>"
-                name="jform[upload_directory]" id="upload_directory" />
-            <br />
-            <br />
             <input type="hidden" name="jform[protect_upload_directory]" value="0" />
-            <?php echo $renderCheckbox('jform[protect_upload_directory]', 'protect_upload_directory', trim((string) $this->item->protect_upload_directory) !== ''); ?> <label class="form-check-label" for="protect_upload_directory">
-                <?php echo Text::_('COM_CONTENTBUILDERNG_PROTECT_UPLOAD_DIRECTORY'); ?>
-            </label>
-            <br />
-            <br />
+            <div class="d-flex flex-wrap align-items-center gap-3 mb-3">
+                <input class="form-control form-control-sm" style="width: 50%; min-width: 280px;" type="text"
+                    value="<?php echo trim($this->item->upload_directory) ? trim($this->item->upload_directory) : JPATH_SITE . '/media/com_contentbuilderng/upload'; ?>"
+                    name="jform[upload_directory]" id="upload_directory" />
+                <div class="form-check mb-0">
+                    <?php echo $renderCheckbox('jform[protect_upload_directory]', 'protect_upload_directory', trim((string) $this->item->protect_upload_directory) !== ''); ?>
+                    <label class="form-check-label" for="protect_upload_directory">
+                        <?php echo Text::_('COM_CONTENTBUILDERNG_PROTECT_UPLOAD_DIRECTORY'); ?>
+                    </label>
+                </div>
+            </div>
             <input type="hidden" name="jform[create_editable_sample]" id="cb_create_editable_sample_flag" value="0" />
             <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
                 <button type="button" class="btn btn-sm btn-outline-secondary" id="create_editable_sample"
+                    title="<?php echo Text::_('COM_CONTENTBUILDERNG_CREATE_TEMPLATE_TIP'); ?>"
+                    aria-label="<?php echo Text::_('COM_CONTENTBUILDERNG_CREATE_TEMPLATE_TIP'); ?>"
                     onclick="cbQueueEditableSampleGeneration(this);">
-                    <?php echo Text::_('COM_CONTENTBUILDERNG_INITIALISE'); ?>
+                    <?php echo Text::_('COM_CONTENTBUILDERNG_CREATE_TEMPLATE'); ?>
                 </button>
                 <small id="cb_create_editable_sample_hint" class="text-success d-none">
                     <?php echo Text::_('COM_CONTENTBUILDERNG_INITIALISE_WILL_APPLY_ON_SAVE'); ?>
@@ -3098,12 +3181,12 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
                 $this->item->editable_prepare = '// Here you may alter labels and values for each item before it gets rendered through your editable template.' . "\n";
             }
 
-            ?>
-            <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+        ?>
+            <div class="d-flex flex-wrap align-items-center gap-2 mb-3 cb-prepare-tools">
                 <label class="form-label mb-0" for="cb_editable_prepare_snippet_select">
                     <?php echo Text::_('COM_CONTENTBUILDERNG_EDITABLE_PREPARE_SNIPPET_LABEL'); ?>
                 </label>
-                <select class="form-select form-select-sm" id="cb_editable_prepare_snippet_select" style="display:inline-block;width:auto;min-width:12ch;max-width:42ch;flex:0 0 auto;">
+                <select class="form-select form-select-sm cb-snippet-select" id="cb_editable_prepare_snippet_select">
                     <?php if (!empty($editablePrepareSnippetOptions)) : ?>
                         <option value=""><?php echo Text::_('COM_CONTENTBUILDERNG_EDITABLE_PREPARE_SNIPPET_PLACEHOLDER'); ?></option>
                         <?php foreach ($editablePrepareSnippetOptions as $snippetOption) : ?>
@@ -3116,7 +3199,6 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
                     <?php endif; ?>
                 </select>
                 <span class="d-inline-flex align-items-center gap-2">
-                    <span class="form-label mb-0"><?php echo Text::_('COM_CONTENTBUILDERNG_PREPARE_TARGET_LABEL'); ?></span>
                     <span class="form-check form-check-inline mb-0">
                         <input class="form-check-input" type="radio" name="cb_editable_prepare_slot" id="cb_editable_prepare_slot_value" value="value" checked="checked" <?php echo empty($editablePrepareSnippetOptions) ? 'disabled="disabled"' : ''; ?> />
                         <label class="form-check-label" for="cb_editable_prepare_slot_value"><?php echo Text::_('COM_CONTENTBUILDERNG_PREPARE_TARGET_VALUE_OPTION'); ?></label>
@@ -3126,29 +3208,39 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
                         <label class="form-check-label" for="cb_editable_prepare_slot_label"><?php echo Text::_('COM_CONTENTBUILDERNG_PREPARE_TARGET_LABEL_OPTION'); ?></label>
                     </span>
                 </span>
-                <button
-                    type="button"
-                    class="btn btn-sm btn-outline-secondary"
-                    id="cb_add_editable_prepare_snippet"
-                    onclick="cbInsertEditablePrepareSnippet();"
-                    <?php echo empty($editablePrepareSnippetOptions) ? 'disabled="disabled"' : ''; ?>>
-                    <?php echo Text::_('COM_CONTENTBUILDERNG_EDITABLE_PREPARE_SNIPPET_ADD'); ?>
-                </button>
                 <label class="form-label mb-0" for="cb_editable_prepare_effect_select">
                     <?php echo Text::_('COM_CONTENTBUILDERNG_PREPARE_EFFECT_LABEL'); ?>
                 </label>
-                <select class="form-select form-select-sm" id="cb_editable_prepare_effect_select" style="min-width: 170px; max-width: 240px;" <?php echo empty($editablePrepareSnippetOptions) ? 'disabled="disabled"' : ''; ?>>
+                <select class="form-select form-select-sm cb-effect-select" id="cb_editable_prepare_effect_select" <?php echo empty($editablePrepareSnippetOptions) ? 'disabled="disabled"' : ''; ?>>
                     <?php foreach ($prepareEffectOptions as $effectOption) : ?>
                         <option value="<?php echo htmlspecialchars((string) ($effectOption['value'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>">
                             <?php echo htmlspecialchars((string) ($effectOption['text'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>
                         </option>
                     <?php endforeach; ?>
                 </select>
+                <button
+                    type="button"
+                    class="btn btn-sm btn-outline-secondary text-nowrap"
+                    id="cb_add_editable_prepare_snippet"
+                    onclick="cbInsertEditablePrepareSnippet();"
+                    <?php echo empty($editablePrepareSnippetOptions) ? 'disabled="disabled"' : ''; ?>>
+                    <?php echo Text::_('COM_CONTENTBUILDERNG_EDITABLE_PREPARE_SNIPPET_ADD'); ?>
+                </button>
+                <button
+                    type="button"
+                    class="btn btn-sm px-2"
+                    data-bs-toggle="tooltip"
+                    data-bs-placement="top"
+                    data-bs-title="<?php echo Text::_('COM_CONTENTBUILDERNG_PREPARE_EXAMPLES_BUTTON_TIP'); ?>"
+                    aria-label="<?php echo Text::_('COM_CONTENTBUILDERNG_PREPARE_EXAMPLES_BUTTON_TIP'); ?>"
+                    onclick="cbOpenPrepareExamples();">
+                    <span class="fa-solid fa-circle-question" aria-hidden="true"></span>
+                </button>
                 <small id="cb_editable_prepare_snippet_hint" class="text-success d-none">
                     <?php echo Text::_('COM_CONTENTBUILDERNG_EDITABLE_PREPARE_SNIPPET_HINT'); ?>
                 </small>
             </div>
-            <?php
+        <?php
 
             $params = array('syntax' => 'php');
             $editor = Editor::getInstance('codemirror');
