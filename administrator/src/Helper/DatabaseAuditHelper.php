@@ -16,6 +16,9 @@ use Joomla\Database\DatabaseInterface;
 
 final class DatabaseAuditHelper
 {
+    private const TARGET_CHARSET = 'utf8mb4';
+    private const TARGET_COLLATION = 'utf8mb4_0900_ai_ci';
+
     /**
      * @return array{
      *   generated_at:string,
@@ -701,11 +704,11 @@ final class DatabaseAuditHelper
                 $tablesByCollation[$collation][] = self::toAlias($tableName, $prefix);
             }
 
-            if ($collation === '' || stripos($collation, 'utf8mb4_') !== 0) {
+            if ($collation === '' || strcasecmp($collation, self::TARGET_COLLATION) !== 0) {
                 $tableIssues[] = [
                     'table' => self::toAlias($tableName, $prefix),
                     'collation' => $collation,
-                    'expected' => 'utf8mb4_*',
+                    'expected' => self::TARGET_COLLATION,
                 ];
             }
         }
@@ -745,7 +748,7 @@ final class DatabaseAuditHelper
                 continue;
             }
 
-            if ($charset !== 'utf8mb4' || stripos($collation, 'utf8mb4_') !== 0) {
+            if ($charset !== self::TARGET_CHARSET || strcasecmp($collation, self::TARGET_COLLATION) !== 0) {
                 $columnIssues[] = [
                     'table' => self::toAlias($tableName, $prefix),
                     'column' => $columnName,
