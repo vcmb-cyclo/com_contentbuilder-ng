@@ -2698,12 +2698,18 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
         </table>
         <?php
         echo HTMLHelper::_('uitab.endTab');
-        echo HTMLHelper::_('uitab.addTab', 'view-pane', 'tab3', 'Detail Template');
+        echo HTMLHelper::_('uitab.addTab', 'view-pane', 'tab3', Text::_('COM_CONTENTBUILDERNG_TAB_DETAILS_DISPLAY'));
 
         ?>
         <h3 class="mb-3">
-            <?php echo Text::_('COM_CONTENTBUILDERNG_DETAILS_TEMPLATE_MODE_TITLE'); ?>
+            <?php echo Text::_('COM_CONTENTBUILDERNG_TAB_DETAILS_DISPLAY'); ?>
         </h3>
+        <p class="text-muted mb-3">
+            <?php echo Text::_('COM_CONTENTBUILDERNG_TAB_DETAILS_DISPLAY_INTRO'); ?>
+        </p>
+        <div class="alert alert-info mb-3">
+            <?php echo Text::_('COM_CONTENTBUILDERNG_TAB_DETAILS_DISPLAY_PERMISSION_HINT'); ?>
+        </div>
         <table width="100%" class="table table-striped">
             <tr>
                 <td width="20%">
@@ -2989,25 +2995,25 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
         </h3>
         <?php
         if (trim($this->item->details_prepare ?? '') == '') {
-            $this->item->details_prepare = '// Here you may alter labels and values for each item before it gets rendered through your details template.' . "\n";
+            $this->item->details_prepare = '// Ici, vous pouvez modifier les libellés et les valeurs de chaque élément avant le rendu du template détail.' . "\n";
         }
         $prepareExamplesText = <<<'TXT'
-// Here you may alter labels and values for each item before it gets rendered through your editable template.
+// Ici, vous pouvez modifier les libellés et les valeurs de chaque élément avant le rendu du template d'édition.
 
-// Adapt with PHP code value and label
-// The data are stored in the $items array.
+// Adaptez la valeur et le libellé avec du code PHP.
+// Les données sont stockées dans le tableau $items.
 
-// For an example, the field value "NAME" will be displayed in uppercase, bold and red.
+// Exemple : la valeur du champ "NAME" sera affichée en majuscules, en gras et en rouge.
 $items["NAME"]["value"] = strtoupper((string) $items["NAME"]["value"]);
 $items["NAME"]["value"] = "<b>" . $items["NAME"]["value"] . "</b>";
 $items["NAME"]["value"] = "<span style=\"color:#dc3545\">" . $items["NAME"]["value"] . "</span>";
 
-// For an example, the field value "COUNT" will be displayed in red if < 0.
+// Exemple : la valeur du champ "COUNT" sera affichée en rouge si elle est < 0.
 $items["COUNT"]["value"] = (is_numeric((string) $items["COUNT"]["value"]) && (float) $items["COUNT"]["value"] < 0)
     ? "<span style=\"color:#dc3545\">" . $items["COUNT"]["value"] . "</span>"
     : $items["COUNT"]["value"];
 
-// Example: add the current date to a label field.
+// Exemple : ajouter la date courante à un champ de libellé.
 $items["DATE_LABEL"]["label"] = (string) $items["DATE_LABEL"]["label"] . " (" . date("Y-m-d") . ")";
 TXT;
 
@@ -3105,11 +3111,17 @@ TXT;
         ?>
         <?php
         echo HTMLHelper::_('uitab.endTab');
-        echo HTMLHelper::_('uitab.addTab', 'view-pane', 'tab5', Text::_('COM_CONTENTBUILDERNG_EDITABLE_TEMPLATE'));
+        echo HTMLHelper::_('uitab.addTab', 'view-pane', 'tab5', Text::_('COM_CONTENTBUILDERNG_TAB_EDIT_DISPLAY'));
         ?>
         <h3 class="mb-3">
-            <?php echo Text::_('COM_CONTENTBUILDERNG_EDITABLE_TEMPLATE_MODE_TITLE'); ?>
+            <?php echo Text::_('COM_CONTENTBUILDERNG_TAB_EDIT_DISPLAY'); ?>
         </h3>
+        <p class="text-muted mb-3">
+            <?php echo Text::_('COM_CONTENTBUILDERNG_TAB_EDIT_DISPLAY_INTRO'); ?>
+        </p>
+        <div class="alert alert-info mb-3">
+            <?php echo Text::_('COM_CONTENTBUILDERNG_TAB_EDIT_DISPLAY_PERMISSION_HINT'); ?>
+        </div>
         <input type="hidden" name="jform[edit_by_type]" value="0" />
         <?php if ($canEditByType) : ?>
             <div class="form-check mb-3">
@@ -3178,7 +3190,7 @@ TXT;
             echo '<input type="hidden" name="jform[editable_prepare]" value="' . htmlentities($this->item->editable_prepare ?? '', ENT_QUOTES, 'UTF-8') . '"/>';
         } else {
             if (trim($this->item->editable_prepare ?? '') == '') {
-                $this->item->editable_prepare = '// Here you may alter labels and values for each item before it gets rendered through your editable template.' . "\n";
+                $this->item->editable_prepare = '// Ici, vous pouvez modifier les libellés et les valeurs de chaque élément avant le rendu du template d\'édition.' . "\n";
             }
 
         ?>
@@ -3310,7 +3322,7 @@ TXT;
                 <code><?php echo htmlspecialchars($apiExampleVerboseDisplayUrl, ENT_QUOTES, 'UTF-8'); ?></code>
             </a>
         </div>
-        <label for="cb_api_example_payload" class="form-label"><strong>JSON</strong></label>
+        <label for="cb_api_example_payload" class="form-label"><strong><?php echo Text::_('COM_CONTENTBUILDERNG_API_JSON_LABEL'); ?></strong></label>
         <textarea id="cb_api_example_payload" class="form-control" rows="7" readonly="readonly"><?php echo htmlspecialchars($apiExamplePayloadJson, ENT_QUOTES, 'UTF-8'); ?></textarea>
         <?php
         echo HTMLHelper::_('uitab.endTab');
