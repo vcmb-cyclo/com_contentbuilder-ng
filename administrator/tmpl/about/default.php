@@ -37,13 +37,34 @@ $labelAuditButton = Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT');
 $labelDbRepairButton = Text::_('COM_CONTENTBUILDERNG_ABOUT_MIGRATE_PACKED_DATA');
 $labelShowLogButton = Text::_('COM_CONTENTBUILDERNG_ABOUT_SHOW_LOG');
 $configSections = [
-    'component_params' => Text::_('COM_CONTENTBUILDERNG_ABOUT_CONFIG_SECTION_COMPONENT_PARAMS'),
-    'forms' => Text::_('COM_CONTENTBUILDERNG_ABOUT_CONFIG_SECTION_FORMS'),
-    'elements' => Text::_('COM_CONTENTBUILDERNG_ABOUT_CONFIG_SECTION_ELEMENTS'),
-    'list_states' => Text::_('COM_CONTENTBUILDERNG_ABOUT_CONFIG_SECTION_LIST_STATES'),
-    'storages' => Text::_('COM_CONTENTBUILDERNG_ABOUT_CONFIG_SECTION_STORAGES'),
-    'storage_fields' => Text::_('COM_CONTENTBUILDERNG_ABOUT_CONFIG_SECTION_STORAGE_FIELDS'),
-    'resource_access' => Text::_('COM_CONTENTBUILDERNG_ABOUT_CONFIG_SECTION_RESOURCE_ACCESS'),
+    'component_params' => [
+        'label' => Text::_('COM_CONTENTBUILDERNG_ABOUT_CONFIG_SECTION_COMPONENT_PARAMS'),
+        'description' => Text::_('COM_CONTENTBUILDERNG_ABOUT_CONFIG_SECTION_COMPONENT_PARAMS_DESC'),
+    ],
+    'forms' => [
+        'label' => Text::_('COM_CONTENTBUILDERNG_ABOUT_CONFIG_SECTION_FORMS'),
+        'description' => Text::_('COM_CONTENTBUILDERNG_ABOUT_CONFIG_SECTION_FORMS_DESC'),
+    ],
+    'elements' => [
+        'label' => Text::_('COM_CONTENTBUILDERNG_ABOUT_CONFIG_SECTION_ELEMENTS'),
+        'description' => Text::_('COM_CONTENTBUILDERNG_ABOUT_CONFIG_SECTION_ELEMENTS_DESC'),
+    ],
+    'list_states' => [
+        'label' => Text::_('COM_CONTENTBUILDERNG_ABOUT_CONFIG_SECTION_LIST_STATES'),
+        'description' => Text::_('COM_CONTENTBUILDERNG_ABOUT_CONFIG_SECTION_LIST_STATES_DESC'),
+    ],
+    'storages' => [
+        'label' => Text::_('COM_CONTENTBUILDERNG_ABOUT_CONFIG_SECTION_STORAGES'),
+        'description' => Text::_('COM_CONTENTBUILDERNG_ABOUT_CONFIG_SECTION_STORAGES_DESC'),
+    ],
+    'storage_fields' => [
+        'label' => Text::_('COM_CONTENTBUILDERNG_ABOUT_CONFIG_SECTION_STORAGE_FIELDS'),
+        'description' => Text::_('COM_CONTENTBUILDERNG_ABOUT_CONFIG_SECTION_STORAGE_FIELDS_DESC'),
+    ],
+    'resource_access' => [
+        'label' => Text::_('COM_CONTENTBUILDERNG_ABOUT_CONFIG_SECTION_RESOURCE_ACCESS'),
+        'description' => Text::_('COM_CONTENTBUILDERNG_ABOUT_CONFIG_SECTION_RESOURCE_ACCESS_DESC'),
+    ],
 ];
 $auditReport = is_array($this->auditReport ?? null) ? $this->auditReport : [];
 $auditSummary = (array) ($auditReport['summary'] ?? []);
@@ -57,6 +78,7 @@ $missingAuditColumns = (array) ($auditReport['missing_audit_columns'] ?? []);
 $pluginExtensionDuplicates = (array) ($auditReport['plugin_extension_duplicates'] ?? []);
 $bfFieldSyncIssues = (array) ($auditReport['bf_view_field_sync_issues'] ?? []);
 $missingAuditColumnsTotal = (int) ($auditSummary['missing_audit_columns_total'] ?? 0);
+$missingAuditColumnsTableCount = (int) ($auditSummary['missing_audit_column_tables'] ?? count($missingAuditColumns));
 $pluginDuplicateGroups = (int) ($auditSummary['plugin_duplicate_groups'] ?? count($pluginExtensionDuplicates));
 $pluginDuplicateRowsToRemove = (int) ($auditSummary['plugin_duplicate_rows_to_remove'] ?? 0);
 if ($pluginDuplicateRowsToRemove === 0 && $pluginExtensionDuplicates !== []) {
@@ -174,11 +196,24 @@ $importRowsCount = (int) ($importSummary['rows'] ?? 0);
 $dbRepairConfirmMessage = str_replace('\n', "\n", Text::_('COM_CONTENTBUILDERNG_DB_REPAIR_CONFIRMATION'));
 $dbRepairPromptMessage = str_replace('\n', "\n", Text::_('COM_CONTENTBUILDERNG_DB_REPAIR_CONFIRMATION_PROMPT'));
 $dbRepairPromptFailedMessage = str_replace('\n', "\n", Text::_('COM_CONTENTBUILDERNG_DB_REPAIR_CONFIRMATION_FAILED'));
+$exportPrepareMessage = str_replace('\n', "\n", Text::_('COM_CONTENTBUILDERNG_ABOUT_EXPORT_CONFIGURATION_PREPARE'));
+$importPrepareMessage = str_replace('\n', "\n", Text::_('COM_CONTENTBUILDERNG_ABOUT_IMPORT_CONFIGURATION_PREPARE'));
 $phpLibrariesCount = count((array) $this->phpLibraries);
 $javascriptLibrariesCount = count((array) $this->javascriptLibraries);
 $columnEncodingIssueLimit = 200;
 $columnEncodingIssuesDisplayed = array_slice($columnEncodingIssues, 0, $columnEncodingIssueLimit);
 $columnEncodingIssueHiddenCount = max(0, count($columnEncodingIssues) - count($columnEncodingIssuesDisplayed));
+$hasAuditIssues = (int) ($auditSummary['issues_total'] ?? 0) > 0;
+$hasDuplicateIndexIssues = !empty($duplicateIndexes);
+$hasDuplicateIndexDropIssues = (int) ($auditSummary['duplicate_indexes_to_drop'] ?? 0) > 0;
+$hasLegacyTableIssues = !empty($legacyTables);
+$hasLegacyMenuIssues = $legacyMenuEntriesCount > 0;
+$hasTableEncodingIssues = !empty($tableEncodingIssues);
+$hasColumnEncodingIssues = !empty($columnEncodingIssues);
+$hasMixedCollationIssues = count($mixedTableCollations) > 1;
+$hasMissingAuditColumnIssues = $missingAuditColumnsTableCount > 0 || $missingAuditColumnsTotal > 0;
+$hasPluginDuplicateIssues = $pluginDuplicateGroups > 0 || $pluginDuplicateRowsToRemove > 0;
+$hasBfFieldSyncIssues = $bfFieldSyncViews > 0 || $bfFieldSyncMissingTotal > 0 || $bfFieldSyncOrphanTotal > 0;
 $formatBytes = static function (int $bytes): string {
     if ($bytes <= 0) {
         return '0 B';
@@ -453,12 +488,29 @@ $formatAuditIssueList = static function (array $values, int $limit = 8): string 
         text-decoration-thickness: 2px;
     }
     .cb-config-sections-scroll {
-        max-height: 200px;
+        max-height: 320px;
+        min-height: 240px;
         overflow-y: auto;
         border: 1px solid #e2e8f0;
         border-radius: .5rem;
         padding: .65rem .75rem;
         background: #fff;
+    }
+    .cb-config-section-item {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        align-items: start;
+        column-gap: .6rem;
+    }
+    .cb-config-section-main {
+        min-width: 0;
+    }
+    .cb-config-section-desc {
+        display: block;
+        margin-top: .15rem;
+        font-size: .78rem;
+        color: #6c757d;
+        line-height: 1.25;
     }
     .cb-import-log-scroll {
         max-height: 240px;
@@ -523,8 +575,12 @@ $formatAuditIssueList = static function (array $values, int $limit = 8): string 
             <div class="col-lg-5">
                 <label class="form-label"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_CONFIG_SECTIONS_LABEL'); ?></label>
                 <div class="cb-config-sections-scroll">
-                    <?php foreach ($configSections as $sectionKey => $sectionLabel) : ?>
-                        <div class="form-check mb-2">
+                    <?php foreach ($configSections as $sectionKey => $sectionMeta) : ?>
+                        <?php
+                        $sectionLabel = trim((string) ($sectionMeta['label'] ?? ''));
+                        $sectionDescription = trim((string) ($sectionMeta['description'] ?? ''));
+                        ?>
+                        <div class="form-check mb-2 cb-config-section-item">
                             <input
                                 class="form-check-input"
                                 type="checkbox"
@@ -533,9 +589,14 @@ $formatAuditIssueList = static function (array $values, int $limit = 8): string 
                                 value="<?php echo htmlspecialchars($sectionKey, ENT_QUOTES, 'UTF-8'); ?>"
                                 checked="checked"
                             >
-                            <label class="form-check-label" for="cb_config_section_<?php echo htmlspecialchars($sectionKey, ENT_QUOTES, 'UTF-8'); ?>">
-                                <?php echo htmlspecialchars($sectionLabel, ENT_QUOTES, 'UTF-8'); ?>
-                            </label>
+                            <div class="cb-config-section-main">
+                                <label class="form-check-label" for="cb_config_section_<?php echo htmlspecialchars($sectionKey, ENT_QUOTES, 'UTF-8'); ?>">
+                                    <?php echo htmlspecialchars($sectionLabel, ENT_QUOTES, 'UTF-8'); ?>
+                                </label>
+                                <?php if ($sectionDescription !== '') : ?>
+                                    <small class="cb-config-section-desc"><?php echo htmlspecialchars($sectionDescription, ENT_QUOTES, 'UTF-8'); ?></small>
+                                <?php endif; ?>
+                            </div>
                         </div>
                     <?php endforeach; ?>
                 </div>
@@ -601,63 +662,63 @@ $formatAuditIssueList = static function (array $values, int $limit = 8): string 
             <div class="table-responsive mb-3">
                 <table class="table table-sm table-striped align-middle mb-0">
                     <tbody>
-                    <tr>
+                    <tr class="<?php echo $hasAuditIssues ? 'table-warning' : ''; ?>">
                         <th scope="row"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_ISSUES_TOTAL'); ?></th>
                         <td><?php echo (int) ($auditSummary['issues_total'] ?? 0); ?></td>
                     </tr>
-                    <tr>
+                    <tr class="<?php echo $hasDuplicateIndexIssues ? 'table-warning' : ''; ?>">
                         <th scope="row"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_DUPLICATE_GROUPS'); ?></th>
                         <td><?php echo (int) ($auditSummary['duplicate_index_groups'] ?? 0); ?></td>
                     </tr>
-                    <tr>
+                    <tr class="<?php echo $hasDuplicateIndexDropIssues ? 'table-warning' : ''; ?>">
                         <th scope="row"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_DUPLICATE_TO_DROP'); ?></th>
                         <td><?php echo (int) ($auditSummary['duplicate_indexes_to_drop'] ?? 0); ?></td>
                     </tr>
-                    <tr>
+                    <tr class="<?php echo $hasLegacyTableIssues ? 'table-warning' : ''; ?>">
                         <th scope="row"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_LEGACY_TABLES'); ?></th>
                         <td><?php echo (int) ($auditSummary['legacy_tables'] ?? 0); ?></td>
                     </tr>
-                    <tr>
+                    <tr class="<?php echo $hasLegacyMenuIssues ? 'table-warning' : ''; ?>">
                         <th scope="row"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_LEGACY_MENU_ENTRIES'); ?></th>
                         <td><?php echo $legacyMenuEntriesCount; ?></td>
                     </tr>
-                    <tr>
+                    <tr class="<?php echo $hasTableEncodingIssues ? 'table-warning' : ''; ?>">
                         <th scope="row"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_TABLE_ENCODING_ISSUES'); ?></th>
                         <td><?php echo (int) ($auditSummary['table_encoding_issues'] ?? 0); ?></td>
                     </tr>
-                    <tr>
+                    <tr class="<?php echo $hasColumnEncodingIssues ? 'table-warning' : ''; ?>">
                         <th scope="row"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_COLUMN_ENCODING_ISSUES'); ?></th>
                         <td><?php echo (int) ($auditSummary['column_encoding_issues'] ?? 0); ?></td>
                     </tr>
-                    <tr>
+                    <tr class="<?php echo $hasMixedCollationIssues ? 'table-warning' : ''; ?>">
                         <th scope="row"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_MIXED_COLLATIONS'); ?></th>
                         <td><?php echo max(0, count($mixedTableCollations) - 1); ?></td>
                     </tr>
-                    <tr>
+                    <tr class="<?php echo $missingAuditColumnsTableCount > 0 ? 'table-warning' : ''; ?>">
                         <th scope="row"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_MISSING_AUDIT_COLUMNS_TABLES'); ?></th>
-                        <td><?php echo (int) ($auditSummary['missing_audit_column_tables'] ?? count($missingAuditColumns)); ?></td>
+                        <td><?php echo $missingAuditColumnsTableCount; ?></td>
                     </tr>
-                    <tr>
+                    <tr class="<?php echo $missingAuditColumnsTotal > 0 ? 'table-warning' : ''; ?>">
                         <th scope="row"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_MISSING_AUDIT_COLUMNS_TOTAL'); ?></th>
                         <td><?php echo $missingAuditColumnsTotal; ?></td>
                     </tr>
-                    <tr>
+                    <tr class="<?php echo $hasPluginDuplicateIssues ? 'table-warning' : ''; ?>">
                         <th scope="row"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_PLUGIN_DUPLICATE_GROUPS'); ?></th>
                         <td><?php echo $pluginDuplicateGroups; ?></td>
                     </tr>
-                    <tr>
+                    <tr class="<?php echo $hasPluginDuplicateIssues ? 'table-warning' : ''; ?>">
                         <th scope="row"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_PLUGIN_DUPLICATE_ROWS_TO_REMOVE'); ?></th>
                         <td><?php echo $pluginDuplicateRowsToRemove; ?></td>
                     </tr>
-                    <tr>
+                    <tr class="<?php echo $hasBfFieldSyncIssues ? 'table-warning' : ''; ?>">
                         <th scope="row"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_BF_FIELD_SYNC_VIEWS'); ?></th>
                         <td><?php echo $bfFieldSyncViews; ?></td>
                     </tr>
-                    <tr>
+                    <tr class="<?php echo $hasBfFieldSyncIssues ? 'table-warning' : ''; ?>">
                         <th scope="row"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_BF_FIELD_SYNC_MISSING_IN_CB'); ?></th>
                         <td><?php echo $bfFieldSyncMissingTotal; ?></td>
                     </tr>
-                    <tr>
+                    <tr class="<?php echo $hasBfFieldSyncIssues ? 'table-warning' : ''; ?>">
                         <th scope="row"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_BF_FIELD_SYNC_EXTRA_IN_CB'); ?></th>
                         <td><?php echo $bfFieldSyncOrphanTotal; ?></td>
                     </tr>
@@ -699,7 +760,7 @@ $formatAuditIssueList = static function (array $values, int $limit = 8): string 
                 </div>
             <?php endif; ?>
 
-            <h4 class="h6 mt-3"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_DUPLICATE_GROUPS'); ?></h4>
+            <h4 class="h6 mt-3<?php echo $hasDuplicateIndexIssues ? ' text-warning' : ''; ?>"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_DUPLICATE_GROUPS'); ?></h4>
             <?php if (empty($duplicateIndexes)) : ?>
                 <div class="alert cb-audit-ok-alert">
                     <?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_NO_DUPLICATE_INDEXES'); ?>
@@ -729,7 +790,7 @@ $formatAuditIssueList = static function (array $values, int $limit = 8): string 
                 </div>
             <?php endif; ?>
 
-            <h4 class="h6 mt-3"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_PLUGIN_DUPLICATES'); ?></h4>
+            <h4 class="h6 mt-3<?php echo $hasPluginDuplicateIssues ? ' text-warning' : ''; ?>"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_PLUGIN_DUPLICATES'); ?></h4>
             <?php if (empty($pluginExtensionDuplicates)) : ?>
                 <div class="alert cb-audit-ok-alert">
                     <?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_NO_PLUGIN_DUPLICATES'); ?>
@@ -787,7 +848,7 @@ $formatAuditIssueList = static function (array $values, int $limit = 8): string 
                 </div>
             <?php endif; ?>
 
-            <h4 class="h6 mt-3"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_LEGACY_TABLES'); ?></h4>
+            <h4 class="h6 mt-3<?php echo $hasLegacyTableIssues ? ' text-warning' : ''; ?>"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_LEGACY_TABLES'); ?></h4>
             <?php if (empty($legacyTables)) : ?>
                 <div class="alert cb-audit-ok-alert">
                     <?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_NO_LEGACY_TABLES'); ?>
@@ -800,7 +861,7 @@ $formatAuditIssueList = static function (array $values, int $limit = 8): string 
                 </ul>
             <?php endif; ?>
 
-            <h4 class="h6 mt-3"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_LEGACY_MENU_ENTRIES'); ?></h4>
+            <h4 class="h6 mt-3<?php echo $hasLegacyMenuIssues ? ' text-warning' : ''; ?>"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_LEGACY_MENU_ENTRIES'); ?></h4>
             <?php if (empty($legacyMenuEntries)) : ?>
                 <div class="alert cb-audit-ok-alert">
                     <?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_NO_LEGACY_MENU_ENTRIES'); ?>
@@ -830,7 +891,7 @@ $formatAuditIssueList = static function (array $values, int $limit = 8): string 
                 </div>
             <?php endif; ?>
 
-            <h4 class="h6 mt-3"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_MISSING_AUDIT_COLUMNS'); ?></h4>
+            <h4 class="h6 mt-3<?php echo $hasMissingAuditColumnIssues ? ' text-warning' : ''; ?>"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_MISSING_AUDIT_COLUMNS'); ?></h4>
             <?php if (empty($missingAuditColumns)) : ?>
                 <div class="alert cb-audit-ok-alert">
                     <?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_NO_MISSING_AUDIT_COLUMNS'); ?>
@@ -862,7 +923,7 @@ $formatAuditIssueList = static function (array $values, int $limit = 8): string 
                 </div>
             <?php endif; ?>
 
-            <h4 class="h6 mt-3"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_BF_FIELD_SYNC'); ?></h4>
+            <h4 class="h6 mt-3<?php echo $hasBfFieldSyncIssues ? ' text-warning' : ''; ?>"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_BF_FIELD_SYNC'); ?></h4>
             <?php if (empty($bfFieldSyncIssues)) : ?>
                 <div class="alert cb-audit-ok-alert">
                     <?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_BF_FIELD_SYNC_NO_ISSUES'); ?>
@@ -949,7 +1010,7 @@ $formatAuditIssueList = static function (array $values, int $limit = 8): string 
                 </div>
             <?php endif; ?>
 
-            <h4 class="h6 mt-3"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_TABLE_ENCODING_ISSUES'); ?></h4>
+            <h4 class="h6 mt-3<?php echo $hasTableEncodingIssues ? ' text-warning' : ''; ?>"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_TABLE_ENCODING_ISSUES'); ?></h4>
             <?php if (empty($tableEncodingIssues)) : ?>
                 <div class="alert cb-audit-ok-alert">
                     <?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_NO_TABLE_ENCODING_ISSUES'); ?>
@@ -977,7 +1038,7 @@ $formatAuditIssueList = static function (array $values, int $limit = 8): string 
                 </div>
             <?php endif; ?>
 
-            <h4 class="h6 mt-3"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_COLUMN_ENCODING_ISSUES'); ?></h4>
+            <h4 class="h6 mt-3<?php echo $hasColumnEncodingIssues ? ' text-warning' : ''; ?>"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_COLUMN_ENCODING_ISSUES'); ?></h4>
             <?php if (empty($columnEncodingIssuesDisplayed)) : ?>
                 <div class="alert cb-audit-ok-alert">
                     <?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_NO_COLUMN_ENCODING_ISSUES'); ?>
@@ -1012,7 +1073,7 @@ $formatAuditIssueList = static function (array $values, int $limit = 8): string 
                 <?php endif; ?>
             <?php endif; ?>
 
-            <h4 class="h6 mt-3"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_MIXED_COLLATIONS'); ?></h4>
+            <h4 class="h6 mt-3<?php echo $hasMixedCollationIssues ? ' text-warning' : ''; ?>"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_MIXED_COLLATIONS'); ?></h4>
             <?php if (count($mixedTableCollations) <= 1) : ?>
                 <div class="alert cb-audit-ok-alert">
                     <?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_NO_MIXED_COLLATIONS'); ?>
@@ -1595,15 +1656,20 @@ $formatAuditIssueList = static function (array $values, int $limit = 8): string 
         Joomla.submitbutton = function (task) {
             if (task === 'about.exportConfiguration') {
                 var exportCard = getConfigTransferCard();
-                var isExportReady = !!(
-                    exportCard
-                    && !exportCard.classList.contains('d-none')
-                    && exportCard.getAttribute('data-cb-active-task') === task
-                );
+                if (exportCard) {
+                    var exportCardWasHidden = exportCard.classList.contains('d-none');
+                    var exportCardActiveTask = String(exportCard.getAttribute('data-cb-active-task') || '');
 
-                if (!isExportReady) {
-                    window.cbRevealConfigTransfer(task);
-                    return false;
+                    if (exportCardWasHidden || exportCardActiveTask !== task) {
+                        window.cbRevealConfigTransfer(task);
+                    }
+
+                    if (exportCardWasHidden) {
+                        window.alert(
+                            <?php echo json_encode($exportPrepareMessage, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>
+                        );
+                        return false;
+                    }
                 }
 
                 if (!window.cbSubmitConfigAction(task, false)) {
@@ -1615,15 +1681,20 @@ $formatAuditIssueList = static function (array $values, int $limit = 8): string 
 
             if (task === 'about.importConfiguration') {
                 var importCard = getConfigTransferCard();
-                var isImportReady = !!(
-                    importCard
-                    && !importCard.classList.contains('d-none')
-                    && importCard.getAttribute('data-cb-active-task') === task
-                );
+                if (importCard) {
+                    var importCardWasHidden = importCard.classList.contains('d-none');
+                    var importCardActiveTask = String(importCard.getAttribute('data-cb-active-task') || '');
 
-                if (!isImportReady) {
-                    window.cbRevealConfigTransfer(task);
-                    return false;
+                    if (importCardWasHidden || importCardActiveTask !== task) {
+                        window.cbRevealConfigTransfer(task);
+                    }
+
+                    if (importCardWasHidden) {
+                        window.alert(
+                            <?php echo json_encode($importPrepareMessage, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>
+                        );
+                        return false;
+                    }
                 }
 
                 if (!window.cbSubmitConfigAction(task, true)) {

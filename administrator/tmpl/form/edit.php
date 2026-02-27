@@ -37,6 +37,7 @@ $wa->addInlineStyle(
         . '.cb-order-head .saveorder{float:none!important;margin-left:6px}'
         . '.cb-item-label-cell{display:flex;flex-direction:column;gap:4px}'
         . '.cb-item-label-display{cursor:pointer;width:100%;display:block}'
+        . '.cb-item-order-type-select{align-self:flex-start;width:auto!important;max-width:100%}'
         . '.cb-wordwrap-input{width:8ch!important;min-width:8ch!important;max-width:8ch!important;text-align:center}'
         . '.cb-prepare-tools{row-gap:.5rem}'
         . '.cb-prepare-tools .btn{text-wrap:nowrap}'
@@ -1783,7 +1784,7 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
                                     <div class="d-inline-flex align-items-center gap-2 ms-sm-4 ps-sm-2">
                                         <span class="fw-semibold editlinktip hasTip"
                                             title="<?php echo Text::_('COM_CONTENTBUILDERNG_PUBLISH_TIP'); ?>">
-                                            <?php echo Text::_('COM_CONTENTBUILDERNG_PUBLISHED'); ?>:
+                                            <?php echo Text::_('COM_CONTENTBUILDERNG_PUBLISHED'); ?> :
                                         </span>
                                         <?php
                                         $publishedToggleHtml = HTMLHelper::_(
@@ -2470,7 +2471,7 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
                                             data-cb-last-saved="<?php echo htmlentities($row->label ?? '', ENT_QUOTES, 'UTF-8'); ?>"
                                             value="<?php echo htmlentities($row->label ?? '', ENT_QUOTES, 'UTF-8') ?>" />
 
-                                        <select class="form-select form-select-sm d-inline-block w-auto"
+                                        <select class="form-select form-select-sm d-inline-block w-auto cb-item-order-type-select"
                                             id="itemOrderTypes<?php echo $row->id ?>" name="jform[itemOrderTypes][<?php echo $row->id ?>]">
                                             <option value=""> -
                                                 <?php echo Text::_('COM_CONTENTBUILDERNG_ORDER_TYPES'); ?> -
