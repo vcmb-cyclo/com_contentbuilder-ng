@@ -172,7 +172,7 @@ class EditModel extends BaseDatabaseModel
             $endpath = rtrim($this->normalizePath(JPATH_SITE), '/') . '/' . ltrim($endpath, '/');
         }
 
-        if (!Folder::exists($endpath) && !Folder::create($endpath)) {
+        if (!is_dir($endpath) && !Folder::create($endpath)) {
             return '';
         }
 

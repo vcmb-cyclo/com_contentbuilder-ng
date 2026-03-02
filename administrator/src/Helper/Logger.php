@@ -63,7 +63,7 @@ final class Logger
             $logPath = JPATH_ROOT . '/logs';
         }
 
-        if (!Folder::exists($logPath)) {
+        if (!is_dir($logPath)) {
             Folder::create($logPath);
         }
 

@@ -486,7 +486,7 @@ class FormModel extends AdminModel
 
         // Last-resort fallback: scan plugin directories if extension rows are missing.
         foreach ([JPATH_ROOT . '/plugins/contentbuilderng_themes', JPATH_ROOT . '/plugins/contentbuilderng_themes'] as $path) {
-            if (!Folder::exists($path)) {
+            if (!is_dir($path)) {
                 continue;
             }
             foreach (Folder::folders($path) as $folder) {
