@@ -148,6 +148,7 @@ class com_contentbuilderngInstallerScript
                 $this->renameLegacyTables();
 
                 // Migrate legacy component extension rows (com_contentbuilder / com_contentbuilder_ng) to NG if safe
+                $this->migrateLegacyContentbuilderName('contentbuilder');
                 $this->migrateLegacyContentbuilderName('com_contentbuilder');
                 $this->migrateLegacyContentbuilderName('com_contentbuilder_ng');
             }
@@ -209,8 +210,9 @@ class com_contentbuilderngInstallerScript
             // Remove admin menu entries referencing component (best-effort)
             try {
                 $conditions = array_merge(
-                    $this->buildMenuLinkOptionWhereClauses($db, 'com_contentbuilderng'),
+                    $this->buildMenuLinkOptionWhereClauses($db, 'contentbuilder'),
                     $this->buildMenuLinkOptionWhereClauses($db, 'com_contentbuilder'),
+                    $this->buildMenuLinkOptionWhereClauses($db, 'com_contentbuilderng'),
                     $this->buildMenuLinkOptionWhereClauses($db, 'com_contentbuilder_ng'),
                 );
 
@@ -267,6 +269,7 @@ class com_contentbuilderngInstallerScript
             $this->ensureElementsLinkableDefault();
 
             // Normalize menu links and titles
+            $this->updateMenuLinks('contentbuilder', 'com_contentbuilderng');
             $this->updateMenuLinks('com_contentbuilder', 'com_contentbuilderng');
             $this->updateMenuLinks('com_contentbuilder_ng', 'com_contentbuilderng');
 
@@ -293,6 +296,7 @@ class com_contentbuilderngInstallerScript
                 $this->normalizeLegacyComponentTypes();
 
                 // Remove legacy components rows safely (no uninstall hooks)
+                $this->removeLegacyComponent('contentbuilder');
                 $this->removeLegacyComponent('com_contentbuilder');
                 $this->removeLegacyComponent('com_contentbuilder_ng');
 
@@ -758,7 +762,7 @@ class com_contentbuilderngInstallerScript
                 }
             });
 
-            foreach (['_system', 'com_installer', 'com_plugins', 'com_contentbuilder', 'com_contentbuilderng'] as $group) {
+            foreach (['_system', 'com_installer', 'com_plugins', 'contentbuilder', 'com_contentbuilder', 'com_contentbuilderng'] as $group) {
                 $this->safe(function () use ($group) {
                     $groupCache = Factory::getCache($group);
                     if (is_object($groupCache) && method_exists($groupCache, 'clean')) {
@@ -847,8 +851,10 @@ class com_contentbuilderngInstallerScript
     private function removeOldDirectories(): void
     {
         $paths = [
+            JPATH_ADMINISTRATOR . '/components/contentbuilder/',
             JPATH_ADMINISTRATOR . '/components/com_contentbuilder/',
             JPATH_ADMINISTRATOR . '/components/com_contentbuilder_ng/',
+            JPATH_SITE . '/components/contentbuilder/',
             JPATH_SITE . '/components/com_contentbuilder/',
             JPATH_SITE . '/components/com_contentbuilder_ng/',
             JPATH_ROOT . '/media/contentbuilder/',
@@ -877,6 +883,7 @@ class com_contentbuilderngInstallerScript
     private function removeObsoleteFiles(): void
     {
         $paths = [
+            JPATH_ADMINISTRATOR . '/components/contentbuilder/classes/PHPExcel',
             JPATH_ADMINISTRATOR . '/components/com_contentbuilder/classes/PHPExcel',
             JPATH_ADMINISTRATOR . '/components/com_contentbuilder/classes/PHPExcel.php',
             JPATH_ADMINISTRATOR . '/components/com_contentbuilder_ng/src/Model/EditModel.php',
