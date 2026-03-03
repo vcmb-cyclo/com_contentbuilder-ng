@@ -76,7 +76,7 @@ if (!class_exists(__NAMESPACE__ . '\\CBDbo')) {
 
 				$this->errNo = $e->getCode();
 				$this->errMsg = $e->getMessage();
-			} catch (Error $e) {
+			} catch (\Error $e) {
 
 				$this->errNo = $e->getCode();
 				$this->errMsg = $e->getMessage();
@@ -98,7 +98,7 @@ if (!class_exists(__NAMESPACE__ . '\\CBDbo')) {
 
 				$this->errNo = $e->getCode();
 				$this->errMsg = $e->getMessage();
-			} catch (Error $e) {
+			} catch (\Error $e) {
 
 				$this->errNo = $e->getCode();
 				$this->errMsg = $e->getMessage();
@@ -120,7 +120,7 @@ if (!class_exists(__NAMESPACE__ . '\\CBDbo')) {
 
 				$this->errNo = $e->getCode();
 				$this->errMsg = $e->getMessage();
-			} catch (Error $e) {
+			} catch (\Error $e) {
 				$this->errNo = $e->getCode();
 				$this->errMsg = $e->getMessage();
 			}
@@ -140,7 +140,7 @@ if (!class_exists(__NAMESPACE__ . '\\CBDbo')) {
 			} catch (\Exception $e) {
 				$this->errNo = $e->getCode();
 				$this->errMsg = $e->getMessage();
-			} catch (Error $e) {
+			} catch (\Error $e) {
 				$this->errNo = $e->getCode();
 				$this->errMsg = $e->getMessage();
 			}
@@ -161,7 +161,7 @@ if (!class_exists(__NAMESPACE__ . '\\CBDbo')) {
 
 				$this->errNo = $e->getCode();
 				$this->errMsg = $e->getMessage();
-			} catch (Error $e) {
+			} catch (\Error $e) {
 				$this->errNo = $e->getCode();
 				$this->errMsg = $e->getMessage();
 			}
@@ -184,7 +184,7 @@ if (!class_exists(__NAMESPACE__ . '\\CBDbo')) {
 			} catch (\Exception $e) {
 				$this->errNo = $e->getCode();
 				$this->errMsg = $e->getMessage();
-			} catch (Error $e) {
+			} catch (\Error $e) {
 				$this->errNo = $e->getCode();
 				$this->errMsg = $e->getMessage();
 			}
@@ -202,7 +202,7 @@ if (!class_exists(__NAMESPACE__ . '\\CBDbo')) {
 			} catch (\Exception $e) {
 				$this->errNo = $e->getCode();
 				$this->errMsg = $e->getMessage();
-			} catch (Error $e) {
+			} catch (\Error $e) {
 				$this->errNo = $e->getCode();
 				$this->errMsg = $e->getMessage();
 			}
@@ -220,7 +220,7 @@ if (!class_exists(__NAMESPACE__ . '\\CBDbo')) {
 			} catch (\Exception $e) {
 				$this->errNo = $e->getCode();
 				$this->errMsg = $e->getMessage();
-			} catch (Error $e) {
+			} catch (\Error $e) {
 				$this->errNo = $e->getCode();
 				$this->errMsg = $e->getMessage();
 			}
@@ -283,7 +283,7 @@ if (!class_exists(__NAMESPACE__ . '\\CBDbo')) {
 			} catch (\Exception $e) {
 				$this->errNo = $e->getCode();
 				$this->errMsg = $e->getMessage();
-			} catch (Error $e) {
+			} catch (\Error $e) {
 				$this->errNo = $e->getCode();
 				$this->errMsg = $e->getMessage();
 			}
@@ -301,7 +301,7 @@ if (!class_exists(__NAMESPACE__ . '\\CBDbo')) {
 			} catch (\Exception $e) {
 				$this->errNo = $e->getCode();
 				$this->errMsg = $e->getMessage();
-			} catch (Error $e) {
+			} catch (\Error $e) {
 				$this->errNo = $e->getCode();
 				$this->errMsg = $e->getMessage();
 			}
@@ -321,7 +321,7 @@ if (!class_exists(__NAMESPACE__ . '\\CBDbo')) {
 			} catch (\Exception $e) {
 				$this->errNo = $e->getCode();
 				$this->errMsg = $e->getMessage();
-			} catch (Error $e) {
+			} catch (\Error $e) {
 
 				$this->errNo = $e->getCode();
 				$this->errMsg = $e->getMessage();
