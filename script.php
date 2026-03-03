@@ -2793,7 +2793,7 @@ class com_contentbuilderngInstallerScript
                 $clientId = (int) ($row['client_id'] ?? 1);
 
                 // Si c'est déjà root, OK
-                if ($alias === 'root' && $clientId === 1) {
+                if ($alias === 'root') {
                     return;
                 }
 
