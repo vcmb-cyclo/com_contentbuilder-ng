@@ -17,6 +17,7 @@ use Joomla\CMS\Language\Text;
 use Joomla\CMS\Uri\Uri;
 use Joomla\CMS\Router\Route;
 use Joomla\CMS\HTML\HTMLHelper;
+use Joomla\CMS\Application\CMSApplication;
 
 $toUnicodeSlug = static function (string $string): string {
     $str = preg_replace('/\xE3\x80\x80/', ' ', $string) ?? $string;
@@ -33,7 +34,7 @@ $th = 'th';
 if ($this->page_heading) {
     ?>
     <h1 class="display-6 mb-4">
-        <?php echo Factory::getApplication()->getDocument()->getTitle(); ?>
+        <?php $app = Factory::getApplication();/** @var CMSApplication $app */ echo $app->getDocument()->getTitle(); ?>
     </h1>
     <?php
 }

@@ -14,9 +14,20 @@
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\HTML\HTMLHelper;
+use Joomla\CMS\Application\CMSApplication;
 
-Factory::getApplication()->getDocument()->addStyleDeclaration($this->theme_css);
-Factory::getApplication()->getDocument()->addScriptDeclaration($this->theme_js);
+$app = Factory::getApplication();
+/** @var CMSApplication $app */
+
+$wa = $app->getDocument()->getWebAssetManager();
+if (!empty($this->theme_css)) {
+    $wa->addInlineStyle((string) $this->theme_css);
+}
+
+if (!empty($this->theme_js)) {
+    $wa->addInlineScript((string) $this->theme_js);
+}
+
 ?>
 
 <div class="text-center mb-3">
