@@ -488,10 +488,6 @@ class EditModel extends BaseDatabaseModel
                             }
                         }
 
-                        // Fallback to the record id when no title label is available.
-                        if (!$label) {
-                            $label = (string) $this->_record_id;
-                        }
 
                         // "buddy quaid hack", should be an option in future versions
 
