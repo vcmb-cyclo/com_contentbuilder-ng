@@ -419,6 +419,28 @@ class plgSystemContentbuilderng_system extends CMSPlugin implements SubscriberIn
             return;
         }
 
+        $option = $app->input->getCmd('option', '');
+        $task = $app->input->getCmd('task', '');
+        $view = $app->input->getCmd('view', '');
+
+        // Skip heavy article sync on plain frontend display requests.
+        // Sorting/pagination in list view must not trigger article updates/action logs.
+        $isContentbuilderDisplay = $option === 'com_contentbuilderng'
+            && (
+                $task === ''
+                || $task === 'display'
+                || str_starts_with($task, 'list.display')
+                || str_starts_with($task, 'details.display')
+                || str_starts_with($task, 'edit.display')
+                || $view === 'list'
+                || $view === 'details'
+                || $view === 'edit'
+            );
+
+        if ($isContentbuilderDisplay) {
+            return;
+        }
+
         // synch the records if there are any changes
         if ($app->isClient('site')) {
             $user = $this->app->getIdentity();
