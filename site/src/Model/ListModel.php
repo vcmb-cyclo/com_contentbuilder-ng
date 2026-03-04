@@ -409,7 +409,7 @@ class ListModel extends BaseListModel
                 $data->page_class = $this->_page_class;
                 $data->form_id = $this->_id;
                 if ($data->type && $data->reference_id) {
-                    $data->form = ContentbuilderLegacyHelper::getForm($data->type, $data->reference_id);
+                    $data->form = \CB\Component\Contentbuilderng\Administrator\Helper\FormSourceFactory::getForm($data->type, $data->reference_id);
                     if (!$data->form->exists) {
                         throw new \Exception(Text::_('COM_CONTENTBUILDERNG_FORM_NOT_FOUND'), 404);
                     }

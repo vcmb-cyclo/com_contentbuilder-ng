@@ -178,7 +178,7 @@ class DetailsModel extends ListModel
 
                 if ($data->type && $data->reference_id) {
 
-                    $data->form = ContentbuilderLegacyHelper::getForm($data->type, $data->reference_id);
+                    $data->form = \CB\Component\Contentbuilderng\Administrator\Helper\FormSourceFactory::getForm($data->type, $data->reference_id);
                     $isAdminPreview = Factory::getApplication()->input->getBool('cb_preview_ok', false);
                     if ($isAdminPreview && method_exists($data->form, 'synchRecords')) {
                         $data->form->synchRecords();

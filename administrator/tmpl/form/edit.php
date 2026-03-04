@@ -19,6 +19,7 @@ use Joomla\CMS\Language\Text;
 use Joomla\CMS\Router\Route;
 use Joomla\CMS\Uri\Uri;
 use CB\Component\Contentbuilderng\Administrator\Helper\ContentbuilderLegacyHelper;
+use CB\Component\Contentbuilderng\Administrator\Helper\FormSourceFactory;
 use CB\Component\Contentbuilderng\Administrator\Helper\ContentbuilderngHelper;
 ?>
 <?php
@@ -101,7 +102,7 @@ try {
 
         $apiForm = $this->item->form ?? null;
         if (!is_object($apiForm)) {
-            $apiForm = ContentbuilderLegacyHelper::getForm($formType, $formReferenceId);
+            $apiForm = FormSourceFactory::getForm($formType, $formReferenceId);
         }
 
         if (is_object($apiForm) && method_exists($apiForm, 'getRecord')) {

@@ -39,7 +39,7 @@ use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
 use CB\Component\Contentbuilderng\Administrator\Helper\ContentbuilderngHelper;
 use CB\Component\Contentbuilderng\Administrator\Helper\ContentbuilderLegacyHelper;
 use CB\Component\Contentbuilderng\Administrator\Helper\PackedDataHelper;
-
+use CB\Component\Contentbuilderng\Administrator\Helper\FormSourceFactory;
 
 class EditModel extends BaseDatabaseModel
 {
@@ -423,7 +423,7 @@ class EditModel extends BaseDatabaseModel
                     $data->back_button = $this->app->input->getBool('latest', 0) && !$this->app->input->getCmd('record_id', 0) ? false : $this->_show_back_button;
                     $data->latest = $this->_latest;
                     $data->frontend = $this->frontend;
-                    $data->form = ContentbuilderLegacyHelper::getForm($data->type, $data->reference_id);
+                    $data->form = FormSourceFactory::getForm($data->type, $data->reference_id);
                     if (!$data->form->exists) {
                         throw new \Exception(Text::_('COM_CONTENTBUILDERNG_FORM_NOT_FOUND'), 404);
                     }
@@ -688,7 +688,7 @@ var contentbuilderng = new function(){
             if ($data->type && $data->reference_id) {
 
                 $values = array();
-                $data->form = ContentbuilderLegacyHelper::getForm($data->type, $data->reference_id);
+                $data->form = FormSourceFactory::getForm($data->type, $data->reference_id);
                 $meta = $data->form->getRecordMetadata($this->_record_id);
                 if (!$data->edit_by_type) {
 
@@ -2148,7 +2148,7 @@ var contentbuilderng = new function(){
                 }
                 $data->form_id = $this->_id;
                 if ($data->type && $data->reference_id) {
-                    $data->form = ContentbuilderLegacyHelper::getForm($data->type, $data->reference_id);
+                    $data->form = FormSourceFactory::getForm($data->type, $data->reference_id);
                     $res = $data->form->delete($items, $data->form_id);
                     $cnt = count($items);
                     $new_items = array();

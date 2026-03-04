@@ -21,7 +21,7 @@ use Joomla\Event\SubscriberInterface;
 use Joomla\Registry\Registry;
 use CB\Component\Contentbuilderng\Administrator\Helper\ContentbuilderngHelper;
 use CB\Component\Contentbuilderng\Administrator\Helper\ContentbuilderLegacyHelper;
-
+use use CB\Component\Contentbuilderng\Administrator\Helper\FormSourceFactory;
 
 set_error_handler('myErrorHandler');
 register_shutdown_function('fatalErrorShutdownHandler');
@@ -191,7 +191,7 @@ class plgContentContentbuilderng_image_scale extends CMSPlugin implements Subscr
 					$data = $this->db->loadAssoc();
 
 					require_once (JPATH_SITE .'/administrator/components/com_contentbuilderng/src/contentbuilderng.php');
-					$form = ContentbuilderLegacyHelper::getForm($data['type'], $data['reference_id']);
+					$form = FormSourceFactory::getForm($data['type'], $data['reference_id']);
 					if (!$form || !$form->exists) {
 						return true;
 					}
@@ -371,7 +371,7 @@ class plgContentContentbuilderng_image_scale extends CMSPlugin implements Subscr
 						if (!$use_form) {
 
 							require_once (JPATH_SITE .'/administrator/components/com_contentbuilderng/src/contentbuilderng.php');
-							$use_form = ContentbuilderLegacyHelper::getForm($ref_type, $ref_id);
+							$use_form = FormSourceFactory::getForm($ref_type, $ref_id);
 						}
 
 						if ($use_form && $use_form->exists) {

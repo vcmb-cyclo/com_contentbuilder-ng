@@ -17,9 +17,8 @@ use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\Model\BaseDatabaseModel;
 use Joomla\CMS\Session\Session;
 use CB\Component\Contentbuilderng\Administrator\Helper\ContentbuilderLegacyHelper;
-use Joomla\CMS\Application\CMSApplicationInterface;
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
-use Joomla\Input\Input;
+use CB\Component\Contentbuilderng\Administrator\Helper\FormSourceFactory;
 
 class AjaxModel extends BaseDatabaseModel
 {
@@ -61,7 +60,7 @@ class AjaxModel extends BaseDatabaseModel
                 $this->getDatabase()->setQuery("Select `type`, `reference_id`, `rating_slots` From #__contentbuilderng_forms Where id = " . $this->_id);
                 $result = $this->getDatabase()->loadAssoc();
 
-                $form = ContentbuilderLegacyHelper::getForm($result['type'], $result['reference_id']);
+                $form = FormSourceFactory::getForm($result['type'], $result['reference_id']);
 
                 if (!$form || !$form->exists) {
                     return json_encode(array('code' => 2, 'msg' => Text::_('COM_CONTENTBUILDERNG_FORM_ERROR')));
@@ -96,7 +95,7 @@ class AjaxModel extends BaseDatabaseModel
                 $this->getDatabase()->setQuery("Select `type`, `reference_id`, `rating_slots` From #__contentbuilderng_forms Where id = " . $this->_id);
                 $result = $this->getDatabase()->loadAssoc();
 
-                $form = ContentbuilderLegacyHelper::getForm($result['type'], $result['reference_id']);
+                $form = FormSourceFactory::getForm($result['type'], $result['reference_id']);
 
                 if (!$form || !$form->exists) {
                     return json_encode(array('code' => 2, 'msg' => Text::_('COM_CONTENTBUILDERNG_FORM_ERROR')));

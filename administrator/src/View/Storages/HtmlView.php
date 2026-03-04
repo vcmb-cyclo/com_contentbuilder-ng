@@ -13,8 +13,11 @@ namespace CB\Component\Contentbuilderng\Administrator\View\Storages;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Factory;
+use Joomla\CMS\Application\CMSApplication;
 use Joomla\CMS\Toolbar\ToolbarHelper;
+use Joomla\CMS\Document\HtmlDocument;
 use Joomla\CMS\Uri\Uri;
+use CB\Component\Contentbuilderng\Administrator\Model\StoragesModel;
 use CB\Component\Contentbuilderng\Administrator\View\Contentbuilderng\HtmlView as BaseHtmlView;
 
 /**
@@ -41,6 +44,7 @@ class HtmlView extends BaseHtmlView
             return;
         }
 
+        /** @var StoragesModel $model */
         $model = $this->getModel();
 
         try {
@@ -82,7 +86,11 @@ class HtmlView extends BaseHtmlView
         ToolbarHelper::addNew('storage.add');
         ToolbarHelper::editList('storage.edit');
         ToolbarHelper::deleteList('JGLOBAL_CONFIRM_DELETE', 'storage.delete');
-        $toolbar = Factory::getApplication()->getDocument()->getToolbar('toolbar');
+        /** @var CMSApplication $app */
+        $app = Factory::getApplication();
+        /** @var HtmlDocument $document */
+        $document = $app->getDocument();
+        $toolbar = $document->getToolbar('toolbar');
 
         $statusDropdown = $toolbar->dropdownButton('storages-status-group');
         $statusDropdown->text('Actions');
@@ -109,7 +117,9 @@ class HtmlView extends BaseHtmlView
     protected function addToolbarIcon()
     {
          // 1️⃣ Récupération du WebAssetManager
-        $document = $this->getDocument();
+        /** @var CMSApplication $app */
+        $app = Factory::getApplication();
+        $document = $app->getDocument();
         $wa = $document->getWebAssetManager();
 
          // Icon addition.

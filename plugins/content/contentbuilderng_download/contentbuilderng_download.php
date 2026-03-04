@@ -19,7 +19,7 @@ use Joomla\CMS\Plugin\PluginHelper;
 use Joomla\CMS\Plugin\CMSPlugin;
 use Joomla\Event\SubscriberInterface;
 use CB\Component\Contentbuilderng\Administrator\Helper\ContentbuilderLegacyHelper;
-
+use CB\Component\Contentbuilderng\Administrator\Helper\FormSourceFactory
 class plgContentContentbuilderng_download extends CMSPlugin implements SubscriberInterface
 {
     /**
@@ -214,7 +214,7 @@ class plgContentContentbuilderng_download extends CMSPlugin implements Subscribe
                     $data = $this->db->loadAssoc();
 
                     require_once(JPATH_SITE .'/administrator/components/com_contentbuilderng/src/contentbuilderng.php');
-                    $form = ContentbuilderLegacyHelper::getForm($data['type'], $data['reference_id']);
+                    $form = FormSourceFactory::getForm($data['type'], $data['reference_id']);
                     if (!$form || !$form->exists) {
                         return true;
                     }

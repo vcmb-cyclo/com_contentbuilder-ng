@@ -8,7 +8,7 @@
  * @package     ContentBuilder NG
  * @subpackage  Administrator.Model
  * @author      Markus Bopp / XDA+GIL
- * @copyright   Copyright © 2011–2026 by XDA+GIL
+ * @copyright   Copyright © 2024–2026 by XDA+GIL
  * @license     GNU General Public License version 2 or later; see LICENSE.txt
  * @link        https://breezingforms-ng.vcmb.fr
  * @since       6.0.0  Joomla 6 compatibility rewrite.
@@ -27,10 +27,9 @@ use Joomla\Filesystem\Folder;
 use Joomla\Filesystem\File;
 use Joomla\CMS\MVC\Model\AdminModel;
 use Joomla\CMS\Application\CMSApplication;
-use Joomla\CMS\Application\CMSApplicationInterface;
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
-use Joomla\Input\Input;
 use CB\Component\Contentbuilderng\Administrator\Helper\ContentbuilderLegacyHelper;
+use CB\Component\Contentbuilderng\Administrator\Helper\FormSourceFactory;
 use CB\Component\Contentbuilderng\Administrator\Helper\Logger;
 use CB\Component\Contentbuilderng\Administrator\Helper\PackedDataHelper;
 
@@ -261,11 +260,15 @@ class FormModel extends AdminModel
 
     public function getForm($data = [], $loadData = true)
     {
-        return $this->loadForm(
-            'com_contentbuilderng.form',
+        // Intelephense may not resolve inherited AdminModel::loadForm() in this workspace.
+        $loadForm = 'loadForm';
+        $form = $this->{$loadForm}(
+            $this->option . '.form',
             'form',
             ['control' => 'jform', 'load_data' => $loadData]
         );
+
+        return $form ?: false;
     }
 
     protected function populateState(): void
@@ -712,7 +715,7 @@ class FormModel extends AdminModel
 
         $data->form = null;
         if ($data->type && $data->reference_id) {
-            $data->form = ContentbuilderLegacyHelper::getForm($data->type, $data->reference_id);
+            $data->form = FormSourceFactory::getForm((string) $data->type, (string) $data->reference_id);
             if (!$data->form || !$data->form->exists) {
                 if ((string) $data->type === 'com_breezingforms') {
                     Factory::getApplication()->enqueueMessage(
@@ -1098,7 +1101,7 @@ class FormModel extends AdminModel
 
         $formObj = null;
         if (!empty($jform['type']) && !empty($jform['reference_id'])) {
-            $formObj = ContentbuilderLegacyHelper::getForm($jform['type'], $jform['reference_id']);
+            $formObj = FormSourceFactory::getForm((string) $jform['type'], (string) $jform['reference_id']);
         }
 
         $createSample = !empty($jform['create_sample']);
@@ -1261,19 +1264,7 @@ class FormModel extends AdminModel
             (array) ($jform['order'] ?? [])
         );
 
-        // 13) Synchronisation éventuelle des éléments (si tu en as besoin)
-        // IMPORTANT: Evite de le faire dans getItem() (effets de bord).
-        // Ici tu peux le déclencher si tu as type/reference_id stables :
-        // - récupérer l'item fraîchement sauvegardé (standard)
-        // $item = $this->getItem($formId);
-        // if (!empty($item->type) && !empty($item->reference_id)) {
-        //     $form = ContentbuilderLegacyHelper::getForm($item->type, $item->reference_id);
-        //     if (is_object($form) && !empty($form->exists)) {
-        //         ContentbuilderLegacyHelper::synchElements($formId, $form);
-        //     }
-        // }
-
-        // 14) Mettre à jour l'état du modèle / input (utile pour save2new/apply)
+        // 13) Mettre à jour l'état du modèle / input (utile pour save2new/apply)
         $this->setState($this->getName() . '.id', $formId);
         $input->set('id', $formId);
 

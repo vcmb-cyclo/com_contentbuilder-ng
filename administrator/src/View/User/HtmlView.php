@@ -13,13 +13,15 @@ namespace CB\Component\Contentbuilderng\Administrator\View\User;
 \defined('_JEXEC') or die('Restricted access');
 
 use CB\Component\Contentbuilderng\Administrator\View\Contentbuilderng\HtmlView as BaseHtmlView;
+use CB\Component\Contentbuilderng\Administrator\Model\UserModel;
 
 class HtmlView extends BaseHtmlView
 {
     function display($tpl = null)
     {
-        // Get data from the model
-        $subject = $this->get('Data');
+        /** @var UserModel $model */
+        $model = $this->getModel();
+        $subject = $model->getData();
         $this->subject = $subject;
         parent::display($tpl);
     }

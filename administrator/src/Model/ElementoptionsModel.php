@@ -22,6 +22,7 @@ use Joomla\Filesystem\File;
 use Joomla\Utilities\ArrayHelper;
 use CB\Component\Contentbuilderng\Administrator\Helper\Logger;
 use CB\Component\Contentbuilderng\Administrator\Helper\ContentbuilderLegacyHelper;
+use CB\Component\Contentbuilderng\Administrator\Helper\FormSourceFactory;
 use CB\Component\Contentbuilderng\Administrator\Helper\PackedDataHelper;
 
 class ElementoptionsModel extends BaseDatabaseModel
@@ -144,7 +145,7 @@ class ElementoptionsModel extends BaseDatabaseModel
             return array();
         }
 
-        $form = ContentbuilderLegacyHelper::getForm($formRow['type'], $formRow['reference_id']);
+        $form = FormSourceFactory::getForm((string) $formRow['type'], (string) $formRow['reference_id']);
 
         if ($form && $form->isGroup($this->_data->reference_id)) {
             return $form->getGroupDefinition($this->_data->reference_id);

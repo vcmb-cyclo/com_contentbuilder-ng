@@ -28,6 +28,7 @@ use Joomla\CMS\Application\SiteApplication;
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
 use Joomla\Input\Input;
 use CB\Component\Contentbuilderng\Administrator\Helper\ContentbuilderLegacyHelper;
+use CB\Component\Contentbuilderng\Administrator\Helper\FormSourceFactory;
 
 class VerifyModel extends BaseDatabaseModel
 {
@@ -163,7 +164,7 @@ class VerifyModel extends BaseDatabaseModel
                 throw new \Exception('Verification Setup failed. Reason: View id ' . $out['require_view'] . ' has been requested but is not available (not existent or unpublished). Please update your content template or publish the view.', 500);
             }
 
-            $form = ContentbuilderLegacyHelper::getForm($formsettings['type'], $formsettings['reference_id']);
+            $form = FormSourceFactory::getForm((string) $formsettings['type'], (string) $formsettings['reference_id']);
             $labels = $form->getElementLabels();
 
             $ids = array();

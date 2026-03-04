@@ -14,6 +14,7 @@ namespace CB\Component\Contentbuilderng\Administrator\View\Users;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
 use Joomla\CMS\Toolbar\ToolbarHelper;
+use CB\Component\Contentbuilderng\Administrator\Model\UsersModel;
 class HtmlView extends BaseHtmlView
 {
     /**
@@ -33,10 +34,11 @@ class HtmlView extends BaseHtmlView
 
     public function display($tpl = null): void
     {
-        // Récupération standard ListModel (J4/5/6)
-        $this->items      = $this->get('Items');
-        $this->pagination = $this->get('Pagination');
-        $this->state      = $this->get('State');
+        /** @var UsersModel $model */
+        $model = $this->getModel();
+        $this->items      = $model->getItems();
+        $this->pagination = $model->getPagination();
+        $this->state      = $model->getState();
 
         // Toolbar
         ToolbarHelper::title(

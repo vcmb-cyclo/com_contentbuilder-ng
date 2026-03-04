@@ -58,6 +58,7 @@ class plgSystemContentbuilderng_system extends CMSPlugin implements SubscriberIn
             $base . '/src/Helper/Logger.php',
             $base . '/src/Helper/ContentbuilderngHelper.php',
             $base . '/src/Helper/ContentbuilderLegacyHelper.php',
+            $base . '/src/Helper/FormSourceFactory.php',
         ];
 
         foreach ($files as $file) {
@@ -293,7 +294,7 @@ class plgSystemContentbuilderng_system extends CMSPlugin implements SubscriberIn
             foreach ($views as $view) {
                 if (!isset($typeview[$view['type'] . $view['reference_id']])) {
                     $typeview[$view['type'] . $view['reference_id']] = true;
-                    $form = ContentbuilderLegacyHelper::getForm($view['type'], $view['reference_id']);
+                    $form = \CB\Component\Contentbuilderng\Administrator\Helper\FormSourceFactory::getForm($view['type'], $view['reference_id']);
                     if (is_object($form)) {
                         $form->synchRecords();
                     }
@@ -561,7 +562,7 @@ class plgSystemContentbuilderng_system extends CMSPlugin implements SubscriberIn
 
                 if (is_array($data)) {
 
-                    $form = ContentbuilderLegacyHelper::getForm($data['type'], $data['reference_id']);
+                    $form = \CB\Component\Contentbuilderng\Administrator\Helper\FormSourceFactory::getForm($data['type'], $data['reference_id']);
                     if (!$form || !$form->exists) {
                         return;
                     }

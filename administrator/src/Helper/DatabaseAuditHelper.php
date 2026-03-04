@@ -13,6 +13,7 @@ namespace CB\Component\Contentbuilderng\Administrator\Helper;
 
 use Joomla\CMS\Factory;
 use Joomla\Database\DatabaseInterface;
+use CB\Component\Contentbuilderng\Administrator\Helper\FormSourceFactory;
 
 final class DatabaseAuditHelper
 {
@@ -851,7 +852,7 @@ final class DatabaseAuditHelper
             }
 
             try {
-                $sourceForm = ContentbuilderLegacyHelper::getForm($type, (string) $referenceId);
+                $sourceForm = FormSourceFactory::getForm($type, (string) $referenceId);
             } catch (\Throwable $e) {
                 $errors[] = 'Could not load source form for view #' . $formId . ': ' . $e->getMessage();
                 continue;

@@ -8,7 +8,7 @@
  * @package     ContentBuilder NG
  * @subpackage  Administrator.Controller
  * @author      Xavier DANO
- * @copyright   Copyright © 2011–2026 by XDA+GIL
+ * @copyright   Copyright © 2024–2026 by XDA+GIL
  * @license     GNU General Public License version 2 or later; see LICENSE.txt
  * @link        https://breezingforms-ng.vcmb.fr
  * @since       6.0.0  Joomla 6 compatibility rewrite.
@@ -358,7 +358,6 @@ class StorageController extends BaseFormController
         }
 
         $app = Factory::getApplication();
-        $app->setHeader('Content-Type', 'application/json', true);
         echo new JsonResponse($headers);
         $app->close();
     }

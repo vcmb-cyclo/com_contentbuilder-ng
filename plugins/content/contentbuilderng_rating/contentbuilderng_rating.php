@@ -125,7 +125,7 @@ class plgContentContentbuilderng_rating extends CMSPlugin implements SubscriberI
                     $data = $db->loadAssoc();
 
                     require_once(JPATH_SITE .'/administrator/components/com_contentbuilderng/src/contentbuilderng.php');
-                    $form = ContentbuilderLegacyHelper::getForm($data['type'], $data['reference_id']);
+                    $form = \CB\Component\Contentbuilderng\Administrator\Helper\FormSourceFactory::getForm($data['type'], $data['reference_id']);
                     if (!$form || !$form->exists) {
                         return true;
                     }

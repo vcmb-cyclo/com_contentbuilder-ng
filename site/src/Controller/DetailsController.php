@@ -67,7 +67,7 @@ class DetailsController extends BaseController
 
             $db->setQuery('Select `type`, `reference_id` From #__contentbuilderng_forms Where id = ' . intval($this->siteApp->input->getInt('id', 0)) . ' And published = 1');
             $form = $db->loadAssoc();
-            $form = ContentbuilderLegacyHelper::getForm($form['type'], $form['reference_id']);
+            $form = \CB\Component\Contentbuilderng\Administrator\Helper\FormSourceFactory::getForm($form['type'], $form['reference_id']);
 
             $labels = $form->getElementLabels();
             $ids = array();

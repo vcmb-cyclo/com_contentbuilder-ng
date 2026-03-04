@@ -8,7 +8,7 @@
  * @package     ContentBuilder NG
  * @subpackage  Administrator.Model
  * @author      Markus Bopp / XDA+GIL
- * @copyright   Copyright © 2011–2026 by XDA+GIL
+ * @copyright   Copyright © 2024–2026 by XDA+GIL
  * @license     GNU General Public License version 2 or later; see LICENSE.txt
  * @link        https://breezingforms-ng.vcmb.fr
  * @since       6.0.0  Joomla 6 compatibility rewrite.
@@ -28,6 +28,7 @@ use Joomla\CMS\Application\CMSApplicationInterface;
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
 use Joomla\Input\Input;
 use CB\Component\Contentbuilderng\Administrator\Helper\ContentbuilderLegacyHelper;
+use CB\Component\Contentbuilderng\Administrator\Helper\FormSourceFactory;
 use CB\Component\Contentbuilderng\Administrator\Extension\ContentbuilderngComponent;
 
 class FormsModel extends ListModel
@@ -238,7 +239,7 @@ class FormsModel extends ListModel
             $item->source_title = '';
 
             if (!empty($item->type) && !empty($item->reference_id)) {
-                $form = ContentbuilderLegacyHelper::getForm((string) $item->type, (int) $item->reference_id);
+                $form = FormSourceFactory::getForm((string) $item->type, (int) $item->reference_id);
                 if ($form && !empty($form->exists) && method_exists($form, 'getTitle')) {
                     $item->source_title = trim((string) $form->getTitle());
                 }

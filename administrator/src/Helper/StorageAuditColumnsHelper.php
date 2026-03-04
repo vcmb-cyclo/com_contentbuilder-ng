@@ -66,7 +66,9 @@ final class StorageAuditColumnsHelper
             'warnings' => [],
         ];
 
-        [$storageTables, $warnings] = self::collectStorageTables($db);
+        // Audit only internal storage tables managed by ContentBuilder NG.
+        // External mapped tables (bytable=1), e.g. #__users, are excluded.
+        [$storageTables, $warnings] = self::collectStorageTables($db, false);
 
         if ($warnings !== []) {
             $summary['warnings'] = array_merge($summary['warnings'], $warnings);
@@ -150,26 +152,19 @@ final class StorageAuditColumnsHelper
             'warnings' => [],
         ];
 
-        [$storageTables, $warnings] = self::collectStorageTables($db);
+        // Repair is limited to internal storage tables only.
+        // External mapped tables (bytable=1) are intentionally excluded.
+        [$storageTables, $warnings] = self::collectStorageTables($db, false);
 
         if ($warnings !== []) {
             $summary['warnings'] = array_merge($summary['warnings'], $warnings);
             $summary['errors'] += count($warnings);
         }
 
-        // Repair is limited to internal storage tables only.
-        // External tables (bytable=1), e.g. third-party tables, are intentionally skipped.
-        $repairableTables = array_values(
-            array_filter(
-                $storageTables,
-                static fn(array $storageTable): bool => (int) ($storageTable['bytable'] ?? 0) !== 1
-            )
-        );
-
-        $summary['scanned'] = count($repairableTables);
+        $summary['scanned'] = count($storageTables);
         $now = Factory::getDate()->toSql();
 
-        foreach ($repairableTables as $storageTable) {
+        foreach ($storageTables as $storageTable) {
             $physicalTable = (string) ($storageTable['table_name'] ?? '');
             $tableAlias = (string) ($storageTable['table_alias'] ?? $physicalTable);
             $storageId = (int) ($storageTable['storage_id'] ?? 0);
@@ -265,7 +260,7 @@ final class StorageAuditColumnsHelper
     /**
      * @return array{0:array<int,array{table_name:string,table_alias:string,storage_id:int,storage_name:string,bytable:int}>,1:array<int,string>}
      */
-    private static function collectStorageTables(DatabaseInterface $db): array
+    private static function collectStorageTables(DatabaseInterface $db, bool $includeExternalBytable = false): array
     {
         $warnings = [];
         $result = [];
@@ -309,6 +304,10 @@ final class StorageAuditColumnsHelper
             $bytable = (int) ($storage['bytable'] ?? 0);
 
             if ($storageName === '') {
+                continue;
+            }
+
+            if (!$includeExternalBytable && $bytable === 1) {
                 continue;
             }
 
