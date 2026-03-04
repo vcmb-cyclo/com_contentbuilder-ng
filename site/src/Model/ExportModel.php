@@ -15,6 +15,7 @@ defined('_JEXEC') or die('Restricted access');
 
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Factory;
+use Joomla\CMS\Application\SiteApplication;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\MVC\Model\BaseDatabaseModel;
 use CB\Component\Contentbuilderng\Administrator\Helper\ContentbuilderngHelper;
@@ -32,17 +33,19 @@ class ExportModel extends BaseDatabaseModel
     protected int $_id = 0;
 
     protected ?array $_data = null;
+    private SiteApplication $app;
 
     function  __construct($config)
     {
         parent::__construct($config);
 
-        $this->frontend = Factory::getApplication()->isClient('site');
-
+        /** @var SiteApplication $app */
         $app = Factory::getApplication();
+        $this->app = $app;
+        $this->frontend = $app->isClient('site');
         $option = 'com_contentbuilderng';
 
-        $id = Factory::getApplication()->input->getInt('id', 0);
+        $id = $app->input->getInt('id', 0);
 
         if (!$id && $this->frontend) {
             $menu = $app->getMenu();
@@ -70,18 +73,18 @@ class ExportModel extends BaseDatabaseModel
             $filter_publish   = $app->getUserStateFromRequest($option . 'formsd_filter_publish', 'list_publish_filter', -1, 'int');
             $filter_language  = $app->getUserStateFromRequest($option . 'formsd_filter_language', 'list_language_filter', '', 'cmd');
         } else {
-            $app->setUserState($option . 'formsd_filter_order', Factory::getApplication()->input->getCmd('filter_order', ''));
-            $app->setUserState($option . 'formsd_filter_order_Dir', Factory::getApplication()->input->getCmd('filter_order_Dir', ''));
-            $app->setUserState($option . 'formsd_filter', Factory::getApplication()->input->get('filter', '', 'string'));
-            $app->setUserState($option . 'formsd_filter_state', Factory::getApplication()->input->getInt('list_state_filter', 0));
-            $app->setUserState($option . 'formsd_filter_publish', Factory::getApplication()->input->getInt('list_publish_filter', -1));
-            $app->setUserState($option . 'formsd_filter_language', Factory::getApplication()->input->getCmd('list_language_filter', ''));
-            $filter_order     = Factory::getApplication()->input->getCmd('filter_order', '');
-            $filter_order_Dir = Factory::getApplication()->input->getCmd('filter_order_Dir', '');
-            $filter           = Factory::getApplication()->input->get('filter', '', 'string');
-            $filter_state     = Factory::getApplication()->input->getInt('list_state_filter', 0);
-            $filter_publish   = Factory::getApplication()->input->getInt('list_publish_filter', -1);
-            $filter_language  = Factory::getApplication()->input->getCmd('list_language_filter', '');
+            $app->setUserState($option . 'formsd_filter_order', $app->input->getCmd('filter_order', ''));
+            $app->setUserState($option . 'formsd_filter_order_Dir', $app->input->getCmd('filter_order_Dir', ''));
+            $app->setUserState($option . 'formsd_filter', $app->input->get('filter', '', 'string'));
+            $app->setUserState($option . 'formsd_filter_state', $app->input->getInt('list_state_filter', 0));
+            $app->setUserState($option . 'formsd_filter_publish', $app->input->getInt('list_publish_filter', -1));
+            $app->setUserState($option . 'formsd_filter_language', $app->input->getCmd('list_language_filter', ''));
+            $filter_order     = $app->input->getCmd('filter_order', '');
+            $filter_order_Dir = $app->input->getCmd('filter_order_Dir', '');
+            $filter           = $app->input->get('filter', '', 'string');
+            $filter_state     = $app->input->getInt('list_state_filter', 0);
+            $filter_publish   = $app->input->getInt('list_publish_filter', -1);
+            $filter_language  = $app->input->getCmd('list_language_filter', '');
         }
 
         $this->setState('formsd_filter_state', $filter_state);
@@ -91,7 +94,7 @@ class ExportModel extends BaseDatabaseModel
         $this->setState('formsd_filter_order', $filter_order);
         $this->setState('formsd_filter_order_Dir', $filter_order_Dir);
 
-        $menu_filter = Factory::getApplication()->input->get('cb_list_filterhidden', null, 'string');
+        $menu_filter = $app->input->get('cb_list_filterhidden', null, 'string');
 
         if ($menu_filter !== null) {
             $lines  = explode("\n", $menu_filter);
@@ -106,7 +109,7 @@ class ExportModel extends BaseDatabaseModel
             }
         }
 
-        $menu_filter_order = Factory::getApplication()->input->get('cb_list_orderhidden', null, 'string');
+        $menu_filter_order = $app->input->get('cb_list_orderhidden', null, 'string');
 
         if ($menu_filter_order !== null) {
             $lines  = explode("\n", $menu_filter_order);
@@ -153,7 +156,7 @@ class ExportModel extends BaseDatabaseModel
      */
     function getData()
     {
-        $app = Factory::getApplication();
+        $app = $this->app;
 
         // Lets load the data if it doesn't already exist
         if (empty($this->_data)) {
@@ -342,8 +345,31 @@ class ExportModel extends BaseDatabaseModel
                         $act_as_registration[$data->registration_name_field] = 'registration_name_field';
                         $act_as_registration[$data->registration_email_field] = 'registration_email_field';
                     }
-                    $data->items = $data->form->getListRecords($ids, $this->getState('formsd_filter'), $searchable_elements, 0, 0, $this->getState('formsd_filter_order'), $order_types, $this->getState('formsd_filter_order_Dir'), 0, $data->published_only, $this->frontend && $data->own_only_fe ? 
-                                    (int) (Factory::getApplication()->getIdentity()->id ?? 0) : -1, $this->getState('formsd_filter_state'), $this->getState('formsd_filter_publish'), $data->initial_sort_order == -1 ? -1 : 'col' . $data->initial_sort_order, $data->initial_sort_order2 == -1 ? -1 : 'col' . $data->initial_sort_order2, $data->initial_sort_order3 == -1 ? -1 : 'col' . $data->initial_sort_order3, $this->_menu_filter, $this->frontend ? $data->show_all_languages_fe : true, $this->getState('formsd_filter_language'), $act_as_registration, $data, $this->getState('article_category_filter'));
+                    $ownerFilterUserId = $this->frontend && $data->own_only_fe ? (int) ($app->getIdentity()->id ?? 0) : -1;
+                    $data->items = $data->form->getListRecords(
+                        $ids,
+                        $this->getState('formsd_filter'),
+                        $searchable_elements,
+                        0,
+                        0,
+                        $this->getState('formsd_filter_order'),
+                        $order_types,
+                        $this->getState('formsd_filter_order_Dir'),
+                        0,
+                        $data->published_only,
+                        $ownerFilterUserId,
+                        $this->getState('formsd_filter_state'),
+                        $this->getState('formsd_filter_publish'),
+                        $data->initial_sort_order == -1 ? -1 : 'col' . $data->initial_sort_order,
+                        $data->initial_sort_order2 == -1 ? -1 : 'col' . $data->initial_sort_order2,
+                        $data->initial_sort_order3 == -1 ? -1 : 'col' . $data->initial_sort_order3,
+                        $this->_menu_filter,
+                        $this->frontend ? $data->show_all_languages_fe : true,
+                        $this->getState('formsd_filter_language'),
+                        $act_as_registration,
+                        $data,
+                        $this->getState('article_category_filter')
+                    );
                 }
 
                 return $data;

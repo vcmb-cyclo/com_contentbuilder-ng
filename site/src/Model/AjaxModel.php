@@ -13,6 +13,7 @@ namespace CB\Component\Contentbuilderng\Site\Model;
 \defined('_JEXEC') or die('Restricted access');
 
 use Joomla\CMS\Factory;
+use Joomla\CMS\Application\CMSWebApplication;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\Model\BaseDatabaseModel;
 use Joomla\CMS\Session\Session;
@@ -25,6 +26,8 @@ class AjaxModel extends BaseDatabaseModel
 
     private $frontend = false;
     private $_subject = '';
+    /** @var CMSWebApplication */
+    private $app;
 
     public function __construct(
         $config,
@@ -33,18 +36,18 @@ class AjaxModel extends BaseDatabaseModel
         // IMPORTANT : on transmet factory/app/input à ListModel
         parent::__construct($config, $factory);
 
-        $this->frontend = Factory::getApplication()->isClient('site');
-
+        /** @var CMSWebApplication $app */
         $app = Factory::getApplication();
-        $option = 'com_contentbuilderng';
-
-        $this->_id = Factory::getApplication()->input->getInt('id', 0);
-        $this->_subject = Factory::getApplication()->input->getCmd('subject', '');
+        $this->app = $app;
+        $this->frontend = $app->isClient('site');
+        $this->_id = $app->input->getInt('id', 0);
+        $this->_subject = $app->input->getCmd('subject', '');
 
     }
 
     function getData()
     {
+        $app = $this->app;
         switch ($this->_subject) {
             case 'get_unique_values':
                 if ($this->frontend) {
@@ -66,9 +69,9 @@ class AjaxModel extends BaseDatabaseModel
                     return json_encode(array('code' => 2, 'msg' => Text::_('COM_CONTENTBUILDERNG_FORM_ERROR')));
                 }
 
-                $values = $form->getUniqueValues(Factory::getApplication()->input->getCmd('field_reference_id', ''), Factory::getApplication()->input->getCmd('where_field', ''), Factory::getApplication()->input->get('where', '', 'string'));
+                $values = $form->getUniqueValues($app->input->getCmd('field_reference_id', ''), $app->input->getCmd('where_field', ''), $app->input->get('where', '', 'string'));
 
-                return json_encode(array('code' => 0, 'field_reference_id' => Factory::getApplication()->input->getCmd('field_reference_id', ''), 'msg' => $values));
+                return json_encode(array('code' => 0, 'field_reference_id' => $app->input->getCmd('field_reference_id', ''), 'msg' => $values));
 
 
                 break;
@@ -85,7 +88,7 @@ class AjaxModel extends BaseDatabaseModel
                     }
                 }
 
-                if (strtoupper((string) Factory::getApplication()->input->getMethod()) !== 'POST') {
+                if (strtoupper((string) $app->input->getMethod()) !== 'POST') {
                     return json_encode(array('code' => 1, 'msg' => Text::_('JINVALID_TOKEN')));
                 }
                 if (!Session::checkToken('post') && !Session::checkToken('get')) {
@@ -109,7 +112,7 @@ class AjaxModel extends BaseDatabaseModel
                         //$rating = 5;
                         break;
                     case 2:
-                        $rating = Factory::getApplication()->input->getInt('rate', 5);
+                        $rating = $app->input->getInt('rate', 5);
                         if ($rating > 5)
                             $rating = 5;
                         if ($rating < 4)
@@ -118,7 +121,7 @@ class AjaxModel extends BaseDatabaseModel
                         //if($rating == 2) $rating = 5;
                         break;
                     case 3:
-                        $rating = Factory::getApplication()->input->getInt('rate', 3);
+                        $rating = $app->input->getInt('rate', 3);
                         if ($rating > 3)
                             $rating = 3;
                         if ($rating < 1)
@@ -128,7 +131,7 @@ class AjaxModel extends BaseDatabaseModel
                         //if($rating == 3) $rating = 5;
                         break;
                     case 4:
-                        $rating = Factory::getApplication()->input->getInt('rate', 4);
+                        $rating = $app->input->getInt('rate', 4);
                         if ($rating > 4)
                             $rating = 4;
                         if ($rating < 1)
@@ -138,7 +141,7 @@ class AjaxModel extends BaseDatabaseModel
                         //if($rating == 4) $rating = 5;
                         break;
                     case 5:
-                        $rating = Factory::getApplication()->input->getInt('rate', 5);
+                        $rating = $app->input->getInt('rate', 5);
                         if ($rating > 5)
                             $rating = 5;
                         if ($rating < 1)
@@ -157,27 +160,27 @@ class AjaxModel extends BaseDatabaseModel
                     $this->getDatabase()->execute();
 
                     // test if already voted
-                    $this->getDatabase()->setQuery("Select `form_id` From #__contentbuilderng_rating_cache Where `record_id` = " . $this->getDatabase()->quote(Factory::getApplication()->input->getCmd('record_id', '')) . " And `form_id` = " . $this->_id . " And `ip` = " . $this->getDatabase()->quote($_SERVER['REMOTE_ADDR']));
+                    $this->getDatabase()->setQuery("Select `form_id` From #__contentbuilderng_rating_cache Where `record_id` = " . $this->getDatabase()->quote($app->input->getCmd('record_id', '')) . " And `form_id` = " . $this->_id . " And `ip` = " . $this->getDatabase()->quote($_SERVER['REMOTE_ADDR']));
                     $cached = $this->getDatabase()->loadResult();
-                    $rated = Factory::getApplication()->getSession()->get('rated' . $this->_id . Factory::getApplication()->input->getCmd('record_id', ''), false, 'com_contentbuilderng.rating');
+                    $rated = $app->getSession()->get('rated' . $this->_id . $app->input->getCmd('record_id', ''), false, 'com_contentbuilderng.rating');
 
                     if ($rated || $cached) {
                         return json_encode(array('code' => 1, 'msg' => Text::_('COM_CONTENTBUILDERNG_RATED_ALREADY')));
                     } else {
-                        Factory::getApplication()->getSession()->set('rated' . $this->_id . Factory::getApplication()->input->getCmd('record_id', ''), true, 'com_contentbuilderng.rating');
+                        $app->getSession()->set('rated' . $this->_id . $app->input->getCmd('record_id', ''), true, 'com_contentbuilderng.rating');
                     }
 
                     // adding vote
-                    $this->getDatabase()->setQuery("Update #__contentbuilderng_records Set rating_count = rating_count + 1, rating_sum = rating_sum + " . $rating . ", lastip = " . $this->getDatabase()->quote($_SERVER['REMOTE_ADDR']) . " Where `type` = " . $this->getDatabase()->quote($result['type']) . " And `reference_id` = " . $this->getDatabase()->quote($result['reference_id']) . " And `record_id` = " . $this->getDatabase()->quote(Factory::getApplication()->input->getCmd('record_id', '')));
+                    $this->getDatabase()->setQuery("Update #__contentbuilderng_records Set rating_count = rating_count + 1, rating_sum = rating_sum + " . $rating . ", lastip = " . $this->getDatabase()->quote($_SERVER['REMOTE_ADDR']) . " Where `type` = " . $this->getDatabase()->quote($result['type']) . " And `reference_id` = " . $this->getDatabase()->quote($result['reference_id']) . " And `record_id` = " . $this->getDatabase()->quote($app->input->getCmd('record_id', '')));
                     $this->getDatabase()->execute();
 
                     // adding vote to cache
                     $___now = $_now->toSql();
-                    $this->getDatabase()->setQuery("Insert Into #__contentbuilderng_rating_cache (`record_id`,`form_id`,`ip`,`date`) Values (" . $this->getDatabase()->quote(Factory::getApplication()->input->getCmd('record_id', '')) . ", " . $this->_id . "," . $this->getDatabase()->quote($_SERVER['REMOTE_ADDR']) . ",'" . $___now . "')");
+                    $this->getDatabase()->setQuery("Insert Into #__contentbuilderng_rating_cache (`record_id`,`form_id`,`ip`,`date`) Values (" . $this->getDatabase()->quote($app->input->getCmd('record_id', '')) . ", " . $this->_id . "," . $this->getDatabase()->quote($_SERVER['REMOTE_ADDR']) . ",'" . $___now . "')");
                     $this->getDatabase()->execute();
 
                     // updating article's votes if there is an article bound to the record & view
-                    $this->getDatabase()->setQuery("Select a.article_id From #__contentbuilderng_articles As a, #__content As c Where c.id = a.article_id And (c.state = 1 Or c.state = 0) And a.form_id = " . $this->_id . " And a.record_id = " . $this->getDatabase()->quote(Factory::getApplication()->input->getCmd('record_id', '')));
+                    $this->getDatabase()->setQuery("Select a.article_id From #__contentbuilderng_articles As a, #__content As c Where c.id = a.article_id And (c.state = 1 Or c.state = 0) And a.form_id = " . $this->_id . " And a.record_id = " . $this->getDatabase()->quote($app->input->getCmd('record_id', '')));
                     $article_id = $this->getDatabase()->loadResult();
 
                     if ($article_id) {
@@ -196,7 +199,7 @@ class AjaxModel extends BaseDatabaseModel
                                     cr.rating_sum = cbr.rating_sum,
                                     cr.lastip = cbr.lastip
                                 Where
-                                    cbr.record_id = " . $this->getDatabase()->quote(Factory::getApplication()->input->getCmd('record_id', '')) . "
+                                    cbr.record_id = " . $this->getDatabase()->quote($app->input->getCmd('record_id', '')) . "
                                 And
                                     cbr.record_id = cba.record_id
                                 And

@@ -13,6 +13,7 @@ namespace CB\Component\Contentbuilderng\Site\Model;
 \defined('_JEXEC') or die('Restricted access');
 
 use Joomla\CMS\Factory;
+use Joomla\CMS\Application\SiteApplication;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Router\Route;
 use Joomla\CMS\HTML\HTMLHelper;
@@ -42,6 +43,7 @@ class DetailsModel extends ListModel
     private $_page_title = '';
 
     private $_page_heading = '';
+    private SiteApplication $app;
 
     public function __construct(
         $config,
@@ -49,21 +51,23 @@ class DetailsModel extends ListModel
         // IMPORTANT : on transmet factory/app/input à ListModel
         parent::__construct($config, $factory);
 
+        /** @var SiteApplication $app */
+        $app = Factory::getApplication();
+        $this->app = $app;
         $option = 'com_contentbuilderng';
-
-        $this->frontend = Factory::getApplication()->isClient('site');
+        $this->frontend = $app->isClient('site');
 
         // ATTTENTION: ALSO DEFINED IN DETAILS CONTROLLER!
-        if ($this->frontend && Factory::getApplication()->input->getInt('Itemid', 0)) {
+        if ($this->frontend && $app->input->getInt('Itemid', 0)) {
             $this->_menu_item = true;
 
             // try menu item
 
-            $menu = Factory::getApplication()->getMenu();
+            $menu = $app->getMenu();
             $item = $menu->getActive();
             if (is_object($item)) {
                 if ($item->getParams()->get('record_id', null) !== null) {
-                    Factory::getApplication()->input->set('record_id', $item->getParams()->get('record_id', null));
+                    $app->input->set('record_id', $item->getParams()->get('record_id', null));
                     $this->_show_back_button = $item->getParams()->get('show_back_button', null);
                 }
 
@@ -83,7 +87,7 @@ class DetailsModel extends ListModel
             }
         }
 
-        $menu_filter = Factory::getApplication()->input->get('cb_list_filterhidden', null, 'string');
+        $menu_filter = $app->input->get('cb_list_filterhidden', null, 'string');
 
         if ($menu_filter !== null) {
             $lines = explode("\n", $menu_filter);
@@ -99,7 +103,7 @@ class DetailsModel extends ListModel
             }
         }
 
-        $menu_filter_order = Factory::getApplication()->input->get('cb_list_orderhidden', null, 'string');
+        $menu_filter_order = $app->input->get('cb_list_orderhidden', null, 'string');
 
         if ($menu_filter_order !== null) {
             $lines = explode("\n", $menu_filter_order);
@@ -116,7 +120,7 @@ class DetailsModel extends ListModel
 
         @natsort($this->_menu_filter_order);
 
-        $this->setIds(Factory::getApplication()->input->getInt('id', 0), Factory::getApplication()->input->getCmd('record_id', ''));
+        $this->setIds($app->input->getInt('id', 0), $app->input->getCmd('record_id', ''));
     }
 
     /*
@@ -137,7 +141,7 @@ class DetailsModel extends ListModel
 
     private function _buildQuery()
     {
-        $isAdminPreview = Factory::getApplication()->input->getBool('cb_preview_ok', false);
+        $isAdminPreview = $this->app->input->getBool('cb_preview_ok', false);
         $query = 'Select * From #__contentbuilderng_forms Where id = ' . intval($this->_id);
 
         if (!$isAdminPreview) {
@@ -153,6 +157,7 @@ class DetailsModel extends ListModel
      */
     function getData()
     {
+        $app = $this->app;
         // Lets load the data if it doesn't already exist
         if (empty($this->_data)) {
             $query = $this->_buildQuery();
@@ -163,7 +168,7 @@ class DetailsModel extends ListModel
             }
 
             foreach ($this->_data as $data) {
-                $isAdminPreview = Factory::getApplication()->input->getBool('cb_preview_ok', false);
+                $isAdminPreview = $app->input->getBool('cb_preview_ok', false);
 
                 if (!$isAdminPreview) {
                     if (!$this->frontend && $data->display_in == 0) {
@@ -179,7 +184,7 @@ class DetailsModel extends ListModel
                 if ($data->type && $data->reference_id) {
 
                     $data->form = \CB\Component\Contentbuilderng\Administrator\Helper\FormSourceFactory::getForm($data->type, $data->reference_id);
-                    $isAdminPreview = Factory::getApplication()->input->getBool('cb_preview_ok', false);
+                    $isAdminPreview = $app->input->getBool('cb_preview_ok', false);
                     if ($isAdminPreview && method_exists($data->form, 'synchRecords')) {
                         $data->form->synchRecords();
                     }
@@ -201,18 +206,18 @@ class DetailsModel extends ListModel
 
                     if ($this->_latest) {
 
-                        $rec = $data->form->getListRecords($ids, '', array(), 0, 1, '', array(), 'desc', 0, false, (int) (Factory::getApplication()->getIdentity()->id ?? 0), 0, -1, -1, -1, -1, array(), true, null);
+                        $rec = $data->form->getListRecords($ids, '', array(), 0, 1, '', array(), 'desc', 0, false, (int) ($app->getIdentity()->id ?? 0), 0, -1, -1, -1, -1, array(), true, null);
 
                         if (count($rec) > 0) {
                             $rec = $rec[0];
                             $rec2 = $data->form->getRecord($rec->colRecord, false, -1, true);
 
                             $data->record_id = $rec->colRecord;
-                            Factory::getApplication()->input->set('record_id', $data->record_id);
+                            $app->input->set('record_id', $data->record_id);
                             $this->_record_id = $data->record_id;
                         } else {
-                            Factory::getApplication()->input->set('cbIsNew', 1);
-                            ContentbuilderLegacyHelper::setPermissions(Factory::getApplication()->input->getInt('id', 0), 0, $this->frontend ? '_fe' : '');
+                            $app->input->set('cbIsNew', 1);
+                            ContentbuilderLegacyHelper::setPermissions($app->input->getInt('id', 0), 0, $this->frontend ? '_fe' : '');
                             $auth = $this->frontend ? ContentbuilderLegacyHelper::authorizeFe('new') : ContentbuilderLegacyHelper::authorize('new');
 
                             if ($auth) {
@@ -224,10 +229,10 @@ class DetailsModel extends ListModel
                                     'direction' => $state['direction'],
                                 ]]);
 
-                                Factory::getApplication()->redirect(Route::_('index.php?option=com_contentbuilderng&task=edit.display&latest=1&backtolist=' . Factory::getApplication()->input->getInt('backtolist', 0) . '&id=' . $this->_id . '&record_id=' . ($listQuery !== '' ? '' : '') . ($listQuery !== '' ? '&' . $listQuery : ''), false));
+                                $app->redirect(Route::_('index.php?option=com_contentbuilderng&task=edit.display&latest=1&backtolist=' . $app->input->getInt('backtolist', 0) . '&id=' . $this->_id . '&record_id=' . ($listQuery !== '' ? '' : '') . ($listQuery !== '' ? '&' . $listQuery : ''), false));
                             } else {
-                                Factory::getApplication()->enqueueMessage(Text::_('COM_CONTENTBUILDERNG_ADD_ENTRY_FIRST'));
-                                Factory::getApplication()->redirect('index.php');
+                                $app->enqueueMessage(Text::_('COM_CONTENTBUILDERNG_ADD_ENTRY_FIRST'));
+                                $app->redirect('index.php');
                             }
                         }
                     }
@@ -237,15 +242,15 @@ class DetailsModel extends ListModel
                         throw new \Exception(Text::_('COM_CONTENTBUILDERNG_FORM_NOT_FOUND'), 404);
                     }
                     $data->page_title = '';
-                    if (Factory::getApplication()->input->getInt('cb_prefix_in_title', 1)) {
+                    if ($app->input->getInt('cb_prefix_in_title', 1)) {
                         if (!$this->_menu_item) {
                             $data->page_title = $data->use_view_name_as_title ? $data->name : $data->form->getPageTitle();
                         } else {
-                            $data->page_title = $data->use_view_name_as_title ? $data->name : Factory::getApplication()->getDocument()->getTitle();
+                            $data->page_title = $data->use_view_name_as_title ? $data->name : $app->getDocument()->getTitle();
                         }
                     }
                     if ($this->frontend) {
-                        $document = Factory::getApplication()->getDocument();
+                        $document = $app->getDocument();
                         $document->setTitle($data->page_title);
                     }
                     $data->show_back_button = $this->_show_back_button;
@@ -253,13 +258,13 @@ class DetailsModel extends ListModel
                     if (isset($rec2) && count($rec2)) {
                         $data->items = $rec2;
                     } else {
-                        $isAdminPreview = Factory::getApplication()->input->getBool('cb_preview_ok', false);
+                        $isAdminPreview = $app->input->getBool('cb_preview_ok', false);
                         $publishedOnly = $isAdminPreview ? false : (bool) $data->published_only;
                         $ownerFilterUserId = $isAdminPreview
                             ? -1
                             : ($this->frontend
-                                ? ($data->own_only_fe ? (int) (Factory::getApplication()->getIdentity()->id ?? 0) : -1)
-                                : ($data->own_only ? (int) (Factory::getApplication()->getIdentity()->id ?? 0) : -1));
+                                ? ($data->own_only_fe ? (int) ($app->getIdentity()->id ?? 0) : -1)
+                                : ($data->own_only ? (int) ($app->getIdentity()->id ?? 0) : -1));
                         $showAllLanguages = $isAdminPreview ? true : ($this->frontend ? $data->show_all_languages_fe : true);
                         $data->items = $data->form->getRecord($this->_record_id, $publishedOnly, $ownerFilterUserId, $showAllLanguages);
                     }
@@ -285,9 +290,9 @@ class DetailsModel extends ListModel
                                         $rec->recValue = $user->name;
                                     } else
                                         if ($data->registration_username_field == $rec->recElementId) {
-                                            $item->recValue = $user->username;
+                                            $rec->recValue = $user->username;
                                         } else
-                                            if ($data->registration_email_field == $item->recElementId) {
+                                            if ($data->registration_email_field == $rec->recElementId) {
                                                 $rec->recValue = $user->email;
                                             } else
                                                 if ($data->registration_email_repeat_field == $rec->recElementId) {
@@ -372,14 +377,14 @@ class DetailsModel extends ListModel
                         }
 
                         if ($this->frontend) {
-                            $document = Factory::getApplication()->getDocument();
+                            $document = $app->getDocument();
                             $document->setTitle(html_entity_decode($data->page_title, ENT_QUOTES, 'UTF-8'));
                         }
 
                         $data->template = ContentbuilderLegacyHelper::getTemplate($this->_id, $this->_record_id, $data->items, $ids, true);
 
                         if (
-                            Factory::getApplication()->isClient('administrator')
+                            $app->isClient('administrator')
                             && strpos($data->template, '[[hide-admin-title]]') !== false
                         ) {
 
@@ -422,7 +427,8 @@ class DetailsModel extends ListModel
 
     private function resolveListState(): array
     {
-        $app = Factory::getApplication();
+        /** @var SiteApplication $app */
+        $app = $this->app;
         $option = 'com_contentbuilderng';
         $list = (array) $app->input->get('list', [], 'array');
         $stateKeyPrefix = $this->getPaginationStateKeyPrefix();
@@ -456,7 +462,8 @@ class DetailsModel extends ListModel
 
     private function getPaginationStateKeyPrefix(): string
     {
-        $app = Factory::getApplication();
+        /** @var SiteApplication $app */
+        $app = $this->app;
         $option = 'com_contentbuilderng';
 
         $formId = (int) $this->_id;
