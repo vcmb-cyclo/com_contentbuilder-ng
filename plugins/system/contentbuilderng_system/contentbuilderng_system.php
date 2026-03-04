@@ -41,6 +41,25 @@ class plgSystemContentbuilderng_system extends CMSPlugin implements SubscriberIn
     private $caching = 0;
 
     /**
+     * True when current frontend request is CB edit/new flow.
+     * New records are handled via edit display with record_id=0.
+     */
+    private function isContentbuilderEditFlowRequest(): bool
+    {
+        $input = $this->app->input;
+        $option = $input->getCmd('option', '');
+        $task = $input->getCmd('task', '');
+        $view = $input->getCmd('view', '');
+
+        if ($option !== 'com_contentbuilderng') {
+            return false;
+        }
+
+        return $view === 'edit'
+            || str_starts_with($task, 'edit.');
+    }
+
+    /**
      * Ensure ContentBuilder NG helper classes are available for this plugin lifecycle.
      */
     private function bootstrapContentbuilder(): bool
@@ -287,8 +306,9 @@ class plgSystemContentbuilderng_system extends CMSPlugin implements SubscriberIn
         }
 
         $app = $this->app;
+        $isCbEditFlow = $this->isContentbuilderEditFlowRequest();
         // register non-existent records
-        if (in_array($app->input->get('option', '', 'string'), array('com_contentbuilderng', 'com_content', 'com_breezingforms'))) {
+        if ($isCbEditFlow) {
             $this->db->setQuery("Select `type`, `reference_id` From #__contentbuilderng_forms Where published = 1");
             $views = $this->db->loadAssocList();
             $typeview = array();
@@ -303,7 +323,7 @@ class plgSystemContentbuilderng_system extends CMSPlugin implements SubscriberIn
             }
         }
 
-        if ($app->input->getCmd('option', '') == 'com_content' || $app->input->getCmd('option', '') == 'com_contentbuilderng') {
+        if ($isCbEditFlow) {
             // managing published states
             $date = Factory::getDate()->toSql();
 
@@ -340,7 +360,7 @@ class plgSystemContentbuilderng_system extends CMSPlugin implements SubscriberIn
             }
         }
 
-        if ($option === 'com_contentbuilderng') {
+        if ($isCbEditFlow) {
 
             $this->db->setQuery("
                     Update 
@@ -419,25 +439,13 @@ class plgSystemContentbuilderng_system extends CMSPlugin implements SubscriberIn
             return;
         }
 
-        $option = $app->input->getCmd('option', '');
-        $task = $app->input->getCmd('task', '');
-        $view = $app->input->getCmd('view', '');
+        // Keep this plugin passive on non-edit frontend requests.
+        if (!$this->isContentbuilderEditFlowRequest()) {
+            return;
+        }
 
-        // Skip heavy article sync on plain frontend display requests.
-        // Sorting/pagination in list view must not trigger article updates/action logs.
-        $isContentbuilderDisplay = $option === 'com_contentbuilderng'
-            && (
-                $task === ''
-                || $task === 'display'
-                || str_starts_with($task, 'list.display')
-                || str_starts_with($task, 'details.display')
-                || str_starts_with($task, 'edit.display')
-                || $view === 'list'
-                || $view === 'details'
-                || $view === 'edit'
-            );
-
-        if ($isContentbuilderDisplay) {
+        // Run sync only on effective save operations.
+        if ($app->input->getCmd('task', '') !== 'edit.save') {
             return;
         }
 
