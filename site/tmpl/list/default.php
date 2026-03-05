@@ -65,6 +65,7 @@ if ($previewEnabled && $previewUntil > 0 && $previewSig !== '') {
         . '&cb_preview_sig=' . rawurlencode($previewSig)
         . ($adminReturnContext !== '' ? '&cb_admin_return=' . rawurlencode($adminReturnContext) : '');
 }
+
 if ($isAdminPreview) {
     $view_allowed = true;
 }

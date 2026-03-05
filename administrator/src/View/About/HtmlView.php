@@ -31,7 +31,6 @@ class HtmlView extends BaseHtmlView
     protected array $javascriptLibraries = [];
     protected array $auditReport = [];
     protected array $logReport = [];
-    protected array $importReport = [];
 
     public function display($tpl = null)
     {
@@ -78,7 +77,7 @@ class HtmlView extends BaseHtmlView
         /** @var Toolbar $toolbar */
         $toolbar = $document->getToolbar('toolbar');
         $maintenanceDropdown = $toolbar->dropdownButton('about-maintenance-group');
-        $maintenanceDropdown->text(Text::_('JTOOLBAR_ACTIONS'));
+        $maintenanceDropdown->text(Text::_('COM_CONTENTBUILDERNG_TOOLBAR_ACTIONS'));
         $maintenanceDropdown->toggleSplit(false);
         $maintenanceDropdown->icon('fa fa-wrench');
         $maintenanceDropdown->buttonClass('btn btn-action');
@@ -98,13 +97,13 @@ class HtmlView extends BaseHtmlView
             ->listCheck(false);
 
         $maintenanceChildToolbar->standardButton('about_export_configuration')
-            ->task('about.exportConfiguration')
+            ->task('configtransfer.export')
             ->text('COM_CONTENTBUILDERNG_ABOUT_EXPORT_CONFIGURATION')
             ->icon('fa fa-download')
             ->listCheck(false);
 
         $maintenanceChildToolbar->standardButton('about_import_configuration')
-            ->task('about.importConfiguration')
+            ->task('configtransfer.import')
             ->text('COM_CONTENTBUILDERNG_ABOUT_IMPORT_CONFIGURATION')
             ->icon('fa fa-upload')
             ->listCheck(false);
@@ -137,9 +136,6 @@ class HtmlView extends BaseHtmlView
         $logReport = $app->getUserState('com_contentbuilderng.about.log', []);
         $this->logReport = is_array($logReport) ? $logReport : [];
         $app->setUserState('com_contentbuilderng.about.log', []);
-        $importReport = $app->getUserState('com_contentbuilderng.about.import', []);
-        $this->importReport = is_array($importReport) ? $importReport : [];
-        $app->setUserState('com_contentbuilderng.about.import', []);
 
         // 3️⃣ Affichage du layout
         parent::display($tpl);

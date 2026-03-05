@@ -36,36 +36,6 @@ $tooltipLinkLicense = Text::_('COM_CONTENTBUILDERNG_ABOUT_TOOLTIP_LINK_LICENSE')
 $labelAuditButton = Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT');
 $labelDbRepairButton = Text::_('COM_CONTENTBUILDERNG_ABOUT_MIGRATE_PACKED_DATA');
 $labelShowLogButton = Text::_('COM_CONTENTBUILDERNG_ABOUT_SHOW_LOG');
-$configSections = [
-    'component_params' => [
-        'label' => Text::_('COM_CONTENTBUILDERNG_ABOUT_CONFIG_SECTION_COMPONENT_PARAMS'),
-        'description' => Text::_('COM_CONTENTBUILDERNG_ABOUT_CONFIG_SECTION_COMPONENT_PARAMS_DESC'),
-    ],
-    'forms' => [
-        'label' => Text::_('COM_CONTENTBUILDERNG_ABOUT_CONFIG_SECTION_FORMS'),
-        'description' => Text::_('COM_CONTENTBUILDERNG_ABOUT_CONFIG_SECTION_FORMS_DESC'),
-    ],
-    'elements' => [
-        'label' => Text::_('COM_CONTENTBUILDERNG_ABOUT_CONFIG_SECTION_ELEMENTS'),
-        'description' => Text::_('COM_CONTENTBUILDERNG_ABOUT_CONFIG_SECTION_ELEMENTS_DESC'),
-    ],
-    'list_states' => [
-        'label' => Text::_('COM_CONTENTBUILDERNG_ABOUT_CONFIG_SECTION_LIST_STATES'),
-        'description' => Text::_('COM_CONTENTBUILDERNG_ABOUT_CONFIG_SECTION_LIST_STATES_DESC'),
-    ],
-    'storages' => [
-        'label' => Text::_('COM_CONTENTBUILDERNG_ABOUT_CONFIG_SECTION_STORAGES'),
-        'description' => Text::_('COM_CONTENTBUILDERNG_ABOUT_CONFIG_SECTION_STORAGES_DESC'),
-    ],
-    'storage_fields' => [
-        'label' => Text::_('COM_CONTENTBUILDERNG_ABOUT_CONFIG_SECTION_STORAGE_FIELDS'),
-        'description' => Text::_('COM_CONTENTBUILDERNG_ABOUT_CONFIG_SECTION_STORAGE_FIELDS_DESC'),
-    ],
-    'resource_access' => [
-        'label' => Text::_('COM_CONTENTBUILDERNG_ABOUT_CONFIG_SECTION_RESOURCE_ACCESS'),
-        'description' => Text::_('COM_CONTENTBUILDERNG_ABOUT_CONFIG_SECTION_RESOURCE_ACCESS_DESC'),
-    ],
-];
 $auditReport = is_array($this->auditReport ?? null) ? $this->auditReport : [];
 $auditSummary = (array) ($auditReport['summary'] ?? []);
 $duplicateIndexes = (array) ($auditReport['duplicate_indexes'] ?? []);
@@ -186,18 +156,9 @@ if ($logDisplayContent !== '') {
 }
 $logTruncated = (int) ($logReport['truncated'] ?? 0) === 1;
 $logTailBytes = (int) ($logReport['tail_bytes'] ?? 0);
-$importReport = is_array($this->importReport ?? null) ? $this->importReport : [];
-$hasImportReport = $importReport !== [];
-$importGeneratedAt = (string) ($importReport['generated_at'] ?? Text::_('COM_CONTENTBUILDERNG_NOT_AVAILABLE'));
-$importSummary = is_array($importReport['summary'] ?? null) ? $importReport['summary'] : [];
-$importDetails = array_values(array_filter(array_map('strval', (array) ($importSummary['details'] ?? [])), static fn(string $v): bool => trim($v) !== ''));
-$importTablesCount = (int) ($importSummary['tables'] ?? 0);
-$importRowsCount = (int) ($importSummary['rows'] ?? 0);
 $dbRepairConfirmMessage = str_replace('\n', "\n", Text::_('COM_CONTENTBUILDERNG_DB_REPAIR_CONFIRMATION'));
 $dbRepairPromptMessage = str_replace('\n', "\n", Text::_('COM_CONTENTBUILDERNG_DB_REPAIR_CONFIRMATION_PROMPT'));
 $dbRepairPromptFailedMessage = str_replace('\n', "\n", Text::_('COM_CONTENTBUILDERNG_DB_REPAIR_CONFIRMATION_FAILED'));
-$exportPrepareMessage = str_replace('\n', "\n", Text::_('COM_CONTENTBUILDERNG_ABOUT_EXPORT_CONFIGURATION_PREPARE'));
-$importPrepareMessage = str_replace('\n', "\n", Text::_('COM_CONTENTBUILDERNG_ABOUT_IMPORT_CONFIGURATION_PREPARE'));
 $phpLibrariesCount = count((array) $this->phpLibraries);
 $javascriptLibrariesCount = count((array) $this->javascriptLibraries);
 $columnEncodingIssueLimit = 200;
@@ -564,81 +525,6 @@ $formatAuditIssueList = static function (array $values, int $limit = 8): string 
                 aria-label="<?php echo htmlspecialchars($tooltipLinkLicense, ENT_QUOTES, 'UTF-8'); ?>"
             ><?php echo Text::_('COM_CONTENTBUILDERNG_LICENSE_LINK'); ?></a>
         </div>
-    </div>
-</div>
-
-<div class="card mt-3 d-none" id="cb_config_transfer_card" data-cb-active-task="">
-    <div class="card-body">
-        <h3 class="h6 card-title mb-2"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_CONFIG_TRANSFER_TITLE'); ?></h3>
-        <p class="text-muted small mb-3"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_CONFIG_TRANSFER_DESC'); ?></p>
-        <div class="row g-3">
-            <div class="col-lg-5">
-                <label class="form-label"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_CONFIG_SECTIONS_LABEL'); ?></label>
-                <div class="cb-config-sections-scroll">
-                    <?php foreach ($configSections as $sectionKey => $sectionMeta) : ?>
-                        <?php
-                        $sectionLabel = trim((string) ($sectionMeta['label'] ?? ''));
-                        $sectionDescription = trim((string) ($sectionMeta['description'] ?? ''));
-                        ?>
-                        <div class="form-check mb-2 cb-config-section-item">
-                            <input
-                                class="form-check-input"
-                                type="checkbox"
-                                name="cb_config_sections[]"
-                                id="cb_config_section_<?php echo htmlspecialchars($sectionKey, ENT_QUOTES, 'UTF-8'); ?>"
-                                value="<?php echo htmlspecialchars($sectionKey, ENT_QUOTES, 'UTF-8'); ?>"
-                                checked="checked"
-                            >
-                            <div class="cb-config-section-main">
-                                <label class="form-check-label" for="cb_config_section_<?php echo htmlspecialchars($sectionKey, ENT_QUOTES, 'UTF-8'); ?>">
-                                    <?php echo htmlspecialchars($sectionLabel, ENT_QUOTES, 'UTF-8'); ?>
-                                </label>
-                                <?php if ($sectionDescription !== '') : ?>
-                                    <small class="cb-config-section-desc"><?php echo htmlspecialchars($sectionDescription, ENT_QUOTES, 'UTF-8'); ?></small>
-                                <?php endif; ?>
-                            </div>
-                        </div>
-                    <?php endforeach; ?>
-                </div>
-            </div>
-            <div class="col-lg-7">
-                <div id="cb_config_import_panel" class="collapse">
-                    <label for="cb_config_import_file" class="form-label"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_IMPORT_CONFIGURATION_FILE_LABEL'); ?></label>
-                    <input
-                        type="file"
-                        class="form-control"
-                        id="cb_config_import_file"
-                        name="cb_config_import_file"
-                        accept=".json,application/json"
-                    >
-                    <small class="text-muted d-block mt-1"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_IMPORT_CONFIGURATION_FILE_HELP'); ?></small>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="card mt-3">
-    <div class="card-body">
-        <h3 class="h6 card-title mb-2"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_IMPORT_LOG_TITLE'); ?></h3>
-        <?php if (!$hasImportReport) : ?>
-            <div class="alert alert-info mb-0"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_IMPORT_LOG_EMPTY'); ?></div>
-        <?php else : ?>
-            <p class="text-muted small mb-2">
-                <?php echo Text::sprintf('COM_CONTENTBUILDERNG_ABOUT_IMPORT_LOG_LAST_RUN', $importGeneratedAt, $importTablesCount, $importRowsCount); ?>
-            </p>
-            <?php if ($importDetails === []) : ?>
-                <div class="alert alert-secondary mb-0"><?php echo Text::_('COM_CONTENTBUILDERNG_NOT_AVAILABLE'); ?></div>
-            <?php else : ?>
-                <div class="cb-import-log-scroll">
-                    <ul class="list-group list-group-flush">
-                        <?php foreach ($importDetails as $importDetail) : ?>
-                            <li class="list-group-item px-2 py-1"><?php echo htmlspecialchars($importDetail, ENT_QUOTES, 'UTF-8'); ?></li>
-                        <?php endforeach; ?>
-                    </ul>
-                </div>
-            <?php endif; ?>
-        <?php endif; ?>
     </div>
 </div>
 
@@ -1369,91 +1255,6 @@ $formatAuditIssueList = static function (array $values, int $limit = 8): string 
 <script>
     (function () {
         var originalSubmitbutton = Joomla.submitbutton;
-        function getConfigTransferCard() {
-            return document.getElementById('cb_config_transfer_card');
-        }
-
-        window.cbToggleImportPanel = function (trigger) {
-            var panel = document.getElementById('cb_config_import_panel');
-            if (!panel) {
-                return false;
-            }
-
-            panel.classList.add('show');
-
-            if (trigger && typeof trigger.setAttribute === 'function') {
-                trigger.setAttribute('aria-expanded', 'true');
-            }
-
-            var fileInput = document.getElementById('cb_config_import_file');
-            if (fileInput && typeof fileInput.focus === 'function') {
-                fileInput.focus();
-            }
-
-            return false;
-        };
-
-        window.cbRevealConfigTransfer = function (task) {
-            var card = getConfigTransferCard();
-            if (!card) {
-                return false;
-            }
-
-            card.classList.remove('d-none');
-            card.setAttribute('data-cb-active-task', String(task || ''));
-
-            var importPanel = document.getElementById('cb_config_import_panel');
-            if (importPanel) {
-                if (task === 'about.importConfiguration') {
-                    importPanel.classList.add('show');
-                } else {
-                    importPanel.classList.remove('show');
-                }
-            }
-
-            if (typeof card.scrollIntoView === 'function') {
-                card.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }
-
-            if (task === 'about.importConfiguration') {
-                window.setTimeout(function () {
-                    var fileInput = document.getElementById('cb_config_import_file');
-                    if (fileInput && typeof fileInput.focus === 'function') {
-                        fileInput.focus();
-                    }
-                }, 100);
-            }
-
-            return true;
-        };
-
-        window.cbSubmitConfigAction = function (task, requiresFile) {
-            var form = document.getElementById('adminForm');
-            if (!form) {
-                return false;
-            }
-
-            var checkedSections = form.querySelectorAll('input[name="cb_config_sections[]"]:checked');
-            if (!checkedSections || checkedSections.length < 1) {
-                window.alert(<?php echo json_encode(Text::_('COM_CONTENTBUILDERNG_ABOUT_CONFIGURATION_SELECT_SECTION'), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>);
-                return false;
-            }
-
-            if (requiresFile) {
-                var fileInput = document.getElementById('cb_config_import_file');
-                if (!fileInput || !fileInput.files || fileInput.files.length < 1) {
-                    window.alert(<?php echo json_encode(Text::_('COM_CONTENTBUILDERNG_ABOUT_IMPORT_CONFIGURATION_SELECT_FILE'), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>);
-                    return false;
-                }
-            }
-
-            var taskInput = form.querySelector('input[name="task"]');
-            if (taskInput) {
-                taskInput.value = String(task || '');
-            }
-
-            return true;
-        };
         var toolbarTaskMeta = {
             'about.runAudit': {
                 tooltip: <?php echo json_encode($tooltipAudit, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>,
@@ -1654,56 +1455,6 @@ $formatAuditIssueList = static function (array $values, int $limit = 8): string 
         }
 
         Joomla.submitbutton = function (task) {
-            if (task === 'about.exportConfiguration') {
-                var exportCard = getConfigTransferCard();
-                if (exportCard) {
-                    var exportCardWasHidden = exportCard.classList.contains('d-none');
-                    var exportCardActiveTask = String(exportCard.getAttribute('data-cb-active-task') || '');
-
-                    if (exportCardWasHidden || exportCardActiveTask !== task) {
-                        window.cbRevealConfigTransfer(task);
-                    }
-
-                    if (exportCardWasHidden) {
-                        window.alert(
-                            <?php echo json_encode($exportPrepareMessage, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>
-                        );
-                        return false;
-                    }
-                }
-
-                if (!window.cbSubmitConfigAction(task, false)) {
-                    return false;
-                }
-
-                return Joomla.submitform(task, document.getElementById('adminForm'));
-            }
-
-            if (task === 'about.importConfiguration') {
-                var importCard = getConfigTransferCard();
-                if (importCard) {
-                    var importCardWasHidden = importCard.classList.contains('d-none');
-                    var importCardActiveTask = String(importCard.getAttribute('data-cb-active-task') || '');
-
-                    if (importCardWasHidden || importCardActiveTask !== task) {
-                        window.cbRevealConfigTransfer(task);
-                    }
-
-                    if (importCardWasHidden) {
-                        window.alert(
-                            <?php echo json_encode($importPrepareMessage, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>
-                        );
-                        return false;
-                    }
-                }
-
-                if (!window.cbSubmitConfigAction(task, true)) {
-                    return false;
-                }
-
-                return Joomla.submitform(task, document.getElementById('adminForm'));
-            }
-
             if (task === 'about.migratePackedData') {
                 var confirmed = window.confirm(
                     <?php echo json_encode($dbRepairConfirmMessage, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>

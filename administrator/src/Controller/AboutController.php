@@ -23,10 +23,13 @@ use Joomla\Database\DatabaseInterface;
 final class AboutController extends BaseController
 {
     protected $default_view = 'about';
+    private const CONFIG_TRANSFER_SELECTION_STATE_KEY = 'com_contentbuilderng.configtransfer.selection';
     private const ABOUT_LOG_FILES = [
         'com_contentbuilderng.log',
     ];
     private const ABOUT_LOG_TAIL_BYTES = 262144;
+    private const CONFIG_IMPORT_MODE_MERGE = 'merge';
+    private const CONFIG_IMPORT_MODE_REPLACE = 'replace';
     private const CONFIG_EXPORT_SECTIONS = [
         'component_params' => ['type' => 'component_params'],
         'forms' => ['type' => 'table', 'table' => '#__contentbuilderng_forms'],
@@ -534,13 +537,36 @@ final class AboutController extends BaseController
             throw new \RuntimeException(Text::_('JERROR_ALERTNOAUTHOR'), 403);
         }
 
+        $this->rememberConfigTransferSelection();
+
         try {
             $selectedSections = $this->getSelectedConfigSections();
             if ($selectedSections === []) {
                 throw new \RuntimeException(Text::_('COM_CONTENTBUILDERNG_ABOUT_CONFIGURATION_SELECT_SECTION'));
             }
 
-            $payload = $this->buildConfigurationExportPayload($selectedSections);
+            $selectedFormIds = $this->getSelectedConfigFormIds();
+            $selectedStorageIds = $this->getSelectedConfigStorageIds();
+            $requireFormFilter = $app->input->getInt('cb_require_form_filter', 0) === 1;
+            $requireStorageFilter = $app->input->getInt('cb_require_storage_filter', 0) === 1;
+
+            if (
+                $requireFormFilter
+                && $selectedFormIds === []
+                && array_intersect($selectedSections, ['forms', 'elements', 'list_states', 'resource_access']) !== []
+            ) {
+                throw new \RuntimeException(Text::_('COM_CONTENTBUILDERNG_ABOUT_CONFIGURATION_SELECT_FORM'));
+            }
+
+            if (
+                $requireStorageFilter
+                && $selectedStorageIds === []
+                && array_intersect($selectedSections, ['storages', 'storage_fields']) !== []
+            ) {
+                throw new \RuntimeException(Text::_('COM_CONTENTBUILDERNG_ABOUT_CONFIGURATION_SELECT_STORAGE'));
+            }
+
+            $payload = $this->buildConfigurationExportPayload($selectedSections, $selectedFormIds, $selectedStorageIds);
             $json = json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 
             if (!is_string($json) || $json === '') {
@@ -561,7 +587,7 @@ final class AboutController extends BaseController
                 Text::sprintf('COM_CONTENTBUILDERNG_ABOUT_EXPORT_CONFIGURATION_FAILED', $e->getMessage()),
                 'error'
             );
-            $this->setRedirect(Route::_('index.php?option=com_contentbuilderng&view=about', false));
+            $this->setRedirect($this->buildConfigTransferRedirect('export'));
         }
     }
 
@@ -577,11 +603,14 @@ final class AboutController extends BaseController
             throw new \RuntimeException(Text::_('JERROR_ALERTNOAUTHOR'), 403);
         }
 
+        $this->rememberConfigTransferSelection();
+
         try {
             $selectedSections = $this->getSelectedConfigSections();
             if ($selectedSections === []) {
                 throw new \RuntimeException(Text::_('COM_CONTENTBUILDERNG_ABOUT_CONFIGURATION_SELECT_SECTION'));
             }
+            $importMode = $this->getImportMode();
 
             $upload = (array) $app->input->files->get('cb_config_import_file', [], 'array');
             $tmpName = (string) ($upload['tmp_name'] ?? '');
@@ -606,7 +635,7 @@ final class AboutController extends BaseController
                 throw new \RuntimeException(Text::_('COM_CONTENTBUILDERNG_ABOUT_IMPORT_CONFIGURATION_INVALID'));
             }
 
-            $summary = $this->applyConfigurationImportPayload($payload, $selectedSections);
+            $summary = $this->applyConfigurationImportPayload($payload, $selectedSections, $importMode);
             $app->setUserState('com_contentbuilderng.about.import', [
                 'generated_at' => Factory::getDate()->format('Y-m-d H:i:s'),
                 'summary' => $summary,
@@ -634,7 +663,7 @@ final class AboutController extends BaseController
             );
         }
 
-        $this->setRedirect(Route::_('index.php?option=com_contentbuilderng&view=about', false));
+        $this->setRedirect($this->buildConfigTransferRedirect('import'));
     }
 
     private function getSelectedConfigSections(): array
@@ -657,7 +686,7 @@ final class AboutController extends BaseController
         return array_values(array_intersect($selected, $allowed));
     }
 
-    private function buildConfigurationExportPayload(array $selectedSections): array
+    private function buildConfigurationExportPayload(array $selectedSections, array $selectedFormIds, array $selectedStorageIds): array
     {
         $db = Factory::getContainer()->get(DatabaseInterface::class);
         $existingTables = array_map('strtolower', (array) $db->getTableList());
@@ -692,6 +721,26 @@ final class AboutController extends BaseController
                 ->select('*')
                 ->from($db->quoteName($tableAlias));
 
+            if ($selectedFormIds !== []) {
+                if ($sectionKey === 'forms' && in_array('id', $columns, true)) {
+                    $query->where($db->quoteName('id') . ' IN (' . implode(',', array_map('intval', $selectedFormIds)) . ')');
+                }
+
+                if (in_array($sectionKey, ['elements', 'list_states', 'resource_access'], true) && in_array('form_id', $columns, true)) {
+                    $query->where($db->quoteName('form_id') . ' IN (' . implode(',', array_map('intval', $selectedFormIds)) . ')');
+                }
+            }
+
+            if ($selectedStorageIds !== []) {
+                if ($sectionKey === 'storages' && in_array('id', $columns, true)) {
+                    $query->where($db->quoteName('id') . ' IN (' . implode(',', array_map('intval', $selectedStorageIds)) . ')');
+                }
+
+                if ($sectionKey === 'storage_fields' && in_array('storage_id', $columns, true)) {
+                    $query->where($db->quoteName('storage_id') . ' IN (' . implode(',', array_map('intval', $selectedStorageIds)) . ')');
+                }
+            }
+
             if (in_array('id', $columns, true)) {
                 $query->order($db->quoteName('id') . ' ASC');
             }
@@ -715,8 +764,110 @@ final class AboutController extends BaseController
                 'format' => 'cbng-config-export-v1',
             ],
             'sections' => $selectedSections,
+            'filters' => [
+                'form_ids' => $selectedFormIds,
+                'storage_ids' => $selectedStorageIds,
+            ],
             'data' => $exportSections,
         ];
+    }
+
+    private function getSelectedConfigFormIds(): array
+    {
+        return $this->getSelectedNumericIds('cb_config_form_ids');
+    }
+
+    private function getSelectedConfigStorageIds(): array
+    {
+        return $this->getSelectedNumericIds('cb_config_storage_ids');
+    }
+
+    private function getSelectedNumericIds(string $inputKey): array
+    {
+        $selectedRaw = (array) Factory::getApplication()->input->get($inputKey, [], 'array');
+        $selected = [];
+
+        foreach ($selectedRaw as $selectedId) {
+            $id = (int) $selectedId;
+            if ($id > 0) {
+                $selected[] = $id;
+            }
+        }
+
+        return array_values(array_unique($selected));
+    }
+
+    private function buildConfigTransferRedirect(string $fallbackMode = 'export'): string
+    {
+        $app = Factory::getApplication();
+        $returnView = $app->input->getCmd('return_view', '');
+        $returnMode = $app->input->getCmd('return_mode', $fallbackMode);
+        $returnMode = in_array($returnMode, ['export', 'import'], true) ? $returnMode : $fallbackMode;
+
+        if ($returnView === 'configtransfer') {
+            return Route::_('index.php?option=com_contentbuilderng&view=configtransfer&mode=' . $returnMode, false);
+        }
+
+        return Route::_('index.php?option=com_contentbuilderng&view=about', false);
+    }
+
+    private function rememberConfigTransferSelection(): void
+    {
+        /** @var AdministratorApplication $app */
+        $app = Factory::getApplication();
+        $postData = (array) $app->input->post->getArray();
+        $previous = (array) $app->getUserState(self::CONFIG_TRANSFER_SELECTION_STATE_KEY, []);
+
+        $sections = (array) ($previous['sections'] ?? []);
+        if (array_key_exists('cb_config_sections', $postData)) {
+            $sections = $this->normalizeInputStringArray((array) ($postData['cb_config_sections'] ?? []));
+        }
+
+        $formIds = (array) ($previous['form_ids'] ?? []);
+        if (array_key_exists('cb_config_form_ids', $postData)) {
+            $formIds = $this->normalizeInputIntArray((array) ($postData['cb_config_form_ids'] ?? []));
+        }
+
+        $storageIds = (array) ($previous['storage_ids'] ?? []);
+        if (array_key_exists('cb_config_storage_ids', $postData)) {
+            $storageIds = $this->normalizeInputIntArray((array) ($postData['cb_config_storage_ids'] ?? []));
+        }
+
+        $app->setUserState(self::CONFIG_TRANSFER_SELECTION_STATE_KEY, [
+            'touched' => 1,
+            'sections' => $sections,
+            'form_ids' => $formIds,
+            'storage_ids' => $storageIds,
+        ]);
+    }
+
+    private function normalizeInputStringArray(array $values): array
+    {
+        $clean = [];
+
+        foreach ($values as $value) {
+            $key = strtolower((string) $value);
+            $key = preg_replace('/[^a-z0-9_]/', '', $key) ?? '';
+            if ($key !== '') {
+                $clean[] = $key;
+            }
+        }
+
+        return array_values(array_unique($clean));
+    }
+
+    private function normalizeInputIntArray(array $values): array
+    {
+        $clean = [];
+
+        foreach ($values as $value) {
+            $id = (int) $value;
+            if ($id > 0) {
+                $clean[] = $id;
+            }
+        }
+
+        return array_values(array_unique($clean));
     }
 
     private function loadComponentParams(DatabaseInterface $db): array
@@ -737,7 +888,15 @@ final class AboutController extends BaseController
         return is_array($decoded) ? $decoded : [];
     }
 
-    private function applyConfigurationImportPayload(array $payload, array $selectedSections): array
+    private function getImportMode(): string
+    {
+        $mode = strtolower((string) Factory::getApplication()->input->getCmd('cb_config_import_mode', self::CONFIG_IMPORT_MODE_MERGE));
+        return in_array($mode, [self::CONFIG_IMPORT_MODE_MERGE, self::CONFIG_IMPORT_MODE_REPLACE], true)
+            ? $mode
+            : self::CONFIG_IMPORT_MODE_MERGE;
+    }
+
+    private function applyConfigurationImportPayload(array $payload, array $selectedSections, string $importMode): array
     {
         $db = Factory::getContainer()->get(DatabaseInterface::class);
         $tableRowsImported = 0;
@@ -806,7 +965,7 @@ final class AboutController extends BaseController
 
                 $tableAlias = (string) ($sectionConfig['table'] ?? '');
                 $rows = is_array($sectionPayload['rows'] ?? null) ? $sectionPayload['rows'] : [];
-                $importedRows = $this->replaceConfigTableRows($db, $tableAlias, $rows);
+                $importedRows = $this->importConfigTableRows($db, $tableAlias, $rows, $importMode);
                 $tableRowsImported += $importedRows;
                 $tablesImported++;
                 $details[] = Text::sprintf(
@@ -830,7 +989,7 @@ final class AboutController extends BaseController
         ];
     }
 
-    private function replaceConfigTableRows(DatabaseInterface $db, string $tableAlias, array $rows): int
+    private function importConfigTableRows(DatabaseInterface $db, string $tableAlias, array $rows, string $importMode): int
     {
         $columns = array_keys((array) $db->getTableColumns($tableAlias, false));
 
@@ -838,11 +997,14 @@ final class AboutController extends BaseController
             return 0;
         }
 
-        $query = $db->getQuery(true)
-            ->delete($db->quoteName($tableAlias));
-        $db->setQuery($query)->execute();
+        if ($importMode === self::CONFIG_IMPORT_MODE_REPLACE) {
+            $query = $db->getQuery(true)
+                ->delete($db->quoteName($tableAlias));
+            $db->setQuery($query)->execute();
+        }
 
         $imported = 0;
+        $hasIdColumn = in_array('id', $columns, true);
 
         foreach ($rows as $rowIndex => $row) {
             if (!is_array($row)) {
@@ -862,6 +1024,41 @@ final class AboutController extends BaseController
             }
 
             try {
+                if ($importMode === self::CONFIG_IMPORT_MODE_MERGE && $hasIdColumn && array_key_exists('id', $filtered)) {
+                    $rowId = (int) $filtered['id'];
+                    if ($rowId > 0) {
+                        $existsQuery = $db->getQuery(true)
+                            ->select('1')
+                            ->from($db->quoteName($tableAlias))
+                            ->where($db->quoteName('id') . ' = ' . $rowId);
+                        $db->setQuery($existsQuery, 0, 1);
+                        $exists = (int) $db->loadResult() === 1;
+
+                        if ($exists) {
+                            $updateQuery = $db->getQuery(true)
+                                ->update($db->quoteName($tableAlias));
+                            $setCount = 0;
+
+                            foreach ($filtered as $columnName => $value) {
+                                if ($columnName === 'id') {
+                                    continue;
+                                }
+                                $updateQuery->set(
+                                    $db->quoteName($columnName) . ' = ' . ($value === null ? 'NULL' : $db->quote((string) $value))
+                                );
+                                $setCount++;
+                            }
+
+                            if ($setCount > 0) {
+                                $updateQuery->where($db->quoteName('id') . ' = ' . $rowId);
+                                $db->setQuery($updateQuery)->execute();
+                            }
+                            $imported++;
+                            continue;
+                        }
+                    }
+                }
+
                 $insertQuery = $db->getQuery(true)
                     ->insert($db->quoteName($tableAlias))
                     ->columns(array_map([$db, 'quoteName'], array_keys($filtered)));
