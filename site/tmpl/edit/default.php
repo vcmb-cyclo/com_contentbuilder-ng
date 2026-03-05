@@ -519,8 +519,8 @@ if (!empty($this->theme_css) || !empty($this->theme_js)) {
         }
         if (($edit_allowed || $new_allowed) && !$this->edit_by_type) {
         ?>
-            <button class="btn btn-sm btn-primary cbButton cbSaveButton" title="<?php echo Text::_('COM_CONTENTBUILDERNG_SAVE'); ?>" onclick="<?php echo $this->latest ? "document.getElementById('contentbuilderng_task').value='edit.apply';" : '' ?>contentbuilderng.onSubmit();">
-                <span class="fa-solid fa-xmark me-1" aria-hidden="true"></span>
+            <button class="btn btn-sm btn-primary cbButton cbSaveButton" title="<?php echo Text::_('COM_CONTENTBUILDERNG_SAVE'); ?>" onclick="document.getElementById('contentbuilderng_task').value='edit.apply';contentbuilderng.onSubmit();">
+                <span class="fa-solid fa-floppy-disk me-1" aria-hidden="true"></span>
                 <?php echo trim($this->save_button_title) != '' ? htmlentities($this->save_button_title, ENT_QUOTES, 'UTF-8') : Text::_('COM_CONTENTBUILDERNG_SAVE') ?>
             </button>
         <?php
