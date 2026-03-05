@@ -213,12 +213,20 @@ class contentbuilderng_com_breezingforms
         $data->modified = '';
         $data->modified_by = '';
         if ($obj) {
-            $data->created_id = $obj->user_id;
-            $data->created = $obj->submitted;
-            $data->created_by = $obj->user_full_name != '-' ? $obj->user_full_name : '';
-            $data->modified_id = 0;
-            $data->modified = '';
-            $data->modified_by = '';
+            $createdBy = trim((string) ($obj->created_by ?? ''));
+            if ($createdBy === '') {
+                $legacyCreatedBy = trim((string) ($obj->user_full_name ?? ''));
+                if ($legacyCreatedBy !== '-' && $legacyCreatedBy !== '') {
+                    $createdBy = $legacyCreatedBy;
+                }
+            }
+
+            $data->created_id = (int) ($obj->user_id ?? 0);
+            $data->created = (string) (($obj->created ?? '') !== '' ? $obj->created : ($obj->submitted ?? ''));
+            $data->created_by = $createdBy;
+            $data->modified_id = (int) ($obj->modified_user_id ?? 0);
+            $data->modified = (string) ($obj->modified ?? '');
+            $data->modified_by = trim((string) ($obj->modified_by ?? ''));
         }
 
         // Fallback: use CB tracking information when record has been edited.
@@ -1011,6 +1019,44 @@ class contentbuilderng_com_breezingforms
             )");
             $db->execute();
             $insert_id = $db->insertid();
+        } else {
+            // Keep BF audit columns in sync when an existing record is edited via CB.
+            $identity = Factory::getApplication()->getIdentity();
+            $modifierId = (int) ($identity->id ?? 0);
+            $modifierName = trim((string) ($identity->name ?? ''));
+            if ($modifierName === '') {
+                $modifierName = trim((string) ($identity->username ?? ''));
+            }
+            if ($modifierName === '' && $modifierId > 0) {
+                try {
+                    $db->setQuery("SELECT `name`, `username` FROM #__users WHERE id = " . (int) $modifierId);
+                    $userRow = $db->loadAssoc();
+                    if (is_array($userRow)) {
+                        $modifierName = trim((string) ($userRow['name'] ?? ''));
+                        if ($modifierName === '') {
+                            $modifierName = trim((string) ($userRow['username'] ?? ''));
+                        }
+                    }
+                } catch (\Throwable $e) {
+                    // Ignore lookup errors and continue with deterministic fallback.
+                }
+            }
+            if ($modifierName === '') {
+                $modifierName = $modifierId > 0 ? 'user#' . $modifierId : 'guest';
+            }
+
+            try {
+                $db->setQuery(
+                    "UPDATE #__facileforms_records
+                     SET modified_user_id = " . $db->quote($modifierId) . ",
+                         modified = " . $db->quote(Factory::getDate()->toSql()) . ",
+                         modified_by = " . $db->quote($modifierName) . "
+                     WHERE id = " . $db->quote($record_id)
+                );
+                $db->execute();
+            } catch (\Throwable $e) {
+                // Backward compatibility: older BF schemas may not have these audit columns.
+            }
         }
         foreach ($cleaned_values as $id => $value) {
             $isGroup = $this->isGroup($id);

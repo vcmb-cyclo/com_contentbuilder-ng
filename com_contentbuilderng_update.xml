@@ -2,14 +2,14 @@
 <updates>
 	<update>
 		<name>COM_CONTENTBUILDERNG</name>
-		<description>ContentBuilder NG Update 6.1.4</description>
+		<description>ContentBuilder NG Update 6.1.5</description>
 		<element>Com_contentbuilderng</element>
 		<type>component</type>
 		<client>1</client>
-		<version>6.1.4</version>
+		<version>6.1.5</version>
 		<infourl title="ContentBuilderng">https://breezingforms-ng.vcmb.fr/</infourl>
 		<downloads>
-		<downloadurl type="full" format="zip">https://breezingforms-ng.vcmb.fr/download/com_contentbuilderng-6.1.4.zip</downloadurl>
+		<downloadurl type="full" format="zip">https://breezingforms-ng.vcmb.fr/download/com_contentbuilderng-6.1.5.zip</downloadurl>
 		</downloads>
 		<tags>
 			<tag>stable</tag>

@@ -362,18 +362,9 @@ class DetailsModel extends ListModel
                             }
                         }
 
-                        $data->page_title .= $ordered_extra_title;
-
-                        // trying first element if no title field given
-                        if (!$label) {
-                            $label = ContentbuilderngHelper::cbinternal($data->items[0]->recValue);
-                        }
-
                         // "buddy quaid hack", should be an option in future versions
                         if ($this->_show_page_heading && $this->_page_title != '' && $this->_page_heading != '' && $this->_page_title == $this->_page_heading) {
                             $data->page_title = $this->_page_title;
-                        } else {
-                            $data->page_title .= $label ? (!$data->page_title ? '' : (!$ordered_extra_title ? ': ' : ' &raquo; ')) . $label : '';
                         }
 
                         if ($this->frontend) {

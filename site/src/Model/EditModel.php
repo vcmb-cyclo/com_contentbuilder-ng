@@ -493,8 +493,6 @@ class EditModel extends BaseDatabaseModel
 
                         if ($this->_show_page_heading && $this->_page_title != '' && $this->_page_heading != '' && $this->_page_title == $this->_page_heading) {
                             $data->page_title = $this->_page_title;
-                        } else {
-                            $data->page_title .= $label ? (!$data->page_title ? '' : ': ') . $label : '';
                         }
 
                         if ($this->frontend) {

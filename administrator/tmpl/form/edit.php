@@ -2691,10 +2691,11 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
                 <td>
                     <input type="hidden" name="jform[create_sample]" id="cb_create_sample_flag" value="0" />
                     <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
-                        <button type="button" class="btn btn-sm btn-outline-secondary" id="create_sample"
+                        <button type="button" class="btn btn-primary d-inline-flex align-items-center gap-1" id="create_sample"
                             title="<?php echo Text::_('COM_CONTENTBUILDERNG_CREATE_TEMPLATE_TIP'); ?>"
                             aria-label="<?php echo Text::_('COM_CONTENTBUILDERNG_CREATE_TEMPLATE_TIP'); ?>"
                             onclick="cbQueueDetailsSampleGeneration(this);">
+                            <span class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></span>
                             <?php echo Text::_('COM_CONTENTBUILDERNG_CREATE_TEMPLATE'); ?>
                         </button>
                         <small id="cb_create_sample_hint" class="text-success d-none">
@@ -3138,10 +3139,11 @@ TXT;
             </div>
             <input type="hidden" name="jform[create_editable_sample]" id="cb_create_editable_sample_flag" value="0" />
             <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
-                <button type="button" class="btn btn-sm btn-outline-secondary" id="create_editable_sample"
+                <button type="button" class="btn btn-primary d-inline-flex align-items-center gap-1" id="create_editable_sample"
                     title="<?php echo Text::_('COM_CONTENTBUILDERNG_CREATE_TEMPLATE_TIP'); ?>"
                     aria-label="<?php echo Text::_('COM_CONTENTBUILDERNG_CREATE_TEMPLATE_TIP'); ?>"
                     onclick="cbQueueEditableSampleGeneration(this);">
+                    <span class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></span>
                     <?php echo Text::_('COM_CONTENTBUILDERNG_CREATE_TEMPLATE'); ?>
                 </button>
                 <small id="cb_create_editable_sample_hint" class="text-success d-none">

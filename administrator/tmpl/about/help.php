@@ -9,7 +9,6 @@
 \defined('_JEXEC') or die('Restricted access');
 
 use Joomla\CMS\Language\Text;
-use Joomla\CMS\Router\Route;
 ?>
 <div class="container-fluid p-3">
     <h1 class="h3 mb-3"><?php echo Text::_('COM_CONTENTBUILDERNG_HELP_ABOUT_TITLE'); ?></h1>
@@ -26,7 +25,4 @@ use Joomla\CMS\Router\Route;
         <li><?php echo Text::_('COM_CONTENTBUILDERNG_HELP_ABOUT_POINT_9'); ?></li>
         <li><?php echo Text::_('COM_CONTENTBUILDERNG_HELP_ABOUT_POINT_10'); ?></li>
     </ul>
-    <a class="btn btn-primary btn-sm" href="<?php echo Route::_('index.php?option=com_contentbuilderng&view=about'); ?>">
-        <?php echo Text::_('COM_CONTENTBUILDERNG_HELP_BACK_TO_ABOUT'); ?>
-    </a>
 </div>
