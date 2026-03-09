@@ -32,7 +32,6 @@ final class AboutController extends BaseController
     private const CONFIG_IMPORT_MODE_MERGE = 'merge';
     private const CONFIG_IMPORT_MODE_REPLACE = 'replace';
     private const CONFIG_TRANSFER_ROOT_SECTIONS = [
-        'component_params',
         'forms',
         'storages',
     ];
@@ -52,6 +51,7 @@ final class AboutController extends BaseController
         'storages' => ['type' => 'table', 'table' => '#__contentbuilderng_storages'],
         'storage_fields' => ['type' => 'table', 'table' => '#__contentbuilderng_storage_fields'],
         'resource_access' => ['type' => 'table', 'table' => '#__contentbuilderng_resource_access'],
+        'storage_content' => ['type' => 'storage_content'],
     ];
 
     public function migratePackedData(): void
@@ -549,6 +549,7 @@ final class AboutController extends BaseController
         $selectedSections = [];
         $selectedFormIds = [];
         $selectedStorageIds = [];
+        $includeStorageContent = false;
 
         if (!$user->authorise('core.manage', 'com_contentbuilderng')) {
             throw new \RuntimeException(Text::_('JERROR_ALERTNOAUTHOR'), 403);
@@ -564,26 +565,19 @@ final class AboutController extends BaseController
 
             $selectedFormIds = $this->getSelectedConfigFormIds();
             $selectedStorageIds = $this->getSelectedConfigStorageIds();
-            $requireFormFilter = $app->input->getInt('cb_require_form_filter', 0) === 1;
-            $requireStorageFilter = $app->input->getInt('cb_require_storage_filter', 0) === 1;
+            $selectedSections = $this->resolveEffectiveExportSections($selectedSections, $selectedFormIds, $selectedStorageIds);
 
-            if (
-                $requireFormFilter
-                && $selectedFormIds === []
-                && array_intersect($selectedSections, ['forms', 'elements', 'list_states', 'resource_access']) !== []
-            ) {
-                throw new \RuntimeException(Text::_('COM_CONTENTBUILDERNG_ABOUT_CONFIGURATION_SELECT_FORM'));
+            if ($selectedSections === []) {
+                throw new \RuntimeException(Text::_('COM_CONTENTBUILDERNG_ABOUT_CONFIGURATION_SELECT_EXPORT_TARGET'));
             }
 
-            if (
-                $requireStorageFilter
-                && $selectedStorageIds === []
-                && array_intersect($selectedSections, ['storages', 'storage_fields']) !== []
-            ) {
-                throw new \RuntimeException(Text::_('COM_CONTENTBUILDERNG_ABOUT_CONFIGURATION_SELECT_STORAGE'));
-            }
-
-            $payload = $this->buildConfigurationExportPayload($selectedSections, $selectedFormIds, $selectedStorageIds);
+            $includeStorageContent = $this->shouldExportStorageContent();
+            $payload = $this->buildConfigurationExportPayload($selectedSections, $selectedFormIds, $selectedStorageIds, $includeStorageContent);
+            $exportSummary = $this->buildConfigurationExportSummary($payload, $selectedSections, $selectedFormIds, $selectedStorageIds, $includeStorageContent);
+            $app->setUserState('com_contentbuilderng.about.export', [
+                'generated_at' => $this->getJoomlaLocalDateTime(),
+                'summary' => $exportSummary,
+            ]);
             $this->logConfigurationExportReport($payload, $selectedSections, $selectedFormIds, $selectedStorageIds);
             $json = json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 
@@ -601,10 +595,18 @@ final class AboutController extends BaseController
             echo $json;
             $app->close();
         } catch (\Throwable $e) {
+            $app->setUserState('com_contentbuilderng.about.export', [
+                'generated_at' => $this->getJoomlaLocalDateTime(),
+                'summary' => [
+                    'status' => 'error',
+                    'details' => [(string) $e->getMessage()],
+                ],
+            ]);
             Logger::error('Configuration export failed', [
                 'sections' => $selectedSections,
                 'form_ids' => $selectedFormIds,
                 'storage_ids' => $selectedStorageIds,
+                'include_storage_content' => $includeStorageContent ? 1 : 0,
                 'error' => $e->getMessage(),
             ]);
             $this->setMessage(
@@ -665,7 +667,8 @@ final class AboutController extends BaseController
                 $payload,
                 $selectedSections,
                 $this->getSelectedConfigImportNames('cb_config_import_form_names'),
-                $this->getSelectedConfigImportNames('cb_config_import_storage_names')
+                $this->getSelectedConfigImportNames('cb_config_import_storage_names'),
+                $this->getSelectedConfigImportNames('cb_config_import_storage_content_names')
             );
 
             $summary = $this->applyConfigurationImportPayload($payload, $selectedSections, $importMode);
@@ -727,7 +730,7 @@ final class AboutController extends BaseController
         return array_values(array_intersect($selected, $allowed));
     }
 
-    private function buildConfigurationExportPayload(array $selectedSections, array $selectedFormIds, array $selectedStorageIds): array
+    private function buildConfigurationExportPayload(array $selectedSections, array $selectedFormIds, array $selectedStorageIds, bool $includeStorageContent = false): array
     {
         $db = Factory::getContainer()->get(DatabaseInterface::class);
         $existingTables = array_map('strtolower', (array) $db->getTableList());
@@ -779,6 +782,10 @@ final class AboutController extends BaseController
             ];
         }
 
+        if ($includeStorageContent && in_array('storages', $selectedSections, true) && $selectedStorageIds !== []) {
+            $exportSections['storage_content'] = $this->buildStorageContentExportSection($db, $existingTables, $selectedStorageIds);
+        }
+
         return [
             'meta' => [
                 'generated_at' => Factory::getDate()->toSql(),
@@ -790,9 +797,95 @@ final class AboutController extends BaseController
             'filters' => [
                 'form_ids' => $selectedFormIds,
                 'storage_ids' => $selectedStorageIds,
+                'include_storage_content' => $includeStorageContent ? 1 : 0,
             ],
             'data' => $exportSections,
         ];
+    }
+
+    private function buildStorageContentExportSection(DatabaseInterface $db, array $existingTables, array $selectedStorageIds): array
+    {
+        $query = $db->getQuery(true)
+            ->select([
+                $db->quoteName('id'),
+                $db->quoteName('name'),
+                $db->quoteName('title'),
+                $db->quoteName('bytable'),
+            ])
+            ->from($db->quoteName('#__contentbuilderng_storages'))
+            ->where($db->quoteName('id') . ' IN (' . implode(',', array_map('intval', $selectedStorageIds)) . ')')
+            ->order($db->quoteName('title') . ' ASC, ' . $db->quoteName('name') . ' ASC, ' . $db->quoteName('id') . ' ASC');
+        $db->setQuery($query);
+        $storageRows = (array) $db->loadAssocList();
+
+        $storages = [];
+        $totalRows = 0;
+
+        foreach ($storageRows as $storageRow) {
+            $storageId = (int) ($storageRow['id'] ?? 0);
+            $storageName = trim((string) ($storageRow['name'] ?? ''));
+            $isBytable = (int) ($storageRow['bytable'] ?? 0) === 1;
+
+            if ($storageId <= 0 || $storageName === '' || $isBytable) {
+                continue;
+            }
+
+            $tableAlias = $this->resolveInternalStorageTableAlias($db, $existingTables, $storageName);
+            if ($tableAlias === null) {
+                continue;
+            }
+
+            $columns = array_keys((array) $db->getTableColumns($tableAlias, false));
+            $contentQuery = $db->getQuery(true)
+                ->select('*')
+                ->from($db->quoteName($tableAlias));
+
+            if (in_array('id', $columns, true)) {
+                $contentQuery->order($db->quoteName('id') . ' ASC');
+            }
+
+            $db->setQuery($contentQuery);
+            $rows = (array) $db->loadAssocList();
+            $rowCount = count($rows);
+            $totalRows += $rowCount;
+
+            $storages[] = [
+                'storage_id' => $storageId,
+                'storage_name' => $storageName,
+                'storage_title' => (string) ($storageRow['title'] ?? ''),
+                'table' => $tableAlias,
+                'row_count' => $rowCount,
+                'rows' => $rows,
+            ];
+        }
+
+        return [
+            'type' => 'storage_content',
+            'row_count' => $totalRows,
+            'storages' => $storages,
+        ];
+    }
+
+    private function resolveInternalStorageTableAlias(DatabaseInterface $db, array $existingTables, string $storageName): ?string
+    {
+        $storageName = trim($storageName);
+        if ($storageName === '') {
+            return null;
+        }
+
+        $prefixedAlias = '#__' . $storageName;
+        $prefixedName = strtolower($db->replacePrefix($prefixedAlias));
+
+        if (in_array($prefixedName, $existingTables, true)) {
+            return $prefixedAlias;
+        }
+
+        $plainName = strtolower($storageName);
+        if (in_array($plainName, $existingTables, true)) {
+            return $storageName;
+        }
+
+        return null;
     }
 
     private function getSelectedConfigFormIds(): array
@@ -902,7 +995,8 @@ final class AboutController extends BaseController
         array $payload,
         array $selectedSections,
         array $selectedFormNames,
-        array $selectedStorageNames
+        array $selectedStorageNames,
+        array $selectedStorageContentNames = []
     ): array {
         $dataSections = is_array($payload['data'] ?? null) ? $payload['data'] : [];
 
@@ -1011,6 +1105,40 @@ final class AboutController extends BaseController
             if (isset($payload['filters']) && is_array($payload['filters'])) {
                 $payload['filters']['storage_ids'] = array_map('intval', array_keys($selectedStorageIds));
             }
+
+            $storageContentStorages = is_array($dataSections['storage_content']['storages'] ?? null)
+                ? $dataSections['storage_content']['storages']
+                : [];
+            $filteredContentStorages = [];
+
+            foreach ($storageContentStorages as $storageContentEntry) {
+                if (!is_array($storageContentEntry)) {
+                    continue;
+                }
+
+                $storageId = (int) ($storageContentEntry['storage_id'] ?? 0);
+                if ($storageId > 0 && isset($selectedStorageIds[$storageId])) {
+                    $filteredContentStorages[] = $storageContentEntry;
+                }
+            }
+
+            if (isset($dataSections['storage_content']) && is_array($dataSections['storage_content'])) {
+                if ($selectedStorageContentNames !== []) {
+                    $selectedStorageContentMap = array_fill_keys($selectedStorageContentNames, true);
+                    $filteredContentStorages = array_values(array_filter(
+                        $filteredContentStorages,
+                        static fn(array $entry): bool => isset($selectedStorageContentMap[(string) ($entry['storage_name'] ?? '')])
+                    ));
+                } else {
+                    $filteredContentStorages = [];
+                }
+
+                $dataSections['storage_content']['storages'] = array_values($filteredContentStorages);
+                $dataSections['storage_content']['row_count'] = array_sum(array_map(
+                    static fn(array $entry): int => (int) ($entry['row_count'] ?? 0),
+                    $filteredContentStorages
+                ));
+            }
         }
 
         $payload['data'] = $dataSections;
@@ -1054,11 +1182,19 @@ final class AboutController extends BaseController
             $storageIds = $this->normalizeInputIntArray((array) ($postData['cb_config_storage_ids'] ?? []));
         }
 
+        $includeStorageContent = (int) ($previous['include_storage_content'] ?? 0) === 1;
+        if (array_key_exists('cb_export_storage_content', $postData)) {
+            $includeStorageContent = (int) ($postData['cb_export_storage_content'] ?? 0) === 1;
+        } elseif (((string) ($postData['task'] ?? '')) === 'about.exportConfiguration') {
+            $includeStorageContent = false;
+        }
+
         $app->setUserState(self::CONFIG_TRANSFER_SELECTION_STATE_KEY, [
             'touched' => 1,
             'sections' => $sections,
             'form_ids' => $formIds,
             'storage_ids' => $storageIds,
+            'include_storage_content' => $includeStorageContent ? 1 : 0,
         ]);
     }
 
@@ -1089,6 +1225,29 @@ final class AboutController extends BaseController
         }
 
         return array_values(array_unique($clean));
+    }
+
+    private function shouldExportStorageContent(): bool
+    {
+        return Factory::getApplication()->input->getInt('cb_export_storage_content', 0) === 1;
+    }
+
+    private function resolveEffectiveExportSections(array $selectedSections, array $selectedFormIds, array $selectedStorageIds): array
+    {
+        $effective = [];
+
+        foreach ($selectedSections as $sectionKey) {
+            if ($sectionKey === 'forms' && $selectedFormIds !== []) {
+                $effective[] = $sectionKey;
+                continue;
+            }
+
+            if ($sectionKey === 'storages' && $selectedStorageIds !== []) {
+                $effective[] = $sectionKey;
+            }
+        }
+
+        return array_values(array_unique($effective));
     }
 
     private function loadComponentParams(DatabaseInterface $db): array
@@ -1267,6 +1426,39 @@ final class AboutController extends BaseController
             'rows' => $rows,
             'details' => $details,
         ]);
+    }
+
+    private function buildConfigurationExportSummary(
+        array $payload,
+        array $selectedSections,
+        array $selectedFormIds,
+        array $selectedStorageIds,
+        bool $includeStorageContent
+    ): array {
+        $dataSections = is_array($payload['data'] ?? null) ? $payload['data'] : [];
+        $details = [];
+        $rows = 0;
+
+        foreach ($dataSections as $sectionKey => $sectionPayload) {
+            if (!is_array($sectionPayload)) {
+                continue;
+            }
+
+            $rowCount = (int) ($sectionPayload['row_count'] ?? 0);
+            $rows += $rowCount;
+            $details[] = (string) $sectionKey . ': ' . $rowCount;
+        }
+
+        return [
+            'status' => 'ok',
+            'tables' => count($dataSections),
+            'rows' => $rows,
+            'sections' => array_values($selectedSections),
+            'form_ids' => array_values($selectedFormIds),
+            'storage_ids' => array_values($selectedStorageIds),
+            'include_storage_content' => $includeStorageContent ? 1 : 0,
+            'details' => $details,
+        ];
     }
 
     private function importConfigTableRows(DatabaseInterface $db, string $tableAlias, array $rows, string $importMode): int
@@ -1565,7 +1757,67 @@ final class AboutController extends BaseController
             $details[] = Text::sprintf('COM_CONTENTBUILDERNG_ABOUT_IMPORT_CONFIGURATION_DETAIL_SECTION_MISSING', 'storage_fields');
         }
 
+        $storageContentPayload = $dataSections['storage_content'] ?? null;
+        if (is_array($storageContentPayload)) {
+            $contentImported = $this->importStorageContent($db, $storageContentPayload, $importMode);
+            $rows += $contentImported;
+            $details[] = Text::sprintf(
+                'COM_CONTENTBUILDERNG_ABOUT_IMPORT_CONFIGURATION_DETAIL_TABLE_IMPORTED',
+                'storage_content',
+                $contentImported
+            );
+        }
+
         return ['tables' => $tables, 'rows' => $rows, 'details' => $details];
+    }
+
+    private function importStorageContent(DatabaseInterface $db, array $storageContentPayload, string $importMode): int
+    {
+        $entries = is_array($storageContentPayload['storages'] ?? null) ? $storageContentPayload['storages'] : [];
+        $imported = 0;
+        $existingTables = array_map('strtolower', (array) $db->getTableList());
+
+        foreach ($entries as $entry) {
+            if (!is_array($entry)) {
+                continue;
+            }
+
+            $sourceStorageName = trim((string) ($entry['storage_name'] ?? ''));
+            if ($sourceStorageName === '') {
+                continue;
+            }
+
+            $query = $db->getQuery(true)
+                ->select([
+                    $db->quoteName('id'),
+                    $db->quoteName('name'),
+                    $db->quoteName('bytable'),
+                ])
+                ->from($db->quoteName('#__contentbuilderng_storages'))
+                ->where($db->quoteName('name') . ' = ' . $db->quote($sourceStorageName));
+            $db->setQuery($query, 0, 1);
+            $storage = (array) $db->loadAssoc();
+
+            $storageName = trim((string) ($storage['name'] ?? ''));
+            $isBytable = (int) ($storage['bytable'] ?? 0) === 1;
+            if ($storageName === '' || $isBytable) {
+                continue;
+            }
+
+            $tableAlias = $this->resolveInternalStorageTableAlias($db, $existingTables, $storageName);
+            if ($tableAlias === null) {
+                continue;
+            }
+
+            $rows = is_array($entry['rows'] ?? null) ? $entry['rows'] : [];
+            if ($rows === []) {
+                continue;
+            }
+
+            $imported += $this->importConfigTableRows($db, $tableAlias, $rows, $importMode);
+        }
+
+        return $imported;
     }
 
     private function importRowsByNaturalKey(

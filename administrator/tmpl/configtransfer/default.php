@@ -17,6 +17,12 @@ use Joomla\CMS\Router\Route;
 $mode = in_array((string) ($this->mode ?? 'export'), ['export', 'import'], true) ? (string) $this->mode : 'export';
 $isExportMode = $mode === 'export';
 $isImportMode = $mode === 'import';
+$exportReport = is_array($this->exportReport ?? null) ? $this->exportReport : [];
+$exportSummary = is_array($exportReport['summary'] ?? null) ? $exportReport['summary'] : [];
+$exportDetails = array_values(array_filter(array_map('strval', (array) ($exportSummary['details'] ?? [])), static fn(string $v): bool => trim($v) !== ''));
+$exportGeneratedAt = (string) ($exportReport['generated_at'] ?? Text::_('COM_CONTENTBUILDERNG_NOT_AVAILABLE'));
+$exportTablesCount = (int) ($exportSummary['tables'] ?? 0);
+$exportRowsCount = (int) ($exportSummary['rows'] ?? 0);
 $importReport = is_array($this->importReport ?? null) ? $this->importReport : [];
 $importSummary = is_array($importReport['summary'] ?? null) ? $importReport['summary'] : [];
 $importDetails = array_values(array_filter(array_map('strval', (array) ($importSummary['details'] ?? [])), static fn(string $v): bool => trim($v) !== ''));
@@ -26,6 +32,7 @@ $importRowsCount = (int) ($importSummary['rows'] ?? 0);
 $selectedSections = array_fill_keys((array) ($this->selectedSections ?? []), true);
 $selectedFormIds = array_fill_keys(array_map('intval', (array) ($this->selectedFormIds ?? [])), true);
 $selectedStorageIds = array_fill_keys(array_map('intval', (array) ($this->selectedStorageIds ?? [])), true);
+$exportStorageContent = (int) (($this->exportStorageContent ?? false) ? 1 : 0) === 1;
 ?>
 
 <form
@@ -81,7 +88,7 @@ $selectedStorageIds = array_fill_keys(array_map('intval', (array) ($this->select
                                         </button>
                                     </span>
                                 </div>
-                                <div class="border rounded p-3" style="max-height: 340px; overflow-y: auto;">
+                                <div class="border rounded p-3">
                                     <?php foreach ((array) ($this->configSections ?? []) as $sectionKey => $sectionMeta) : ?>
                                         <?php
                                         $sectionLabel = trim((string) ($sectionMeta['label'] ?? ''));
@@ -127,7 +134,7 @@ $selectedStorageIds = array_fill_keys(array_map('intval', (array) ($this->select
                                                 </button>
                                             </span>
                                         </div>
-                                        <div class="border rounded p-3" style="max-height: 220px; overflow-y: auto;">
+                                        <div class="border rounded p-3">
                                             <?php if (empty($this->forms)) : ?>
                                                 <div class="alert alert-info mb-0"><?php echo Text::_('COM_CONTENTBUILDERNG_NOT_AVAILABLE'); ?></div>
                                             <?php else : ?>
@@ -181,7 +188,7 @@ $selectedStorageIds = array_fill_keys(array_map('intval', (array) ($this->select
                                                 </button>
                                             </span>
                                         </div>
-                                        <div class="border rounded p-3" style="max-height: 220px; overflow-y: auto;">
+                                        <div class="border rounded p-3">
                                             <?php if (empty($this->storages)) : ?>
                                                 <div class="alert alert-info mb-0"><?php echo Text::_('COM_CONTENTBUILDERNG_NOT_AVAILABLE'); ?></div>
                                             <?php else : ?>
@@ -213,6 +220,20 @@ $selectedStorageIds = array_fill_keys(array_map('intval', (array) ($this->select
                                                 <?php endforeach; ?>
                                             <?php endif; ?>
                                         </div>
+                                    </div>
+                                    <div class="form-check mt-3" id="cb-config-storage-content-box">
+                                        <input
+                                            class="form-check-input"
+                                            type="checkbox"
+                                            name="cb_export_storage_content"
+                                            id="cb_export_storage_content"
+                                            value="1"
+                                            <?php echo $exportStorageContent ? 'checked="checked"' : ''; ?>
+                                        >
+                                        <label class="form-check-label" for="cb_export_storage_content">
+                                            <?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_EXPORT_STORAGE_CONTENT'); ?>
+                                        </label>
+                                        <small class="d-block text-muted"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_EXPORT_STORAGE_CONTENT_DESC'); ?></small>
                                     </div>
                                 <?php endif; ?>
 
@@ -258,7 +279,7 @@ $selectedStorageIds = array_fill_keys(array_map('intval', (array) ($this->select
                                                         </button>
                                                     </span>
                                                 </div>
-                                                <div class="border rounded p-3" id="cb-config-import-forms-list" style="max-height: 220px; overflow-y: auto;"></div>
+                                                <div class="border rounded p-3" id="cb-config-import-forms-list"></div>
                                             </div>
                                             <div class="col-lg-6" id="cb-config-import-storages-box">
                                                 <div class="d-flex justify-content-between align-items-center mb-2">
@@ -272,7 +293,7 @@ $selectedStorageIds = array_fill_keys(array_map('intval', (array) ($this->select
                                                         </button>
                                                     </span>
                                                 </div>
-                                                <div class="border rounded p-3" id="cb-config-import-storages-list" style="max-height: 220px; overflow-y: auto;"></div>
+                                                <div class="border rounded p-3" id="cb-config-import-storages-list"></div>
                                             </div>
                                         </div>
                                         <div id="cb-config-import-hidden-inputs"></div>
@@ -290,6 +311,32 @@ $selectedStorageIds = array_fill_keys(array_map('intval', (array) ($this->select
                     </div>
                 </div>
             </div>
+
+            <?php if ($isExportMode) : ?>
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-body">
+                            <h3 class="h6 card-title mb-2"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_EXPORT_LOG_TITLE'); ?></h3>
+                            <?php if ($exportReport === []) : ?>
+                                <div class="alert alert-info mb-0"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_EXPORT_LOG_EMPTY'); ?></div>
+                            <?php else : ?>
+                                <p class="text-muted small mb-2">
+                                    <?php echo Text::sprintf('COM_CONTENTBUILDERNG_ABOUT_EXPORT_LOG_LAST_RUN', $exportGeneratedAt, $exportTablesCount, $exportRowsCount); ?>
+                                </p>
+                                <?php if ($exportDetails === []) : ?>
+                                    <div class="alert alert-secondary mb-0"><?php echo Text::_('COM_CONTENTBUILDERNG_NOT_AVAILABLE'); ?></div>
+                                <?php else : ?>
+                                    <ul class="list-group list-group-flush">
+                                        <?php foreach ($exportDetails as $exportDetail) : ?>
+                                            <li class="list-group-item px-2 py-1"><?php echo htmlspecialchars($exportDetail, ENT_QUOTES, 'UTF-8'); ?></li>
+                                        <?php endforeach; ?>
+                                    </ul>
+                                <?php endif; ?>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                </div>
+            <?php endif; ?>
 
             <?php if ($isImportMode) : ?>
                 <div class="col-12">
@@ -370,6 +417,10 @@ $selectedStorageIds = array_fill_keys(array_map('intval', (array) ($this->select
                 .replace(/'/g, '&#039;');
         }
 
+        function normalizeStorageKey(value) {
+            return String(value || '').trim().toLowerCase();
+        }
+
         function setImportPreviewGroupState(containerId, itemSelector, enabled) {
             var container = document.getElementById(containerId);
             if (!container) {
@@ -384,6 +435,17 @@ $selectedStorageIds = array_fill_keys(array_map('intval', (array) ($this->select
             }
         }
 
+        function setStorageContentOptionState(enabled) {
+            var container = document.getElementById('cb-config-storage-content-box');
+            var checkbox = document.getElementById('cb_export_storage_content');
+            if (!container || !checkbox) {
+                return;
+            }
+
+            container.style.opacity = enabled ? '1' : '.55';
+            checkbox.disabled = !enabled;
+        }
+
         function syncImportSubmitState() {
             var submitButton = document.getElementById('cb-config-submit-button');
             if (!submitButton) {
@@ -391,7 +453,13 @@ $selectedStorageIds = array_fill_keys(array_map('intval', (array) ($this->select
             }
 
             if (<?php echo $isExportMode ? 'true' : 'false'; ?>) {
-                submitButton.disabled = false;
+                var formsEnabled = isSectionChecked('forms');
+                var storagesEnabled = isSectionChecked('storages');
+                var hasSections = formsEnabled || storagesEnabled;
+                var hasSelectedForms = formsEnabled && document.querySelectorAll('.cb-config-form-item:checked').length > 0;
+                var hasSelectedStorages = storagesEnabled && document.querySelectorAll('.cb-config-storage-item:checked').length > 0;
+
+                submitButton.disabled = !(hasSections && (hasSelectedForms || hasSelectedStorages));
                 return;
             }
 
@@ -427,6 +495,13 @@ $selectedStorageIds = array_fill_keys(array_map('intval', (array) ($this->select
                 }
             }
 
+            var storageContentItems = document.querySelectorAll('.cb-config-import-storage-content-item:checked');
+            if (importStoragesEnabled) {
+                for (var k = 0; k < storageContentItems.length; k++) {
+                    markup += '<input type="hidden" name="cb_config_import_storage_content_names[]" value="' + escapeHtml(storageContentItems[k].value) + '">';
+                }
+            }
+
             hiddenContainer.innerHTML = markup;
             syncImportSubmitState();
         }
@@ -439,6 +514,7 @@ $selectedStorageIds = array_fill_keys(array_map('intval', (array) ($this->select
             setGroupState('cb-config-storages-box', '.cb-config-storage-item', storageFiltersEnabled);
             setImportPreviewGroupState('cb-config-import-forms-box', '.cb-config-import-form-item', formFiltersEnabled);
             setImportPreviewGroupState('cb-config-import-storages-box', '.cb-config-import-storage-item', storageFiltersEnabled);
+            setStorageContentOptionState(storageFiltersEnabled);
             syncImportHiddenInputs();
             syncImportSubmitState();
         }
@@ -466,14 +542,19 @@ $selectedStorageIds = array_fill_keys(array_map('intval', (array) ($this->select
         }
 
         bindCheckButtons('cb-config-sections-check-all', 'cb-config-sections-uncheck-all', '.cb-config-section-toggle', syncSectionFilters);
-        bindCheckButtons('cb-config-forms-check-all', 'cb-config-forms-uncheck-all', '.cb-config-form-item');
-        bindCheckButtons('cb-config-storages-check-all', 'cb-config-storages-uncheck-all', '.cb-config-storage-item');
+        bindCheckButtons('cb-config-forms-check-all', 'cb-config-forms-uncheck-all', '.cb-config-form-item', syncImportSubmitState);
+        bindCheckButtons('cb-config-storages-check-all', 'cb-config-storages-uncheck-all', '.cb-config-storage-item', syncImportSubmitState);
         bindCheckButtons('cb-config-import-forms-check-all', 'cb-config-import-forms-uncheck-all', '.cb-config-import-form-item', syncImportHiddenInputs);
         bindCheckButtons('cb-config-import-storages-check-all', 'cb-config-import-storages-uncheck-all', '.cb-config-import-storage-item', syncImportHiddenInputs);
 
         var sectionToggles = document.querySelectorAll('.cb-config-section-toggle');
         for (var i = 0; i < sectionToggles.length; i++) {
             sectionToggles[i].addEventListener('change', syncSectionFilters);
+        }
+
+        var exportSelectionItems = document.querySelectorAll('.cb-config-form-item, .cb-config-storage-item');
+        for (var j = 0; j < exportSelectionItems.length; j++) {
+            exportSelectionItems[j].addEventListener('change', syncImportSubmitState);
         }
 
         function extractPreviewRows(payload, sectionKey) {
@@ -531,8 +612,84 @@ $selectedStorageIds = array_fill_keys(array_map('intval', (array) ($this->select
             list.innerHTML = markup !== '' ? markup : '<div class="alert alert-secondary mb-0"><?php echo Text::_('COM_CONTENTBUILDERNG_NOT_AVAILABLE'); ?></div>';
         }
 
+        function getStorageContentMap(payload) {
+            var map = {};
+            var data = payload && payload.data && typeof payload.data === 'object' ? payload.data : null;
+            var storageContent = data && data.storage_content && typeof data.storage_content === 'object' ? data.storage_content : null;
+            var entries = [];
+
+            if (storageContent) {
+                if (Array.isArray(storageContent.storages)) {
+                    entries = storageContent.storages;
+                } else if (Array.isArray(storageContent.rows)) {
+                    entries = storageContent.rows;
+                }
+            }
+
+            for (var i = 0; i < entries.length; i++) {
+                var entry = entries[i];
+                if (!entry || !entry.storage_name) {
+                    continue;
+                }
+
+                map[normalizeStorageKey(entry.storage_name)] = entry;
+            }
+
+            return map;
+        }
+
+        function renderImportStoragePreviewList(listId, rows, contentMap) {
+            var list = document.getElementById(listId);
+            if (!list) {
+                return;
+            }
+
+            if (!rows.length) {
+                list.innerHTML = '<div class="alert alert-secondary mb-0"><?php echo Text::_('COM_CONTENTBUILDERNG_NOT_AVAILABLE'); ?></div>';
+                return;
+            }
+
+            var markup = '';
+            for (var i = 0; i < rows.length; i++) {
+                var row = rows[i];
+                var name = row && row.name ? String(row.name) : '';
+                if (!name) {
+                    continue;
+                }
+
+                var title = row && row.title ? String(row.title) : '';
+                var isExternalTable = row && Number(row.bytable || 0) === 1;
+                var label = title && title !== name ? (title + ' (' + name + ')') : name;
+                var id = 'cb_config_import_storage_' + i;
+                var content = contentMap[normalizeStorageKey(name)] || null;
+                var contentCount = content ? Number(content.row_count || 0) : 0;
+
+                markup += '<div class="border rounded p-2 mb-2">';
+                markup += '<div class="form-check mb-1">';
+                markup += '<input class="form-check-input cb-config-import-storage-item" type="checkbox" id="' + escapeHtml(id) + '" value="' + escapeHtml(name) + '" checked="checked">';
+                markup += '<label class="form-check-label" for="' + escapeHtml(id) + '">' + escapeHtml(label) + '</label>';
+                markup += '</div>';
+
+                if (content) {
+                    var contentId = id + '_content';
+                    markup += '<div class="form-check ms-4">';
+                    markup += '<input class="form-check-input cb-config-import-storage-content-item" type="checkbox" id="' + escapeHtml(contentId) + '" value="' + escapeHtml(name) + '">';
+                    markup += '<label class="form-check-label" for="' + escapeHtml(contentId) + '"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_IMPORT_STORAGE_CONTENT'); ?> (' + escapeHtml(String(contentCount)) + ')</label>';
+                    markup += '</div>';
+                } else {
+                    markup += '<small class="text-muted d-block ms-4">' + (isExternalTable
+                        ? '<?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_IMPORT_STORAGE_CONTENT_NOT_AVAILABLE_EXTERNAL'); ?>'
+                        : '<?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_IMPORT_STORAGE_CONTENT_NOT_AVAILABLE'); ?>') + '</small>';
+                }
+
+                markup += '</div>';
+            }
+
+            list.innerHTML = markup !== '' ? markup : '<div class="alert alert-secondary mb-0"><?php echo Text::_('COM_CONTENTBUILDERNG_NOT_AVAILABLE'); ?></div>';
+        }
+
         function bindImportPreviewCheckboxes() {
-            var previewItems = document.querySelectorAll('.cb-config-import-form-item, .cb-config-import-storage-item');
+            var previewItems = document.querySelectorAll('.cb-config-import-form-item, .cb-config-import-storage-item, .cb-config-import-storage-content-item');
             for (var i = 0; i < previewItems.length; i++) {
                 previewItems[i].addEventListener('change', syncImportHiddenInputs);
             }
@@ -547,6 +704,7 @@ $selectedStorageIds = array_fill_keys(array_map('intval', (array) ($this->select
 
             var formRows = extractPreviewRows(payload, 'forms');
             var storageRows = extractPreviewRows(payload, 'storages');
+            var storageContentMap = getStorageContentMap(payload);
 
             renderImportPreviewList(
                 'cb-config-import-forms-list',
@@ -563,20 +721,7 @@ $selectedStorageIds = array_fill_keys(array_map('intval', (array) ($this->select
                 }
             );
 
-            renderImportPreviewList(
-                'cb-config-import-storages-list',
-                'cb-config-import-storage-item',
-                'cb_config_import_storage',
-                storageRows,
-                function (row) {
-                    return row && row.name ? String(row.name) : '';
-                },
-                function (row) {
-                    var title = row && row.title ? String(row.title) : '';
-                    var name = row && row.name ? String(row.name) : '';
-                    return title && title !== name ? (title + ' (' + name + ')') : name;
-                }
-            );
+            renderImportStoragePreviewList('cb-config-import-storages-list', storageRows, storageContentMap);
 
             summary.textContent = 'Fichier analyse : ' + formRows.length + ' form(s), ' + storageRows.length + ' storage(s).';
             preview.classList.remove('d-none');

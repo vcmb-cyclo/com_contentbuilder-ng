@@ -30,7 +30,9 @@ class HtmlView extends BaseHtmlView
     protected array $selectedSections = [];
     protected array $selectedFormIds = [];
     protected array $selectedStorageIds = [];
+    protected array $exportReport = [];
     protected array $importReport = [];
+    protected bool $exportStorageContent = false;
     protected string $mode = 'export';
 
     public function display($tpl = null)
@@ -79,6 +81,9 @@ class HtmlView extends BaseHtmlView
         $importReport = $app->getUserState('com_contentbuilderng.about.import', []);
         $this->importReport = is_array($importReport) ? $importReport : [];
         $app->setUserState('com_contentbuilderng.about.import', []);
+        $exportReport = $app->getUserState('com_contentbuilderng.about.export', []);
+        $this->exportReport = is_array($exportReport) ? $exportReport : [];
+        $app->setUserState('com_contentbuilderng.about.export', []);
 
         ToolbarHelper::title(
             Text::_('COM_CONTENTBUILDERNG') . ' :: ' . Text::_('COM_CONTENTBUILDERNG_ABOUT_CONFIG_TRANSFER_TITLE'),
@@ -94,10 +99,6 @@ class HtmlView extends BaseHtmlView
         );
 
         $this->configSections = [
-            'component_params' => [
-                'label' => Text::_('COM_CONTENTBUILDERNG_ABOUT_CONFIG_SECTION_COMPONENT_PARAMS'),
-                'description' => Text::_('COM_CONTENTBUILDERNG_ABOUT_CONFIG_SECTION_COMPONENT_PARAMS_DESC'),
-            ],
             'forms' => [
                 'label' => Text::_('COM_CONTENTBUILDERNG_ABOUT_CONFIG_SECTION_FORMS'),
                 'description' => Text::_('COM_CONTENTBUILDERNG_ABOUT_CONFIG_SECTION_FORMS_DESC'),
@@ -186,6 +187,7 @@ class HtmlView extends BaseHtmlView
         $selectedSections = $this->normalizeSections((array) ($selection['sections'] ?? []), $allowedSections);
         $selectedFormIds = $this->normalizeIds((array) ($selection['form_ids'] ?? []), $allowedFormIds);
         $selectedStorageIds = $this->normalizeIds((array) ($selection['storage_ids'] ?? []), $allowedStorageIds);
+        $includeStorageContent = (int) ($selection['include_storage_content'] ?? 0) === 1;
 
         if (!$isTouched) {
             $selectedSections = $allowedSections;
@@ -196,6 +198,7 @@ class HtmlView extends BaseHtmlView
         $this->selectedSections = $selectedSections;
         $this->selectedFormIds = $selectedFormIds;
         $this->selectedStorageIds = $selectedStorageIds;
+        $this->exportStorageContent = $includeStorageContent;
     }
 
     private function normalizeSections(array $values, array $allowed): array
