@@ -138,6 +138,13 @@ class HtmlView extends BaseHtmlView
         $isExternalTable = ((int) ($this->item->bytable ?? 0) === 1);
 
         $wa->addInlineStyle('.cb-toolbar-preview{margin-inline-start:auto!important;}');
+        $applyTip = json_encode(Text::_('JTOOLBAR_APPLY'), JSON_UNESCAPED_UNICODE);
+        $saveTip = json_encode(Text::_('JTOOLBAR_SAVE'), JSON_UNESCAPED_UNICODE);
+        $saveNewTip = json_encode(Text::_('JTOOLBAR_SAVE_AND_NEW'), JSON_UNESCAPED_UNICODE);
+        $closeTip = json_encode(Text::_($isNew ? 'JTOOLBAR_CANCEL' : 'JTOOLBAR_CLOSE'), JSON_UNESCAPED_UNICODE);
+        $previewTip = json_encode(Text::_('COM_CONTENTBUILDERNG_PREVIEW'), JSON_UNESCAPED_UNICODE);
+        $helpTip = json_encode(Text::_('COM_CONTENTBUILDERNG_HELP_STORAGES_TITLE'), JSON_UNESCAPED_UNICODE);
+        $syncLabelTip = json_encode(Text::_('COM_CONTENTBUILDERNG_DATATABLE_SYNC'), JSON_UNESCAPED_UNICODE);
         $wa->addInlineScript(
             "(function () {
                 function getToolbarHost() {
@@ -210,6 +217,36 @@ class HtmlView extends BaseHtmlView
                     return findHostByHref('task=list.display&storage_id=');
                 }
 
+                function getButtonByTask(task) {
+                    return document.querySelector('[data-task=\"' + task + '\"]')
+                        || document.querySelector('[onclick*=\"' + task + '\"]');
+                }
+
+                function applyTooltip(node, message) {
+                    var button = resolveToolbarButtonHost(node) || node;
+                    if (!button || !message) {
+                        return;
+                    }
+                    button.setAttribute('title', message);
+                    button.setAttribute('data-bs-title', message);
+                    button.setAttribute('data-bs-toggle', 'tooltip');
+                    button.setAttribute('data-bs-placement', 'bottom');
+
+                    if (window.bootstrap && window.bootstrap.Tooltip) {
+                        window.bootstrap.Tooltip.getOrCreateInstance(button);
+                    }
+                }
+
+                function applyStaticTooltips() {
+                    applyTooltip(getButtonByTask('storage.apply'), " . $applyTip . ");
+                    applyTooltip(getButtonByTask('storage.save'), " . $saveTip . ");
+                    applyTooltip(getButtonByTask('storage.save2new'), " . $saveNewTip . ");
+                    applyTooltip(getButtonByTask('storage.cancel'), " . $closeTip . ");
+                    applyTooltip(getPreviewHost(), " . $previewTip . ");
+                    applyTooltip(findHostByHref('layout=help'), " . $helpTip . ");
+                    applyTooltip(getButtonByTask('datatable.sync'), " . $syncLabelTip . ");
+                }
+
                 function alignPreviewNearHelp() {
                     var previewHost = getPreviewHost();
                     if (!previewHost) {
@@ -230,16 +267,23 @@ class HtmlView extends BaseHtmlView
 
                 function init() {
                     var toolbarHost = getToolbarHost();
+                    applyStaticTooltips();
                     alignPreviewNearHelp();
 
                     if (toolbarHost && typeof MutationObserver === 'function') {
-                        var observer = new MutationObserver(alignPreviewNearHelp);
+                        var observer = new MutationObserver(function () {
+                            applyStaticTooltips();
+                            alignPreviewNearHelp();
+                        });
                         observer.observe(toolbarHost, { childList: true, subtree: true });
                         window.setTimeout(function () {
                             observer.disconnect();
                         }, 6000);
                     }
 
+                    window.setTimeout(applyStaticTooltips, 0);
+                    window.setTimeout(applyStaticTooltips, 120);
+                    window.setTimeout(applyStaticTooltips, 400);
                     window.setTimeout(alignPreviewNearHelp, 0);
                     window.setTimeout(alignPreviewNearHelp, 120);
                     window.setTimeout(alignPreviewNearHelp, 400);

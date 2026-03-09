@@ -43,6 +43,8 @@ $publishedIconClass = $isPublished ? 'fa-solid fa-check text-success' : 'fa-soli
 $publishedIconTitle = $isPublished ? Text::_('JPUBLISHED') : Text::_('JUNPUBLISHED');
 $csvToggleTooltip = 'Show or hide CSV/Excel import options.';
 $addFieldTooltip = 'Add a new field to this storage.';
+$tabStorageTooltip = Text::_('COM_CONTENTBUILDERNG_STORAGE_TAB_TOOLTIP');
+$tabInfoTooltip = Text::_('COM_CONTENTBUILDERNG_STORAGE_INFO_TAB_TOOLTIP');
 
 $formatDate = static function ($date): string {
     $value = trim((string) $date);
@@ -504,10 +506,50 @@ function toggleCsvUploadOptions() {
 }
 
 function initStorageTooltips() {
-    if (!window.bootstrap || !window.bootstrap.Tooltip) return;
+    var hasBootstrapTooltip = !!(window.bootstrap && window.bootstrap.Tooltip);
 
-    document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function (el) {
-        window.bootstrap.Tooltip.getOrCreateInstance(el);
+    if (hasBootstrapTooltip) {
+        document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function (el) {
+            window.bootstrap.Tooltip.getOrCreateInstance(el);
+        });
+    }
+
+    var tabTooltips = {
+        tab0: <?php echo json_encode($tabStorageTooltip, JSON_UNESCAPED_UNICODE); ?>,
+        tab1: <?php echo json_encode($tabInfoTooltip, JSON_UNESCAPED_UNICODE); ?>
+    };
+
+    var tabTriggers = Array.prototype.slice.call(
+        document.querySelectorAll(
+            '#view-paneTabs [role="tab"], #view-paneTabs .nav-link, .joomla-tab a[role="tab"], .joomla-tab button[role="tab"]'
+        )
+    );
+
+    Object.keys(tabTooltips).forEach(function (tabId) {
+        var label = String(tabTooltips[tabId] || '').trim();
+        if (!label) {
+            return;
+        }
+
+        var tabTrigger = document.querySelector(
+            '[href=\"#' + tabId + '\"],[data-bs-target=\"#' + tabId + '\"],[aria-controls=\"' + tabId + '\"]'
+        );
+
+        if (!tabTrigger) {
+            tabTrigger = tabTriggers[tabId === 'tab0' ? 0 : 1] || null;
+        }
+
+        if (!tabTrigger) {
+            return;
+        }
+
+        tabTrigger.setAttribute('title', label);
+        tabTrigger.setAttribute('data-bs-title', label);
+        tabTrigger.setAttribute('data-bs-placement', 'bottom');
+
+        if (hasBootstrapTooltip) {
+            window.bootstrap.Tooltip.getOrCreateInstance(tabTrigger);
+        }
     });
 }
 
