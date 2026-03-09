@@ -546,6 +546,9 @@ final class AboutController extends BaseController
         /** @var AdministratorApplication $app */
         $app = Factory::getApplication();
         $user = $app->getIdentity();
+        $selectedSections = [];
+        $selectedFormIds = [];
+        $selectedStorageIds = [];
 
         if (!$user->authorise('core.manage', 'com_contentbuilderng')) {
             throw new \RuntimeException(Text::_('JERROR_ALERTNOAUTHOR'), 403);
@@ -581,6 +584,7 @@ final class AboutController extends BaseController
             }
 
             $payload = $this->buildConfigurationExportPayload($selectedSections, $selectedFormIds, $selectedStorageIds);
+            $this->logConfigurationExportReport($payload, $selectedSections, $selectedFormIds, $selectedStorageIds);
             $json = json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 
             if (!is_string($json) || $json === '') {
@@ -597,6 +601,12 @@ final class AboutController extends BaseController
             echo $json;
             $app->close();
         } catch (\Throwable $e) {
+            Logger::error('Configuration export failed', [
+                'sections' => $selectedSections,
+                'form_ids' => $selectedFormIds,
+                'storage_ids' => $selectedStorageIds,
+                'error' => $e->getMessage(),
+            ]);
             $this->setMessage(
                 Text::sprintf('COM_CONTENTBUILDERNG_ABOUT_EXPORT_CONFIGURATION_FAILED', $e->getMessage()),
                 'error'
@@ -1225,6 +1235,38 @@ final class AboutController extends BaseController
                 'detail' => $detail,
             ]);
         }
+    }
+
+    private function logConfigurationExportReport(array $payload, array $selectedSections, array $selectedFormIds, array $selectedStorageIds): void
+    {
+        $dataSections = is_array($payload['data'] ?? null) ? $payload['data'] : [];
+        $details = [];
+        $rows = 0;
+
+        foreach ($dataSections as $sectionKey => $sectionPayload) {
+            if (!is_array($sectionPayload)) {
+                continue;
+            }
+
+            $type = (string) ($sectionPayload['type'] ?? '');
+            if ($type === 'component_params') {
+                $details[] = 'component_params: 1';
+                continue;
+            }
+
+            $rowCount = (int) ($sectionPayload['row_count'] ?? 0);
+            $rows += $rowCount;
+            $details[] = (string) $sectionKey . ': ' . $rowCount;
+        }
+
+        Logger::info('Configuration export completed', [
+            'sections' => array_values($selectedSections),
+            'form_ids' => array_values($selectedFormIds),
+            'storage_ids' => array_values($selectedStorageIds),
+            'data_sections' => count($dataSections),
+            'rows' => $rows,
+            'details' => $details,
+        ]);
     }
 
     private function importConfigTableRows(DatabaseInterface $db, string $tableAlias, array $rows, string $importMode): int

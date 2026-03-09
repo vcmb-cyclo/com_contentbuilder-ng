@@ -126,13 +126,11 @@ class HtmlView extends BaseHtmlView
             ->icon('fa fa-arrow-left')
             ->listCheck(false);
 
-        if ($this->mode === 'import' && $this->importReport !== []) {
-            $toolbar->standardButton('configtransfer_last_log')
-                ->task('about.showLog')
-                ->text('COM_CONTENTBUILDERNG_ABOUT_LAST_LOG')
-                ->icon('fa fa-file-text-o')
-                ->listCheck(false);
-        }
+        $toolbar->standardButton('configtransfer_last_log')
+            ->task('about.showLog')
+            ->text('COM_CONTENTBUILDERNG_ABOUT_LAST_LOG')
+            ->icon('fa fa-file-text-o')
+            ->listCheck(false);
     }
 
     private function loadForms(): array

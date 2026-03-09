@@ -41,7 +41,7 @@ final class Logger
             [
                 'text_file'         => self::LOG_FILE,
                 'text_file_path'    => self::resolveLogDirectory(),
-                'text_entry_format' => "{DATE} {TIME} {PRIORITY}\t{CATEGORY}\t{MESSAGE}", // pas d'IP.
+                'text_entry_format' => "{DATETIME} {PRIORITY}\t{CATEGORY}\t{MESSAGE}", // aligne le format avec script.php.
             ],
             Log::ALL,
             ['cb.admin', 'cb.site']
