@@ -318,10 +318,10 @@ class ListController extends BaseController
         if (!$isDirectStorageMode) {
             ContentbuilderLegacyHelper::setPermissions($formId, $recordId, $suffix);
         }
-        $isAdminPreview = !$isDirectStorageMode && $this->isValidAdminPreviewRequest($formId);
+        $isAdminPreview = $this->isValidAdminPreviewRequest($formId, $storageId);
         $this->input->set('cb_preview_ok', $isAdminPreview ? 1 : 0);
         Factory::getApplication()->input->set('cb_preview_ok', $isAdminPreview ? 1 : 0);
-        if ($isAdminPreview) {
+        if ($isAdminPreview && !$isDirectStorageMode) {
             $this->enqueueUnpublishedPreviewNotice($formId);
         }
         if (!$isDirectStorageMode && !$isAdminPreview) {
@@ -408,9 +408,9 @@ class ListController extends BaseController
     /**
      * Validates a short-lived preview signature generated in admin toolbar.
      */
-    private function isValidAdminPreviewRequest(int $formId): bool
+    private function isValidAdminPreviewRequest(int $formId, int $storageId = 0): bool
     {
-        if ($formId < 1 || !$this->input->getBool('cb_preview', false)) {
+        if (($formId < 1 && $storageId < 1) || !$this->input->getBool('cb_preview', false)) {
             return false;
         }
 
@@ -428,25 +428,35 @@ class ListController extends BaseController
             return false;
         }
 
-        $payload  = $formId . '|' . $until;
-        $expected = hash_hmac('sha256', $payload, $secret);
-        $actorPayload = $payload . '|' . $actorId . '|' . $actorName;
-        $actorExpected = hash_hmac('sha256', $actorPayload, $secret);
-
-        if (($actorId > 0 || $actorName !== '') && hash_equals($actorExpected, $sig)) {
-            $this->input->set('cb_preview_actor_id', $actorId);
-            $this->input->set('cb_preview_actor_name', $actorName);
-            Factory::getApplication()->input->set('cb_preview_actor_id', $actorId);
-            Factory::getApplication()->input->set('cb_preview_actor_name', $actorName);
-            return true;
+        $targets = [];
+        if ($formId > 0) {
+            $targets[] = (string) $formId;
+        }
+        if ($storageId > 0) {
+            $targets[] = 'storage:' . $storageId;
         }
 
-        if (hash_equals($expected, $sig)) {
-            $this->input->set('cb_preview_actor_id', 0);
-            $this->input->set('cb_preview_actor_name', '');
-            Factory::getApplication()->input->set('cb_preview_actor_id', 0);
-            Factory::getApplication()->input->set('cb_preview_actor_name', '');
-            return true;
+        foreach ($targets as $target) {
+            $payload  = $target . '|' . $until;
+            $expected = hash_hmac('sha256', $payload, $secret);
+            $actorPayload = $payload . '|' . $actorId . '|' . $actorName;
+            $actorExpected = hash_hmac('sha256', $actorPayload, $secret);
+
+            if (($actorId > 0 || $actorName !== '') && hash_equals($actorExpected, $sig)) {
+                $this->input->set('cb_preview_actor_id', $actorId);
+                $this->input->set('cb_preview_actor_name', $actorName);
+                Factory::getApplication()->input->set('cb_preview_actor_id', $actorId);
+                Factory::getApplication()->input->set('cb_preview_actor_name', $actorName);
+                return true;
+            }
+
+            if (hash_equals($expected, $sig)) {
+                $this->input->set('cb_preview_actor_id', 0);
+                $this->input->set('cb_preview_actor_name', '');
+                Factory::getApplication()->input->set('cb_preview_actor_id', 0);
+                Factory::getApplication()->input->set('cb_preview_actor_name', '');
+                return true;
+            }
         }
 
         return false;

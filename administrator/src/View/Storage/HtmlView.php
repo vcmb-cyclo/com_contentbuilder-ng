@@ -298,9 +298,25 @@ class HtmlView extends BaseHtmlView
         );
 
         if ($id > 0 && !$isExternalTable) {
+            $previewUntil = time() + 600;
+            $previewActorId = (int) ($app->getIdentity()->id ?? 0);
+            $previewActorName = trim((string) ($app->getIdentity()->name ?? ''));
+            if ($previewActorName === '') {
+                $previewActorName = trim((string) ($app->getIdentity()->username ?? ''));
+            }
+            if ($previewActorName === '') {
+                $previewActorName = 'administrator';
+            }
+            $previewPayload = 'storage:' . $id . '|' . $previewUntil . '|' . $previewActorId . '|' . $previewActorName;
+            $previewSig = hash_hmac('sha256', $previewPayload, (string) $app->get('secret'));
             $previewUrl = Uri::root()
                 . 'index.php?option=com_contentbuilderng&task=list.display&storage_id='
-                . $id;
+                . $id
+                . '&cb_preview=1'
+                . '&cb_preview_until=' . $previewUntil
+                . '&cb_preview_actor_id=' . $previewActorId
+                . '&cb_preview_actor_name=' . rawurlencode($previewActorName)
+                . '&cb_preview_sig=' . $previewSig;
             $toolbar->appendButton(
                 'Link',
                 'eye',

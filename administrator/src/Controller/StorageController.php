@@ -519,6 +519,16 @@ class StorageController extends BaseFormController
         return $this->storagesPublish(0, 'COM_CONTENTBUILDERNG_UNPUBLISHED');
     }
 
+    public function publishItem(): bool
+    {
+        return $this->setStorageItemPublished(1, 'COM_CONTENTBUILDERNG_PUBLISHED');
+    }
+
+    public function unpublishItem(): bool
+    {
+        return $this->setStorageItemPublished(0, 'COM_CONTENTBUILDERNG_UNPUBLISHED');
+    }
+
     /* 
     public function publish()
     {
@@ -628,6 +638,70 @@ class StorageController extends BaseFormController
             } else {
                 $this->setRedirect(Route::_('index.php?option=com_contentbuilderng&task=storage.display', false));
             }
+            return false;
+        }
+    }
+
+    private function setStorageItemPublished(int $state, string $successMsgKey): bool
+    {
+        $this->checkToken();
+
+        try {
+            $storageId = (int) $this->input->getInt('id', 0);
+
+            if ($storageId <= 0) {
+                $jform = $this->input->post->get('jform', [], 'array');
+                $storageId = (int) ($jform['id'] ?? 0);
+            }
+
+            if ($storageId <= 0) {
+                $cids = (array) $this->input->get('cid', [], 'array');
+                ArrayHelper::toInteger($cids);
+                $storageId = (int) ($cids[0] ?? 0);
+            }
+
+            if ($storageId <= 0) {
+                throw new \RuntimeException(Text::_('JERROR_NO_ITEMS_SELECTED'));
+            }
+
+            if (!Factory::getApplication()->getIdentity()->authorise('core.edit.state', 'com_contentbuilderng')) {
+                throw new \RuntimeException(Text::_('JERROR_ALERTNOAUTHOR'), 403);
+            }
+
+            $db = Factory::getContainer()->get(DatabaseInterface::class);
+            $query = $db->getQuery(true)
+                ->update($db->quoteName('#__contentbuilderng_storages'))
+                ->set($db->quoteName('published') . ' = ' . (int) $state)
+                ->where($db->quoteName('id') . ' = ' . (int) $storageId);
+            $db->setQuery($query);
+            $db->execute();
+
+            $tabStartOffset = trim((string) $this->input->getString('tabStartOffset', 'tab1'));
+            if ($tabStartOffset === '') {
+                $tabStartOffset = 'tab1';
+            }
+            Factory::getApplication()->getSession()->set('tabStartOffset', $tabStartOffset, 'com_contentbuilderng');
+
+            $this->setRedirect(
+                Route::_(
+                    'index.php?option=com_contentbuilderng&task=storage.edit&id='
+                    . $storageId
+                    . '&tabStartOffset=' . rawurlencode($tabStartOffset)
+                    . '#' . rawurlencode($tabStartOffset),
+                    false
+                ),
+                Text::_($successMsgKey),
+                'message'
+            );
+
+            return true;
+        } catch (\Throwable $e) {
+            $this->setRedirect(
+                Route::_('index.php?option=com_contentbuilderng&task=storage.display&layout=edit&id=' . (int) $this->input->getInt('id', 0), false),
+                $e->getMessage(),
+                'error'
+            );
+
             return false;
         }
     }

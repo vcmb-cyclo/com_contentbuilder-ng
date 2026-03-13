@@ -38,9 +38,29 @@ $storageTitle = trim((string) ($this->item->title ?? ''));
 $dataTableName = $storageName !== '' ? $storageName : '-';
 $createdBy = trim((string) ($this->item->created_by ?? ''));
 $modifiedBy = trim((string) ($this->item->modified_by ?? ''));
+$requestedTab = trim((string) $app->input->getCmd('tabStartOffset', ''));
+$activeTab = preg_match('/^tab\d+$/', $requestedTab) ? $requestedTab : 'tab0';
 $isPublished = ((int) ($this->item->published ?? 0) === 1);
 $publishedIconClass = $isPublished ? 'fa-solid fa-check text-success' : 'fa-solid fa-circle-xmark text-danger';
 $publishedIconTitle = $isPublished ? Text::_('JPUBLISHED') : Text::_('JUNPUBLISHED');
+$publishedToggleHtml = '';
+if ((int) ($this->item->id ?? 0) > 0) {
+    $publishedToggleHtml = HTMLHelper::_(
+        'jgrid.published',
+        $isPublished ? 1 : 0,
+        0,
+        'storage.',
+        true,
+        'cbstorageitem'
+    );
+    $publishedToggleHtml = preg_replace(
+        ['/storage\.publish\b/', '/storage\.unpublish\b/'],
+        ['storage.publishItem', 'storage.unpublishItem'],
+        (string) $publishedToggleHtml
+    ) ?? (string) $publishedToggleHtml;
+    $publishedToggleHtml = preg_replace('/\saria-labelledby="[^"]*"/', '', (string) $publishedToggleHtml) ?? (string) $publishedToggleHtml;
+    $publishedToggleHtml = preg_replace('#<div role="tooltip"[^>]*>.*?</div>#s', '', (string) $publishedToggleHtml) ?? (string) $publishedToggleHtml;
+}
 $csvToggleTooltip = 'Show or hide CSV/Excel import options.';
 $addFieldTooltip = 'Add a new field to this storage.';
 $tabStorageTooltip = Text::_('COM_CONTENTBUILDERNG_STORAGE_TAB_TOOLTIP');
@@ -482,6 +502,13 @@ function listItemTask(id, task) {
         return false;
     }
 
+    if (task === 'storage.publishItem' || task === 'storage.unpublishItem') {
+        var tabField = form.querySelector('input[name="tabStartOffset"]');
+        if (tabField) {
+            tabField.value = 'tab1';
+        }
+    }
+
     Joomla.submitform(task, form);
     return false;
 }
@@ -610,7 +637,7 @@ if (document.readyState === 'loading') {
 
 <?php
 // Démarrer les onglets
-echo HTMLHelper::_('uitab.startTabSet', 'view-pane', ['active' => 'tab0']);
+echo HTMLHelper::_('uitab.startTabSet', 'view-pane', ['active' => $activeTab]);
 // Premier onglet
 echo HTMLHelper::_('uitab.addTab', 'view-pane', 'tab0', Text::_('COM_CONTENTBUILDERNG_STORAGE'));
 ?>
@@ -1100,8 +1127,17 @@ echo HTMLHelper::_('uitab.addTab', 'view-pane', 'tab0', Text::_('COM_CONTENTBUIL
                     <tr>
                         <th scope="row"><?php echo Text::_('COM_CONTENTBUILDERNG_PUBLISHED'); ?></th>
                         <td colspan="3">
-                            <span class="<?php echo $publishedIconClass; ?>" aria-hidden="true" title="<?php echo htmlspecialchars($publishedIconTitle, ENT_QUOTES, 'UTF-8'); ?>"></span>
-                            <span class="visually-hidden"><?php echo htmlspecialchars($publishedIconTitle, ENT_QUOTES, 'UTF-8'); ?></span>
+                            <?php if ((int) ($this->item->id ?? 0) > 0) : ?>
+                                <?php echo $publishedToggleHtml; ?>
+                                <input type="checkbox"
+                                    name="cid[]"
+                                    id="cbstorageitem0"
+                                    value="<?php echo (int) ($this->item->id ?? 0); ?>"
+                                    style="display:none" />
+                            <?php else : ?>
+                                <span class="<?php echo $publishedIconClass; ?>" aria-hidden="true" title="<?php echo htmlspecialchars($publishedIconTitle, ENT_QUOTES, 'UTF-8'); ?>"></span>
+                                <span class="visually-hidden"><?php echo htmlspecialchars($publishedIconTitle, ENT_QUOTES, 'UTF-8'); ?></span>
+                            <?php endif; ?>
                         </td>
                     </tr>
                     <tr>
@@ -1157,7 +1193,7 @@ echo HTMLHelper::_('uitab.addTab', 'view-pane', 'tab0', Text::_('COM_CONTENTBUIL
     <input type="hidden" name="list[direction]" value="<?php echo htmlspecialchars($listDirn, ENT_QUOTES, 'UTF-8'); ?>" />
     <input type="hidden" name="limitstart" value="<?php echo (int) Factory::getApplication()->input->getInt('limitstart', 0); ?>" />
     <input type="hidden" name="boxchecked" value="0" />
-    <input type="hidden" name="tabStartOffset" value="<?php echo $session->get('tabStartOffset', 0); ?>" />
+    <input type="hidden" name="tabStartOffset" value="<?php echo htmlspecialchars($activeTab, ENT_QUOTES, 'UTF-8'); ?>" />
     <?php echo HTMLHelper::_('form.token'); ?>
 </form>
 <script>

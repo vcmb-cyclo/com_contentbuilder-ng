@@ -2347,10 +2347,20 @@ var contentbuilderng = new function(){
 
     function change_list_publish()
     {
-        $this->getDatabase()->setQuery('Select reference_id,`type` From #__contentbuilderng_forms Where id = ' . intval($this->_id));
-        $typeref = $this->getDatabase()->loadAssoc();
+        $storageId = (int) $this->app->input->getInt('storage_id', 0);
+        $typeref = null;
 
-        if (!is_array($typeref)) {
+        if ((int) $this->_id > 0) {
+            $this->getDatabase()->setQuery('Select reference_id,`type` From #__contentbuilderng_forms Where id = ' . intval($this->_id));
+            $typeref = $this->getDatabase()->loadAssoc();
+        } elseif ($storageId > 0) {
+            $typeref = [
+                'reference_id' => $storageId,
+                'type' => 'com_contentbuilderng',
+            ];
+        }
+
+        if (!is_array($typeref) || !isset($typeref['reference_id'], $typeref['type'])) {
             return 0;
         }
 

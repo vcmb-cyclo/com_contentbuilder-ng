@@ -43,7 +43,8 @@ class EditController extends BaseController
     private function applyPreviewContextForAction(): bool
     {
         $formId = (int) $this->input->getInt('id', 0);
-        $isAdminPreview = $this->isValidAdminPreviewRequest($formId);
+        $storageId = (int) $this->input->getInt('storage_id', 0);
+        $isAdminPreview = $this->isValidAdminPreviewRequest($formId, $storageId);
         $this->input->set('cb_preview_ok', $isAdminPreview ? 1 : 0);
         $this->siteApp->input->set('cb_preview_ok', $isAdminPreview ? 1 : 0);
         return $isAdminPreview;
@@ -268,8 +269,15 @@ class EditController extends BaseController
 
     public function publish()
     {
+        $storageId = (int) $this->siteApp->input->getInt('storage_id', 0);
+        $isDirectStorageMode = $storageId > 0 && $this->siteApp->input->getInt('id', 0) <= 0;
         $isAdminPreview = $this->applyPreviewContextForAction();
-        if (!$isAdminPreview) {
+
+        if ($isDirectStorageMode && !$isAdminPreview) {
+            if (!$this->siteApp->getIdentity()->authorise('core.edit.state', 'com_contentbuilderng')) {
+                throw new \RuntimeException(Text::_('COM_CONTENTBUILDERNG_PERMISSIONS_PUBLISHING_NOT_ALLOWED'), 403);
+            }
+        } elseif (!$isAdminPreview) {
             ContentbuilderLegacyHelper::checkPermissions('publish', Text::_('COM_CONTENTBUILDERNG_PERMISSIONS_PUBLISHING_NOT_ALLOWED'), $this->frontend ? '_fe' : '');
         }
 
@@ -283,7 +291,16 @@ class EditController extends BaseController
         }
         $listQuery = $this->buildListQuery();
         $previewQuery = $this->buildPreviewQuery();
-        $link = Route::_('index.php?option=com_contentbuilderng&task=list.display&id=' . $this->siteApp->input->getInt('id', 0) . ($listQuery !== '' ? '&' . $listQuery : '') . ($this->siteApp->input->get('tmpl', '', 'string') != '' ? '&tmpl=' . $this->siteApp->input->get('tmpl', '', 'string') : '') . ($this->siteApp->input->get('layout', '', 'string') != '' ? '&layout=' . $this->siteApp->input->get('layout', '', 'string') : '') . $previewQuery . '&Itemid=' . $this->siteApp->input->getInt('Itemid', 0), false);
+        $link = Route::_(
+            'index.php?option=com_contentbuilderng&task=list.display&'
+            . ($isDirectStorageMode ? 'storage_id=' . $storageId : 'id=' . $this->siteApp->input->getInt('id', 0))
+            . ($listQuery !== '' ? '&' . $listQuery : '')
+            . ($this->siteApp->input->get('tmpl', '', 'string') != '' ? '&tmpl=' . $this->siteApp->input->get('tmpl', '', 'string') : '')
+            . ($this->siteApp->input->get('layout', '', 'string') != '' ? '&layout=' . $this->siteApp->input->get('layout', '', 'string') : '')
+            . $previewQuery
+            . '&Itemid=' . $this->siteApp->input->getInt('Itemid', 0),
+            false
+        );
         $this->setRedirect($link, $msg, 'message');
     }
 
@@ -456,9 +473,9 @@ class EditController extends BaseController
     /**
      * Validates a short-lived preview signature generated in admin toolbar.
      */
-    private function isValidAdminPreviewRequest(int $formId): bool
+    private function isValidAdminPreviewRequest(int $formId, int $storageId = 0): bool
     {
-        if ($formId < 1 || !$this->input->getBool('cb_preview', false)) {
+        if (($formId < 1 && $storageId < 1) || !$this->input->getBool('cb_preview', false)) {
             return false;
         }
 
@@ -476,26 +493,36 @@ class EditController extends BaseController
             return false;
         }
 
-        $payload  = $formId . '|' . $until;
-        $expected = hash_hmac('sha256', $payload, $secret);
-        $actorPayload = $payload . '|' . $actorId . '|' . $actorName;
-        $actorExpected = hash_hmac('sha256', $actorPayload, $secret);
-
-        if (($actorId > 0 || $actorName !== '') && hash_equals($actorExpected, $sig)) {
-            $this->input->set('cb_preview_actor_id', $actorId);
-            $this->input->set('cb_preview_actor_name', $actorName);
-            $this->siteApp->input->set('cb_preview_actor_id', $actorId);
-            $this->siteApp->input->set('cb_preview_actor_name', $actorName);
-            return true;
+        $targets = [];
+        if ($formId > 0) {
+            $targets[] = (string) $formId;
+        }
+        if ($storageId > 0) {
+            $targets[] = 'storage:' . $storageId;
         }
 
-        if (hash_equals($expected, $sig)) {
-            // Legacy preview links (without actor) stay valid, but without actor propagation.
-            $this->input->set('cb_preview_actor_id', 0);
-            $this->input->set('cb_preview_actor_name', '');
-            $this->siteApp->input->set('cb_preview_actor_id', 0);
-            $this->siteApp->input->set('cb_preview_actor_name', '');
-            return true;
+        foreach ($targets as $target) {
+            $payload  = $target . '|' . $until;
+            $expected = hash_hmac('sha256', $payload, $secret);
+            $actorPayload = $payload . '|' . $actorId . '|' . $actorName;
+            $actorExpected = hash_hmac('sha256', $actorPayload, $secret);
+
+            if (($actorId > 0 || $actorName !== '') && hash_equals($actorExpected, $sig)) {
+                $this->input->set('cb_preview_actor_id', $actorId);
+                $this->input->set('cb_preview_actor_name', $actorName);
+                $this->siteApp->input->set('cb_preview_actor_id', $actorId);
+                $this->siteApp->input->set('cb_preview_actor_name', $actorName);
+                return true;
+            }
+
+            if (hash_equals($expected, $sig)) {
+                // Legacy preview links (without actor) stay valid, but without actor propagation.
+                $this->input->set('cb_preview_actor_id', 0);
+                $this->input->set('cb_preview_actor_name', '');
+                $this->siteApp->input->set('cb_preview_actor_id', 0);
+                $this->siteApp->input->set('cb_preview_actor_name', '');
+                return true;
+            }
         }
 
         return false;

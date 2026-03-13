@@ -529,6 +529,7 @@ class ListModel extends BaseListModel
                 -1
             );
             $this->_total = $storage->form->getListRecordsTotal($ids, $this->getState('formsd_filter'), $searchableElements);
+            $data->published_items = ContentbuilderLegacyHelper::getRecordsPublishInfo($data->items, $data->type, $data->reference_id);
         } else {
             $data->items = [];
             $this->_total = 0;

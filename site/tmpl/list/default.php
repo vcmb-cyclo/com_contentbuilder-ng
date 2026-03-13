@@ -60,14 +60,24 @@ $previewFormName = htmlspecialchars($previewFormName, ENT_QUOTES, 'UTF-8');
 $directStorageMode = !empty($this->direct_storage_mode);
 $directStorageId = (int) ($this->direct_storage_id ?? 0);
 $directStorageUnpublished = !empty($this->direct_storage_unpublished);
+$directStoragePublishAllowed = $directStorageMode
+    && ($isAdminPreview || $app->getIdentity()->authorise('core.edit.state', 'com_contentbuilderng'));
 if ($directStorageMode && $directStorageId > 0) {
     $adminReturnUrl = Uri::root() . 'administrator/index.php?option=com_contentbuilderng&view=storage&layout=edit&id=' . $directStorageId;
 }
 $listTarget = $directStorageMode
     ? ('storage_id=' . $directStorageId)
     : ('id=' . (int) $input->getInt('id', 0));
+$listState = [
+    'limit' => (int) ($this->pagination?->limit ?? $input->getInt('list[limit]', 0)),
+    'start' => (int) ($this->pagination?->limitstart ?? $input->getInt('list[start]', 0)),
+    'ordering' => (string) ($this->lists['order'] ?? $input->getCmd('list[ordering]', '')),
+    'direction' => (string) ($this->lists['order_Dir'] ?? $input->getCmd('list[direction]', '')),
+];
+$listQuery = http_build_query(['list' => $listState]);
 if ($directStorageMode) {
     $view_allowed = true;
+    $publish_allowed = $directStoragePublishAllowed;
 }
 if ($previewEnabled && $previewUntil > 0 && $previewSig !== '') {
     $previewQuery = '&cb_preview=1'
@@ -602,7 +612,7 @@ by this block. -->
 			<thead>
 				<tr>
 					<?php
-					if ($showPreviewLink) {
+					if ($showPreviewLink && ($view_allowed || $this->own_only)) {
 					?>
 						<th class="table-light" width="20">
 							<span class="fa-solid fa-eye" aria-hidden="true"></span>
@@ -644,7 +654,7 @@ by this block. -->
 						<?php
 						}
 
-						if ($this->list_publish && $publish_allowed) {
+						if (($this->list_publish || $directStorageMode) && $publish_allowed) {
 						?>
 							<th class="table-light" width="20">
 								<?php echo HTMLHelper::_('grid.sort', Text::_('COM_CONTENTBUILDERNG_PUBLISHED'), 'colPublished', $this->lists['order_Dir'], $this->lists['order']); ?>
@@ -713,12 +723,22 @@ by this block. -->
 				$edit_link = Route::_('index.php?option=com_contentbuilderng&task=edit.display&backtolist=1&id=' . $this->form_id . '&record_id=' . $row->colRecord . '&Itemid=' . Factory::getApplication()->input->getInt('Itemid', 0) . (Factory::getApplication()->input->get('tmpl', '', 'string') != '' ? '&tmpl=' . Factory::getApplication()->input->get('tmpl', '', 'string') : '') . (Factory::getApplication()->input->get('layout', '', 'string') != '' ? '&layout=' . Factory::getApplication()->input->get('layout', '', 'string') : '') . $previewQuery);
 					$isPublished = isset($this->published_items[$row->colRecord]) && $this->published_items[$row->colRecord];
 					$togglePublish = $isPublished ? 0 : 1;
-					$toggle_link = Route::_('index.php?option=com_contentbuilderng&task=edit.publish&backtolist=1&id=' . $this->form_id . '&list_publish=' . $togglePublish . '&cid[]=' . $row->colRecord . '&Itemid=' . Factory::getApplication()->input->getInt('Itemid', 0) . (Factory::getApplication()->input->get('tmpl', '', 'string') != '' ? '&tmpl=' . Factory::getApplication()->input->get('tmpl', '', 'string') : '') . (Factory::getApplication()->input->get('layout', '', 'string') != '' ? '&layout=' . Factory::getApplication()->input->get('layout', '', 'string') : '') . $previewQuery);
+					$toggle_link = Route::_(
+						'index.php?option=com_contentbuilderng&task=edit.publish&backtolist=1&'
+						. ($directStorageMode ? 'storage_id=' . $directStorageId : 'id=' . $this->form_id)
+						. '&list_publish=' . $togglePublish
+						. '&cid[]=' . $row->colRecord
+						. '&Itemid=' . Factory::getApplication()->input->getInt('Itemid', 0)
+						. (Factory::getApplication()->input->get('tmpl', '', 'string') != '' ? '&tmpl=' . Factory::getApplication()->input->get('tmpl', '', 'string') : '')
+						. (Factory::getApplication()->input->get('layout', '', 'string') != '' ? '&layout=' . Factory::getApplication()->input->get('layout', '', 'string') : '')
+						. ($listQuery !== '' ? '&' . $listQuery : '')
+						. $previewQuery
+					);
 					$select = '<input class="form-check-input" type="checkbox" name="cid[]" value="' . $row->colRecord . '"/>';
 				?>
 				<tr class="<?php echo "row$k"; ?>">
 					<?php
-					if ($showPreviewLink) {
+					if ($showPreviewLink && ($view_allowed || $this->own_only)) {
 					?>
 						<td>
 							<?php if ($view_allowed || $this->own_only) : ?>
@@ -800,7 +820,7 @@ by this block. -->
 					}
 					?>
 						<?php
-						if ($this->list_publish && $publish_allowed) {
+						if (($this->list_publish || $directStorageMode) && $publish_allowed) {
 						?>
 							<td align="center" valign="middle">
 								<?php
