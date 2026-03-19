@@ -78,7 +78,7 @@ if ($currentSessionLabel === '') {
     $currentSessionLabel = trim((string) ($currentUser->username ?? ''));
 }
 if ($currentSessionLabel === '') {
-    $currentSessionLabel = Text::_('JGLOBAL_GUEST');
+    $currentSessionLabel = Text::_('COM_CONTENTBUILDERNG_GUEST');
 }
 $previewActorLabel = trim($previewActorName);
 if ($previewActorLabel === '' && $previewActorId > 0) {
@@ -475,7 +475,7 @@ if (!empty($this->theme_css) || !empty($this->theme_js)) {
             <span>
                 <?php echo Text::_('COM_CONTENTBUILDERNG_PREVIEW_MODE') . ' - ' . Text::sprintf('COM_CONTENTBUILDERNG_PREVIEW_CURRENT_FORM', $previewFormName) . ' - ' . Text::sprintf('COM_CONTENTBUILDERNG_PREVIEW_CONFIG_TAB', Text::_('COM_CONTENTBUILDERNG_PREVIEW_TAB_EDITABLE_TEMPLATE')); ?>
                 <?php if ($previewActorLabel !== ''): ?>
-                    <span class="badge text-bg-light border ms-2">Preview actor: <?php echo htmlspecialchars($previewActorLabel, ENT_QUOTES, 'UTF-8'); ?><?php echo $previewActorId > 0 ? ' (#' . (int) $previewActorId . ')' : ''; ?></span>
+                    <span class="badge text-bg-secondary ms-2">Preview actor: <?php echo htmlspecialchars($previewActorLabel, ENT_QUOTES, 'UTF-8'); ?><?php echo $previewActorId > 0 ? ' (#' . (int) $previewActorId . ')' : ''; ?></span>
                 <?php endif; ?>
                 <?php if ($showPreviewSessionBadge): ?>
                     <span class="badge text-bg-secondary ms-1">Session: <?php echo htmlspecialchars($currentSessionLabel, ENT_QUOTES, 'UTF-8'); ?></span>

@@ -28,7 +28,7 @@ $delete_allowed = $frontend ? $permissionService->authorizeFe('delete') : $permi
 $view_allowed = $frontend ? $permissionService->authorizeFe('view') : $permissionService->authorize('view');
 $input = Factory::getApplication()->input;
 $runtimeApp = Factory::getApplication();
-$detailsTopBarToggle = MenuParamHelper::resolveInputOrMenuToggle($runtimeApp, 'cb_show_details_top_bar', 0);
+$detailsTopBarToggle = MenuParamHelper::resolveInputOrMenuToggle($runtimeApp, 'cb_show_details_top_bar', 1);
 $detailsBackButtonToggle = MenuParamHelper::resolveInputOrMenuToggle($runtimeApp, 'cb_show_details_back_button', 1, 'show_back_button');
 $showAuthorToggle = MenuParamHelper::resolveInputOrMenuToggle($runtimeApp, 'cb_show_author', 1);
 
@@ -60,7 +60,7 @@ if ($currentSessionLabel === '') {
     $currentSessionLabel = trim((string) ($currentUser->username ?? ''));
 }
 if ($currentSessionLabel === '') {
-    $currentSessionLabel = Text::_('JGLOBAL_GUEST');
+    $currentSessionLabel = Text::_('COM_CONTENTBUILDERNG_GUEST');
 }
 $previewActorLabel = trim($previewActorName);
 if ($previewActorLabel === '' && $previewActorId > 0) {
@@ -220,7 +220,7 @@ CSS
             <span>
                 <?php echo Text::_('COM_CONTENTBUILDERNG_PREVIEW_MODE') . ' - ' . Text::sprintf($directStorageMode ? 'COM_CONTENTBUILDERNG_PREVIEW_CURRENT_STORAGE' : 'COM_CONTENTBUILDERNG_PREVIEW_CURRENT_FORM', $previewFormName); ?>
                 <?php if ($previewActorLabel !== ''): ?>
-                    <span class="badge text-bg-light border ms-2">Preview actor: <?php echo htmlspecialchars($previewActorLabel, ENT_QUOTES, 'UTF-8'); ?><?php echo $previewActorId > 0 ? ' (#' . (int) $previewActorId . ')' : ''; ?></span>
+                    <span class="badge text-bg-secondary ms-2">Preview actor: <?php echo htmlspecialchars($previewActorLabel, ENT_QUOTES, 'UTF-8'); ?><?php echo $previewActorId > 0 ? ' (#' . (int) $previewActorId . ')' : ''; ?></span>
                 <?php endif; ?>
                 <?php if ($showPreviewSessionBadge): ?>
                     <span class="badge text-bg-secondary ms-1">Session: <?php echo htmlspecialchars($currentSessionLabel, ENT_QUOTES, 'UTF-8'); ?></span>

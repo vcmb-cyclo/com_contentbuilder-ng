@@ -15,6 +15,7 @@ use Joomla\CMS\Factory;
 use Joomla\CMS\Application\AdministratorApplication;
 use Joomla\CMS\Editor\Editor;
 use Joomla\CMS\HTML\HTMLHelper;
+use Joomla\CMS\Layout\LayoutHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Router\Route;
 use Joomla\CMS\Uri\Uri;
@@ -28,6 +29,7 @@ use CB\Component\Contentbuilderng\Administrator\Service\TextUtilityService;
 $app = Factory::getApplication();
 $session = $app->getSession();
 $textUtilityService = new TextUtilityService();
+$componentLayoutBase = dirname(__DIR__, 2) . '/layouts';
 $wa = $app->getDocument()->getWebAssetManager();
 $wa->addInlineStyle(
     '.saveorder.btn{background-color:var(--bs-body-bg);border-color:var(--bs-border-color);color:var(--bs-body-color)}'
@@ -51,15 +53,19 @@ $wa->addInlineStyle(
         . '.cb-prepare-tools .cb-snippet-select{display:inline-block;width:auto;min-width:12ch;max-width:42ch;flex:0 0 auto}'
         . '.cb-prepare-tools .cb-effect-select{min-width:170px;max-width:240px}'
         . '.cb-upload-box{margin:0 0 1rem;padding:.85rem .95rem;border:1px solid var(--bs-border-color);border-radius:12px;background:linear-gradient(180deg,var(--bs-tertiary-bg),var(--bs-body-bg))}'
-        . '.cb-save-animate{background-color:var(--alert-heading-bg,var(--bs-success,#198754))!important;background-image:none!important;border-color:var(--bs-success,#198754)!important;color:var(--bs-white)!important;filter:brightness(1.2)!important;box-shadow:0 0 0 .38rem rgba(25,135,84,.36)!important;transition:none!important}'
-        . '.cb-save-animate .fa-check,.cb-save-animate .fa-xmark,.cb-save-animate .fa-xmark-new{color:var(--bs-white)!important}'
+        . '.cb-save-animate,.cb-save-animate button,.cb-save-animate .btn,button.cb-save-animate,.btn.cb-save-animate{background-color:var(--alert-heading-bg,var(--bs-success,#198754))!important;background-image:none!important;border-color:var(--bs-success,#198754)!important;color:var(--bs-white)!important;filter:brightness(1.2)!important;box-shadow:0 0 0 .38rem rgba(25,135,84,.36)!important;transition:none!important;opacity:1!important}'
+        . '.cb-save-animate .fa-check,.cb-save-animate .fa-xmark,.cb-save-animate .fa-xmark-new,.cb-save-animate [class*="icon-"],.cb-save-animate svg{color:var(--bs-white)!important;fill:currentColor!important;stroke:currentColor!important}'
+        . '.cb-save-disabled{filter:none!important;opacity:1!important}'
+        . '.cb-save-disabled button,.cb-save-disabled .btn{background:linear-gradient(180deg,#fcfcfd,#f4f6f8)!important;border-color:#d8dee4!important;color:#8a949e!important;box-shadow:none!important;text-shadow:none!important}'
+        . '.cb-save-disabled button .icon-save,.cb-save-disabled .btn .icon-save,.cb-save-disabled button .fa-check,.cb-save-disabled .btn .fa-check,.cb-save-disabled button [class*="icon-"],.cb-save-disabled .btn [class*="icon-"]{color:#8a949e!important}'
+        . '.cb-save-disabled button svg,.cb-save-disabled .btn svg{color:#8a949e!important;fill:currentColor!important;stroke:currentColor!important}'
+        . '.cb-save-disabled,[aria-disabled="true"].cb-save-disabled{pointer-events:none!important;cursor:not-allowed!important}'
         . '#view-pane .nav-tabs,#perm-pane .nav-tabs{display:flex;gap:.4rem;flex-wrap:wrap;padding:.42rem;margin-bottom:.9rem;border:1px solid var(--bs-border-color);border-bottom:1px solid var(--bs-border-color);border-radius:14px;background:linear-gradient(180deg,var(--bs-tertiary-bg),var(--bs-secondary-bg))}'
         . '#view-pane .nav-tabs .nav-link,#view-pane .nav-tabs [role="tab"],#perm-pane .nav-tabs .nav-link,#perm-pane .nav-tabs [role="tab"]{border:1px solid transparent;border-radius:10px;padding:.45rem .8rem;font-weight:600;color:var(--bs-secondary-color);background:transparent;transition:all .18s ease}'
         . '#view-pane .nav-tabs .nav-link:hover,#view-pane .nav-tabs [role="tab"]:hover,#perm-pane .nav-tabs .nav-link:hover,#perm-pane .nav-tabs [role="tab"]:hover{background:var(--bs-body-bg);border-color:var(--bs-border-color);color:var(--bs-emphasis-color);transform:translateY(-1px)}'
         . '#view-pane .nav-tabs .nav-link:focus-visible,#view-pane .nav-tabs [role="tab"]:focus-visible,#perm-pane .nav-tabs .nav-link:focus-visible,#perm-pane .nav-tabs [role="tab"]:focus-visible{outline:2px solid var(--bs-primary);outline-offset:1px}'
         . '#view-pane .nav-tabs .nav-link.active,#view-pane .nav-tabs [role="tab"][aria-selected="true"],#perm-pane .nav-tabs .nav-link.active,#perm-pane .nav-tabs [role="tab"][aria-selected="true"]{color:var(--bs-white);background:var(--bs-primary);border-color:var(--bs-primary);box-shadow:0 4px 12px rgba(13,110,253,.28)}'
         . '@media (max-width:991.98px){#view-pane .nav-tabs,#perm-pane .nav-tabs{flex-wrap:nowrap;overflow:auto;-webkit-overflow-scrolling:touch}#view-pane .nav-tabs .nav-link,#view-pane .nav-tabs [role="tab"],#perm-pane .nav-tabs .nav-link,#perm-pane .nav-tabs [role="tab"]{white-space:nowrap}}'
-        . '@keyframes cb-blink{50%{opacity:0}}'
 );
 
 $listOrder = (string) ($this->listOrder ?? 'ordering');
@@ -566,7 +572,11 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
     }
 
     function cbAnimateSaveButton() {
+        var shouldRestoreDisabled = !cbDirtyState;
         var selectors = [
+            'joomla-toolbar-button#save-group-children-save button',
+            '#save-group-children-save button',
+            '#toolbar .button-save',
             'joomla-toolbar-button#save-group-children-apply button',
             '#save-group-children-apply button',
             '#toolbar .button-apply'
@@ -594,10 +604,18 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
             return;
         }
 
+        cbSetSaveButtonsEnabled(true);
+
         targets.forEach(function(el) {
             el.classList.remove('cb-save-animate');
             void el.offsetWidth;
             el.classList.add('cb-save-animate');
+
+            if (el.parentElement && el.parentElement.classList) {
+                el.parentElement.classList.remove('cb-save-animate');
+                void el.parentElement.offsetWidth;
+                el.parentElement.classList.add('cb-save-animate');
+            }
         });
 
         if (cbSaveButtonTimer) {
@@ -608,7 +626,14 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
         cbSaveButtonTimer = setTimeout(function() {
             targets.forEach(function(el) {
                 el.classList.remove('cb-save-animate');
+                if (el.parentElement && el.parentElement.classList) {
+                    el.parentElement.classList.remove('cb-save-animate');
+                }
             });
+
+            if (shouldRestoreDisabled) {
+                cbSetSaveButtonsEnabled(false);
+            }
         }, cbSaveAnimationDurationMs);
     }
 
@@ -879,6 +904,7 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
         cbAjaxBusy = true;
         cbRememberViewport(rowId || '');
         cbDismissTransientTooltips();
+        cbAnimateSaveButton();
 
         var formData = new FormData(form);
         formData.set('task', task);
@@ -1062,6 +1088,8 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
                 }
 
                 if (!error) {
+                    cbSetDirtyState(false);
+                    cbAnimateSaveButton();
                     Joomla.submitform(task);
                 }
 
@@ -1776,10 +1804,168 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
     window.setTimeout(cbInitListStateColorControls, 1200);
     window.setTimeout(cbInitColoris, 300);
     window.setTimeout(cbInitColoris, 1200);
+
+    var cbDirtyState = false;
+    var cbDirtySnapshot = '';
+
+    function cbShouldTrackField(field) {
+        if (!field || field.disabled) {
+            return false;
+        }
+
+        var name = String(field.name || '');
+        if (name === '' || name === 'cid[]') {
+            return false;
+        }
+
+        var type = String(field.type || '').toLowerCase();
+
+        if (type === 'hidden' || type === 'submit' || type === 'button' || type === 'reset' || type === 'file') {
+            return false;
+        }
+
+        return true;
+    }
+
+    function cbSerializeTrackedFormState(form) {
+        if (!form || !form.elements) {
+            return '';
+        }
+
+        var parts = [];
+
+        for (var i = 0; i < form.elements.length; i++) {
+            var field = form.elements[i];
+
+            if (!cbShouldTrackField(field)) {
+                continue;
+            }
+
+            var type = String(field.type || '').toLowerCase();
+            var key = String(field.name || '');
+
+            if (type === 'checkbox' || type === 'radio') {
+                parts.push(key + '=' + (field.checked ? '1' : '0'));
+                continue;
+            }
+
+            if (field.tagName && String(field.tagName).toLowerCase() === 'select' && field.multiple) {
+                var selected = [];
+                for (var j = 0; j < field.options.length; j++) {
+                    if (field.options[j].selected) {
+                        selected.push(field.options[j].value);
+                    }
+                }
+                parts.push(key + '=' + selected.join('|'));
+                continue;
+            }
+
+            parts.push(key + '=' + String(field.value || ''));
+        }
+
+        return parts.join('\n');
+    }
+
+    function cbGetSaveButtons() {
+        var selectors = [
+            'joomla-toolbar-button#save-group-children-apply',
+            'joomla-toolbar-button#save-group-children-save',
+            'joomla-toolbar-button#save-group-children-save2new',
+            'joomla-toolbar-button#save-group-children-apply button',
+            'joomla-toolbar-button#save-group-children-save button',
+            'joomla-toolbar-button#save-group-children-save2new button',
+            '#save-group-children-apply button',
+            '#save-group-children-save button',
+            '#save-group-children-save2new button',
+            '#toolbar .button-apply',
+            '#toolbar .button-save',
+            '#toolbar .button-save-new'
+        ];
+        var targets = [];
+
+        selectors.forEach(function(selector) {
+            document.querySelectorAll(selector).forEach(function(el) {
+                if (!el || targets.indexOf(el) !== -1) {
+                    return;
+                }
+                targets.push(el);
+            });
+        });
+
+        return targets;
+    }
+
+    function cbSetSaveButtonsEnabled(enabled) {
+        cbGetSaveButtons().forEach(function(el) {
+            if ('disabled' in el) {
+                el.disabled = !enabled;
+            } else if (enabled) {
+                el.removeAttribute('disabled');
+            } else {
+                el.setAttribute('disabled', 'disabled');
+            }
+
+            el.classList.toggle('cb-save-disabled', !enabled);
+            el.setAttribute('aria-disabled', enabled ? 'false' : 'true');
+
+            if (el.parentElement && el.parentElement.classList) {
+                el.parentElement.classList.toggle('cb-save-disabled', !enabled);
+            }
+        });
+    }
+
+    function cbSetDirtyState(isDirty) {
+        cbDirtyState = !!isDirty;
+        cbSetSaveButtonsEnabled(cbDirtyState);
+    }
+
+    function cbRefreshDirtyState() {
+        var form = document.getElementById('adminForm') || document.adminForm;
+        if (!form) {
+            return;
+        }
+
+        cbSetDirtyState(cbSerializeTrackedFormState(form) !== cbDirtySnapshot);
+    }
+
+    function cbMarkDirtySnapshot() {
+        var form = document.getElementById('adminForm') || document.adminForm;
+        if (!form) {
+            return;
+        }
+
+        cbDirtySnapshot = cbSerializeTrackedFormState(form);
+        cbSetDirtyState(false);
+    }
+
+    function cbInitDirtyTracking() {
+        var form = document.getElementById('adminForm') || document.adminForm;
+        if (!form) {
+            return;
+        }
+
+        cbMarkDirtySnapshot();
+
+        form.addEventListener('input', cbRefreshDirtyState, true);
+        form.addEventListener('change', cbRefreshDirtyState, true);
+
+        window.addEventListener('beforeunload', function(event) {
+            if (!cbDirtyState) {
+                return;
+            }
+
+            event.preventDefault();
+            event.returnValue = '';
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', cbInitDirtyTracking);
+    window.addEventListener('load', cbInitDirtyTracking);
+    window.setTimeout(cbRefreshDirtyState, 200);
+    window.setTimeout(cbRefreshDirtyState, 900);
 </script>
 <form action="index.php" method="post" name="adminForm" id="adminForm">
     <div class="w-100 row g-0" style="max-width: 100%; overflow-x: auto;">
-
         <?php
         $advancedOptionsContent = '';
         // Démarrer les onglets
@@ -2405,221 +2591,21 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
         </tr>
         <tr>
             <td valign="top">
-                <table class="table table-striped cb-elements-table">
-                    <thead>
-                        <tr>
-                            <th width="5">
-                                <?php echo $sortLink(Text::_('COM_CONTENTBUILDERNG_ID'), 'id'); ?>
-                            </th>
-                            <th width="20">
-                                <?php echo HTMLHelper::_('grid.checkall'); ?>
-                            </th>
-                            <th>
-                                <span class="editlinktip hasTip"
-                                    title="<?php echo Text::_('COM_CONTENTBUILDERNG_LABEL_TIP'); ?>">
-                                    <?php echo $sortLink(Text::_('COM_CONTENTBUILDERNG_LABEL'), 'label'); ?>
-                                </span>
-                            </th>
-                            <th>
-                                <span class="editlinktip hasTip"
-                                    title="<?php echo Text::_('COM_CONTENTBUILDERNG_LIST_INCLUDE_TIP'); ?>">
-                                    <?php echo $sortLink(Text::_('COM_CONTENTBUILDERNG_LIST_INCLUDE'), 'list_include'); ?>
-                                </span>
-                            </th>
-                            <th>
-                                <span class="editlinktip hasTip"
-                                    title="<?php echo Text::_('COM_CONTENTBUILDERNG_SEARCH_INCLUDE_TIP'); ?>">
-                                    <?php echo $sortLink(Text::_('COM_CONTENTBUILDERNG_SEARCH_INCLUDE'), 'search_include'); ?>
-                                </span>
-                            </th>
-                            <th>
-                                <span class="editlinktip hasTip"
-                                    title="<?php echo Text::_('COM_CONTENTBUILDERNG_LINKABLE_TIP'); ?>">
-                                    <?php echo $sortLink(Text::_('COM_CONTENTBUILDERNG_LINKABLE'), 'linkable'); ?>
-                                </span>
-                            </th>
-                            <th>
-                                <span class="editlinktip hasTip"
-                                    title="<?php echo Text::_('COM_CONTENTBUILDERNG_EDITABLE_TIP'); ?>">
-                                    <?php echo $sortLink(Text::_('COM_CONTENTBUILDERNG_EDITABLE'), 'editable'); ?>
-                                </span>
-                            </th>
-                            <th>
-                                <span class="editlinktip hasTip"
-                                    title="<?php echo Text::_('COM_CONTENTBUILDERNG_LIST_WORDWRAP_TIP'); ?>">
-                                    <?php echo Text::_('COM_CONTENTBUILDERNG_LIST_WORDWRAP'); ?>
-                                </span>
-                            </th>
-                            <th width="150">
-                                <span class="editlinktip hasTip"
-                                    title="<?php echo $textUtilityService->allhtmlentities(Text::_('COM_CONTENTBUILDERNG_LIST_ITEM_WRAPPER_TIP')); ?>">
-                                    <?php echo Text::_('COM_CONTENTBUILDERNG_LIST_ITEM_WRAPPER'); ?>
-                                </span>
-                            </th>
-                            <th>
-                                <?php echo $sortLink(Text::_('COM_CONTENTBUILDERNG_PUBLISHED'), 'published'); ?>
-                            </th>
-                            <th width="120" class="cb-order-head">
-                                <?php if (!empty($this->elements) && is_array($this->elements)) : ?>
-                                    <?php echo $sortLink(Text::_('COM_CONTENTBUILDERNG_ORDERBY'), 'ordering'); ?>
-                                    <?php //TODO: dragndrop if ($this->ordering) echo HTMLHelper::_('grid.order',  $this->elements );   
-                                    ?>
-                                    <?php echo HTMLHelper::_('grid.order', $this->elements); ?>
-                                <?php endif; ?>
-                            </th>
-
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php
-                        $k = 0;
-                        $n = count($this->elements);
-                        for ($i = 0; $i < $n; $i++) {
-                            $row = $this->elements[$i];
-                            $checked = HTMLHelper::_('grid.id', $i, $row->id);
-                            $published = ContentbuilderngHelper::listPublish('form', $row, $i);
-                            $list_include = ContentbuilderngHelper::listIncludeInList('form', $row, $i);
-                            $search_include = ContentbuilderngHelper::listIncludeInSearch('form', $row, $i);
-                            $linkable = ContentbuilderngHelper::listLinkable('form', $row, $i);
-                            $editable = ContentbuilderngHelper::listEditable('form', $row, $i);
-                            $isModifiedElement = $isModifiedElementSettings($row);
-                        ?>
-                            <tr id="cb-row-<?php echo (int) $row->id; ?>" class="<?php echo "row$k"; ?>" data-cb-row-id="<?php echo (int) $row->id; ?>">
-                                <td valign="top">
-                                    <?php echo $row->id; ?>
-                                </td>
-                                <td valign="top">
-                                    <?php echo $checked; ?>
-                                </td>
-                                <td valign="top">
-                                    <div class="cb-item-label-cell">
-                                        <div class="cb-item-label-display"
-                                            id="itemLabels_<?php echo $row->id ?>"
-                                            onclick="document.getElementById('itemLabels<?php echo $row->id ?>').style.display='block';this.style.display='none';document.getElementById('itemLabels<?php echo $row->id ?>').focus();">
-                                            <b>
-                                                <?php echo htmlentities($row->label ?? '', ENT_QUOTES, 'UTF-8'); ?>
-                                            </b>
-                                        </div>
-                                        <input class="form-control form-control-sm"
-                                            onblur="cbHandleItemLabelBlur(this, <?php echo (int) $row->id; ?>);"
-                                            onkeydown="if (event.key === 'Enter') { event.preventDefault(); this.blur(); }"
-                                            id="itemLabels<?php echo $row->id ?>" type="text" style="display:none; width: 100%;"
-                                            name="jform[itemLabels][<?php echo $row->id ?>]"
-                                            data-cb-last-saved="<?php echo htmlentities($row->label ?? '', ENT_QUOTES, 'UTF-8'); ?>"
-                                            value="<?php echo htmlentities($row->label ?? '', ENT_QUOTES, 'UTF-8') ?>" />
-
-                                        <select class="form-select form-select-sm d-inline-block w-auto cb-item-order-type-select"
-                                            id="itemOrderTypes<?php echo $row->id ?>" name="jform[itemOrderTypes][<?php echo $row->id ?>]">
-                                            <option value=""> -
-                                                <?php echo Text::_('COM_CONTENTBUILDERNG_ORDER_TYPES'); ?> -
-                                            </option>
-                                            <option value="CHAR" <?php echo $row->order_type == 'CHAR' ? ' selected="selected"' : '' ?>>
-                                                <?php echo Text::_('COM_CONTENTBUILDERNG_ORDER_TYPES_TEXT'); ?>
-                                            </option>
-                                            <option value="DATETIME" <?php echo $row->order_type == 'DATETIME' ? ' selected="selected"' : '' ?>>
-                                                <?php echo Text::_('COM_CONTENTBUILDERNG_ORDER_TYPES_DATETIME'); ?>
-                                            </option>
-                                            <option value="DATE" <?php echo $row->order_type == 'DATE' ? ' selected="selected"' : '' ?>>
-                                                <?php echo Text::_('COM_CONTENTBUILDERNG_ORDER_TYPES_DATE'); ?>
-                                            </option>
-                                            <option value="TIME" <?php echo $row->order_type == 'TIME' ? ' selected="selected"' : '' ?>>
-                                                <?php echo Text::_('COM_CONTENTBUILDERNG_ORDER_TYPES_TIME'); ?>
-                                            </option>
-                                            <option value="UNSIGNED" <?php echo $row->order_type == 'UNSIGNED' ? ' selected="selected"' : '' ?>>
-                                                <?php echo Text::_('COM_CONTENTBUILDERNG_ORDER_TYPES_INTEGER'); ?>
-                                            </option>
-                                            <option value="DECIMAL" <?php echo $row->order_type == 'DECIMAL' ? ' selected="selected"' : '' ?>>
-                                                <?php echo Text::_('COM_CONTENTBUILDERNG_ORDER_TYPES_DECIMAL'); ?>
-                                            </option>
-                                        </select>
-                                    </div>
-
-                                </td>
-                                <td valign="top">
-                                    <?php echo $list_include; ?>
-                                </td>
-                                <td valign="top">
-                                    <?php echo $search_include; ?>
-                                </td>
-                                <td valign="top">
-                                    <?php echo $linkable; ?>
-                                </td>
-                                <td valign="top">
-                                    <?php echo $editable; ?>
-                                    <?php
-                                    if ($row->editable && !$this->item->edit_by_type) {
-                                        $typeBadgeClass = $isModifiedElement ? 'is-modified' : 'is-default';
-                                        $typeBadgeTitle = $isModifiedElement ? ' title="' . htmlentities('Element settings changed from default', ENT_QUOTES, 'UTF-8') . '"' : '';
-                                        echo '<div class="mt-1"><a class="cb-item-type-badge ' . $typeBadgeClass . '" href="index.php?option=com_contentbuilderng&amp;view=elementoptions&amp;tmpl=component&amp;element_id=' . $row->id . '&amp;id=' . $this->item->id . '" data-bs-toggle="modal" data-bs-target="#text-type-modal"' . $typeBadgeTitle . '>' . ($isModifiedElement ? 'Modified' : 'Default') . '</a></div>';
-                                    }
-                                    ?>
-                                </td>
-                                <td valign="top">
-                                    <input class="form-control form-control-sm cb-wordwrap-input" type="text" size="4" maxlength="4" inputmode="numeric" pattern="[0-9]{0,4}" oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,4);"
-                                        name="jform[itemWordwrap][<?php echo $row->id ?>]"
-                                        value="<?php echo htmlentities($row->wordwrap ?? '', ENT_QUOTES, 'UTF-8') ?>" />
-                                </td>
-                                <td valign="top">
-                                    <input class="form-control form-control-sm w-100" style="width: 150px;" type="text"
-                                        name="jform[itemWrapper][<?php echo $row->id ?>]"
-                                        value="<?php echo htmlentities($row->item_wrapper ?? '', ENT_QUOTES, 'UTF-8') ?>" />
-                                </td>
-                                <td valign="top">
-                                    <?php echo $published; ?>
-                                </td>
-                                <td class="order" width="150" valign="top">
-                                    <?php
-                                    $orderUp = '';
-                                    $orderDown = '';
-                                    if ($this->pagination) {
-                                        $orderUp = (string) $this->pagination->orderUpIcon($i, true, 'form.orderup', 'Move Up', $this->ordering);
-                                        $orderDown = (string) $this->pagination->orderDownIcon($i, $n, true, 'form.orderdown', 'Move Down', $this->ordering);
-                                    }
-                                    ?>
-                                    <span class="cb-order-slot">
-                                        <?php echo $orderUp !== '' ? $orderUp : '<span class="cb-order-placeholder">•</span>'; ?>
-                                    </span>
-                                    <span class="cb-order-slot">
-                                        <?php echo $orderDown !== '' ? $orderDown : '<span class="cb-order-placeholder">•</span>'; ?>
-                                    </span>
-                                    <?php $disabled = $this->ordering ? '' : 'disabled="disabled"'; ?>
-                                    <input
-                                        type="text"
-                                        name="jform[order][<?php echo (int) $row->id; ?>]"
-                                        size="3"
-                                        style="width:30px;text-align:center;margin-left:20px"
-                                        value="<?php echo (int) $row->ordering; ?>"
-                                        <?php echo $disabled; ?>
-                                        class="text_area" />
-                                </td>
-                            </tr>
-                        <?php
-                            $k = 1 - $k;
-                        }
-                        ?>
-                    </tbody>
-                    <tfoot>
-                        <tr>
-                            <td colspan="11">
-                                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
-
-                                    <div class="d-flex flex-wrap align-items-center gap-2">
-                                        <?php echo $this->pagination ? $this->pagination->getPagesCounter() : ''; ?>
-                                        <span><?php echo Text::_('COM_CONTENTBUILDERNG_DISPLAY_NUM'); ?>&nbsp;</span>
-                                        <span class="d-inline-block">
-                                            <?php echo $this->pagination ? $this->pagination->getLimitBox() : ''; ?>
-                                        </span>
-                                    </div>
-
-                                    <div>
-                                        <?php echo $this->pagination ? $this->pagination->getPagesLinks() : ''; ?>
-                                    </div>
-
-                                </div>
-                            </td>
-                        </tr>
-                    </tfoot>
-                </table>
+                <?php
+                echo LayoutHelper::render(
+                    'form.elements_table',
+                    [
+                        'elements' => $this->elements,
+                        'pagination' => $this->pagination,
+                        'ordering' => $this->ordering,
+                        'item' => $this->item,
+                        'sortLink' => $sortLink,
+                        'textUtilityService' => $textUtilityService,
+                        'isModifiedElementSettings' => $isModifiedElementSettings,
+                    ],
+                    $componentLayoutBase
+                );
+                ?>
 
             </td>
         </tr>
@@ -2644,1503 +2630,114 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
         echo HTMLHelper::_('uitab.endTab');
         echo HTMLHelper::_('uitab.addTab', 'view-pane', 'tab1', Text::_('COM_CONTENTBUILDERNG_LIST_STATES'));
         ?>
-        <table class="table table-striped">
-            <thead>
-                <tr>
-                    <th>
-                        <?php echo Text::_('COM_CONTENTBUILDERNG_LIST_STATES_PUBLISHED') ?>
-                    </th>
-                    <th>
-                        <?php echo Text::_('COM_CONTENTBUILDERNG_LIST_STATES_TITLE') ?>
-                    </th>
-                    <th>
-                        <?php echo Text::_('COM_CONTENTBUILDERNG_LIST_STATES_COLOR') ?>
-                    </th>
-                    <th>
-                        <?php echo Text::_('COM_CONTENTBUILDERNG_LIST_STATES_ACTION') ?>
-                    </th>
-                </tr>
-            </thead>
-            <?php
-            foreach ($this->item->list_states as $state) {
-                $k = 0;
-                $stateRawColor = (string) ($state['color'] ?? '');
-                $previewHex = strtoupper(ltrim(trim($stateRawColor), '#'));
-                if (preg_match('/^[0-9A-F]{3}$/', $previewHex)) {
-                    $previewHex = $previewHex[0] . $previewHex[0]
-                        . $previewHex[1] . $previewHex[1]
-                        . $previewHex[2] . $previewHex[2];
-                }
-                $stateColorStyle = '';
-                if (preg_match('/^[0-9A-F]{6}$/', $previewHex)) {
-                    $red = hexdec(substr($previewHex, 0, 2));
-                    $green = hexdec(substr($previewHex, 2, 2));
-                    $blue = hexdec(substr($previewHex, 4, 2));
-                    $textColor = ((($red * 299) + ($green * 587) + ($blue * 114)) / 1000) >= 160 ? '#000000' : '#FFFFFF';
-                    $stateColorStyle = 'background-color:#' . $previewHex . ';color:' . $textColor . ';';
-                }
-                $stateColorInputId = 'list_state_color_' . (int) $state['id'];
-                $stateColorPickerId = 'list_state_color_picker_' . (int) $state['id'];
-                $stateNativePickerValue = preg_match('/^[0-9A-F]{6}$/', $previewHex) ? '#' . $previewHex : '#FFFFFF';
-            ?>
-                <tr class="<?php echo "row$k"; ?>">
-                    <td>
-                        <?php echo $renderCheckbox('jform[list_states][' . $state['id'] . '][published]', 'list_state_published_' . $state['id'], (bool) $state['published']); ?>
-                    </td>
-                    <td>
-                        <input class="form-control form-control-sm w-100" type="text"
-                            name="jform[list_states][<?php echo $state['id']; ?>][title]"
-                            value="<?php echo htmlentities($state['title'] ?? '', ENT_QUOTES, 'UTF-8'); ?>" />
-                    </td>
-                    <td>
-                        <div class="d-flex align-items-center gap-2">
-                            <input
-                                class="form-control form-control-sm w-100"
-                                type="text"
-                                id="<?php echo $stateColorInputId; ?>"
-                                data-cb-color-text="1"
-                                data-cb-color-picker-target="<?php echo $stateColorPickerId; ?>"
-                                value="<?php echo htmlentities($stateRawColor, ENT_QUOTES, 'UTF-8'); ?>"
-                                style="<?php echo $stateColorStyle; ?>"
-                                name="jform[list_states][<?php echo $state['id']; ?>][color]" />
-                            <input
-                                class="form-control form-control-color form-control-sm"
-                                type="color"
-                                id="<?php echo $stateColorPickerId; ?>"
-                                data-cb-color-picker="1"
-                                data-cb-color-target="<?php echo $stateColorInputId; ?>"
-                                value="<?php echo $stateNativePickerValue; ?>"
-                                title="<?php echo Text::_('COM_CONTENTBUILDERNG_LIST_STATES_COLOR'); ?>"
-                                aria-label="<?php echo Text::_('COM_CONTENTBUILDERNG_LIST_STATES_COLOR'); ?>"
-                                style="width: 3rem; min-width: 3rem; padding: 0.2rem;" />
-                        </div>
-                    </td>
-                    <td>
-                        <select class="form-select-sm" name="jform[list_states][<?php echo $state['id']; ?>][action]">
-                            <option value=""> -
-                                <?php echo Text::_('COM_CONTENTBUILDERNG_NONE'); ?> -
-                            </option>
-                            <?php
-                            foreach ($this->list_states_action_plugins as $list_state_action_plugin) {
-                            ?>
-                                <option value="<?php echo $list_state_action_plugin; ?>" <?php echo $list_state_action_plugin == $state['action'] ? ' selected="selected"' : ''; ?>>
-                                    <?php echo $list_state_action_plugin; ?>
-                                </option>
-                            <?php
-                            }
-                            ?>
-                        </select>
-                    </td>
-                </tr>
-            <?php
-                $k = 1 - $k;
-            }
-            ?>
-        </table>
+        <?php
+        echo LayoutHelper::render(
+            'form.list_states',
+            [
+                'item' => $this->item,
+                'renderCheckbox' => $renderCheckbox,
+                'listStatesActionPlugins' => $this->list_states_action_plugins,
+            ],
+            $componentLayoutBase
+        );
+        ?>
         <?php
         echo HTMLHelper::_('uitab.endTab');
         echo HTMLHelper::_('uitab.addTab', 'view-pane', 'tab3', Text::_('COM_CONTENTBUILDERNG_TAB_DETAILS_DISPLAY'));
 
         ?>
-        <h3 class="mb-3">
-            <?php echo Text::_('COM_CONTENTBUILDERNG_TAB_DETAILS_DISPLAY'); ?>
-        </h3>
-        <p class="text-muted mb-3">
-            <?php echo Text::_('COM_CONTENTBUILDERNG_TAB_DETAILS_DISPLAY_INTRO'); ?>
-        </p>
-        <div class="alert alert-info mb-3">
-            <?php echo Text::_('COM_CONTENTBUILDERNG_TAB_DETAILS_DISPLAY_PERMISSION_HINT'); ?>
-        </div>
-        <table width="100%" class="table table-striped">
-            <tr>
-                <td width="20%">
-                    <label for="create_sample"><span class="editlinktip hasTip"
-                            title="<?php echo Text::_('COM_CONTENTBUILDERNG_CREATE_TIP'); ?>">
-                            <?php echo Text::_('COM_CONTENTBUILDERNG_CREATE'); ?><span></label>
-                </td>
-                <td>
-                    <input type="hidden" name="jform[create_sample]" id="cb_create_sample_flag" value="0" />
-                    <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
-                        <button type="button" class="btn btn-primary d-inline-flex align-items-center gap-1" id="create_sample"
-                            title="<?php echo Text::_('COM_CONTENTBUILDERNG_CREATE_TEMPLATE_TIP'); ?>"
-                            aria-label="<?php echo Text::_('COM_CONTENTBUILDERNG_CREATE_TEMPLATE_TIP'); ?>"
-                            onclick="cbQueueDetailsSampleGeneration(this);">
-                            <span class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></span>
-                            <?php echo Text::_('COM_CONTENTBUILDERNG_CREATE_TEMPLATE'); ?>
-                        </button>
-                        <small id="cb_create_sample_hint" class="text-success d-none">
-                            <?php echo Text::_('COM_CONTENTBUILDERNG_INITIALISE_WILL_APPLY_ON_SAVE'); ?>
-                        </small>
-                    </div>
-                </td>
-                <td width="20%">
-                    <div class="mb-2">
-                        <label for="create_articles_yes"><span class="editlinktip hasTip"
-                                title="<?php echo Text::_('COM_CONTENTBUILDERNG_CREATE_TIP'); ?>">
-                                <?php echo Text::_('COM_CONTENTBUILDERNG_CREATE_ARTICLES_LABEL'); ?>
-                            </span></label>
-                    </div>
-                    <div class="mb-1">
-                        <label for="delete_articles"><span class="editlinktip hasTip"
-                                title="<?php echo Text::_('COM_CONTENTBUILDERNG_DELETE_ARTICLES_TIP'); ?>">
-                                <?php echo Text::_('COM_CONTENTBUILDERNG_DELETE_ARTICLES'); ?>
-                            </span></label>
-                    </div>
-                </td>
-                <td>
-                    <div class="mb-2">
-                        <input class="form-check-input" type="radio" value="1" name="jform[create_articles]" id="create_articles_yes"
-                            <?php echo (int) $this->item->create_articles === 1 ? ' checked="checked"' : ''; ?> />
-                        <label for="create_articles_yes">
-                            <?php echo Text::_('COM_CONTENTBUILDERNG_YES'); ?>
-                        </label>
-                        <input class="form-check-input" type="radio" value="0" name="jform[create_articles]" id="create_articles_no"
-                            <?php echo (int) $this->item->create_articles !== 1 ? ' checked="checked"' : ''; ?> />
-                        <label for="create_articles_no">
-                            <?php echo Text::_('COM_CONTENTBUILDERNG_NO'); ?>
-                        </label>
-                    </div>
-                    <input class="form-check-input" type="radio" value="1" name="jform[delete_articles]" id="delete_articles"
-                        <?php echo $this->item->delete_articles ? ' checked="checked"' : '' ?> /> <label
-                        for="delete_articles">
-                        <?php echo Text::_('COM_CONTENTBUILDERNG_YES'); ?>
-                    </label>
-                    <input class="form-check-input" type="radio" value="0" name="jform[delete_articles]"
-                        id="delete_articles_no" <?php echo !$this->item->delete_articles ? ' checked="checked"' : '' ?> /> <label for="delete_articles_no">
-                        <?php echo Text::_('COM_CONTENTBUILDERNG_NO'); ?>
-                    </label>
-                </td>
-            </tr>
-            <tr>
-                <td width="20%">
-                    <label for="title_field"><span class="editlinktip hasTip"
-                            title="<?php echo Text::_('COM_CONTENTBUILDERNG_TITLE_FIELD_TIP'); ?>">
-                            <?php echo Text::_('COM_CONTENTBUILDERNG_TITLE_FIELD'); ?>
-                        </span></label>
-                </td>
-                <td>
-                    <select class="form-select-sm" name="jform[title_field]" id="title_field">
-                        <option value="0">
-                            - <?php echo Text::_('COM_CONTENTBUILDERNG_NONE'); ?> -
-                        </option>
-                        <?php
-                        foreach ($this->all_elements as $sortable) {
-                        ?>
-                            <option value="<?php echo $sortable->reference_id; ?>" <?php echo $this->item->title_field == $sortable->reference_id ? ' selected="selected"' : ''; ?>>
-                                <?php echo htmlentities($sortable->label ?? '', ENT_QUOTES, 'UTF-8'); ?>
-                            </option>
-                        <?php
-                        }
-                        ?>
-                    </select>
-                </td>
-                <td width="20%">
-                    <label for="default_category"><span class="editlinktip hasTip"
-                            title="<?php echo Text::_('COM_CONTENTBUILDERNG_DEFAULT_CATEGORY_TIP'); ?>">
-                            <?php echo Text::_('COM_CONTENTBUILDERNG_DEFAULT_CATEGORY'); ?>
-                        </span></label>
-                </td>
-                <td>
-                    <?php
-                    ?>
-                    <select class="form-select-sm" id="default_category" name="jform[sectioncategories]">
-                        <?php
-                        foreach ($this->item->sectioncategories as $category) {
-                        ?>
-                            <option <?php echo $this->item->default_category == $category->value ? ' selected="selected"' : '' ?>value="<?php echo $category->value; ?>">
-                                <?php echo htmlentities($category->text ?? '', ENT_QUOTES, 'UTF-8'); ?>
-                            </option>
-                        <?php
-                        }
-                        ?>
-                    </select>
-                    <?php
-                    ?>
-                </td>
-            </tr>
-            <tr>
-                <td width="20%" valign="top">
-                    <label for="default_lang_code"><span class="editlinktip hasTip"
-                            title="<?php echo Text::_('COM_CONTENTBUILDERNG_DEFAULT_LANG_CODE_TIP'); ?>">
-                            <?php echo Text::_('COM_CONTENTBUILDERNG_DEFAULT_LANG_CODE'); ?>
-                        </span></label>
-                </td>
-                <td valign="top">
-                    <select class="form-select-sm" name="jform[default_lang_code]" id="default_lang_code">
-                        <option value="*">
-                            <?php echo Text::_('COM_CONTENTBUILDERNG_ANY'); ?>
-                        </option>
-                        <?php
-                        foreach ($this->item->language_codes as $lang_code) {
-                        ?>
-                            <option value="<?php echo $lang_code ?>" <?php echo $lang_code == $this->item->default_lang_code ? ' selected="selected"' : ''; ?>>
-                                <?php echo $lang_code; ?>
-                            </option>
-                        <?php
-                        }
-                        ?>
-                    </select>
-                    <br /><br />
-                    <label for="article_record_impact_language"><span class="editlinktip hasTip"
-                            title="<?php echo Text::_('COM_CONTENTBUILDERNG_ARTICLE_RECORD_IMPACT_TIP'); ?>">
-                            <?php echo Text::_('COM_CONTENTBUILDERNG_ARTICLE_RECORD_IMPACT'); ?>
-                        </span></label>
-                    <input class="form-check-input" <?php echo $this->item->article_record_impact_language ? 'checked="checked" ' : '' ?>type="radio" name="jform[article_record_impact_language]"
-                        id="article_record_impact_language" value="1" />
-                    <label for="article_record_impact_language_yes">
-                        <?php echo Text::_('COM_CONTENTBUILDERNG_YES'); ?>
-                    </label>
-                    <input class="form-check-input" <?php echo !$this->item->article_record_impact_language ? 'checked="checked" ' : '' ?>type="radio" name="jform[article_record_impact_language]"
-                        id="article_record_impact_language_no" value="0" />
-                    <label for="article_record_impact_language_no">
-                        <?php echo Text::_('COM_CONTENTBUILDERNG_NO'); ?>
-                    </label>
-                </td>
-                <td width="20%" valign="top">
-                    <label for="default_lang_code_ignore_yes"><span class="editlinktip hasTip"
-                            title="<?php echo Text::_('COM_CONTENTBUILDERNG_DEFAULT_LANG_CODE_IGNORE_TIP'); ?>">
-                            <?php echo Text::_('COM_CONTENTBUILDERNG_DEFAULT_LANG_CODE_IGNORE'); ?>
-                        </span></label>
-                </td>
-                <td valign="top">
-                    <input class="form-check-input" <?php echo $this->item->default_lang_code_ignore ? 'checked="checked" ' : '' ?>type="radio" name="jform[default_lang_code_ignore]"
-                        id="default_lang_code_ignore_yes" value="1" />
-                    <label for="default_lang_code_ignore_yes">
-                        <?php echo Text::_('COM_CONTENTBUILDERNG_YES'); ?>
-                    </label>
-
-                    <input class="form-check-input" <?php echo !$this->item->default_lang_code_ignore ? 'checked="checked" ' : '' ?>type="radio" name="jform[default_lang_code_ignore]"
-                        id="default_lang_code_ignore_no" value="0" />
-                    <label for="default_lang_code_ignore_no">
-                        <?php echo Text::_('COM_CONTENTBUILDERNG_NO'); ?>
-                    </label>
-                </td>
-            </tr>
-            <tr>
-                <td width="20%" valign="top">
-                    <label for="default_publish_up_days"><span class="editlinktip hasTip"
-                            title="<?php echo Text::_('COM_CONTENTBUILDERNG_DEFAULT_PUBLISH_UP_DAYS_TIP'); ?>">
-                            <?php echo Text::_('COM_CONTENTBUILDERNG_DEFAULT_PUBLISH_UP_DAYS'); ?>
-                        </span></label>
-                </td>
-                <td valign="top">
-                    <input class="form-control form-control-sm w-100" type="text" name="jform[default_publish_up_days]"
-                        id="default_publish_up_days" value="<?php echo $this->item->default_publish_up_days; ?>" />
-                    <br /><br />
-                    <label for="article_record_impact_publish"><span class="editlinktip hasTip"
-                            title="<?php echo Text::_('COM_CONTENTBUILDERNG_ARTICLE_RECORD_PUBLISH_IMPACT_TIP'); ?>">
-                            <?php echo Text::_('COM_CONTENTBUILDERNG_ARTICLE_RECORD_PUBLISH_IMPACT'); ?>
-                        </span></label>
-                    <input class="form-check-input" <?php echo $this->item->article_record_impact_publish ? 'checked="checked" ' : '' ?>type="radio" name="jform[article_record_impact_publish]"
-                        id="article_record_impact_publish" value="1" />
-                    <label for="article_record_impact_publish_yes">
-                        <?php echo Text::_('COM_CONTENTBUILDERNG_YES'); ?>
-                    </label>
-                    <input class="form-check-input" <?php echo !$this->item->article_record_impact_publish ? 'checked="checked" ' : '' ?>type="radio" name="jform[article_record_impact_publish]"
-                        id="article_record_impact_publish_no" value="0" />
-                    <label for="article_record_impact_publish_no">
-                        <?php echo Text::_('COM_CONTENTBUILDERNG_NO'); ?>
-                    </label>
-
-                </td>
-                <td width="20%" valign="top">
-                    <label for="default_publish_down_days"><span class="editlinktip hasTip"
-                            title="<?php echo Text::_('COM_CONTENTBUILDERNG_DEFAULT_PUBLISH_DOWN_DAYS_TIP'); ?>">
-                            <?php echo Text::_('COM_CONTENTBUILDERNG_DEFAULT_PUBLISH_DOWN_DAYS'); ?>
-                        </span></label>
-                </td>
-                <td valign="top">
-                    <input class="form-control form-control-sm w-100" type="text" name="jform[default_publish_down_days]"
-                        id="default_publish_down_days" value="<?php echo $this->item->default_publish_down_days; ?>" />
-                </td>
-
-            </tr>
-            <tr>
-                <td width="20%">
-                    <label for="default_access"><span class="editlinktip hasTip"
-                            title="<?php echo Text::_('COM_CONTENTBUILDERNG_DEFAULT_ACCESS_TIP'); ?>">
-                            <?php echo Text::_('COM_CONTENTBUILDERNG_DEFAULT_ACCESS'); ?>
-                        </span></label>
-                </td>
-                <td>
-                    <?php
-                    ?>
-                    <?php echo HTMLHelper::_('access.level', 'default_access', $this->item->default_access, '', array(), 'default_access'); ?>
-                    <?php
-                    ?>
-                </td>
-                <td width="20%">
-                    <label for="default_featured"><span class="editlinktip hasTip"
-                            title="<?php echo Text::_('COM_CONTENTBUILDERNG_DEFAULT_FEATURED_TIP'); ?>">
-                            <?php echo Text::_('COM_CONTENTBUILDERNG_DEFAULT_FEATURED'); ?>
-                        </span></label>
-                </td>
-                <td>
-                    <input class="form-check-input" class="form-check-input" <?php echo $this->item->default_featured ? 'checked="checked" ' : '' ?>type="radio" name="jform[default_featured]" id="default_featured"
-                        value="1" />
-                    <label for="default_featured">
-                        <?php echo Text::_('COM_CONTENTBUILDERNG_YES'); ?>
-                    </label>
-
-                    <input class="form-check-input" class="form-check-input" <?php echo !$this->item->default_featured ? 'checked="checked" ' : '' ?>type="radio" name="jform[default_featured]" id="default_featured_no"
-                        value="0" />
-                    <label for="default_featured_no">
-                        <?php echo Text::_('COM_CONTENTBUILDERNG_NO'); ?>
-                    </label>
-
-                </td>
-            </tr>
-            <tr>
-                <td width="20%">
-                    <label for="auto_publish"><span class="editlinktip hasTip"
-                            title="<?php echo Text::_('COM_CONTENTBUILDERNG_AUTO_PUBLISH_TIP'); ?>">
-                            <?php echo Text::_('COM_CONTENTBUILDERNG_AUTO_PUBLISH'); ?>
-                        </span></label>
-                </td>
-                <td>
-                    <input type="hidden" name="jform[auto_publish]" value="0" />
-                    <?php echo $renderCheckbox('jform[auto_publish]', 'auto_publish', (int) $this->item->auto_publish === 1); ?>
-                </td>
-                <td width="20%">
-                    <?php
-                    if ($this->item->edit_by_type && $isBreezingFormsType) {
-                    ?>
-                        <label for="protect_upload_directory"><span class="editlinktip hasTip"
-                                title="<?php echo Text::_('COM_CONTENTBUILDERNG_UPLOAD_DIRECTORY_TYPE_TIP'); ?>">
-                                <?php echo Text::_('COM_CONTENTBUILDERNG_PROTECT_UPLOAD_DIRECTORY'); ?>
-                            </span></label>
-                    <?php
-                    }
-                    ?>
-                </td>
-                <td>
-                    <?php
-                    if ($this->item->edit_by_type && $isBreezingFormsType) {
-                    ?>
-                        <input type="hidden" name="jform[protect_upload_directory]" value="0" />
-                        <?php echo $renderCheckbox('jform[protect_upload_directory]', 'protect_upload_directory', trim((string) $this->item->protect_upload_directory) !== ''); ?>
-                    <?php
-                    }
-                    ?>
-                </td>
-            </tr>
-        </table>
-
         <?php
-        echo $this->form->renderField('details_template');
-        //        $editor = Editor::getInstance(Factory::getApplication()->get('editor'));
-        //        echo $editor->display('details_template', $this->item->details_template, '100%', '550', '75', '20', true, 'details_template');
-        ?>
-        <hr />
-        <h3 class="mb-3">
-            <?php echo Text::_('COM_CONTENTBUILDERNG_DETAILS_PREPARE_MODE_TITLE'); ?>
-        </h3>
-        <?php
-        if (trim($this->item->details_prepare ?? '') == '') {
-            $this->item->details_prepare = '// Ici, vous pouvez modifier les libellés et les valeurs de chaque élément avant le rendu du template détail.' . "\n";
-        }
-        $prepareExamplesText = <<<'TXT'
-// Ici, vous pouvez modifier les libellés et les valeurs de chaque élément avant le rendu du template d'édition.
-
-// Adaptez la valeur et le libellé avec du code PHP.
-// Les données sont stockées dans le tableau $items.
-
-// Exemple : la valeur du champ "NAME" sera affichée en majuscules, en gras et en rouge.
-$items["NAME"]["value"] = strtoupper((string) $items["NAME"]["value"]);
-$items["NAME"]["value"] = "<b>" . $items["NAME"]["value"] . "</b>";
-$items["NAME"]["value"] = "<span style=\"color:#dc3545\">" . $items["NAME"]["value"] . "</span>";
-
-// Exemple : la valeur du champ "COUNT" sera affichée en rouge si elle est < 0.
-$items["COUNT"]["value"] = (is_numeric((string) $items["COUNT"]["value"]) && (float) $items["COUNT"]["value"] < 0)
-    ? "<span style=\"color:#dc3545\">" . $items["COUNT"]["value"] . "</span>"
-    : $items["COUNT"]["value"];
-
-// Exemple : ajouter la date courante à un champ de libellé.
-$items["DATE_LABEL"]["label"] = (string) $items["DATE_LABEL"]["label"] . " (" . date("Y-m-d") . ")";
-TXT;
-
-        ?>
-        <div class="d-flex flex-wrap align-items-center gap-2 mb-3 cb-prepare-tools">
-            <label class="form-label mb-0" for="cb_details_prepare_snippet_select">
-                <?php echo Text::_('COM_CONTENTBUILDERNG_EDITABLE_PREPARE_SNIPPET_LABEL'); ?>
-            </label>
-            <select class="form-select form-select-sm cb-snippet-select" id="cb_details_prepare_snippet_select">
-                <?php if (!empty($editablePrepareSnippetOptions)) : ?>
-                    <option value=""><?php echo Text::_('COM_CONTENTBUILDERNG_EDITABLE_PREPARE_SNIPPET_PLACEHOLDER'); ?></option>
-                    <?php foreach ($editablePrepareSnippetOptions as $snippetOption) : ?>
-                        <option value="<?php echo htmlspecialchars((string) ($snippetOption['item_path'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>">
-                            <?php echo htmlspecialchars((string) ($snippetOption['text'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>
-                        </option>
-                    <?php endforeach; ?>
-                <?php else : ?>
-                    <option value=""><?php echo Text::_('COM_CONTENTBUILDERNG_EDITABLE_PREPARE_SNIPPET_EMPTY'); ?></option>
-                <?php endif; ?>
-            </select>
-            <span class="d-inline-flex align-items-center gap-2">
-                <span class="form-check form-check-inline mb-0">
-                    <input class="form-check-input" type="radio" name="cb_details_prepare_slot" id="cb_details_prepare_slot_value" value="value" checked="checked" <?php echo empty($editablePrepareSnippetOptions) ? 'disabled="disabled"' : ''; ?> />
-                    <label class="form-check-label" for="cb_details_prepare_slot_value"><?php echo Text::_('COM_CONTENTBUILDERNG_PREPARE_TARGET_VALUE_OPTION'); ?></label>
-                </span>
-                <span class="form-check form-check-inline mb-0">
-                    <input class="form-check-input" type="radio" name="cb_details_prepare_slot" id="cb_details_prepare_slot_label" value="label" <?php echo empty($editablePrepareSnippetOptions) ? 'disabled="disabled"' : ''; ?> />
-                    <label class="form-check-label" for="cb_details_prepare_slot_label"><?php echo Text::_('COM_CONTENTBUILDERNG_PREPARE_TARGET_LABEL_OPTION'); ?></label>
-                </span>
-            </span>
-            <label class="form-label mb-0" for="cb_details_prepare_effect_select">
-                <?php echo Text::_('COM_CONTENTBUILDERNG_PREPARE_EFFECT_LABEL'); ?>
-            </label>
-            <select class="form-select form-select-sm cb-effect-select" id="cb_details_prepare_effect_select" <?php echo empty($editablePrepareSnippetOptions) ? 'disabled="disabled"' : ''; ?>>
-                <?php foreach ($prepareEffectOptions as $effectOption) : ?>
-                    <option value="<?php echo htmlspecialchars((string) ($effectOption['value'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>">
-                        <?php echo htmlspecialchars((string) ($effectOption['text'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>
-                    </option>
-                <?php endforeach; ?>
-            </select>
-            <button
-                type="button"
-                class="btn btn-sm btn-outline-secondary text-nowrap"
-                id="cb_add_details_prepare_snippet"
-                onclick="cbInsertDetailsPrepareSnippet();"
-                <?php echo empty($editablePrepareSnippetOptions) ? 'disabled="disabled"' : ''; ?>>
-                <?php echo Text::_('COM_CONTENTBUILDERNG_DETAILS_PREPARE_SNIPPET_ADD'); ?>
-            </button>
-            <button
-                type="button"
-                class="btn btn-sm px-2"
-                data-bs-toggle="tooltip"
-                data-bs-placement="top"
-                data-bs-title="<?php echo Text::_('COM_CONTENTBUILDERNG_PREPARE_EXAMPLES_BUTTON_TIP'); ?>"
-                aria-label="<?php echo Text::_('COM_CONTENTBUILDERNG_PREPARE_EXAMPLES_BUTTON_TIP'); ?>"
-                onclick="cbOpenPrepareExamples();">
-                <span class="fa-solid fa-circle-question" aria-hidden="true"></span>
-            </button>
-            <small id="cb_details_prepare_snippet_hint" class="text-success d-none">
-                <?php echo Text::_('COM_CONTENTBUILDERNG_EDITABLE_PREPARE_SNIPPET_HINT'); ?>
-            </small>
-        </div>
-        <div class="modal fade" id="cb-prepare-examples-modal" tabindex="-1" aria-labelledby="cb-prepare-examples-modal-label" aria-hidden="true">
-            <div class="modal-dialog modal-lg modal-dialog-scrollable">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="cb-prepare-examples-modal-label"><?php echo Text::_('COM_CONTENTBUILDERNG_PREPARE_EXAMPLES_TITLE'); ?></h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="<?php echo Text::_('JCLOSE'); ?>"></button>
-                    </div>
-                    <div class="modal-body">
-                        <pre class="mb-0"><code><?php echo htmlspecialchars($prepareExamplesText, ENT_QUOTES, 'UTF-8'); ?></code></pre>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <?php
-
-        $params = array('syntax' => 'php');
-        $editor = Editor::getInstance('codemirror');
-        echo $editor->display(
-            'jform[details_prepare]',
-            (string) ($this->item->details_prepare ?? ''),
-            '100%',
-            '550',
-            '75',
-            '20',
-            false,
-            'jform_details_prepare',
-            null,
-            null,
-            $params
+        echo LayoutHelper::render(
+            'form.details_display',
+            [
+                'item' => $this->item,
+                'form' => $this->form,
+                'allElements' => $this->all_elements,
+                'renderCheckbox' => $renderCheckbox,
+                'editablePrepareSnippetOptions' => $editablePrepareSnippetOptions,
+                'prepareEffectOptions' => $prepareEffectOptions,
+                'isBreezingFormsType' => $isBreezingFormsType,
+            ],
+            $componentLayoutBase
         );
-
-        //echo '<textarea name="jform[details_prepare]" style="width:100%;height: 500px;">'.htmlentities($this->item->details_prepare, ENT_QUOTES, 'UTF-8').'</textarea>';
         ?>
         <?php
         echo HTMLHelper::_('uitab.endTab');
         echo HTMLHelper::_('uitab.addTab', 'view-pane', 'tab5', Text::_('COM_CONTENTBUILDERNG_TAB_EDIT_DISPLAY'));
         ?>
-        <h3 class="mb-3">
-            <?php echo Text::_('COM_CONTENTBUILDERNG_TAB_EDIT_DISPLAY'); ?>
-        </h3>
-        <p class="text-muted mb-3">
-            <?php echo Text::_('COM_CONTENTBUILDERNG_TAB_EDIT_DISPLAY_INTRO'); ?>
-        </p>
-        <div class="alert alert-info mb-3">
-            <?php echo Text::_('COM_CONTENTBUILDERNG_TAB_EDIT_DISPLAY_PERMISSION_HINT'); ?>
-        </div>
-        <input type="hidden" name="jform[edit_by_type]" value="0" />
-        <?php if ($canEditByType) : ?>
-            <div class="form-check mb-3">
-                <?php echo $renderCheckbox('jform[edit_by_type]', 'edit_by_type', (bool) $this->item->edit_by_type); ?>
-                <label class="form-check-label" for="edit_by_type">
-                    <span class="editlinktip hasTip" title="<?php echo Text::_('COM_CONTENTBUILDERNG_TYPE_EDIT_TIP'); ?>">
-                        <?php echo Text::_('COM_CONTENTBUILDERNG_TYPE_EDIT'); ?>
-                    </span>
-                </label>
-            </div>
-        <?php endif; ?>
         <?php
-
-        if ($this->item->edit_by_type && $isBreezingFormsType) {
-            echo $breezingFormsProvidedMessage;
-            echo '<input type="hidden" name="jform[editable_template]" value="' . htmlspecialchars($breezingFormsEditableToken, ENT_QUOTES, 'UTF-8') . '"/>';
-            //echo '<input type="hidden" name="jform[protect_upload_directory]" value="'.(trim($this->item->protect_upload_directory) ? 1 : 0).'"/>'; 
-            echo '<input type="hidden" name="jform[upload_directory]" value="' . (trim($this->item->upload_directory) ? trim($this->item->upload_directory) : JPATH_SITE . '/media/com_contentbuilderng/upload') . '"/>';
-        } else {
+        echo LayoutHelper::render(
+            'form.edit_display',
+            [
+                'item' => $this->item,
+                'form' => $this->form,
+                'renderCheckbox' => $renderCheckbox,
+                'canEditByType' => $canEditByType,
+                'isBreezingFormsType' => $isBreezingFormsType,
+                'breezingFormsProvidedMessage' => $breezingFormsProvidedMessage,
+                'breezingFormsEditableToken' => $breezingFormsEditableToken,
+                'editablePrepareSnippetOptions' => $editablePrepareSnippetOptions,
+                'prepareEffectOptions' => $prepareEffectOptions,
+            ],
+            $componentLayoutBase
+        );
         ?>
-
-            <input type="hidden" name="jform[protect_upload_directory]" value="0" />
-            <div class="cb-upload-box">
-                <div class="row g-3 align-items-end">
-                    <div class="col-lg-8">
-                        <label for="upload_directory" class="form-label mb-2"><span class="editlinktip hasTip"
-                                title="<?php echo Text::_('COM_CONTENTBUILDERNG_UPLOAD_DIRECTORY_TIP'); ?>">
-                                <?php echo Text::_('COM_CONTENTBUILDERNG_UPLOAD_DIRECTORY'); ?>
-                            </span></label>
-                        <input class="form-control form-control-sm" type="text"
-                            value="<?php echo trim($this->item->upload_directory) ? trim($this->item->upload_directory) : JPATH_SITE . '/media/com_contentbuilderng/upload'; ?>"
-                            name="jform[upload_directory]" id="upload_directory" />
-                    </div>
-                    <div class="col-lg-auto">
-                        <div class="form-check mb-1">
-                            <?php echo $renderCheckbox('jform[protect_upload_directory]', 'protect_upload_directory', trim((string) $this->item->protect_upload_directory) !== ''); ?>
-                            <label class="form-check-label" for="protect_upload_directory">
-                                <?php echo Text::_('COM_CONTENTBUILDERNG_PROTECT_UPLOAD_DIRECTORY'); ?>
-                            </label>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <input type="hidden" name="jform[create_editable_sample]" id="cb_create_editable_sample_flag" value="0" />
-            <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
-                <button type="button" class="btn btn-primary d-inline-flex align-items-center gap-1" id="create_editable_sample"
-                    title="<?php echo Text::_('COM_CONTENTBUILDERNG_CREATE_TEMPLATE_TIP'); ?>"
-                    aria-label="<?php echo Text::_('COM_CONTENTBUILDERNG_CREATE_TEMPLATE_TIP'); ?>"
-                    onclick="cbQueueEditableSampleGeneration(this);">
-                    <span class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></span>
-                    <?php echo Text::_('COM_CONTENTBUILDERNG_CREATE_TEMPLATE'); ?>
-                </button>
-                <small id="cb_create_editable_sample_hint" class="text-success d-none">
-                    <?php echo Text::_('COM_CONTENTBUILDERNG_INITIALISE_WILL_APPLY_ON_SAVE'); ?>
-                </small>
-            </div>
-            <br />
-            <br />
-        <?php
-            echo $this->form->renderField('editable_template');
-            //      $editor = Editor::getInstance(Factory::getApplication()->get('editor'));
-            //      echo $editor->display('editable_template', $this->item->editable_template, '100%', '550', '75', '20', true, 'editable_template');
-        }
-        ?>
-        <hr />
-        <h3 class="mb-3">
-            <?php echo Text::_('COM_CONTENTBUILDERNG_DETAILS_PREPARE_MODE_TITLE'); ?>
-        </h3>
-        <?php
-
-        if ($this->item->edit_by_type) {
-            echo $breezingFormsProvidedMessage;
-            echo '<input type="hidden" name="jform[editable_prepare]" value="' . htmlentities($this->item->editable_prepare ?? '', ENT_QUOTES, 'UTF-8') . '"/>';
-        } else {
-            if (trim($this->item->editable_prepare ?? '') == '') {
-                $this->item->editable_prepare = '// Ici, vous pouvez modifier les libellés et les valeurs de chaque élément avant le rendu du template d\'édition.' . "\n";
-            }
-
-        ?>
-            <div class="d-flex flex-wrap align-items-center gap-2 mb-3 cb-prepare-tools">
-                <label class="form-label mb-0" for="cb_editable_prepare_snippet_select">
-                    <?php echo Text::_('COM_CONTENTBUILDERNG_EDITABLE_PREPARE_SNIPPET_LABEL'); ?>
-                </label>
-                <select class="form-select form-select-sm cb-snippet-select" id="cb_editable_prepare_snippet_select">
-                    <?php if (!empty($editablePrepareSnippetOptions)) : ?>
-                        <option value=""><?php echo Text::_('COM_CONTENTBUILDERNG_EDITABLE_PREPARE_SNIPPET_PLACEHOLDER'); ?></option>
-                        <?php foreach ($editablePrepareSnippetOptions as $snippetOption) : ?>
-                            <option value="<?php echo htmlspecialchars((string) ($snippetOption['item_path'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>">
-                                <?php echo htmlspecialchars((string) ($snippetOption['text'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>
-                            </option>
-                        <?php endforeach; ?>
-                    <?php else : ?>
-                        <option value=""><?php echo Text::_('COM_CONTENTBUILDERNG_EDITABLE_PREPARE_SNIPPET_EMPTY'); ?></option>
-                    <?php endif; ?>
-                </select>
-                <span class="d-inline-flex align-items-center gap-2">
-                    <span class="form-check form-check-inline mb-0">
-                        <input class="form-check-input" type="radio" name="cb_editable_prepare_slot" id="cb_editable_prepare_slot_value" value="value" checked="checked" <?php echo empty($editablePrepareSnippetOptions) ? 'disabled="disabled"' : ''; ?> />
-                        <label class="form-check-label" for="cb_editable_prepare_slot_value"><?php echo Text::_('COM_CONTENTBUILDERNG_PREPARE_TARGET_VALUE_OPTION'); ?></label>
-                    </span>
-                    <span class="form-check form-check-inline mb-0">
-                        <input class="form-check-input" type="radio" name="cb_editable_prepare_slot" id="cb_editable_prepare_slot_label" value="label" <?php echo empty($editablePrepareSnippetOptions) ? 'disabled="disabled"' : ''; ?> />
-                        <label class="form-check-label" for="cb_editable_prepare_slot_label"><?php echo Text::_('COM_CONTENTBUILDERNG_PREPARE_TARGET_LABEL_OPTION'); ?></label>
-                    </span>
-                </span>
-                <label class="form-label mb-0" for="cb_editable_prepare_effect_select">
-                    <?php echo Text::_('COM_CONTENTBUILDERNG_PREPARE_EFFECT_LABEL'); ?>
-                </label>
-                <select class="form-select form-select-sm cb-effect-select" id="cb_editable_prepare_effect_select" <?php echo empty($editablePrepareSnippetOptions) ? 'disabled="disabled"' : ''; ?>>
-                    <?php foreach ($prepareEffectOptions as $effectOption) : ?>
-                        <option value="<?php echo htmlspecialchars((string) ($effectOption['value'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>">
-                            <?php echo htmlspecialchars((string) ($effectOption['text'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
-                <button
-                    type="button"
-                    class="btn btn-sm btn-outline-secondary text-nowrap"
-                    id="cb_add_editable_prepare_snippet"
-                    onclick="cbInsertEditablePrepareSnippet();"
-                    <?php echo empty($editablePrepareSnippetOptions) ? 'disabled="disabled"' : ''; ?>>
-                    <?php echo Text::_('COM_CONTENTBUILDERNG_EDITABLE_PREPARE_SNIPPET_ADD'); ?>
-                </button>
-                <button
-                    type="button"
-                    class="btn btn-sm px-2"
-                    data-bs-toggle="tooltip"
-                    data-bs-placement="top"
-                    data-bs-title="<?php echo Text::_('COM_CONTENTBUILDERNG_PREPARE_EXAMPLES_BUTTON_TIP'); ?>"
-                    aria-label="<?php echo Text::_('COM_CONTENTBUILDERNG_PREPARE_EXAMPLES_BUTTON_TIP'); ?>"
-                    onclick="cbOpenPrepareExamples();">
-                    <span class="fa-solid fa-circle-question" aria-hidden="true"></span>
-                </button>
-                <small id="cb_editable_prepare_snippet_hint" class="text-success d-none">
-                    <?php echo Text::_('COM_CONTENTBUILDERNG_EDITABLE_PREPARE_SNIPPET_HINT'); ?>
-                </small>
-            </div>
-        <?php
-
-            $params = array('syntax' => 'php');
-            $editor = Editor::getInstance('codemirror');
-            echo $editor->display(
-                'jform[editable_prepare]',
-                (string) ($this->item->editable_prepare ?? ''),
-                '100%',
-                '550',
-                '75',
-                '20',
-                false,
-                'jform_editable_prepare',
-                null,
-                null,
-                $params
-            );
-        }
 
         echo HTMLHelper::_('uitab.endTab');
         echo HTMLHelper::_('uitab.addTab', 'view-pane', 'tab6', Text::_('COM_CONTENTBUILDERNG_API_TAB_TITLE'));
         ?>
-        <h3 class="mb-3"><?php echo Text::_('COM_CONTENTBUILDERNG_API_TAB_TITLE'); ?></h3>
-        <p class="text-muted mb-3">
-            <?php echo Text::_('COM_CONTENTBUILDERNG_API_TAB_INTRO'); ?>
-        </p>
-        <div class="alert alert-info mb-3">
-            <?php echo Text::_('COM_CONTENTBUILDERNG_API_TAB_PERMISSION_HINT'); ?>
-        </div>
-        <table class="table table-striped">
-            <tr>
-                <th style="width:180px;"><?php echo Text::_('COM_CONTENTBUILDERNG_API_METHOD'); ?></th>
-                <th><?php echo Text::_('COM_CONTENTBUILDERNG_API_ENDPOINT'); ?></th>
-                <th><?php echo Text::_('COM_CONTENTBUILDERNG_API_DESCRIPTION'); ?></th>
-            </tr>
-            <tr>
-                <td><code>GET</code></td>
-                <td>
-                    <a href="<?php echo htmlspecialchars($apiExampleDetailUrl, ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener noreferrer">
-                        <code><?php echo htmlspecialchars($apiExampleDetailDisplayUrl, ENT_QUOTES, 'UTF-8'); ?></code>
-                    </a>
-                </td>
-                <td><?php echo Text::_('COM_CONTENTBUILDERNG_API_GET_DETAIL_DESC'); ?></td>
-            </tr>
-            <tr>
-                <td><code>GET</code></td>
-                <td>
-                    <a href="<?php echo htmlspecialchars($apiExampleListUrl, ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener noreferrer">
-                        <code><?php echo htmlspecialchars($apiExampleListDisplayUrl, ENT_QUOTES, 'UTF-8'); ?></code>
-                    </a>
-                </td>
-                <td><?php echo Text::_('COM_CONTENTBUILDERNG_API_GET_LIST_DESC'); ?></td>
-            </tr>
-            <tr>
-                <td><code>PUT</code> / <code>PATCH</code> / <code>POST</code></td>
-                <td>
-                    <a href="<?php echo htmlspecialchars($apiExampleUpdateUrl, ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener noreferrer">
-                        <code><?php echo htmlspecialchars($apiExampleUpdateUrl, ENT_QUOTES, 'UTF-8'); ?></code>
-                    </a>
-                </td>
-                <td><?php echo Text::_('COM_CONTENTBUILDERNG_API_UPDATE_DESC'); ?></td>
-            </tr>
-        </table>
-        <div class="alert alert-secondary py-2 mb-3">
-            <strong><?php echo Text::_('COM_CONTENTBUILDERNG_API_VERBOSE_OPTION_TITLE'); ?></strong>
-            <?php echo Text::_('COM_CONTENTBUILDERNG_API_VERBOSE_OPTION_TEXT'); ?>
-            <a href="<?php echo htmlspecialchars($apiExampleVerboseUrl, ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener noreferrer">
-                <code><?php echo htmlspecialchars($apiExampleVerboseDisplayUrl, ENT_QUOTES, 'UTF-8'); ?></code>
-            </a>
-        </div>
-        <label for="cb_api_example_payload" class="form-label"><strong><?php echo Text::_('COM_CONTENTBUILDERNG_API_JSON_LABEL'); ?></strong></label>
-        <textarea id="cb_api_example_payload" class="form-control" rows="7" readonly="readonly"><?php echo htmlspecialchars($apiExamplePayloadJson, ENT_QUOTES, 'UTF-8'); ?></textarea>
+        <?php
+        echo LayoutHelper::render(
+            'form.api_tab',
+            [
+                'apiExampleDetailUrl' => $apiExampleDetailUrl,
+                'apiExampleListUrl' => $apiExampleListUrl,
+                'apiExampleUpdateUrl' => $apiExampleUpdateUrl,
+                'apiExampleVerboseUrl' => $apiExampleVerboseUrl,
+                'apiExampleDetailDisplayUrl' => $apiExampleDetailDisplayUrl,
+                'apiExampleListDisplayUrl' => $apiExampleListDisplayUrl,
+                'apiExampleVerboseDisplayUrl' => $apiExampleVerboseDisplayUrl,
+                'apiExamplePayloadJson' => $apiExamplePayloadJson,
+            ],
+            $componentLayoutBase
+        );
+        ?>
         <?php
         echo HTMLHelper::_('uitab.endTab');
         echo HTMLHelper::_('uitab.addTab', 'view-pane', 'tab7', Text::_('COM_CONTENTBUILDERNG_EMAIL_TEMPLATES'));
         ?>
-        <h3 class="mb-3"><?php echo Text::_('COM_CONTENTBUILDERNG_EMAIL_TEMPLATES'); ?></h3>
-        <p class="text-muted mb-3">
-            <?php echo Text::_('COM_CONTENTBUILDERNG_EMAIL_TAB_INTRO'); ?>
-        </p>
-        <div class="alert alert-info mb-3">
-            <?php echo Text::_('COM_CONTENTBUILDERNG_EMAIL_TAB_PERMISSION_HINT'); ?>
-        </div>
-        <div class="border rounded-3 p-3 mb-3 bg-body-tertiary">
-            <div class="row g-3 align-items-start">
-                <div class="col-lg-4 d-flex align-items-start gap-2">
-                    <input type="hidden" name="jform[email_notifications]" value="0" />
-                    <?php echo $renderCheckbox('jform[email_notifications]', 'email_notifications', (bool) $this->item->email_notifications); ?>
-                    <label class="form-check-label" for="email_notifications">
-                        <?php echo Text::_('COM_CONTENTBUILDERNG_TYPE_EMAIL_NOTIFICATIONS'); ?>
-                    </label>
-                </div>
-                <div class="col-lg-8">
-                    <small class="text-muted"><?php echo Text::_('COM_CONTENTBUILDERNG_TYPE_EMAIL_NOTIFICATIONS_DESC'); ?></small>
-                </div>
-                <div class="col-lg-4 d-flex align-items-start gap-2">
-                    <input type="hidden" name="jform[email_update_notifications]" value="0" />
-                    <?php echo $renderCheckbox('jform[email_update_notifications]', 'email_update_notifications', (bool) $this->item->email_update_notifications); ?>
-                    <label class="form-check-label" for="email_update_notifications">
-                        <?php echo Text::_('COM_CONTENTBUILDERNG_TYPE_EMAIL_UPDATE_NOTIFICATIONS'); ?>
-                    </label>
-                </div>
-                <div class="col-lg-8">
-                    <small class="text-muted"><?php echo Text::_('COM_CONTENTBUILDERNG_TYPE_EMAIL_UPDATE_NOTIFICATIONS_DESC'); ?></small>
-                </div>
-            </div>
-        </div>
         <?php
-
-        if ($this->item->edit_by_type) {
-            echo $breezingFormsProvidedMessage;
-            echo '<input type="hidden" name="jform[email_admin_template]" value="' . htmlentities($this->item->email_admin_template ?? '', ENT_QUOTES, 'UTF-8') . '"/>';
-            echo '<input type="hidden" name="jform[email_template]" value="' . htmlentities($this->item->email_template ?? '', ENT_QUOTES, 'UTF-8') . '"/>';
-            echo '<input type="hidden" name="jform[email_admin_subject]" value="' . htmlentities($this->item->email_admin_subject ?? '', ENT_QUOTES, 'UTF-8') . '"/>';
-            echo '<input type="hidden" name="jform[email_admin_alternative_from]" value="' . htmlentities($this->item->email_admin_alternative_from ?? '', ENT_QUOTES, 'UTF-8') . '"/>';
-            echo '<input type="hidden" name="jform[email_admin_alternative_fromname]" value="' . htmlentities($this->item->email_admin_alternative_fromname ?? '', ENT_QUOTES, 'UTF-8') . '"/>';
-            echo '<input type="hidden" name="jform[email_admin_recipients]" value="' . htmlentities($this->item->email_admin_recipients ?? '', ENT_QUOTES, 'UTF-8') . '"/>';
-            echo '<input type="hidden" name="jform[email_admin_recipients_attach_uploads]" value="' . htmlentities($this->item->email_admin_recipients_attach_uploads ?? '', ENT_QUOTES, 'UTF-8') . '"/>';
-            echo '<input type="hidden" name="jform[email_admin_html]" value="' . htmlentities($this->item->email_admin_html ?? '', ENT_QUOTES, 'UTF-8') . '"/>';
-
-            echo '<input type="hidden" name="jform[email_subject]" value="' . htmlentities($this->item->email_subject ?? '', ENT_QUOTES, 'UTF-8') . '"/>';
-            echo '<input type="hidden" name="jform[email_alternative_from]" value="' . htmlentities($this->item->email_alternative_from ?? '', ENT_QUOTES, 'UTF-8') . '"/>';
-            echo '<input type="hidden" name="jform[email_alternative_fromname]" value="' . htmlentities($this->item->email_alternative_fromname ?? '', ENT_QUOTES, 'UTF-8') . '"/>';
-            echo '<input type="hidden" name="jform[email_recipients]" value="' . htmlentities($this->item->email_recipients ?? '', ENT_QUOTES, 'UTF-8') . '"/>';
-            echo '<input type="hidden" name="jform[email_recipients_attach_uploads]" value="' . htmlentities($this->item->email_recipients_attach_uploads ?? '', ENT_QUOTES, 'UTF-8') . '"/>';
-            echo '<input type="hidden" name="jform[email_html]" value="' . htmlentities($this->item->email_html ?? '', ENT_QUOTES, 'UTF-8') . '"/>';
-        } else {
-
-            $title = Text::_('COM_CONTENTBUILDERNG_EMAIL_ADMINS');
-
-        ?>
-            <div id="email_admins" style="cursor:pointer; width: 100%; background-color: var(--bs-body-bg);"
-                onclick="if(document.adminForm.email_admins.value=='none'){document.adminForm.email_admins.value='';document.getElementById('email_admins_div').style.display='';}else{document.adminForm.email_admins.value='none';document.getElementById('email_admins_div').style.display='none';}">
-                <h3>
-                    <?php echo $title; ?>
-                </h3>
-            </div>
-            <div id="email_admins_div"
-                style="display:<?php echo $session->get('email_admins', '', 'com_contentbuilderng'); ?>">
-                <table width="100%" class="table table-striped">
-                    <tr>
-                        <td width="20%">
-                            <label for="email_admin_subject"><span class="editlinktip hasTip"
-                                    title="<?php echo Text::_('COM_CONTENTBUILDERNG_EMAIL_SUBJECT_TIP'); ?>">
-                                    <?php echo Text::_('COM_CONTENTBUILDERNG_EMAIL_SUBJECT'); ?>
-                                </span></label>
-                        </td>
-                        <td>
-                            <input class="form-control form-control-sm w-100" id="email_admin_subject" type="text"
-                                name="jform[email_admin_subject]"
-                                value="<?php echo htmlentities($this->item->email_admin_subject ?? '', ENT_QUOTES, 'UTF-8'); ?>" />
-                        </td>
-                        <td width="20%">
-                            <label for="email_admin_alternative_from">
-                                <?php echo Text::_('COM_CONTENTBUILDERNG_EMAIL_ALTERNATIVE_FROM'); ?>
-                            </label>
-                        </td>
-                        <td>
-                            <input class="form-control form-control-sm w-100" id="email_admin_alternative_from" type="text"
-                                name="jform[email_admin_alternative_from]"
-                                value="<?php echo htmlentities($this->item->email_admin_alternative_from ?? '', ENT_QUOTES, 'UTF-8'); ?>" />
-                        </td>
-                    </tr>
-                    <tr>
-                        <td width="20%">
-                            <label for="email_admin_alternative_fromname">
-                                <?php echo Text::_('COM_CONTENTBUILDERNG_EMAIL_ALTERNATIVE_FROMNAME'); ?>
-                            </label>
-                        </td>
-                        <td>
-                            <input class="form-control form-control-sm w-100" id="email_admin_alternative_fromname"
-                                type="text" name="jform[email_admin_alternative_fromname]"
-                                value="<?php echo htmlentities($this->item->email_admin_alternative_fromname ?? '', ENT_QUOTES, 'UTF-8'); ?>" />
-                        </td>
-                        <td width="20%">
-                            <label for="email_admin_recipients"><span class="editlinktip hasTip"
-                                    title="<?php echo Text::_('COM_CONTENTBUILDERNG_EMAIL_RECIPIENTS_TIP'); ?>">
-                                    <?php echo Text::_('COM_CONTENTBUILDERNG_EMAIL_RECIPIENTS'); ?>
-                                </span></label>
-                        </td>
-                        <td>
-                            <input class="form-control form-control-sm w-100" id="email_admin_recipients" type="text"
-                                name="jform[email_admin_recipients]"
-                                value="<?php echo htmlentities($this->item->email_admin_recipients ?? '', ENT_QUOTES, 'UTF-8'); ?>" />
-                        </td>
-                    </tr>
-                    <tr>
-                        <td width="20%">
-                            <label for="email_admin_recipients_attach_uploads"><span class="editlinktip hasTip"
-                                    title="<?php echo Text::_('COM_CONTENTBUILDERNG_EMAIL_ATTACH_UPLOADS_TIP'); ?>">
-                                    <?php echo Text::_('COM_CONTENTBUILDERNG_EMAIL_ATTACH_UPLOADS'); ?>
-                                </span></label>
-                        </td>
-                        <td>
-                            <input class="form-control form-control-sm w-100" id="email_admin_recipients_attach_uploads"
-                                type="text" name="jform[email_admin_recipients_attach_uploads]"
-                                value="<?php echo htmlentities($this->item->email_admin_recipients_attach_uploads ?? '', ENT_QUOTES, 'UTF-8'); ?>" />
-                        </td>
-                        <td width="20%">
-                            <label for="email_admin_html">
-                                <?php echo Text::_('COM_CONTENTBUILDERNG_EMAIL_HTML'); ?>
-                            </label>
-                        </td>
-                        <td>
-                            <input type="hidden" name="jform[email_admin_html]" value="0" />
-                            <?php echo $renderCheckbox('jform[email_admin_html]', 'email_admin_html', (bool) $this->item->email_admin_html); ?>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td width="20%">
-                            <label for="email_admin_create_sample_button">
-                                <?php echo Text::_('COM_CONTENTBUILDERNG_CREATE_EMAIL_TEMPLATE'); ?>
-                            </label>
-                        </td>
-                        <td>
-                            <input type="hidden" name="jform[email_admin_create_sample]" id="cb_email_admin_create_sample_flag" value="0" />
-                            <div class="d-flex flex-wrap align-items-center gap-2">
-                                <button type="button" class="btn btn-sm btn-outline-secondary" id="email_admin_create_sample_button"
-                                    onclick="cbQueueEmailAdminSampleGeneration(this);">
-                                    <?php echo Text::_('COM_CONTENTBUILDERNG_CREATE_EMAIL_TEMPLATE'); ?>
-                                </button>
-                                <small id="cb_email_admin_create_sample_hint" class="text-success d-none">
-                                    <?php echo Text::_('COM_CONTENTBUILDERNG_INITIALISE_WILL_APPLY_ON_SAVE'); ?>
-                                </small>
-                            </div>
-                        </td>
-                        <td width="20%">
-                        </td>
-                        <td>
-                        </td>
-                    </tr>
-                </table>
-
-                <?php
-                $params = array('syntax' => 'html');
-                echo $this->form->renderField('email_admin_template');
-                ?>
-            </div>
-            <?php
-
-            $title = Text::_('COM_CONTENTBUILDERNG_EMAIL_USERS');
-
-            ?>
-            <div id="email_users" style="cursor:pointer; width: 100%; background-color: var(--bs-body-bg);">
-                <h3>
-                    <?php echo $title; ?>
-                </h3>
-            </div>
-            <div id="email_users_div">
-                <table width="100%" class="table table-striped">
-                    <tr>
-                        <td width="20%">
-                            <label for="email_subject">
-                                <?php echo Text::_('COM_CONTENTBUILDERNG_EMAIL_SUBJECT'); ?>
-                            </label>
-                        </td>
-                        <td>
-                            <input class="form-control form-control-sm w-100" id="email_subject" type="text"
-                                name="jform[email_subject]"
-                                value="<?php echo htmlentities($this->item->email_subject ?? '', ENT_QUOTES, 'UTF-8'); ?>" />
-                        </td>
-                        <td width="20%">
-                            <label for="email_alternative_from">
-                                <?php echo Text::_('COM_CONTENTBUILDERNG_EMAIL_ALTERNATIVE_FROM'); ?>
-                            </label>
-                        </td>
-                        <td>
-                            <input class="form-control form-control-sm w-100" id="email_alternative_from" type="text"
-                                name="jform[email_alternative_from]"
-                                value="<?php echo htmlentities($this->item->email_alternative_from ?? '', ENT_QUOTES, 'UTF-8'); ?>" />
-                        </td>
-                    </tr>
-                    <tr>
-                        <td width="20%">
-                            <label for="email_alternative_fromname">
-                                <?php echo Text::_('COM_CONTENTBUILDERNG_EMAIL_ALTERNATIVE_FROMNAME'); ?>
-                            </label>
-                        </td>
-                        <td>
-                            <input class="form-control form-control-sm w-100" id="email_alternative_fromname" type="text"
-                                name="jform[email_alternative_fromname]"
-                                value="<?php echo htmlentities($this->item->email_alternative_fromname ?? '', ENT_QUOTES, 'UTF-8'); ?>" />
-                        </td>
-                        <td width="20%">
-                            <label for="email_recipients">
-                                <?php echo Text::_('COM_CONTENTBUILDERNG_EMAIL_RECIPIENTS'); ?>
-                            </label>
-                        </td>
-                        <td>
-                            <input class="form-control form-control-sm w-100" id="email_recipients" type="text"
-                                name="jform[email_recipients]"
-                                value="<?php echo htmlentities($this->item->email_recipients ?? '', ENT_QUOTES, 'UTF-8'); ?>" />
-                        </td>
-                    </tr>
-                    <tr>
-                        <td width="20%">
-                            <label for="email_recipients_attach_uploads">
-                                <?php echo Text::_('COM_CONTENTBUILDERNG_EMAIL_ATTACH_UPLOADS'); ?>
-                            </label>
-                        </td>
-                        <td>
-                            <input class="form-control form-control-sm w-100" id="email_recipients_attach_uploads"
-                                type="text" name="jform[email_recipients_attach_uploads]"
-                                value="<?php echo htmlentities($this->item->email_recipients_attach_uploads ?? '', ENT_QUOTES, 'UTF-8'); ?>" />
-                        </td>
-                        <td width="20%">
-                            <label for="email_html">
-                                <?php echo Text::_('COM_CONTENTBUILDERNG_EMAIL_HTML'); ?>
-                            </label>
-                        </td>
-                        <td>
-                            <input type="hidden" name="jform[email_html]" value="0" />
-                            <?php echo $renderCheckbox('jform[email_html]', 'email_html', (bool) $this->item->email_html); ?>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td width="20%">
-                            <label for="email_create_sample_button">
-                                <?php echo Text::_('COM_CONTENTBUILDERNG_CREATE_EMAIL_TEMPLATE'); ?>
-                            </label>
-                        </td>
-                        <td>
-                            <input type="hidden" name="jform[email_create_sample]" id="cb_email_create_sample_flag" value="0" />
-                            <div class="d-flex flex-wrap align-items-center gap-2">
-                                <button type="button" class="btn btn-sm btn-outline-secondary" id="email_create_sample_button"
-                                    onclick="cbQueueEmailUserSampleGeneration(this);">
-                                    <?php echo Text::_('COM_CONTENTBUILDERNG_CREATE_EMAIL_TEMPLATE'); ?>
-                                </button>
-                                <small id="cb_email_create_sample_hint" class="text-success d-none">
-                                    <?php echo Text::_('COM_CONTENTBUILDERNG_INITIALISE_WILL_APPLY_ON_SAVE'); ?>
-                                </small>
-                            </div>
-                        </td>
-                        <td width="20%">
-                        </td>
-                        <td>
-                        </td>
-                    </tr>
-                </table>
-
-                <?php
-                $params = array('syntax' => 'html');
-                echo $this->form->renderField('email_template');
-                ?>
-            </div>
-        <?php
-        }
+        echo LayoutHelper::render(
+            'form.email_tab',
+            [
+                'item' => $this->item,
+                'form' => $this->form,
+                'session' => $session,
+                'renderCheckbox' => $renderCheckbox,
+                'breezingFormsProvidedMessage' => $breezingFormsProvidedMessage,
+            ],
+            $componentLayoutBase
+        );
 
         echo HTMLHelper::_('uitab.endTab');
         echo HTMLHelper::_('uitab.addTab', 'view-pane', 'tab8', Text::_('COM_CONTENTBUILDERNG_PERMISSIONS'));
-
-        // Démarrer les onglets
-        $activePermTab = $session->get('slideStartOffset', 'permtab1', 'com_contentbuilderng');
-        echo HTMLHelper::_('uitab.startTabSet', 'perm-pane', ['active' => $activePermTab]);
-
-
-        // Premier onglet
-        echo HTMLHelper::_('uitab.addTab', 'perm-pane', 'permtab1', Text::_('COM_CONTENTBUILDERNG_PERMISSIONS_FRONTEND'));
         ?>
-        <table class="table table-striped">
-            <tr class="row0">
-                <td width="20%" align="right" class="key">
-                    <label for="own_only_fe">
-                        <span class="editlinktip hasTip"
-                            title="<?php echo Text::_('COM_CONTENTBUILDERNG_PERM_OWN_OWNLY_TIP'); ?>">
-                            <?php echo Text::_('COM_CONTENTBUILDERNG_PERM_OWN_OWNLY'); ?>
-                        </span>:
-                    </label>
-                </td>
-                <td>
-                    <input type="hidden" name="jform[own_only_fe]" value="0" />
-                    <?php echo $renderCheckbox('jform[own_only_fe]', 'own_only_fe', (bool) $this->item->own_only_fe); ?>
-                </td>
-            </tr>
-            <tr class="row0">
-                <td width="20%" align="right" class="key">
-                    <label for="limited_article_options_fe">
-                        <span class="editlinktip hasTip"
-                            title="<?php echo Text::_('COM_CONTENTBUILDERNG_PERM_LIMITED_ARTICLE_OPTIONS_TIP'); ?>">
-                            <?php echo Text::_('COM_CONTENTBUILDERNG_PERM_LIMITED_ARTICLE_OPTIONS'); ?>
-                        </span>:
-                    </label>
-                </td>
-                <td>
-                    <input type="hidden" name="jform[limited_article_options_fe]" value="0" />
-                    <?php echo $renderCheckbox('jform[limited_article_options_fe]', 'limited_article_options_fe', (bool) $this->item->limited_article_options_fe); ?>
-                </td>
-            </tr>
-            <tr class="row0">
-                <td width="20%" align="right" class="key">
-                    <label for="own_fe_view">
-                        <span class="editlinktip hasTip"
-                            title="<?php echo Text::_('COM_CONTENTBUILDERNG_PERM_OWN_TIP'); ?>">
-                            <?php echo Text::_('COM_CONTENTBUILDERNG_PERM_OWN'); ?>
-                        </span>:
-                    </label>
-                </td>
-                <td>
-                    <?php foreach ($permissionColumns as $permissionColumn) : ?>
-                        <?php
-                        $permKey = $permissionColumn['key'];
-                        $permId = 'own_fe_' . $permKey;
-                        $permName = 'jform[own_fe][' . $permKey . ']';
-                        $isChecked = !empty($this->item->config['own_fe'][$permKey]);
-                        ?>
-                        <?php echo $renderCheckbox($permName, $permId, $isChecked); ?>
-                        <label class="form-check-label me-2" for="<?php echo $permId; ?>">
-                            <?php echo Text::_($permissionColumn['label']); ?>
-                        </label>
-                    <?php endforeach; ?>
-                </td>
-            </tr>
-            <tr class="row0">
-                <td width="20%" align="right" class="key">
-                    <label for="show_all_languages_fe">
-                        <span class="editlinktip hasTip"
-                            title="<?php echo Text::_('COM_CONTENTBUILDERNG_PERM_SHOW_ALL_LANGUAGES_TIP'); ?>">
-                            <?php echo Text::_('COM_CONTENTBUILDERNG_PERM_SHOW_ALL_LANGUAGES'); ?>
-                        </span>:
-                    </label>
-                </td>
-                <td>
-                    <input type="hidden" name="jform[show_all_languages_fe]" value="0" />
-                    <?php echo $renderCheckbox('jform[show_all_languages_fe]', 'show_all_languages_fe', (bool) $this->item->show_all_languages_fe); ?>
-                </td>
-            </tr>
-            <?php
-            if ($this->item->edit_by_type) {
-            ?>
-                <tr class="row0">
-                    <td width="20%" align="right" class="key">
-                        <label for="force_login">
-                            <?php echo Text::_('COM_CONTENTBUILDERNG_PERM_FORCE_LOGIN'); ?>
-                        </label>
-                    </td>
-                    <td>
-                        <input type="hidden" name="jform[force_login]" value="0" />
-                        <?php echo $renderCheckbox('jform[force_login]', 'force_login', (bool) $this->item->force_login); ?>
-                    </td>
-                </tr>
-                <tr class="row0">
-                    <td width="20%" align="right" class="key">
-                        <label for="force_url">
-                            <?php echo Text::_('COM_CONTENTBUILDERNG_PERM_FORCE_URL'); ?>
-                        </label>
-                    </td>
-                    <td>
-                        <input style="width: 100%;" id="force_url" name="jform[force_url]" type="text"
-                            value="<?php echo htmlentities($this->item->force_url ?? '', ENT_QUOTES, 'UTF-8'); ?>" />
-                    </td>
-                </tr>
-            <?php
-            }
-            ?>
-        </table>
-        <table class="table table-striped">
-            <thead>
-                <tr>
-                    <th>
-                        <?php echo $permHeaderLabel('COM_CONTENTBUILDERNG_PERM_GROUP', 'COM_CONTENTBUILDERNG_PERM_GROUP_TIP'); ?>
-                    </th>
-                    <?php foreach ($permissionColumns as $permissionColumn) : ?>
-                        <th>
-                            <?php echo $permHeaderLabel($permissionColumn['label'], $permissionColumn['tip']); ?>
-                        </th>
-                    <?php endforeach; ?>
-                </tr>
-            </thead>
-            <tr>
-                <td class="bg-body-tertiary"></td>
-                <?php foreach ($permissionColumns as $permissionColumn) : ?>
-                    <?php
-                    $permKey = $permissionColumn['key'];
-                    $permId = 'perms_fe_select_' . $permKey;
-                    ?>
-                    <td class="bg-body-tertiary">
-                        <?php echo $renderCheckbox('', $permId, false, $permKey, ['onclick' => "contentbuilderng_selectAll(this,'fe')"]); ?>
-                    </td>
-                <?php endforeach; ?>
-            </tr>
-
-            <?php
-            foreach ($this->gmap as $entry) {
-                $k = 0;
-            ?>
-                <tr class="<?php echo "row$k"; ?>">
-                    <td>
-                        <?php echo $entry->text; ?>
-                    </td>
-                    <?php
-                    $groupPermissions = $this->item->config['permissions_fe'][$entry->value] ?? [];
-                    foreach ($permissionColumns as $permissionColumn) {
-                        $permKey = $permissionColumn['key'];
-                        $permName = 'jform[perms_fe][' . $entry->value . '][' . $permKey . ']';
-                        $permId = 'perms_fe_' . $entry->value . '_' . $permKey;
-                        $isChecked = !$this->item->id && !empty($defaultCheckedForNewPermissions[$permKey]);
-
-                        if (!$isChecked) {
-                            $isChecked = !empty($groupPermissions[$permKey]);
-                        }
-
-                        echo '<td>' . $renderCheckbox($permName, $permId, $isChecked) . '</td>';
-                    }
-                    ?>
-                </tr>
-            <?php
-                $k = 1 - $k;
-            }
-            ?>
-        </table>
         <?php
-        echo HTMLHelper::_('uitab.endTab');
-        // The old backend permissions block was removed in favor of Joomla 6 frontend permissions UI.
-
-
-        echo HTMLHelper::_('uitab.addTab', 'perm-pane', 'permtab2', Text::_('COM_CONTENTBUILDERNG_PERMISSIONS_USERS'));
-        ?>
-
-        <table class="table table-striped">
-            <tr class="row0">
-                <td width="20%" align="right" class="key">
-                    <label for="limit_add">
-                        <?php echo Text::_('COM_CONTENTBUILDERNG_PERM_LIMIT_ADD'); ?>:
-                    </label>
-                </td>
-                <td>
-                    <input class="form-control form-control-sm w-100" id="limit_add" name="jform[limit_add]" type="text"
-                        value="<?php echo $this->item->limit_add; ?>" />
-                </td>
-            </tr>
-            <tr class="row0">
-                <td width="20%" align="right" class="key">
-                    <label for="limit_edit">
-                        <?php echo Text::_('COM_CONTENTBUILDERNG_PERM_LIMIT_EDIT'); ?>:
-                    </label>
-                </td>
-                <td>
-                    <input class="form-control form-control-sm w-100" id="limit_edit" name="jform[limit_edit]" type="text"
-                        value="<?php echo $this->item->limit_edit; ?>" />
-                </td>
-            </tr>
-            <tr class="row0">
-                <td width="20%" align="right" class="key">
-                    <label for="verification_required_view">
-                        <?php echo Text::_('COM_CONTENTBUILDERNG_PERM_VIEW'); ?>:
-                    </label>
-                </td>
-                <td>
-                    <input type="hidden" name="jform[verification_required_view]" value="0" />
-                    <?php echo $renderCheckbox('jform[verification_required_view]', 'verification_required_view', (bool) $this->item->verification_required_view); ?><label class="form-check-label" for="verification_required_view">
-                        <?php echo Text::_('COM_CONTENTBUILDERNG_PERM_VERIFICATION_REQUIRED'); ?>
-                    </label>
-                    <input class="form-control form-control-sm" style="width: 50px;" id="verification_days_view"
-                        name="jform[verification_days_view]" type="text"
-                        value="<?php echo $this->item->verification_days_view; ?>" /> <label
-                        for="verification_days_view">
-                        <?php echo Text::_('COM_CONTENTBUILDERNG_PERM_VERIFICATION_DAYS'); ?>
-                    </label>
-                    <input class="form-control form-control-sm" style="width: 300px;" id="verification_url_view"
-                        name="jform[verification_url_view]" type="text"
-                        value="<?php echo htmlentities($this->item->verification_url_view ?? '', ENT_QUOTES, 'UTF-8'); ?>" />
-                    <label for="verification_url_view">
-                        <?php echo Text::_('COM_CONTENTBUILDERNG_PERM_VERIFICATION_URL'); ?>
-                    </label>
-                </td>
-            </tr>
-            <tr class="row0">
-                <td width="20%" align="right" class="key">
-                    <label for="verification_required_new">
-                        <?php echo Text::_('COM_CONTENTBUILDERNG_PERM_NEW'); ?>:
-                    </label>
-                </td>
-                <td>
-                    <input type="hidden" name="jform[verification_required_new]" value="0" />
-                    <?php echo $renderCheckbox('jform[verification_required_new]', 'verification_required_new', (bool) $this->item->verification_required_new); ?><label class="form-check-label" for="verification_required_new">
-                        <?php echo Text::_('COM_CONTENTBUILDERNG_PERM_VERIFICATION_REQUIRED'); ?>
-                    </label>
-                    <input class="form-control form-control-sm" style="width: 50px;" id="verification_days_new"
-                        name="jform[verification_days_new]" type="text"
-                        value="<?php echo $this->item->verification_days_new; ?>" /> <label for="verification_days_new">
-                        <?php echo Text::_('COM_CONTENTBUILDERNG_PERM_VERIFICATION_DAYS'); ?>
-                    </label>
-                    <input class="form-control form-control-sm" style="width: 300px;" id="verification_url_new"
-                        name="jform[verification_url_new]" type="text"
-                        value="<?php echo htmlentities($this->item->verification_url_new ?? '', ENT_QUOTES, 'UTF-8'); ?>" />
-                    <label for="verification_url_new">
-                        <?php echo Text::_('COM_CONTENTBUILDERNG_PERM_VERIFICATION_URL'); ?>
-                    </label>
-                </td>
-            </tr>
-            <tr class="row0">
-                <td width="20%" align="right" class="key">
-                    <label for="verification_required_edit">
-                        <?php echo Text::_('COM_CONTENTBUILDERNG_PERM_EDIT'); ?>:
-                    </label>
-                </td>
-                <td>
-                    <input type="hidden" name="jform[verification_required_edit]" value="0" />
-                    <?php echo $renderCheckbox('jform[verification_required_edit]', 'verification_required_edit', (bool) $this->item->verification_required_edit); ?><label class="form-check-label" for="verification_required_edit">
-                        <?php echo Text::_('COM_CONTENTBUILDERNG_PERM_VERIFICATION_REQUIRED'); ?>
-                    </label>
-                    <input class="form-control form-control-sm" style="width: 50px;" id="verification_days_edit"
-                        name="jform[verification_days_edit]" type="text"
-                        value="<?php echo $this->item->verification_days_edit; ?>" /> <label
-                        for="verification_days_edit">
-                        <?php echo Text::_('COM_CONTENTBUILDERNG_PERM_VERIFICATION_DAYS'); ?>
-                    </label>
-                    <input class="form-control form-control-sm" style="width: 300px;" id="verification_url_new"
-                        name="jform[verification_url_edit]" type="text"
-                        value="<?php echo htmlentities($this->item->verification_url_edit ?? '', ENT_QUOTES, 'UTF-8'); ?>" />
-                    <label for="verification_url_edit">
-                        <?php echo Text::_('COM_CONTENTBUILDERNG_PERM_VERIFICATION_URL'); ?>
-                    </label>
-                </td>
-            </tr>
-            <tr class="row0">
-                <td width="20%" align="right" class="key">
-                    <label>
-                        <?php echo Text::_('COM_CONTENTBUILDERNG_PERM_USERS'); ?>:
-                    </label>
-                </td>
-                <td>
-                    <?php echo '[<a href="index.php?option=com_contentbuilderng&amp;view=users&amp;tmpl=component&amp;form_id=' . $this->item->id . '" title="" data-bs-toggle="modal" data-bs-target="#edit-modal">' . Text::_('COM_CONTENTBUILDERNG_EDIT') . '</a>]'; ?>
-
-                </td>
-            </tr>
-            <?php
-            if (!$this->item->edit_by_type) {
-            ?>
-                <tr class="row0">
-                    <td width="20%" align="right" class="key" valign="top">
-                        <label for="act_as_registration">
-                            <?php echo Text::_('COM_CONTENTBUILDERNG_PERM_ACT_AS_REGISTRATION'); ?>:
-                        </label>
-                    </td>
-                    <td>
-                        <input type="hidden" name="jform[act_as_registration]" value="0" />
-                        <?php echo $renderCheckbox('jform[act_as_registration]', 'act_as_registration', (bool) $this->item->act_as_registration); ?>
-                        <br />
-                        <br />
-                        <select class="form-select-sm" name="jform[registration_name_field]" id="registration_name_field"
-                            style="max-width: 200px;">
-                            <option value=""> -
-                                <?php echo Text::_('COM_CONTENTBUILDERNG_PERM_ACT_AS_REGISTRATION_NAME_FIELD'); ?> -
-                            </option>
-                            <?php
-                            foreach ($this->elements as $the_element) {
-                            ?>
-                                <option value="<?php echo $the_element->reference_id; ?>" <?php echo $this->item->registration_name_field == $the_element->reference_id ? ' selected="selected"' : ''; ?>>
-                                    <?php echo htmlentities($the_element->label ?? '', ENT_QUOTES, 'UTF-8'); ?>
-                                    </value>
-                                <?php
-                            }
-                                ?>
-                        </select>
-                        <br />
-                        <br />
-                        <select class="form-select-sm" name="jform[registration_username_field]" id="registration_username_field"
-                            style="max-width: 200px;">
-                            <option value=""> -
-                                <?php echo Text::_('COM_CONTENTBUILDERNG_PERM_ACT_AS_REGISTRATION_USERNAME_FIELD'); ?> -
-                            </option>
-                            <?php
-                            foreach ($this->elements as $the_element) {
-                            ?>
-                                <option value="<?php echo $the_element->reference_id; ?>" <?php echo $this->item->registration_username_field == $the_element->reference_id ? ' selected="selected"' : ''; ?>>
-                                    <?php echo htmlentities($the_element->label ?? '', ENT_QUOTES, 'UTF-8'); ?>
-                                    </value>
-                                <?php
-                            }
-                                ?>
-                        </select>
-                        <br />
-                        <br />
-                        <select class="form-select-sm" name="jform[registration_email_field]" id="registration_email_field"
-                            style="max-width: 200px;">
-                            <option value=""> -
-                                <?php echo Text::_('COM_CONTENTBUILDERNG_PERM_ACT_AS_REGISTRATION_EMAIL_FIELD'); ?> -
-                            </option>
-                            <?php
-                            foreach ($this->elements as $the_element) {
-                            ?>
-                                <option value="<?php echo $the_element->reference_id; ?>" <?php echo $this->item->registration_email_field == $the_element->reference_id ? ' selected="selected"' : ''; ?>>
-                                    <?php echo htmlentities($the_element->label ?? '', ENT_QUOTES, 'UTF-8'); ?>
-                                    </value>
-                                <?php
-                            }
-                                ?>
-                        </select>
-                        <br />
-                        <br />
-                        <select class="form-select-sm" name="jform[registration_email_repeat_field]"
-                            id="registration_email_repeat_field" style="max-width: 200px;">
-                            <option value=""> -
-                                <?php echo Text::_('COM_CONTENTBUILDERNG_PERM_ACT_AS_REGISTRATION_EMAIL_REPEAT_FIELD'); ?> -
-                            </option>
-                            <?php
-                            foreach ($this->elements as $the_element) {
-                            ?>
-                                <option value="<?php echo $the_element->reference_id; ?>" <?php echo $this->item->registration_email_repeat_field == $the_element->reference_id ? ' selected="selected"' : ''; ?>>
-                                    <?php echo htmlentities($the_element->label ?? '', ENT_QUOTES, 'UTF-8'); ?>
-                                    </value>
-                                <?php
-                            }
-                                ?>
-                        </select>
-                        <br />
-                        <br />
-                        <select class="form-select-sm" name="jform[registration_password_field]" id="registration_password_field"
-                            style="max-width: 200px;">
-                            <option value=""> -
-                                <?php echo Text::_('COM_CONTENTBUILDERNG_PERM_ACT_AS_REGISTRATION_PASSWORD_FIELD'); ?> -
-                            </option>
-                            <?php
-                            foreach ($this->elements as $the_element) {
-                            ?>
-                                <option value="<?php echo $the_element->reference_id; ?>" <?php echo $this->item->registration_password_field == $the_element->reference_id ? ' selected="selected"' : ''; ?>>
-                                    <?php echo htmlentities($the_element->label ?? '', ENT_QUOTES, 'UTF-8'); ?>
-                                    </value>
-                                <?php
-                            }
-                                ?>
-                        </select>
-                        <br />
-                        <br />
-                        <select class="form-select-sm" name="jform[registration_password_repeat_field]"
-                            id="registration_password_repeat_field" style="max-width: 200px;">
-                            <option value=""> -
-                                <?php echo Text::_('COM_CONTENTBUILDERNG_PERM_ACT_AS_REGISTRATION_PASSWORD_REPEAT_FIELD'); ?>
-                                -
-                            </option>
-                            <?php
-                            foreach ($this->elements as $the_element) {
-                            ?>
-                                <option value="<?php echo $the_element->reference_id; ?>" <?php echo $this->item->registration_password_repeat_field == $the_element->reference_id ? ' selected="selected"' : ''; ?>>
-                                    <?php echo htmlentities($the_element->label ?? '', ENT_QUOTES, 'UTF-8'); ?>
-                                    </value>
-                                <?php
-                            }
-                                ?>
-                        </select>
-                        <br />
-                        <br />
-                        <label for="force_login">
-                            <?php echo Text::_('COM_CONTENTBUILDERNG_PERM_FORCE_LOGIN'); ?>
-                        </label>
-                        <br />
-                        <input type="hidden" name="jform[force_login]" value="0" />
-                        <?php echo $renderCheckbox('jform[force_login]', 'force_login', (bool) $this->item->force_login); ?>
-                        <br />
-                        <br />
-                        <label for="force_url">
-                            <?php echo Text::_('COM_CONTENTBUILDERNG_PERM_FORCE_URL'); ?>
-                        </label>
-                        <br />
-                        <input class="form-control form-control-sm" id="force_url" name="jform[force_url]" type="text"
-                            value="<?php echo htmlentities($this->item->force_url ?? '', ENT_QUOTES, 'UTF-8'); ?>" />
-                        <br />
-                        <br />
-                        <label for="registration_bypass_plugin">
-                            <?php echo Text::_('COM_CONTENTBUILDERNG_PERM_REGISTRATION_BYPASS_PLUGIN'); ?>
-                        </label>
-                        <br />
-                        <select class="form-select-sm" name="jform[registration_bypass_plugin]" id="registration_bypass_plugin">
-                            <option value=""> -
-                                <?php echo Text::_('COM_CONTENTBUILDERNG_NONE'); ?> -
-                            </option>
-                            <?php
-                            foreach ($this->verification_plugins as $registration_bypass_plugin) {
-                            ?>
-                                <option value="<?php echo $registration_bypass_plugin; ?>" <?php echo $registration_bypass_plugin == $this->item->registration_bypass_plugin ? ' selected="selected"' : ''; ?>>
-                                    <?php echo $registration_bypass_plugin; ?>
-                                </option>
-                            <?php
-                            }
-                            ?>
-                        </select>
-                        <br />
-                        <br />
-                        <label for="registration_bypass_verification_name">
-                            <?php echo Text::_('COM_CONTENTBUILDERNG_PERM_REGISTRATION_BYPASS_VERIFICATION_NAME'); ?>
-                        </label>
-                        <br />
-                        <input class="form-control form-control-sm" type="text" name="jform[registration_bypass_verification_name]"
-                            id="registration_bypass_verification_name"
-                            value="<?php echo htmlentities($this->item->registration_bypass_verification_name ?? '', ENT_QUOTES, 'UTF-8'); ?>" />
-                        <br />
-                        <br />
-                        <label for="registration_bypass_verify_view">
-                            <?php echo Text::_('COM_CONTENTBUILDERNG_PERM_REGISTRATION_BYPASS_VERIFICATION_VIEW'); ?>
-                        </label>
-                        <br />
-                        <input class="form-control form-control-sm" type="text" name="jform[registration_bypass_verify_view]"
-                            id="registration_bypass_verify_view"
-                            value="<?php echo htmlentities($this->item->registration_bypass_verify_view ?? '', ENT_QUOTES, 'UTF-8'); ?>" />
-
-                        <br />
-                        <br />
-                        <label for="registration_bypass_plugin_params">
-                            <?php echo Text::_('COM_CONTENTBUILDERNG_PERM_REGISTRATION_BYPASS_PLUGIN_PARAMS'); ?>
-                        </label>
-                        <br />
-                        <textarea class="form-control form-control-sm" style="width: 100%;height: 80px;"
-                            name="jform[registration_bypass_plugin_params]"
-                            id="registration_bypass_plugin_params"><?php echo htmlentities($this->item->registration_bypass_plugin_params ?? '', ENT_QUOTES, 'UTF-8'); ?></textarea>
-                    </td>
-                </tr>
-            <?php
-            } else {
-            ?>
-                <input type="hidden" name="jform[act_as_registration]"
-                    value="<?php echo htmlentities($this->item->act_as_registration ?? '', ENT_QUOTES, 'UTF-8'); ?>" />
-                <input type="hidden" name="jform[registration_name_field]"
-                    value="<?php echo htmlentities($this->item->registration_name_field ?? '', ENT_QUOTES, 'UTF-8'); ?>" />
-                <input type="hidden" name="jform[registration_username_field]"
-                    value="<?php echo htmlentities($this->item->registration_username_field ?? '', ENT_QUOTES, 'UTF-8'); ?>" />
-                <input type="hidden" name="jform[registration_email_field]"
-                    value="<?php echo htmlentities($this->item->registration_email_field ?? '', ENT_QUOTES, 'UTF-8'); ?>" />
-                <input type="hidden" name="jform[registration_email_repeat_field]"
-                    value="<?php echo htmlentities($this->item->registration_email_repeat_field ?? '', ENT_QUOTES, 'UTF-8'); ?>" />
-                <input type="hidden" name="jform[registration_password_field]"
-                    value="<?php echo htmlentities($this->item->registration_password_field ?? '', ENT_QUOTES, 'UTF-8'); ?>" />
-                <input type="hidden" name="jform[registration_password_repeat_field]"
-                    value="<?php echo htmlentities($this->item->registration_password_repeat_field ?? '', ENT_QUOTES, 'UTF-8'); ?>" />
-                <input type="hidden" name="jform[registration_bypass_plugin]"
-                    value="<?php echo htmlentities($this->item->registration_bypass_plugin ?? '', ENT_QUOTES, 'UTF-8'); ?>" />
-                <input type="hidden" name="jform[registration_bypass_verification_name]"
-                    value="<?php echo htmlentities($this->item->registration_bypass_verification_name ?? '', ENT_QUOTES, 'UTF-8'); ?>" />
-                <input type="hidden" name="jform[registration_bypass_verify_view]"
-                    value="<?php echo htmlentities($this->item->registration_bypass_verify_view ?? '', ENT_QUOTES, 'UTF-8'); ?>" />
-                <input type="hidden" name="jform[registration_bypass_plugin_params]"
-                    value="<?php echo htmlentities($this->item->registration_bypass_plugin_params ?? '', ENT_QUOTES, 'UTF-8'); ?>" />
-            <?php
-            }
-            ?>
-        </table>
-
-        <?php
-        echo HTMLHelper::_('uitab.endTab'); // ✅ ferme permtab2
-        echo HTMLHelper::_('uitab.endTabSet'); // ✅ ferme perm-pane
+        echo LayoutHelper::render(
+            'form.permissions_tab',
+            [
+                'item' => $this->item,
+                'session' => $session,
+                'gmap' => $this->gmap,
+                'elements' => $this->elements,
+                'verificationPlugins' => $this->verification_plugins,
+                'permissionColumns' => $permissionColumns,
+                'defaultCheckedForNewPermissions' => $defaultCheckedForNewPermissions,
+                'renderCheckbox' => $renderCheckbox,
+                'permHeaderLabel' => $permHeaderLabel,
+            ],
+            $componentLayoutBase
+        );
 
         echo HTMLHelper::_('uitab.endTab');     // ferme tab8 (Permissions)
         echo HTMLHelper::_('uitab.endTabSet');  // ferme view-pane

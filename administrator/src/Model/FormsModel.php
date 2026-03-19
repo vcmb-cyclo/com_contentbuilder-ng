@@ -29,6 +29,7 @@ use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
 use Joomla\Input\Input;
 use CB\Component\Contentbuilderng\Administrator\Helper\FormSourceFactory;
 use CB\Component\Contentbuilderng\Administrator\Extension\ContentbuilderngComponent;
+use CB\Component\Contentbuilderng\Administrator\Model\FormModel;
 
 class FormsModel extends ListModel
 {
@@ -273,9 +274,10 @@ class FormsModel extends ListModel
         }
         $factory = $component->getMVCFactory();
 
+        /** @var FormModel|null $formModel */
         $formModel = $factory->createModel('form', 'Administrator', ['ignore_request' => true]);
 
-        if (!$formModel) {
+        if (!$formModel instanceof FormModel) {
             return false;
         }
 
