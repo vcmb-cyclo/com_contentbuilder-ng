@@ -16,6 +16,7 @@ use Joomla\CMS\Language\Text;
 use Joomla\CMS\Uri\Uri;
 use Joomla\CMS\Router\Route;
 use Joomla\CMS\HTML\HTMLHelper;
+use Joomla\CMS\Factory;
 
 $versionValue = (string) ($this->componentVersion ?: Text::_('COM_CONTENTBUILDERNG_NOT_AVAILABLE'));
 $creationDateValue = (string) ($this->componentCreationDate ?: Text::_('COM_CONTENTBUILDERNG_NOT_AVAILABLE'));
@@ -42,11 +43,15 @@ $duplicateIndexes = (array) ($auditReport['duplicate_indexes'] ?? []);
 $historicalTables = (array) ($auditReport['historical_tables'] ?? []);
 $historicalMenuEntries = (array) ($auditReport['historical_menu_entries'] ?? []);
 $tableEncodingIssues = (array) ($auditReport['table_encoding_issues'] ?? []);
+$packedDataAudit = is_array($auditReport['packed_data_audit'] ?? null) ? $auditReport['packed_data_audit'] : [];
 $columnEncodingIssues = (array) ($auditReport['column_encoding_issues'] ?? []);
 $mixedTableCollations = (array) ($auditReport['mixed_table_collations'] ?? []);
 $missingAuditColumns = (array) ($auditReport['missing_audit_columns'] ?? []);
 $pluginExtensionDuplicates = (array) ($auditReport['plugin_extension_duplicates'] ?? []);
 $bfFieldSyncIssues = (array) ($auditReport['bf_view_field_sync_issues'] ?? []);
+$menuViewIssues = (array) ($auditReport['menu_view_issues'] ?? []);
+$frontendPermissionIssues = (array) ($auditReport['frontend_permission_issues'] ?? []);
+$elementReferenceIssues = (array) ($auditReport['element_reference_issues'] ?? []);
 $missingAuditColumnsTotal = (int) ($auditSummary['missing_audit_columns_total'] ?? 0);
 $missingAuditColumnsTableCount = (int) ($auditSummary['missing_audit_column_tables'] ?? count($missingAuditColumns));
 $pluginDuplicateGroups = (int) ($auditSummary['plugin_duplicate_groups'] ?? count($pluginExtensionDuplicates));
@@ -100,6 +105,18 @@ $cbTableSummary = (array) ($cbTableStats['summary'] ?? []);
 $cbTableDetails = (array) ($cbTableStats['tables'] ?? []);
 $cbMissingNgTables = (array) ($cbTableStats['missing_ng_tables'] ?? []);
 $auditErrors = (array) ($auditReport['errors'] ?? []);
+$auditGeneratedAtDisplay = (string) ($auditReport['generated_at'] ?? Text::_('COM_CONTENTBUILDERNG_NOT_AVAILABLE'));
+
+if (!empty($auditReport['generated_at'])) {
+    try {
+        $userTz = Factory::getApplication()->getIdentity()->getParam('timezone', '');
+        $configTz = Factory::getApplication()->get('offset', 'UTC');
+        $displayTz = new \DateTimeZone($userTz !== '' ? $userTz : $configTz);
+        $auditGeneratedAt = new \DateTimeImmutable((string) $auditReport['generated_at'], new \DateTimeZone('UTC'));
+        $auditGeneratedAtDisplay = $auditGeneratedAt->setTimezone($displayTz)->format('Y-m-d H:i:s');
+    } catch (\Throwable) {
+    }
+}
 $auditWarnings = [];
 foreach ($auditErrors as $auditError) {
     $warningText = trim((string) $auditError);
@@ -163,26 +180,56 @@ $repairWorkflowCurrentStep = $repairWorkflowSteps[$repairWorkflowCurrentIndex] ?
 $repairWorkflowCurrentStepId = is_array($repairWorkflowCurrentStep) ? (string) ($repairWorkflowCurrentStep['id'] ?? '') : '';
 $repairWorkflowCurrentStatus = is_array($repairWorkflowCurrentStep) ? (string) ($repairWorkflowCurrentStep['status'] ?? 'pending') : 'pending';
 $repairWorkflowCurrentResult = is_array($repairWorkflowCurrentStep) ? (array) ($repairWorkflowCurrentStep['result'] ?? []) : [];
-$repairWorkflowIsActive = !empty($repairWorkflow) && (bool) ($repairWorkflow['active'] ?? false);
+$repairWorkflowRequested = isset($_GET['repair_workflow']) && (int) $_GET['repair_workflow'] === 1;
+$repairWorkflowIsActive = $repairWorkflowRequested && !empty($repairWorkflow) && (bool) ($repairWorkflow['active'] ?? false);
 $repairWorkflowIsCompleted = (bool) ($repairWorkflow['completed'] ?? false);
 $repairWorkflowHasNext = $repairWorkflowIsActive && $repairWorkflowCurrentIndex < count($repairWorkflowSteps) - 1;
 $repairWorkflowDisplayCurrentIndex = $repairWorkflowCurrentIndex;
 if ($repairWorkflowCurrentStatus !== 'pending' && $repairWorkflowHasNext) {
     $repairWorkflowDisplayCurrentIndex++;
 }
+$repairWorkflowShowCurrentPanel = true;
+if (
+    $repairWorkflowIsCompleted
+    && is_array($repairWorkflowCurrentStep)
+    && in_array($repairWorkflowCurrentStatus, ['done', 'skipped'], true)
+) {
+    $currentResultLines = (array) ($repairWorkflowCurrentResult['lines'] ?? []);
+    $currentResultSummary = trim((string) ($repairWorkflowCurrentResult['summary'] ?? ''));
+
+    if ($currentResultLines === [] || $currentResultSummary !== '') {
+        $repairWorkflowShowCurrentPanel = false;
+    }
+}
 $repairWorkflowStepLabels = [
-    'table_encoding' => Text::_('COM_CONTENTBUILDERNG_DB_REPAIR_STEP_TABLE_ENCODING_TITLE'),
+    'duplicate_indexes' => Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_DUPLICATE_GROUPS'),
+    'historical_tables' => Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_HISTORICAL_TABLES'),
+    'historical_menu_entries' => Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_HISTORICAL_MENU_ENTRIES'),
+    'table_encoding' => Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_TABLE_ENCODING_ISSUES')
+        . ' / '
+        . Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_COLUMN_ENCODING_ISSUES')
+        . ' / '
+        . Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_MIXED_COLLATIONS'),
     'packed_data' => Text::_('COM_CONTENTBUILDERNG_DB_REPAIR_STEP_PACKED_DATA_TITLE'),
-    'audit_columns' => Text::_('COM_CONTENTBUILDERNG_DB_REPAIR_STEP_AUDIT_COLUMNS_TITLE'),
-    'plugin_duplicates' => Text::_('COM_CONTENTBUILDERNG_DB_REPAIR_STEP_PLUGIN_DUPLICATES_TITLE'),
-    'historical_menu_entries' => Text::_('COM_CONTENTBUILDERNG_DB_REPAIR_STEP_HISTORICAL_MENU_TITLE'),
+    'audit_columns' => Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_MISSING_AUDIT_COLUMNS'),
+    'plugin_duplicates' => Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_PLUGIN_DUPLICATES'),
+    'bf_field_sync' => Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_BF_FIELD_SYNC'),
+    'menu_view_consistency' => Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_MENU_VIEW_CONSISTENCY'),
+    'frontend_permission_consistency' => Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_FRONTEND_PERMISSION_CONSISTENCY'),
+    'element_reference_consistency' => Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_ELEMENT_REFERENCE_CONSISTENCY'),
 ];
 $repairWorkflowStepDescriptions = [
+    'duplicate_indexes' => Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_DUPLICATE_GROUPS'),
+    'historical_tables' => Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_HISTORICAL_TABLES'),
     'table_encoding' => Text::_('COM_CONTENTBUILDERNG_DB_REPAIR_STEP_TABLE_ENCODING_DESC'),
     'packed_data' => Text::_('COM_CONTENTBUILDERNG_DB_REPAIR_STEP_PACKED_DATA_DESC'),
     'audit_columns' => Text::_('COM_CONTENTBUILDERNG_DB_REPAIR_STEP_AUDIT_COLUMNS_DESC'),
     'plugin_duplicates' => Text::_('COM_CONTENTBUILDERNG_DB_REPAIR_STEP_PLUGIN_DUPLICATES_DESC'),
     'historical_menu_entries' => Text::_('COM_CONTENTBUILDERNG_DB_REPAIR_STEP_HISTORICAL_MENU_DESC'),
+    'bf_field_sync' => Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_BF_FIELD_SYNC'),
+    'menu_view_consistency' => Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_MENU_VIEW_CONSISTENCY'),
+    'frontend_permission_consistency' => Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_FRONTEND_PERMISSION_CONSISTENCY'),
+    'element_reference_consistency' => Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_ELEMENT_REFERENCE_CONSISTENCY'),
 ];
 $phpLibrariesCount = count((array) $this->phpLibraries);
 $javascriptLibrariesCount = count((array) $this->javascriptLibraries);
@@ -195,11 +242,15 @@ $hasDuplicateIndexDropIssues = (int) ($auditSummary['duplicate_indexes_to_drop']
 $hasLegacyTableIssues = !empty($historicalTables);
 $hasLegacyMenuIssues = $historicalMenuEntriesCount > 0;
 $hasTableEncodingIssues = !empty($tableEncodingIssues);
+$hasPackedDataIssues = (int) ($auditSummary['packed_data_candidates'] ?? 0) > 0;
 $hasColumnEncodingIssues = !empty($columnEncodingIssues);
 $hasMixedCollationIssues = count($mixedTableCollations) > 1;
 $hasMissingAuditColumnIssues = $missingAuditColumnsTableCount > 0 || $missingAuditColumnsTotal > 0;
 $hasPluginDuplicateIssues = $pluginDuplicateGroups > 0 || $pluginDuplicateRowsToRemove > 0;
 $hasBfFieldSyncIssues = $bfFieldSyncViews > 0 || $bfFieldSyncMissingTotal > 0 || $bfFieldSyncOrphanTotal > 0;
+$hasMenuViewIssues = (int) ($auditSummary['menu_view_issues'] ?? count($menuViewIssues)) > 0;
+$hasFrontendPermissionIssues = (int) ($auditSummary['frontend_permission_issues'] ?? count($frontendPermissionIssues)) > 0;
+$hasElementReferenceIssues = (int) ($auditSummary['element_reference_issues'] ?? count($elementReferenceIssues)) > 0;
 $formatBytes = static function (int $bytes): string {
     if ($bytes <= 0) {
         return '0 B';
@@ -244,6 +295,18 @@ $formatAuditIssueList = static function (array $values, int $limit = 8): string 
     }
 
     return $rendered;
+};
+$renderAuditTitle = static function (string $label, bool $hasIssues): string {
+    $safeLabel = htmlspecialchars($label, ENT_QUOTES, 'UTF-8');
+
+    if ($hasIssues) {
+        return '<span class="cb-audit-section-title"><span class="cb-audit-warning-icon icon-warning" aria-hidden="true"></span><span>' . $safeLabel . '</span></span>';
+    }
+
+    return $safeLabel;
+};
+$renderNumberedAuditTitle = static function (int $number, string $label, bool $hasIssues) use ($renderAuditTitle): string {
+    return $renderAuditTitle($number . '. ' . $label, $hasIssues);
 };
 
 ?>
@@ -434,24 +497,27 @@ $formatAuditIssueList = static function (array $values, int $limit = 8): string 
         color: var(--bs-success-text-emphasis);
     }
     .cb-audit-ok-alert::before {
-        content: "\2713";
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        width: 1.2rem;
-        height: 1.2rem;
-        border-radius: 50%;
-        background-color: var(--bs-success);
-        color: var(--bs-white);
+        display: none;
         font-weight: 700;
         font-size: .78rem;
         line-height: 1;
         flex: 0 0 auto;
     }
     .cb-audit-warning-alert {
+        position: relative;
+        padding-left: 2.6rem;
         border-color: var(--bs-warning-border-subtle);
         background-color: var(--bs-warning-bg-subtle);
         color: var(--bs-warning-text-emphasis);
+    }
+    .cb-audit-warning-alert::before {
+        content: "\26A0";
+        position: absolute;
+        top: .9rem;
+        left: 1rem;
+        color: #fd7e14;
+        font-size: 1rem;
+        line-height: 1;
     }
     .cb-audit-warning-alert .cb-audit-warning-title {
         font-weight: 600;
@@ -502,6 +568,21 @@ $formatAuditIssueList = static function (array $values, int $limit = 8): string 
         max-height: 240px;
         overflow-y: auto;
     }
+    .cb-audit-section-title {
+        display: inline-flex;
+        align-items: center;
+        gap: .45rem;
+    }
+    .cb-audit-ok-check {
+        color: #198754;
+        font-size: .95rem;
+        line-height: 1;
+    }
+    .cb-audit-warning-icon {
+        color: #fd7e14;
+        font-size: .95rem;
+        line-height: 1;
+    }
     .cb-repair-workflow-steps {
         display: grid;
         gap: .65rem;
@@ -520,6 +601,7 @@ $formatAuditIssueList = static function (array $values, int $limit = 8): string 
     .cb-repair-workflow-step.is-done,
     .cb-repair-workflow-step.is-skipped {
         border-color: rgba(25, 135, 84, .22);
+        background: linear-gradient(135deg, rgba(209, 231, 221, .72), rgba(248, 255, 251, .96));
     }
     .cb-repair-workflow-step-head {
         display: flex;
@@ -528,14 +610,25 @@ $formatAuditIssueList = static function (array $values, int $limit = 8): string 
         align-items: center;
     }
     .cb-repair-workflow-step-title {
+        display: inline-flex;
+        align-items: center;
+        gap: .45rem;
         margin: 0;
         font-weight: 600;
+    }
+    .cb-repair-workflow-step-check {
+        color: #198754;
+        font-size: .95rem;
+        line-height: 1;
     }
     .cb-repair-workflow-step-desc {
         margin: .4rem 0 0;
         color: var(--bs-secondary-color);
     }
     .cb-repair-workflow-status {
+        display: inline-flex;
+        align-items: center;
+        gap: .35rem;
         font-size: .75rem;
         font-weight: 700;
         text-transform: uppercase;
@@ -566,6 +659,53 @@ $formatAuditIssueList = static function (array $values, int $limit = 8): string 
         overflow: auto;
         white-space: pre-wrap;
         background: var(--bs-tertiary-bg);
+    }
+    .cb-repair-workflow-result {
+        border: 1px solid rgba(0, 0, 0, .08);
+        border-radius: .85rem;
+        padding: 1rem;
+        background: var(--bs-tertiary-bg);
+    }
+    .cb-repair-workflow-result.is-success {
+        border-color: rgba(25, 135, 84, .22);
+        background: linear-gradient(135deg, rgba(209, 231, 221, .72), rgba(248, 255, 251, .96));
+    }
+    .cb-repair-workflow-result.is-warning {
+        border-color: rgba(255, 193, 7, .28);
+        background: linear-gradient(135deg, rgba(255, 243, 205, .8), rgba(255, 252, 240, .97));
+    }
+    .cb-repair-workflow-result.is-danger {
+        border-color: rgba(220, 53, 69, .22);
+        background: linear-gradient(135deg, rgba(248, 215, 218, .72), rgba(255, 247, 248, .97));
+    }
+    .cb-repair-workflow-result-title {
+        display: inline-flex;
+        align-items: center;
+        gap: .45rem;
+    }
+    .cb-repair-workflow-summary {
+        display: inline-flex;
+        align-items: center;
+        gap: .55rem;
+        border: 1px solid rgba(25, 135, 84, .22);
+        border-radius: .85rem;
+        padding: .85rem 1rem;
+        background: linear-gradient(135deg, rgba(209, 231, 221, .72), rgba(248, 255, 251, .96));
+        color: #146c43;
+        font-weight: 600;
+    }
+    .cb-repair-workflow-summary .icon-check-circle {
+        font-size: 1rem;
+    }
+    .cb-repair-workflow-summary-section {
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid rgba(0, 0, 0, .08);
+    }
+    .cb-repair-workflow-summary-title {
+        margin: 0 0 .75rem;
+        font-size: .95rem;
+        font-weight: 600;
     }
 </style>
 <form
@@ -647,7 +787,7 @@ $formatAuditIssueList = static function (array $values, int $limit = 8): string 
                     $stepClasses = ['cb-repair-workflow-step'];
                     $statusClasses = ['cb-repair-workflow-status'];
 
-                    if ($stepIsCurrent) {
+                    if ($stepIsCurrent && $stepStatus === 'pending') {
                         $stepClasses[] = 'is-current';
                         $statusClasses[] = 'is-current';
                     } elseif ($stepStatus === 'done' || $stepStatus === 'skipped') {
@@ -656,7 +796,10 @@ $formatAuditIssueList = static function (array $values, int $limit = 8): string 
                     }
 
                     $stepLabel = $repairWorkflowStepLabels[$stepId] ?? $stepId;
-                    $stepDescription = $repairWorkflowStepDescriptions[$stepId] ?? '';
+                    $stepPrecheck = (array) ($repairWorkflowStep['precheck'] ?? []);
+                    $stepResult = (array) ($repairWorkflowStep['result'] ?? []);
+                    $stepResultLevel = (string) ($stepResult['level'] ?? 'message');
+                    $stepDescription = trim((string) ($stepPrecheck['description'] ?? ($repairWorkflowStepDescriptions[$stepId] ?? '')));
                     $statusLabelKey = match ($stepStatus) {
                         'done' => 'COM_CONTENTBUILDERNG_DB_REPAIR_WORKFLOW_STATUS_DONE',
                         'skipped' => 'COM_CONTENTBUILDERNG_DB_REPAIR_WORKFLOW_STATUS_SKIPPED',
@@ -664,13 +807,25 @@ $formatAuditIssueList = static function (array $values, int $limit = 8): string 
                             ? 'COM_CONTENTBUILDERNG_DB_REPAIR_WORKFLOW_STATUS_CURRENT'
                             : 'COM_CONTENTBUILDERNG_DB_REPAIR_WORKFLOW_STATUS_PENDING',
                     };
+                    $statusIconClass = match (true) {
+                        ($stepStatus === 'done' || $stepStatus === 'skipped') && !in_array($stepResultLevel, ['warning', 'error', 'danger'], true) => 'icon-check-circle',
+                        default => '',
+                    };
+                    $showStepCheck = ($stepStatus === 'done' || $stepStatus === 'skipped')
+                        && !in_array($stepResultLevel, ['warning', 'error', 'danger'], true);
                     ?>
                     <div class="<?php echo implode(' ', $stepClasses); ?>">
                         <div class="cb-repair-workflow-step-head">
                             <p class="cb-repair-workflow-step-title">
+                                <?php if ($showStepCheck) : ?>
+                                    <span class="cb-repair-workflow-step-check icon-check-circle" aria-hidden="true"></span>
+                                <?php endif; ?>
                                 <?php echo ($stepIndex + 1) . '. ' . htmlspecialchars($stepLabel, ENT_QUOTES, 'UTF-8'); ?>
                             </p>
                             <span class="<?php echo implode(' ', $statusClasses); ?>">
+                                <?php if ($statusIconClass !== '') : ?>
+                                    <span class="<?php echo htmlspecialchars($statusIconClass, ENT_QUOTES, 'UTF-8'); ?>" aria-hidden="true"></span>
+                                <?php endif; ?>
                                 <?php echo Text::_($statusLabelKey); ?>
                             </span>
                         </div>
@@ -685,12 +840,12 @@ $formatAuditIssueList = static function (array $values, int $limit = 8): string 
                                 <button
                                     type="submit"
                                     class="btn btn-success"
-                                    onclick="document.getElementById('repair_step').value=<?php echo json_encode($stepId, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>;document.getElementById('repair_action').value='apply';document.getElementById('adminForm').task.value='about.executeRepairWorkflowStep';"
+                                    onclick="var f=this.form;if(f){f.elements['repair_step'].value=<?php echo htmlspecialchars(json_encode($stepId, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES), ENT_QUOTES, 'UTF-8'); ?>;f.elements['repair_action'].value='apply';f.elements['task'].value='about.executeRepairWorkflowStep';}"
                                 ><?php echo Text::_('COM_CONTENTBUILDERNG_DB_REPAIR_WORKFLOW_APPLY'); ?></button>
                                 <button
                                     type="submit"
                                     class="btn btn-outline-secondary"
-                                    onclick="document.getElementById('repair_step').value=<?php echo json_encode($stepId, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>;document.getElementById('repair_action').value='skip';document.getElementById('adminForm').task.value='about.executeRepairWorkflowStep';"
+                                    onclick="var f=this.form;if(f){f.elements['repair_step'].value=<?php echo htmlspecialchars(json_encode($stepId, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES), ENT_QUOTES, 'UTF-8'); ?>;f.elements['repair_action'].value='skip';f.elements['task'].value='about.executeRepairWorkflowStep';}"
                                 ><?php echo Text::_('COM_CONTENTBUILDERNG_DB_REPAIR_WORKFLOW_SKIP'); ?></button>
                             </div>
                         <?php endif; ?>
@@ -698,10 +853,11 @@ $formatAuditIssueList = static function (array $values, int $limit = 8): string 
                 <?php endforeach; ?>
             </div>
 
-            <?php if (is_array($repairWorkflowCurrentStep)) : ?>
+            <?php if ($repairWorkflowShowCurrentPanel && is_array($repairWorkflowCurrentStep)) : ?>
                 <?php
                 $currentStepTitle = $repairWorkflowStepLabels[$repairWorkflowCurrentStepId] ?? $repairWorkflowCurrentStepId;
-                $currentStepDescription = $repairWorkflowStepDescriptions[$repairWorkflowCurrentStepId] ?? '';
+                $currentStepPrecheck = is_array($repairWorkflowCurrentStep) ? (array) ($repairWorkflowCurrentStep['precheck'] ?? []) : [];
+                $currentStepDescription = trim((string) ($currentStepPrecheck['description'] ?? ($repairWorkflowStepDescriptions[$repairWorkflowCurrentStepId] ?? '')));
                 $currentStepLines = (array) ($repairWorkflowCurrentResult['lines'] ?? []);
                 $currentStepSummary = trim((string) ($repairWorkflowCurrentResult['summary'] ?? ''));
                 $currentStepLevel = (string) ($repairWorkflowCurrentResult['level'] ?? 'info');
@@ -711,9 +867,23 @@ $formatAuditIssueList = static function (array $values, int $limit = 8): string 
                     'message' => 'success',
                     default => 'info',
                 };
+                $currentStepPanelClasses = ['cb-repair-workflow-result'];
+                if ($repairWorkflowCurrentStatus === 'skipped' || $currentStepAlertClass === 'success') {
+                    $currentStepPanelClasses[] = 'is-success';
+                } elseif ($currentStepAlertClass === 'warning') {
+                    $currentStepPanelClasses[] = 'is-warning';
+                } elseif ($currentStepAlertClass === 'danger') {
+                    $currentStepPanelClasses[] = 'is-danger';
+                }
+                $currentStepShowCheck = $repairWorkflowCurrentStatus === 'skipped' || $currentStepAlertClass === 'success';
                 ?>
-                <div class="border rounded p-3 bg-body-tertiary">
-                    <h4 class="h6 mb-2"><?php echo htmlspecialchars($currentStepTitle, ENT_QUOTES, 'UTF-8'); ?></h4>
+                <div class="<?php echo implode(' ', $currentStepPanelClasses); ?>">
+                    <h4 class="h6 mb-2 cb-repair-workflow-result-title">
+                        <?php if ($currentStepShowCheck) : ?>
+                            <span class="cb-repair-workflow-step-check icon-check-circle" aria-hidden="true"></span>
+                        <?php endif; ?>
+                        <span><?php echo htmlspecialchars($currentStepTitle, ENT_QUOTES, 'UTF-8'); ?></span>
+                    </h4>
                     <?php if ($currentStepDescription !== '') : ?>
                         <p class="mb-2"><?php echo htmlspecialchars($currentStepDescription, ENT_QUOTES, 'UTF-8'); ?></p>
                     <?php endif; ?>
@@ -725,12 +895,8 @@ $formatAuditIssueList = static function (array $values, int $limit = 8): string 
                             </div>
                         <?php endif; ?>
 
-                        <h5 class="h6"><?php echo Text::_('COM_CONTENTBUILDERNG_DB_REPAIR_WORKFLOW_LOG_TITLE'); ?></h5>
-                        <?php if ($currentStepLines === []) : ?>
-                            <div class="alert alert-info mb-0">
-                                <?php echo Text::_('COM_CONTENTBUILDERNG_DB_REPAIR_WORKFLOW_NO_LOG'); ?>
-                            </div>
-                        <?php else : ?>
+                        <?php if ($currentStepLines !== []) : ?>
+                            <h5 class="h6"><?php echo Text::_('COM_CONTENTBUILDERNG_DB_REPAIR_WORKFLOW_LOG_TITLE'); ?></h5>
                             <pre class="cb-repair-workflow-log border rounded p-3 mb-0"><?php echo htmlspecialchars(implode(PHP_EOL, $currentStepLines), ENT_QUOTES, 'UTF-8'); ?></pre>
                         <?php endif; ?>
 
@@ -739,21 +905,21 @@ $formatAuditIssueList = static function (array $values, int $limit = 8): string 
                                 <button
                                     type="submit"
                                     class="btn btn-primary"
-                                    onclick="document.getElementById('repair_step').value='';document.getElementById('repair_action').value='';document.getElementById('adminForm').task.value='about.nextRepairWorkflowStep';"
+                                    onclick="var f=this.form;if(f){f.elements['repair_step'].value='';f.elements['repair_action'].value='';f.elements['task'].value='about.nextRepairWorkflowStep';}"
                                 ><?php echo Text::_('COM_CONTENTBUILDERNG_DB_REPAIR_WORKFLOW_NEXT'); ?></button>
-                            <?php elseif ($repairWorkflowIsCompleted || !$repairWorkflowHasNext) : ?>
-                                <div class="alert alert-success mb-0">
-                                    <?php echo Text::_('COM_CONTENTBUILDERNG_DB_REPAIR_WORKFLOW_FINISHED'); ?>
-                                </div>
                             <?php endif; ?>
-
-                            <button
-                                type="submit"
-                                class="btn btn-outline-dark"
-                                onclick="document.getElementById('repair_step').value='';document.getElementById('repair_action').value='';document.getElementById('adminForm').task.value='about.startRepairWorkflow';"
-                            ><?php echo Text::_('COM_CONTENTBUILDERNG_DB_REPAIR_WORKFLOW_RESTART'); ?></button>
                         </div>
                     <?php endif; ?>
+                </div>
+            <?php endif; ?>
+
+            <?php if ($repairWorkflowIsCompleted) : ?>
+                <div class="cb-repair-workflow-summary-section">
+                    <h4 class="cb-repair-workflow-summary-title">Summary</h4>
+                    <div class="cb-repair-workflow-summary">
+                        <span class="icon-check-circle" aria-hidden="true"></span>
+                        <span><?php echo Text::_('COM_CONTENTBUILDERNG_DB_REPAIR_WORKFLOW_FINISHED'); ?></span>
+                    </div>
                 </div>
             <?php endif; ?>
         </div>
@@ -772,7 +938,7 @@ $formatAuditIssueList = static function (array $values, int $limit = 8): string 
             <p class="text-muted small mb-2">
                 <?php echo Text::sprintf(
                     'COM_CONTENTBUILDERNG_ABOUT_AUDIT_LAST_RUN',
-                    (string) ($auditReport['generated_at'] ?? Text::_('COM_CONTENTBUILDERNG_NOT_AVAILABLE')),
+                    $auditGeneratedAtDisplay,
                     (int) ($auditReport['scanned_tables'] ?? 0)
                 ); ?>
             </p>
@@ -803,6 +969,10 @@ $formatAuditIssueList = static function (array $values, int $limit = 8): string 
                     <tr class="<?php echo $hasTableEncodingIssues ? 'table-warning' : ''; ?>">
                         <th scope="row"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_TABLE_ENCODING_ISSUES'); ?></th>
                         <td><?php echo (int) ($auditSummary['table_encoding_issues'] ?? 0); ?></td>
+                    </tr>
+                    <tr class="<?php echo $hasPackedDataIssues ? 'table-warning' : ''; ?>">
+                        <th scope="row"><?php echo Text::_('COM_CONTENTBUILDERNG_DB_REPAIR_STEP_PACKED_DATA_TITLE'); ?></th>
+                        <td><?php echo (int) ($auditSummary['packed_data_candidates'] ?? ($packedDataAudit['candidates'] ?? 0)); ?></td>
                     </tr>
                     <tr class="<?php echo $hasColumnEncodingIssues ? 'table-warning' : ''; ?>">
                         <th scope="row"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_COLUMN_ENCODING_ISSUES'); ?></th>
@@ -840,6 +1010,18 @@ $formatAuditIssueList = static function (array $values, int $limit = 8): string 
                         <th scope="row"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_BF_FIELD_SYNC_EXTRA_IN_CB'); ?></th>
                         <td><?php echo $bfFieldSyncOrphanTotal; ?></td>
                     </tr>
+                    <tr class="<?php echo $hasMenuViewIssues ? 'table-warning' : ''; ?>">
+                        <th scope="row"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_MENU_VIEW_CONSISTENCY'); ?></th>
+                        <td><?php echo (int) ($auditSummary['menu_view_issues'] ?? count($menuViewIssues)); ?></td>
+                    </tr>
+                    <tr class="<?php echo $hasFrontendPermissionIssues ? 'table-warning' : ''; ?>">
+                        <th scope="row"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_FRONTEND_PERMISSION_CONSISTENCY'); ?></th>
+                        <td><?php echo (int) ($auditSummary['frontend_permission_issues'] ?? count($frontendPermissionIssues)); ?></td>
+                    </tr>
+                    <tr class="<?php echo $hasElementReferenceIssues ? 'table-warning' : ''; ?>">
+                        <th scope="row"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_ELEMENT_REFERENCE_CONSISTENCY'); ?></th>
+                        <td><?php echo (int) ($auditSummary['element_reference_issues'] ?? count($elementReferenceIssues)); ?></td>
+                    </tr>
                     <tr>
                         <th scope="row"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_CB_TABLES_TOTAL'); ?></th>
                         <td><?php echo (int) ($cbTableSummary['tables_total'] ?? 0); ?></td>
@@ -874,14 +1056,20 @@ $formatAuditIssueList = static function (array $values, int $limit = 8): string 
 
             <?php if ((int) ($auditSummary['issues_total'] ?? 0) === 0 && empty($auditErrors)) : ?>
                 <div class="alert cb-audit-ok-alert mb-3">
-                    <?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_NO_ISSUES'); ?>
+                    <span class="cb-audit-section-title">
+                        <span class="cb-audit-ok-check icon-check-circle" aria-hidden="true"></span>
+                        <span><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_NO_ISSUES'); ?></span>
+                    </span>
                 </div>
             <?php endif; ?>
 
-            <h4 class="h6 mt-3<?php echo $hasDuplicateIndexIssues ? ' text-warning' : ''; ?>"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_DUPLICATE_GROUPS'); ?></h4>
+            <h4 class="h6 mt-3<?php echo $hasDuplicateIndexIssues ? ' text-warning' : ''; ?>"><?php echo $renderNumberedAuditTitle(1, Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_DUPLICATE_GROUPS'), $hasDuplicateIndexIssues); ?></h4>
             <?php if (empty($duplicateIndexes)) : ?>
                 <div class="alert cb-audit-ok-alert">
-                    <?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_NO_DUPLICATE_INDEXES'); ?>
+                    <span class="cb-audit-section-title">
+                        <span class="cb-audit-ok-check icon-check-circle" aria-hidden="true"></span>
+                        <span><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_NO_DUPLICATE_INDEXES'); ?></span>
+                    </span>
                 </div>
             <?php else : ?>
                 <div class="table-responsive">
@@ -908,10 +1096,13 @@ $formatAuditIssueList = static function (array $values, int $limit = 8): string 
                 </div>
             <?php endif; ?>
 
-            <h4 class="h6 mt-3<?php echo $hasPluginDuplicateIssues ? ' text-warning' : ''; ?>"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_PLUGIN_DUPLICATES'); ?></h4>
+            <h4 class="h6 mt-3<?php echo $hasPluginDuplicateIssues ? ' text-warning' : ''; ?>"><?php echo $renderNumberedAuditTitle(2, Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_PLUGIN_DUPLICATES'), $hasPluginDuplicateIssues); ?></h4>
             <?php if (empty($pluginExtensionDuplicates)) : ?>
                 <div class="alert cb-audit-ok-alert">
-                    <?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_NO_PLUGIN_DUPLICATES'); ?>
+                    <span class="cb-audit-section-title">
+                        <span class="cb-audit-ok-check icon-check-circle" aria-hidden="true"></span>
+                        <span><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_NO_PLUGIN_DUPLICATES'); ?></span>
+                    </span>
                 </div>
             <?php else : ?>
                 <div class="table-responsive">
@@ -966,10 +1157,13 @@ $formatAuditIssueList = static function (array $values, int $limit = 8): string 
                 </div>
             <?php endif; ?>
 
-            <h4 class="h6 mt-3<?php echo $hasLegacyTableIssues ? ' text-warning' : ''; ?>"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_HISTORICAL_TABLES'); ?></h4>
+            <h4 class="h6 mt-3<?php echo $hasLegacyTableIssues ? ' text-warning' : ''; ?>"><?php echo $renderNumberedAuditTitle(3, Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_HISTORICAL_TABLES'), $hasLegacyTableIssues); ?></h4>
             <?php if (empty($historicalTables)) : ?>
                 <div class="alert cb-audit-ok-alert">
-                    <?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_NO_HISTORICAL_TABLES'); ?>
+                    <span class="cb-audit-section-title">
+                        <span class="cb-audit-ok-check icon-check-circle" aria-hidden="true"></span>
+                        <span><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_NO_HISTORICAL_TABLES'); ?></span>
+                    </span>
                 </div>
             <?php else : ?>
                 <ul class="mb-0">
@@ -979,10 +1173,13 @@ $formatAuditIssueList = static function (array $values, int $limit = 8): string 
                 </ul>
             <?php endif; ?>
 
-            <h4 class="h6 mt-3<?php echo $hasLegacyMenuIssues ? ' text-warning' : ''; ?>"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_HISTORICAL_MENU_ENTRIES'); ?></h4>
+            <h4 class="h6 mt-3<?php echo $hasLegacyMenuIssues ? ' text-warning' : ''; ?>"><?php echo $renderNumberedAuditTitle(4, Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_HISTORICAL_MENU_ENTRIES'), $hasLegacyMenuIssues); ?></h4>
             <?php if (empty($historicalMenuEntries)) : ?>
                 <div class="alert cb-audit-ok-alert">
-                    <?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_NO_HISTORICAL_MENU_ENTRIES'); ?>
+                    <span class="cb-audit-section-title">
+                        <span class="cb-audit-ok-check icon-check-circle" aria-hidden="true"></span>
+                        <span><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_NO_HISTORICAL_MENU_ENTRIES'); ?></span>
+                    </span>
                 </div>
             <?php else : ?>
                 <div class="table-responsive">
@@ -1009,10 +1206,13 @@ $formatAuditIssueList = static function (array $values, int $limit = 8): string 
                 </div>
             <?php endif; ?>
 
-            <h4 class="h6 mt-3<?php echo $hasMissingAuditColumnIssues ? ' text-warning' : ''; ?>"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_MISSING_AUDIT_COLUMNS'); ?></h4>
+            <h4 class="h6 mt-3<?php echo $hasMissingAuditColumnIssues ? ' text-warning' : ''; ?>"><?php echo $renderNumberedAuditTitle(5, Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_MISSING_AUDIT_COLUMNS'), $hasMissingAuditColumnIssues); ?></h4>
             <?php if (empty($missingAuditColumns)) : ?>
                 <div class="alert cb-audit-ok-alert">
-                    <?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_NO_MISSING_AUDIT_COLUMNS'); ?>
+                    <span class="cb-audit-section-title">
+                        <span class="cb-audit-ok-check icon-check-circle" aria-hidden="true"></span>
+                        <span><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_NO_MISSING_AUDIT_COLUMNS'); ?></span>
+                    </span>
                 </div>
             <?php else : ?>
                 <div class="table-responsive">
@@ -1041,10 +1241,13 @@ $formatAuditIssueList = static function (array $values, int $limit = 8): string 
                 </div>
             <?php endif; ?>
 
-            <h4 class="h6 mt-3<?php echo $hasBfFieldSyncIssues ? ' text-warning' : ''; ?>"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_BF_FIELD_SYNC'); ?></h4>
+            <h4 class="h6 mt-3<?php echo $hasBfFieldSyncIssues ? ' text-warning' : ''; ?>"><?php echo $renderNumberedAuditTitle(6, Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_BF_FIELD_SYNC'), $hasBfFieldSyncIssues); ?></h4>
             <?php if (empty($bfFieldSyncIssues)) : ?>
                 <div class="alert cb-audit-ok-alert">
-                    <?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_BF_FIELD_SYNC_NO_ISSUES'); ?>
+                    <span class="cb-audit-section-title">
+                        <span class="cb-audit-ok-check icon-check-circle" aria-hidden="true"></span>
+                        <span><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_BF_FIELD_SYNC_NO_ISSUES'); ?></span>
+                    </span>
                 </div>
             <?php else : ?>
                 <div class="table-responsive">
@@ -1065,7 +1268,7 @@ $formatAuditIssueList = static function (array $values, int $limit = 8): string 
                             $formName = trim((string) ($bfFieldSyncIssue['form_name'] ?? ''));
                             $formNameDisplay = $formName !== '' ? $formName : ('#' . $formId);
                             $formEditLink = $formId > 0
-                                ? Route::_('index.php?option=com_contentbuilderng&task=form.edit&id=' . $formId)
+                                ? Route::_('index.php?option=com_contentbuilderng&view=form&layout=edit&id=' . $formId, false)
                                 : '';
 
                             $sourceExists = (int) ($bfFieldSyncIssue['source_exists'] ?? 0) === 1;
@@ -1128,10 +1331,243 @@ $formatAuditIssueList = static function (array $values, int $limit = 8): string 
                 </div>
             <?php endif; ?>
 
-            <h4 class="h6 mt-3<?php echo $hasTableEncodingIssues ? ' text-warning' : ''; ?>"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_TABLE_ENCODING_ISSUES'); ?></h4>
+            <h4 class="h6 mt-3<?php echo $hasMenuViewIssues ? ' text-warning' : ''; ?>"><?php echo $renderNumberedAuditTitle(7, Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_MENU_VIEW_CONSISTENCY'), $hasMenuViewIssues); ?></h4>
+            <?php if (empty($menuViewIssues)) : ?>
+                <div class="alert cb-audit-ok-alert">
+                    <span class="cb-audit-section-title">
+                        <span class="cb-audit-ok-check icon-check-circle" aria-hidden="true"></span>
+                        <span><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_MENU_VIEW_CONSISTENCY_OK'); ?></span>
+                    </span>
+                </div>
+            <?php else : ?>
+                <div class="table-responsive">
+                    <table class="table table-sm table-striped align-middle">
+                        <thead>
+                        <tr>
+                            <th scope="col"><?php echo Text::_('COM_CONTENTBUILDERNG_ID'); ?></th>
+                            <th scope="col"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_MENU_TITLE'); ?></th>
+                            <th scope="col"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_MENU_TARGET'); ?></th>
+                            <th scope="col"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_MENU_LINK'); ?></th>
+                            <th scope="col"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_ISSUES'); ?></th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <?php foreach ($menuViewIssues as $menuViewIssue) : ?>
+                            <?php
+                            $menuId = (int) ($menuViewIssue['menu_id'] ?? 0);
+                            $menuEditLink = $menuId > 0
+                                ? Route::_('index.php?option=com_menus&view=item&client_id=0&layout=edit&id=' . $menuId, false)
+                                : '';
+                            $menuTitle = trim((string) ($menuViewIssue['title'] ?? ''));
+                            $menuTitle = $menuTitle !== '' ? $menuTitle : ('#' . $menuId);
+                            $menuIssueItems = array_values(array_filter(array_map(
+                                static fn($issue): string => trim((string) $issue),
+                                (array) ($menuViewIssue['issues'] ?? [])
+                            )));
+                            ?>
+                            <tr>
+                                <td><?php echo $menuId; ?></td>
+                                <td>
+                                    <?php if ($menuEditLink !== '') : ?>
+                                        <a href="<?php echo htmlspecialchars($menuEditLink, ENT_QUOTES, 'UTF-8'); ?>">
+                                            <?php echo htmlspecialchars($menuTitle, ENT_QUOTES, 'UTF-8'); ?>
+                                        </a>
+                                    <?php else : ?>
+                                        <?php echo htmlspecialchars($menuTitle, ENT_QUOTES, 'UTF-8'); ?>
+                                    <?php endif; ?>
+                                </td>
+                                <td><?php echo htmlspecialchars((string) ($menuViewIssue['target'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></td>
+                                <td><?php echo htmlspecialchars((string) ($menuViewIssue['link'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></td>
+                                <td>
+                                    <ol class="mb-0 ps-3">
+                                        <?php foreach ($menuIssueItems as $menuIssueItem) : ?>
+                                            <li><?php echo htmlspecialchars($menuIssueItem, ENT_QUOTES, 'UTF-8'); ?></li>
+                                        <?php endforeach; ?>
+                                    </ol>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            <?php endif; ?>
+
+            <h4 class="h6 mt-3<?php echo $hasFrontendPermissionIssues ? ' text-warning' : ''; ?>"><?php echo $renderNumberedAuditTitle(8, Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_FRONTEND_PERMISSION_CONSISTENCY'), $hasFrontendPermissionIssues); ?></h4>
+            <?php if (empty($frontendPermissionIssues)) : ?>
+                <div class="alert cb-audit-ok-alert">
+                    <span class="cb-audit-section-title">
+                        <span class="cb-audit-ok-check icon-check-circle" aria-hidden="true"></span>
+                        <span><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_FRONTEND_PERMISSION_CONSISTENCY_OK'); ?></span>
+                    </span>
+                </div>
+            <?php else : ?>
+                <div class="table-responsive">
+                    <table class="table table-sm table-striped align-middle">
+                        <thead>
+                        <tr>
+                            <th scope="col"><?php echo Text::_('COM_CONTENTBUILDERNG_ID'); ?></th>
+                            <th scope="col"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_BF_FIELD_SYNC_VIEW'); ?></th>
+                            <th scope="col"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_ISSUES'); ?></th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <?php foreach ($frontendPermissionIssues as $frontendPermissionIssue) : ?>
+                            <?php
+                            $formId = (int) ($frontendPermissionIssue['form_id'] ?? 0);
+                            $formEditLink = $formId > 0
+                                ? Route::_('index.php?option=com_contentbuilderng&view=form&layout=edit&id=' . $formId, false)
+                                : '';
+                            $formName = trim((string) ($frontendPermissionIssue['form_name'] ?? ''));
+                            $formName = $formName !== '' ? $formName : ('#' . $formId);
+                            $permissionIssueItems = array_values(array_filter(array_map(
+                                static fn($issue): string => trim((string) $issue),
+                                (array) ($frontendPermissionIssue['issues'] ?? [])
+                            )));
+                            $permissionIssueItemsHtml = [];
+
+                            foreach ($permissionIssueItems as $permissionIssueItem) {
+                                if (preg_match('/^Public menu #(\d+)\b(.*)$/', $permissionIssueItem, $matches) === 1) {
+                                    $issueMenuId = (int) ($matches[1] ?? 0);
+                                    $issueSuffix = trim((string) ($matches[2] ?? ''));
+                                    $issueMenuLink = $issueMenuId > 0
+                                        ? Route::_('index.php?option=com_menus&view=item&client_id=0&layout=edit&id=' . $issueMenuId, false)
+                                        : '';
+
+                                    if ($issueMenuLink !== '') {
+                                        $permissionIssueItemsHtml[] = 'Public <a href="'
+                                            . htmlspecialchars($issueMenuLink, ENT_QUOTES, 'UTF-8')
+                                            . '">menu #'
+                                            . $issueMenuId
+                                            . '</a>'
+                                            . ($issueSuffix !== '' ? ' ' . htmlspecialchars($issueSuffix, ENT_QUOTES, 'UTF-8') : '');
+                                        continue;
+                                    }
+                                }
+
+                                $permissionIssueItemsHtml[] = htmlspecialchars($permissionIssueItem, ENT_QUOTES, 'UTF-8');
+                            }
+                            ?>
+                            <tr>
+                                <td><?php echo $formId; ?></td>
+                                <td>
+                                    <?php if ($formEditLink !== '') : ?>
+                                        <a href="<?php echo htmlspecialchars($formEditLink, ENT_QUOTES, 'UTF-8'); ?>">
+                                            <?php echo htmlspecialchars($formName, ENT_QUOTES, 'UTF-8'); ?>
+                                        </a>
+                                    <?php else : ?>
+                                        <?php echo htmlspecialchars($formName, ENT_QUOTES, 'UTF-8'); ?>
+                                    <?php endif; ?>
+                                </td>
+                                <td>
+                                    <ol class="mb-0 ps-3">
+                                        <?php foreach ($permissionIssueItemsHtml as $permissionIssueItemHtml) : ?>
+                                            <li><?php echo $permissionIssueItemHtml; ?></li>
+                                        <?php endforeach; ?>
+                                    </ol>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            <?php endif; ?>
+
+            <h4 class="h6 mt-3<?php echo $hasElementReferenceIssues ? ' text-warning' : ''; ?>"><?php echo $renderNumberedAuditTitle(9, Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_ELEMENT_REFERENCE_CONSISTENCY'), $hasElementReferenceIssues); ?></h4>
+            <?php if (empty($elementReferenceIssues)) : ?>
+                <div class="alert cb-audit-ok-alert">
+                    <span class="cb-audit-section-title">
+                        <span class="cb-audit-ok-check icon-check-circle" aria-hidden="true"></span>
+                        <span><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_ELEMENT_REFERENCE_CONSISTENCY_OK'); ?></span>
+                    </span>
+                </div>
+            <?php else : ?>
+                <div class="table-responsive">
+                    <table class="table table-sm table-striped align-middle">
+                        <thead>
+                        <tr>
+                            <th scope="col"><?php echo Text::_('COM_CONTENTBUILDERNG_ID'); ?></th>
+                            <th scope="col"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_BF_FIELD_SYNC_VIEW'); ?></th>
+                            <th scope="col"><?php echo Text::_('COM_CONTENTBUILDERNG_TYPE'); ?></th>
+                            <th scope="col"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_ISSUES'); ?></th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <?php foreach ($elementReferenceIssues as $elementReferenceIssue) : ?>
+                            <?php
+                            $formId = (int) ($elementReferenceIssue['form_id'] ?? 0);
+                            $formEditLink = $formId > 0
+                                ? Route::_('index.php?option=com_contentbuilderng&view=form&layout=edit&id=' . $formId, false)
+                                : '';
+                            $formName = trim((string) ($elementReferenceIssue['form_name'] ?? ''));
+                            $formName = $formName !== '' ? $formName : ('#' . $formId);
+                            $referenceIssueItems = [];
+                            $emptyReferenceIds = (array) ($elementReferenceIssue['empty_reference_ids'] ?? []);
+                            if ($emptyReferenceIds !== []) {
+                                $referenceIssueItems[] = Text::sprintf(
+                                    'COM_CONTENTBUILDERNG_ABOUT_AUDIT_ELEMENT_REFERENCE_EMPTY',
+                                    $formatAuditIssueList($emptyReferenceIds, 12)
+                                );
+                            }
+
+                            foreach ((array) ($elementReferenceIssue['duplicate_reference_ids'] ?? []) as $duplicateReferenceId) {
+                                if (!is_array($duplicateReferenceId)) {
+                                    continue;
+                                }
+
+                                $referenceIssueItems[] = Text::sprintf(
+                                    'COM_CONTENTBUILDERNG_ABOUT_AUDIT_ELEMENT_REFERENCE_DUPLICATE',
+                                    (string) ($duplicateReferenceId['reference_id'] ?? ''),
+                                    (int) ($duplicateReferenceId['count'] ?? 0),
+                                    $formatAuditIssueList((array) ($duplicateReferenceId['labels'] ?? []), 12)
+                                );
+                            }
+
+                            foreach ((array) ($elementReferenceIssue['orphan_reference_ids'] ?? []) as $orphanReferenceId) {
+                                if (!is_array($orphanReferenceId)) {
+                                    continue;
+                                }
+
+                                $referenceIssueItems[] = Text::sprintf(
+                                    'COM_CONTENTBUILDERNG_ABOUT_AUDIT_ELEMENT_REFERENCE_ORPHAN',
+                                    (string) ($orphanReferenceId['reference_id'] ?? ''),
+                                    (string) ($orphanReferenceId['label'] ?? '')
+                                );
+                            }
+
+                            ?>
+                            <tr>
+                                <td><?php echo $formId; ?></td>
+                                <td>
+                                    <?php if ($formEditLink !== '') : ?>
+                                        <a href="<?php echo htmlspecialchars($formEditLink, ENT_QUOTES, 'UTF-8'); ?>">
+                                            <?php echo htmlspecialchars($formName, ENT_QUOTES, 'UTF-8'); ?>
+                                        </a>
+                                    <?php else : ?>
+                                        <?php echo htmlspecialchars($formName, ENT_QUOTES, 'UTF-8'); ?>
+                                    <?php endif; ?>
+                                </td>
+                                <td><?php echo htmlspecialchars((string) ($elementReferenceIssue['type'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></td>
+                                <td>
+                                    <ol class="mb-0 ps-3">
+                                        <?php foreach ($referenceIssueItems as $referenceIssueItem) : ?>
+                                            <li><?php echo htmlspecialchars($referenceIssueItem, ENT_QUOTES, 'UTF-8'); ?></li>
+                                        <?php endforeach; ?>
+                                    </ol>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            <?php endif; ?>
+
+            <h4 class="h6 mt-3<?php echo $hasTableEncodingIssues ? ' text-warning' : ''; ?>"><?php echo $renderNumberedAuditTitle(10, Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_TABLE_ENCODING_ISSUES'), $hasTableEncodingIssues); ?></h4>
             <?php if (empty($tableEncodingIssues)) : ?>
                 <div class="alert cb-audit-ok-alert">
-                    <?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_NO_TABLE_ENCODING_ISSUES'); ?>
+                    <span class="cb-audit-section-title">
+                        <span class="cb-audit-ok-check icon-check-circle" aria-hidden="true"></span>
+                        <span><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_NO_TABLE_ENCODING_ISSUES'); ?></span>
+                    </span>
                 </div>
             <?php else : ?>
                 <div class="table-responsive">
@@ -1156,10 +1592,13 @@ $formatAuditIssueList = static function (array $values, int $limit = 8): string 
                 </div>
             <?php endif; ?>
 
-            <h4 class="h6 mt-3<?php echo $hasColumnEncodingIssues ? ' text-warning' : ''; ?>"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_COLUMN_ENCODING_ISSUES'); ?></h4>
+            <h4 class="h6 mt-3<?php echo $hasColumnEncodingIssues ? ' text-warning' : ''; ?>"><?php echo $renderNumberedAuditTitle(11, Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_COLUMN_ENCODING_ISSUES'), $hasColumnEncodingIssues); ?></h4>
             <?php if (empty($columnEncodingIssuesDisplayed)) : ?>
                 <div class="alert cb-audit-ok-alert">
-                    <?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_NO_COLUMN_ENCODING_ISSUES'); ?>
+                    <span class="cb-audit-section-title">
+                        <span class="cb-audit-ok-check icon-check-circle" aria-hidden="true"></span>
+                        <span><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_NO_COLUMN_ENCODING_ISSUES'); ?></span>
+                    </span>
                 </div>
             <?php else : ?>
                 <div class="table-responsive">
@@ -1191,10 +1630,13 @@ $formatAuditIssueList = static function (array $values, int $limit = 8): string 
                 <?php endif; ?>
             <?php endif; ?>
 
-            <h4 class="h6 mt-3<?php echo $hasMixedCollationIssues ? ' text-warning' : ''; ?>"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_MIXED_COLLATIONS'); ?></h4>
+            <h4 class="h6 mt-3<?php echo $hasMixedCollationIssues ? ' text-warning' : ''; ?>"><?php echo $renderNumberedAuditTitle(12, Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_MIXED_COLLATIONS'), $hasMixedCollationIssues); ?></h4>
             <?php if (count($mixedTableCollations) <= 1) : ?>
                 <div class="alert cb-audit-ok-alert">
-                    <?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_NO_MIXED_COLLATIONS'); ?>
+                    <span class="cb-audit-section-title">
+                        <span class="cb-audit-ok-check icon-check-circle" aria-hidden="true"></span>
+                        <span><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_NO_MIXED_COLLATIONS'); ?></span>
+                    </span>
                 </div>
             <?php else : ?>
                 <div class="table-responsive">

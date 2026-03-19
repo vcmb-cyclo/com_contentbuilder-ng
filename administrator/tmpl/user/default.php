@@ -12,8 +12,12 @@
 // No direct access
 \defined('_JEXEC') or die('Restricted access');
 
+use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\HTML\HTMLHelper;
+
+$app = Factory::getApplication();
+$formId = $app->input->getInt('form_id', 0);
 
 $renderCheckbox = static function (string $name, string $id, bool $checked = false): string {
     return '<span class="form-check d-inline-block mb-0"><input class="form-check-input" type="checkbox" name="'
@@ -193,9 +197,9 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
 
     <input type="hidden" name="option" value="com_contentbuilderng" />
     <input type="hidden" name="task" id="task" value="" />
-    <input type="hidden" name="form_id" value="<?php echo Factory::getApplication()->input->getInt('form_id', 0); ?>" />
+    <input type="hidden" name="form_id" value="<?php echo $formId; ?>" />
     <input type="hidden" name="joomla_userid" value="<?php echo $this->subject->id; ?>" />
     <input type="hidden" name="cb_id" value="<?php echo $this->subject->cb_id; ?>" />
-    <input type="hidden" name="tmpl" value="<?php echo Factory::getApplication()->input->getCmd('tmpl', ''); ?>" />
+    <input type="hidden" name="tmpl" value="<?php echo $app->input->getCmd('tmpl', ''); ?>" />
     <?php echo HTMLHelper::_('form.token'); ?>
 </form>

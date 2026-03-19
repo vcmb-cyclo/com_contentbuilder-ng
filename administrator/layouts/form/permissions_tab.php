@@ -22,6 +22,7 @@ $permissionColumns = is_array($displayData['permissionColumns'] ?? null) ? $disp
 $defaultCheckedForNewPermissions = is_array($displayData['defaultCheckedForNewPermissions'] ?? null) ? $displayData['defaultCheckedForNewPermissions'] : [];
 $renderCheckbox = $displayData['renderCheckbox'] ?? null;
 $permHeaderLabel = $displayData['permHeaderLabel'] ?? null;
+$permGroupLabel = $displayData['permGroupLabel'] ?? null;
 
 $activePermTab = $session ? $session->get('slideStartOffset', 'permtab1', 'com_contentbuilderng') : 'permtab1';
 echo HTMLHelper::_('uitab.startTabSet', 'perm-pane', ['active' => $activePermTab]);
@@ -149,11 +150,51 @@ echo HTMLHelper::_('uitab.addTab', 'perm-pane', 'permtab1', Text::_('COM_CONTENT
         <?php endforeach; ?>
     </tr>
 
-    <?php foreach ($gmap as $entry) : ?>
-        <?php $k = 0; ?>
+    <?php $groupBranchState = []; ?>
+    <?php foreach ($gmap as $groupIndex => $entry) : ?>
+        <?php
+        $k = 0;
+        $depth = max(0, (int) ($entry->depth ?? 0));
+        $nextEntry = $gmap[$groupIndex + 1] ?? null;
+        $nextDepth = max(0, (int) ($nextEntry->depth ?? 0));
+        $isLastAtDepth = $nextDepth <= $depth;
+        $branchHtml = '';
+
+        if ($depth > 0) {
+            for ($level = 1; $level < $depth; $level++) {
+                $branchHtml .= '<span class="cb-perm-group-branch cb-perm-group-branch-guide" aria-hidden="true">&nbsp;</span>';
+            }
+
+            $branchHtml .= '<span class="cb-perm-group-branch cb-perm-group-branch-node" aria-hidden="true">'
+                . ($isLastAtDepth ? '└─' : '├─')
+                . '</span>';
+        }
+
+        $groupBranchState[$depth] = !$isLastAtDepth;
+
+        if ($nextDepth < $depth) {
+            for ($level = $depth; $level > $nextDepth; $level--) {
+                unset($groupBranchState[$level]);
+            }
+        }
+        ?>
         <tr class="<?php echo 'row' . $k; ?>">
             <td>
-                <?php echo $entry->text; ?>
+                <span class="cb-perm-group-label">
+                    <?php if ($branchHtml !== '') : ?>
+                        <span class="cb-perm-group-tree"><?php echo $branchHtml; ?></span>
+                    <?php endif; ?>
+                    <?php
+                    echo is_callable($permGroupLabel)
+                        ? $permGroupLabel(
+                            (string) ($entry->text ?? ''),
+                            (int) ($entry->value ?? 0),
+                            (string) ($entry->path ?? ''),
+                            (string) ($entry->title ?? '')
+                        )
+                        : '<span class="cb-perm-group-text">' . htmlspecialchars((string) $entry->text, ENT_QUOTES, 'UTF-8') . '</span>';
+                    ?>
+                </span>
             </td>
             <?php
             $groupPermissions = $item->config['permissions_fe'][$entry->value] ?? [];

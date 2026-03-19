@@ -12,6 +12,7 @@ namespace CB\Component\Contentbuilderng\Administrator\Controller;
 \defined('_JEXEC') or die('Restricted access');
 
 use CB\Component\Contentbuilderng\Administrator\Helper\DatabaseAuditHelper;
+use CB\Component\Contentbuilderng\Administrator\Helper\DatabaseRepairHelper;
 use CB\Component\Contentbuilderng\Administrator\Helper\Logger;
 use CB\Component\Contentbuilderng\Administrator\Helper\PackedDataMigrationHelper;
 use Joomla\CMS\Application\AdministratorApplication;
@@ -31,11 +32,17 @@ final class AboutController extends BaseController
     private const ABOUT_LOG_TAIL_BYTES = 262144;
     private const REPAIR_WORKFLOW_STATE_KEY = 'com_contentbuilderng.about.repair_workflow';
     private const REPAIR_WORKFLOW_STEPS = [
+        'duplicate_indexes',
+        'historical_tables',
+        'historical_menu_entries',
         'table_encoding',
         'packed_data',
         'audit_columns',
         'plugin_duplicates',
-        'historical_menu_entries',
+        'bf_field_sync',
+        'menu_view_consistency',
+        'frontend_permission_consistency',
+        'element_reference_consistency',
     ];
     private const CONFIG_IMPORT_MODE_MERGE = 'merge';
     private const CONFIG_IMPORT_MODE_REPLACE = 'replace';
@@ -74,7 +81,7 @@ final class AboutController extends BaseController
         $app = $this->getAuthorizedApplication();
         $app->setUserState(self::REPAIR_WORKFLOW_STATE_KEY, $this->createRepairWorkflowState());
         $this->setMessage(Text::_('COM_CONTENTBUILDERNG_DB_REPAIR_WORKFLOW_STARTED'), 'message');
-        $this->setRedirect(Route::_('index.php?option=com_contentbuilderng&view=about', false));
+        $this->setRedirect(Route::_('index.php?option=com_contentbuilderng&view=about&repair_workflow=1', false));
     }
 
     public function executeRepairWorkflowStep(): void
@@ -86,7 +93,7 @@ final class AboutController extends BaseController
 
         if ($workflow === []) {
             $this->setMessage(Text::_('COM_CONTENTBUILDERNG_DB_REPAIR_WORKFLOW_MISSING'), 'warning');
-            $this->setRedirect(Route::_('index.php?option=com_contentbuilderng&view=about', false));
+            $this->setRedirect(Route::_('index.php?option=com_contentbuilderng&view=about&repair_workflow=1', false));
 
             return;
         }
@@ -99,21 +106,21 @@ final class AboutController extends BaseController
 
         if (!is_array($currentStep) || $requestedStepId === '' || $requestedStepId !== (string) ($currentStep['id'] ?? '')) {
             $this->setMessage(Text::_('COM_CONTENTBUILDERNG_DB_REPAIR_WORKFLOW_INVALID_STEP'), 'warning');
-            $this->setRedirect(Route::_('index.php?option=com_contentbuilderng&view=about', false));
+            $this->setRedirect(Route::_('index.php?option=com_contentbuilderng&view=about&repair_workflow=1', false));
 
             return;
         }
 
         if ($action !== 'apply' && $action !== 'skip') {
             $this->setMessage(Text::_('COM_CONTENTBUILDERNG_DB_REPAIR_WORKFLOW_INVALID_ACTION'), 'warning');
-            $this->setRedirect(Route::_('index.php?option=com_contentbuilderng&view=about', false));
+            $this->setRedirect(Route::_('index.php?option=com_contentbuilderng&view=about&repair_workflow=1', false));
 
             return;
         }
 
         if ((string) ($currentStep['status'] ?? 'pending') !== 'pending') {
             $this->setMessage(Text::_('COM_CONTENTBUILDERNG_DB_REPAIR_WORKFLOW_ALREADY_DONE'), 'message');
-            $this->setRedirect(Route::_('index.php?option=com_contentbuilderng&view=about', false));
+            $this->setRedirect(Route::_('index.php?option=com_contentbuilderng&view=about&repair_workflow=1', false));
 
             return;
         }
@@ -144,14 +151,24 @@ final class AboutController extends BaseController
         $currentStep['completed_at'] = $this->getJoomlaLocalDateTime();
         $steps[$currentIndex] = $currentStep;
         $workflow['steps'] = $steps;
-        if ($currentIndex >= count($steps) - 1) {
+
+        if ($action === 'skip' && $currentIndex < count($steps) - 1) {
+            $workflow['current_step'] = $currentIndex + 1;
+        }
+
+        if (($workflow['current_step'] ?? $currentIndex) >= count($steps) - 1 && $currentIndex >= count($steps) - 1) {
             $workflow['completed'] = true;
         }
+
+        if ($action === 'skip' && $currentIndex >= count($steps) - 1) {
+            $workflow['completed'] = true;
+        }
+
         $workflow['updated_at'] = $currentStep['completed_at'];
         $app->setUserState(self::REPAIR_WORKFLOW_STATE_KEY, $workflow);
 
         $this->setMessage((string) ($result['summary'] ?? ''), (string) ($result['level'] ?? 'message'));
-        $this->setRedirect(Route::_('index.php?option=com_contentbuilderng&view=about', false));
+        $this->setRedirect(Route::_('index.php?option=com_contentbuilderng&view=about&repair_workflow=1', false));
     }
 
     public function nextRepairWorkflowStep(): void
@@ -163,7 +180,7 @@ final class AboutController extends BaseController
 
         if ($workflow === []) {
             $this->setMessage(Text::_('COM_CONTENTBUILDERNG_DB_REPAIR_WORKFLOW_MISSING'), 'warning');
-            $this->setRedirect(Route::_('index.php?option=com_contentbuilderng&view=about', false));
+            $this->setRedirect(Route::_('index.php?option=com_contentbuilderng&view=about&repair_workflow=1', false));
 
             return;
         }
@@ -174,7 +191,7 @@ final class AboutController extends BaseController
 
         if (!is_array($currentStep) || (string) ($currentStep['status'] ?? 'pending') === 'pending') {
             $this->setMessage(Text::_('COM_CONTENTBUILDERNG_DB_REPAIR_WORKFLOW_COMPLETE_STEP_FIRST'), 'warning');
-            $this->setRedirect(Route::_('index.php?option=com_contentbuilderng&view=about', false));
+            $this->setRedirect(Route::_('index.php?option=com_contentbuilderng&view=about&repair_workflow=1', false));
 
             return;
         }
@@ -191,7 +208,7 @@ final class AboutController extends BaseController
             $this->setMessage(Text::_('COM_CONTENTBUILDERNG_DB_REPAIR_WORKFLOW_FINISHED'), 'message');
         }
 
-        $this->setRedirect(Route::_('index.php?option=com_contentbuilderng&view=about', false));
+        $this->setRedirect(Route::_('index.php?option=com_contentbuilderng&view=about&repair_workflow=1', false));
     }
 
     public function runAudit(): void
@@ -1941,10 +1958,13 @@ final class AboutController extends BaseController
 
     private function createRepairWorkflowState(): array
     {
+        $db = Factory::getContainer()->get(DatabaseInterface::class);
         $steps = [];
+        $now = $this->getJoomlaLocalDateTime();
+        $prechecks = $this->buildRepairWorkflowPrechecks($db);
 
         foreach (self::REPAIR_WORKFLOW_STEPS as $stepId) {
-            $steps[] = [
+            $step = [
                 'id' => $stepId,
                 'status' => 'pending',
                 'decision' => '',
@@ -1955,14 +1975,53 @@ final class AboutController extends BaseController
                     'lines' => [],
                 ],
             ];
+
+            if (isset($prechecks[$stepId])) {
+                $step['precheck'] = $prechecks[$stepId];
+            }
+
+            if (($prechecks[$stepId]['mode'] ?? '') === 'diagnostic') {
+                $step['status'] = 'done';
+                $step['decision'] = 'diagnostic';
+                $step['completed_at'] = $now;
+                $step['result'] = (array) ($prechecks[$stepId]['result'] ?? [
+                    'level' => 'message',
+                    'summary' => (string) ($prechecks[$stepId]['description'] ?? ''),
+                    'lines' => [],
+                ]);
+                $steps[] = $step;
+                continue;
+            }
+
+            if ((int) ($prechecks[$stepId]['count'] ?? 0) === 0 && empty($prechecks[$stepId]['has_errors'])) {
+                $step['status'] = 'skipped';
+                $step['decision'] = 'skip';
+                $step['completed_at'] = $now;
+                $step['result'] = [
+                    'level' => 'message',
+                    'summary' => (string) ($prechecks[$stepId]['skip_summary'] ?? 'Skipped automatically because there is nothing to repair.'),
+                    'lines' => [],
+                ];
+            }
+
+            $steps[] = $step;
+        }
+        $currentStep = 0;
+
+        while ($currentStep < count($steps) && (string) ($steps[$currentStep]['status'] ?? 'pending') !== 'pending') {
+            $currentStep++;
         }
 
-        $now = $this->getJoomlaLocalDateTime();
+        $completed = $currentStep >= count($steps);
+
+        if ($completed) {
+            $currentStep = max(0, count($steps) - 1);
+        }
 
         return [
             'active' => true,
-            'completed' => false,
-            'current_step' => 0,
+            'completed' => $completed,
+            'current_step' => $currentStep,
             'steps' => $steps,
             'started_at' => $now,
             'updated_at' => $now,
@@ -1976,18 +2035,373 @@ final class AboutController extends BaseController
         return is_array($workflow) ? $workflow : [];
     }
 
+    /**
+     * @return array<string,array{
+     *   count:int,
+     *   description:string,
+     *   skip_summary:string,
+     *   has_errors:bool,
+     *   mode?:string,
+     *   result?:array{level:string,summary:string,lines:array<int,string>}
+     * }>
+     */
+    private function buildRepairWorkflowPrechecks(DatabaseInterface $db): array
+    {
+        $prechecks = [];
+
+        try {
+            $auditReport = DatabaseAuditHelper::run();
+            $auditSummary = (array) ($auditReport['summary'] ?? []);
+
+            $duplicateIndexGroups = (int) ($auditSummary['duplicate_index_groups'] ?? 0);
+            $duplicateIndexesToDrop = (int) ($auditSummary['duplicate_indexes_to_drop'] ?? 0);
+            $historicalTablesCount = (int) ($auditSummary['historical_tables'] ?? 0);
+            $tableEncodingCount = (int) ($auditSummary['table_encoding_issues'] ?? 0);
+            $columnEncodingCount = (int) ($auditSummary['column_encoding_issues'] ?? 0);
+            $mixedCollationsCount = (int) ($auditSummary['mixed_table_collations'] ?? 0);
+            $collationIssueCount = $tableEncodingCount + $columnEncodingCount + $mixedCollationsCount;
+            $missingAuditColumnsTotal = (int) ($auditSummary['missing_audit_columns_total'] ?? 0);
+            $missingAuditColumnsTables = (int) ($auditSummary['missing_audit_column_tables'] ?? 0);
+            $pluginDuplicateRows = (int) ($auditSummary['plugin_duplicate_rows_to_remove'] ?? 0);
+            $pluginDuplicateGroups = (int) ($auditSummary['plugin_duplicate_groups'] ?? 0);
+            $historicalMenuEntriesCount = (int) ($auditSummary['historical_menu_entries'] ?? 0);
+            $bfFieldSyncViews = (int) ($auditSummary['bf_view_field_sync_views'] ?? 0);
+            $bfMissingInCbTotal = (int) ($auditSummary['bf_view_field_sync_missing_in_cb'] ?? 0);
+            $bfOrphanInCbTotal = (int) ($auditSummary['bf_view_field_sync_orphan_in_cb'] ?? 0);
+            $menuViewIssues = (array) ($auditReport['menu_view_issues'] ?? []);
+            $frontendPermissionIssues = (array) ($auditReport['frontend_permission_issues'] ?? []);
+            $elementReferenceIssues = (array) ($auditReport['element_reference_issues'] ?? []);
+
+            $prechecks['duplicate_indexes'] = [
+                'count' => $duplicateIndexesToDrop,
+                'description' => match (true) {
+                    $duplicateIndexesToDrop <= 0 => 'No duplicate index to remove was detected by the last audit.',
+                    $duplicateIndexesToDrop === 1 => '1 duplicate index was detected in ' . max(1, $duplicateIndexGroups) . ' group and can be removed in this step.',
+                    default => $duplicateIndexesToDrop . ' duplicate indexes were detected in ' . max(1, $duplicateIndexGroups) . ' groups and can be removed in this step.',
+                },
+                'skip_summary' => 'No duplicate index detected by the pre-check. Skipped automatically.',
+                'has_errors' => false,
+            ];
+
+            $prechecks['historical_tables'] = [
+                'count' => $historicalTablesCount,
+                'description' => match (true) {
+                    $historicalTablesCount <= 0 => 'No historical table name was detected by the last audit.',
+                    $historicalTablesCount === 1 => '1 historical table name was detected by the last audit and can be renamed in this step when the NG target table does not already exist.',
+                    default => $historicalTablesCount . ' historical table names were detected by the last audit and can be renamed in this step when the NG target tables do not already exist.',
+                },
+                'skip_summary' => 'No historical table name detected by the pre-check. Skipped automatically.',
+                'has_errors' => false,
+            ];
+
+            $prechecks['table_encoding'] = [
+                'count' => $collationIssueCount,
+                'description' => match (true) {
+                    $collationIssueCount <= 0 => 'No table or column encoding/collation mismatch was detected by the last audit.',
+                    default => $collationIssueCount . ' encoding/collation issues were detected by the last audit (' . $tableEncodingCount . ' table, ' . $columnEncodingCount . ' column, ' . $mixedCollationsCount . ' mixed collation groups) and can be repaired in this step.',
+                },
+                'skip_summary' => 'No encoding/collation issue detected by the pre-check. Skipped automatically.',
+                'has_errors' => false,
+            ];
+
+            $prechecks['audit_columns'] = [
+                'count' => $missingAuditColumnsTotal,
+                'description' => match (true) {
+                    $missingAuditColumnsTotal <= 0 => 'No missing audit column was detected by the last audit.',
+                    $missingAuditColumnsTotal === 1 => '1 missing audit column was detected across ' . max(1, $missingAuditColumnsTables) . ' table and can be repaired in this step.',
+                    default => $missingAuditColumnsTotal . ' missing audit columns were detected across ' . max(1, $missingAuditColumnsTables) . ' tables and can be repaired in this step.',
+                },
+                'skip_summary' => 'No missing audit column detected by the pre-check. Skipped automatically.',
+                'has_errors' => false,
+            ];
+
+            $prechecks['plugin_duplicates'] = [
+                'count' => $pluginDuplicateRows,
+                'description' => match (true) {
+                    $pluginDuplicateRows <= 0 => 'No duplicate plugin row was detected by the last audit.',
+                    $pluginDuplicateRows === 1 => '1 duplicate plugin row was detected in ' . max(1, $pluginDuplicateGroups) . ' group and can be removed in this step.',
+                    default => $pluginDuplicateRows . ' duplicate plugin rows were detected in ' . max(1, $pluginDuplicateGroups) . ' groups and can be removed in this step.',
+                },
+                'skip_summary' => 'No duplicate plugin row detected by the pre-check. Skipped automatically.',
+                'has_errors' => false,
+            ];
+
+            $prechecks['historical_menu_entries'] = [
+                'count' => $historicalMenuEntriesCount,
+                'description' => match (true) {
+                    $historicalMenuEntriesCount <= 0 => 'No historical menu entry was detected by the last audit.',
+                    $historicalMenuEntriesCount === 1 => '1 historical menu entry was detected by the last audit and can be repaired in this step.',
+                    default => $historicalMenuEntriesCount . ' historical menu entries were detected by the last audit and can be repaired in this step.',
+                },
+                'skip_summary' => 'No historical menu entry detected by the pre-check. Skipped automatically.',
+                'has_errors' => false,
+            ];
+
+            $prechecks['bf_field_sync'] = [
+                'count' => $bfFieldSyncViews,
+                'description' => match (true) {
+                    $bfFieldSyncViews <= 0 => 'No BF-linked CB view synchronization issue was detected by the last audit.',
+                    default => $bfFieldSyncViews . ' BF-linked CB views need manual review (' . $bfMissingInCbTotal . ' source fields missing in CB, ' . $bfOrphanInCbTotal . ' extra fields in CB). This diagnostic step does not perform an automatic repair.',
+                },
+                'skip_summary' => 'No BF-linked CB view synchronization issue detected by the pre-check. Skipped automatically.',
+                'has_errors' => false,
+            ];
+
+            $menuViewLines = [];
+            foreach ($menuViewIssues as $menuViewIssue) {
+                if (!is_array($menuViewIssue)) {
+                    continue;
+                }
+
+                $menuId = (int) ($menuViewIssue['menu_id'] ?? 0);
+                $menuTitle = trim((string) ($menuViewIssue['title'] ?? ''));
+                $menuIssueText = implode(' | ', array_filter(array_map('strval', (array) ($menuViewIssue['issues'] ?? []))));
+                $menuViewLines[] = 'Menu #' . $menuId . ($menuTitle !== '' ? ' (' . $menuTitle . ')' : '') . ': ' . $menuIssueText;
+            }
+
+            $prechecks['menu_view_consistency'] = [
+                'count' => count($menuViewIssues),
+                'description' => match (true) {
+                    count($menuViewIssues) <= 0 => 'No menu -> view inconsistency was detected by the last audit.',
+                    count($menuViewIssues) === 1 => '1 ContentBuilder menu points to an invalid or inconsistent target. This diagnostic step does not perform an automatic repair.',
+                    default => count($menuViewIssues) . ' ContentBuilder menus point to invalid or inconsistent targets. This diagnostic step does not perform an automatic repair.',
+                },
+                'skip_summary' => '',
+                'has_errors' => false,
+                'mode' => 'diagnostic',
+                'result' => [
+                    'level' => count($menuViewIssues) > 0 ? 'warning' : 'message',
+                    'summary' => match (true) {
+                        count($menuViewIssues) <= 0 => 'No menu -> view inconsistency detected by the last audit.',
+                        count($menuViewIssues) === 1 => '1 menu -> view inconsistency detected. Review the affected menu in the Audit section.',
+                        default => count($menuViewIssues) . ' menu -> view inconsistencies detected. Review the affected menus in the Audit section.',
+                    },
+                    'lines' => $menuViewLines,
+                ],
+            ];
+
+            $frontendPermissionLines = [];
+            foreach ($frontendPermissionIssues as $frontendPermissionIssue) {
+                if (!is_array($frontendPermissionIssue)) {
+                    continue;
+                }
+
+                $formId = (int) ($frontendPermissionIssue['form_id'] ?? 0);
+                $formName = trim((string) ($frontendPermissionIssue['form_name'] ?? ''));
+                $issueText = implode(' | ', array_filter(array_map('strval', (array) ($frontendPermissionIssue['issues'] ?? []))));
+                $frontendPermissionLines[] = 'View #' . $formId . ($formName !== '' ? ' (' . $formName . ')' : '') . ': ' . $issueText;
+            }
+
+            $prechecks['frontend_permission_consistency'] = [
+                'count' => count($frontendPermissionIssues),
+                'description' => match (true) {
+                    count($frontendPermissionIssues) <= 0 => 'No frontend permission incoherence was detected by the last audit.',
+                    count($frontendPermissionIssues) === 1 => '1 view has an incoherent frontend permission setup. This diagnostic step does not perform an automatic repair.',
+                    default => count($frontendPermissionIssues) . ' views have an incoherent frontend permission setup. This diagnostic step does not perform an automatic repair.',
+                },
+                'skip_summary' => '',
+                'has_errors' => false,
+                'mode' => 'diagnostic',
+                'result' => [
+                    'level' => count($frontendPermissionIssues) > 0 ? 'warning' : 'message',
+                    'summary' => match (true) {
+                        count($frontendPermissionIssues) <= 0 => 'No frontend permission incoherence detected by the last audit.',
+                        count($frontendPermissionIssues) === 1 => '1 frontend permission incoherence detected. Review the affected view in the Audit section.',
+                        default => count($frontendPermissionIssues) . ' frontend permission incoherences detected. Review the affected views in the Audit section.',
+                    },
+                    'lines' => $frontendPermissionLines,
+                ],
+            ];
+
+            $elementReferenceLines = [];
+            foreach ($elementReferenceIssues as $elementReferenceIssue) {
+                if (!is_array($elementReferenceIssue)) {
+                    continue;
+                }
+
+                $formId = (int) ($elementReferenceIssue['form_id'] ?? 0);
+                $formName = trim((string) ($elementReferenceIssue['form_name'] ?? ''));
+                $issueParts = [];
+
+                foreach ((array) ($elementReferenceIssue['empty_reference_ids'] ?? []) as $emptyReferenceId) {
+                    $issueParts[] = 'empty reference_id on ' . trim((string) $emptyReferenceId);
+                }
+
+                foreach ((array) ($elementReferenceIssue['duplicate_reference_ids'] ?? []) as $duplicateReferenceId) {
+                    if (!is_array($duplicateReferenceId)) {
+                        continue;
+                    }
+
+                    $issueParts[] = 'duplicate reference_id ' . trim((string) ($duplicateReferenceId['reference_id'] ?? ''));
+                }
+
+                foreach ((array) ($elementReferenceIssue['orphan_reference_ids'] ?? []) as $orphanReferenceId) {
+                    if (!is_array($orphanReferenceId)) {
+                        continue;
+                    }
+
+                    $issueParts[] = 'orphan reference_id ' . trim((string) ($orphanReferenceId['reference_id'] ?? ''));
+                }
+
+                $elementReferenceLines[] = 'View #' . $formId . ($formName !== '' ? ' (' . $formName . ')' : '') . ': ' . implode(' | ', $issueParts);
+            }
+
+            $prechecks['element_reference_consistency'] = [
+                'count' => count($elementReferenceIssues),
+                'description' => match (true) {
+                    count($elementReferenceIssues) <= 0 => 'No element reference_id incoherence was detected by the last audit.',
+                    count($elementReferenceIssues) === 1 => '1 view has duplicate, empty, or orphan element reference_id values. This diagnostic step does not perform an automatic repair.',
+                    default => count($elementReferenceIssues) . ' views have duplicate, empty, or orphan element reference_id values. This diagnostic step does not perform an automatic repair.',
+                },
+                'skip_summary' => '',
+                'has_errors' => false,
+                'mode' => 'diagnostic',
+                'result' => [
+                    'level' => count($elementReferenceIssues) > 0 ? 'warning' : 'message',
+                    'summary' => match (true) {
+                        count($elementReferenceIssues) <= 0 => 'No element reference_id incoherence detected by the last audit.',
+                        count($elementReferenceIssues) === 1 => '1 element reference_id incoherence detected. Review the affected view in the Audit section.',
+                        default => count($elementReferenceIssues) . ' element reference_id incoherences detected. Review the affected views in the Audit section.',
+                    },
+                    'lines' => $elementReferenceLines,
+                ],
+            ];
+        } catch (\Throwable $e) {
+            foreach (['duplicate_indexes', 'historical_tables', 'historical_menu_entries', 'table_encoding', 'audit_columns', 'plugin_duplicates', 'bf_field_sync', 'menu_view_consistency', 'frontend_permission_consistency', 'element_reference_consistency'] as $stepId) {
+                $prechecks[$stepId] = [
+                    'count' => 1,
+                    'description' => 'Pre-check unavailable for this step. You can still run the repair manually.',
+                    'skip_summary' => '',
+                    'has_errors' => true,
+                ];
+            }
+        }
+
+        try {
+            $packedDataAudit = PackedDataMigrationHelper::auditPackedPayloadsStep($db);
+            $packedDataCandidates = (int) ($packedDataAudit['candidates'] ?? 0);
+            $packedDataErrors = (int) ($packedDataAudit['errors'] ?? 0);
+
+            $prechecks['packed_data'] = [
+                'count' => $packedDataCandidates,
+                'description' => match (true) {
+                    $packedDataErrors > 0 => 'Packed data pre-check reported ' . $packedDataErrors . ' errors. You can still run the repair manually.',
+                    $packedDataCandidates <= 0 => 'No packed payload needing migration was detected by the pre-check.',
+                    $packedDataCandidates === 1 => '1 packed payload needing migration was detected by the pre-check.',
+                    default => $packedDataCandidates . ' packed payloads needing migration were detected by the pre-check.',
+                },
+                'skip_summary' => 'No packed payload needing migration was detected by the pre-check. Skipped automatically.',
+                'has_errors' => $packedDataErrors > 0,
+            ];
+        } catch (\Throwable $e) {
+            $prechecks['packed_data'] = [
+                'count' => 1,
+                'description' => 'Packed data pre-check unavailable. You can still run the repair manually.',
+                'skip_summary' => '',
+                'has_errors' => true,
+            ];
+        }
+
+        return $prechecks;
+    }
+
     private function runRepairWorkflowStep(string $stepId): array
     {
         $db = Factory::getContainer()->get(DatabaseInterface::class);
 
         return match ($stepId) {
+            'duplicate_indexes' => $this->buildDuplicateIndexStepResult(DatabaseRepairHelper::repairDuplicateIndexesStep($db)),
+            'historical_tables' => $this->buildHistoricalTablesStepResult(DatabaseRepairHelper::repairHistoricalTablesStep($db)),
             'table_encoding' => $this->buildTableEncodingStepResult(PackedDataMigrationHelper::repairTableCollationsStep($db)),
             'packed_data' => $this->buildPackedDataStepResult(PackedDataMigrationHelper::migratePackedPayloadsStep($db)),
             'audit_columns' => $this->buildAuditColumnsStepResult(\CB\Component\Contentbuilderng\Administrator\Helper\StorageAuditColumnsHelper::repair($db)),
             'plugin_duplicates' => $this->buildPluginDuplicateStepResult(\CB\Component\Contentbuilderng\Administrator\Helper\PluginExtensionDedupHelper::repair($db)),
             'historical_menu_entries' => $this->buildHistoricalMenuStepResult(PackedDataMigrationHelper::repairLegacyMenuEntriesStep($db)),
+            'bf_field_sync' => $this->buildBfFieldSyncStepResult(DatabaseAuditHelper::run()),
             default => throw new \RuntimeException('Unknown repair step: ' . $stepId),
         };
+    }
+
+    private function buildDuplicateIndexStepResult(array $summary): array
+    {
+        $scanned = (int) ($summary['scanned'] ?? 0);
+        $issues = (int) ($summary['issues'] ?? 0);
+        $repaired = (int) ($summary['repaired'] ?? 0);
+        $unchanged = (int) ($summary['unchanged'] ?? 0);
+        $errors = (int) ($summary['errors'] ?? 0);
+        $dropped = (int) ($summary['dropped'] ?? 0);
+        $lines = [];
+
+        foreach ((array) ($summary['groups'] ?? []) as $group) {
+            if (!is_array($group)) {
+                continue;
+            }
+
+            $table = trim((string) ($group['table'] ?? ''));
+            $keep = trim((string) ($group['keep'] ?? ''));
+            $drop = implode(', ', (array) ($group['drop'] ?? []));
+            $removed = implode(', ', (array) ($group['removed'] ?? []));
+            $status = (string) ($group['status'] ?? '');
+            $error = trim((string) ($group['error'] ?? ''));
+
+            $line = $table . ' [' . $status . '] keep=' . $keep . ' drop=[' . $drop . ']';
+            if ($removed !== '') {
+                $line .= ' removed=[' . $removed . ']';
+            }
+            if ($error !== '') {
+                $line .= ' error=' . $error;
+            }
+            $lines[] = $line;
+        }
+
+        foreach ((array) ($summary['warnings'] ?? []) as $warning) {
+            $warning = trim((string) $warning);
+            if ($warning !== '') {
+                $lines[] = 'Warning: ' . $warning;
+            }
+        }
+
+        return [
+            'level' => $errors > 0 ? 'warning' : 'message',
+            'summary' => 'Duplicate index cleanup: scanned ' . $scanned . ' groups, issues ' . $issues . ', repaired ' . $repaired . ', unchanged ' . $unchanged . ', dropped indexes ' . $dropped . ', errors ' . $errors . '.',
+            'lines' => $lines,
+        ];
+    }
+
+    private function buildHistoricalTablesStepResult(array $summary): array
+    {
+        $scanned = (int) ($summary['scanned'] ?? 0);
+        $issues = (int) ($summary['issues'] ?? 0);
+        $repaired = (int) ($summary['repaired'] ?? 0);
+        $unchanged = (int) ($summary['unchanged'] ?? 0);
+        $errors = (int) ($summary['errors'] ?? 0);
+        $lines = [];
+
+        foreach ((array) ($summary['renames'] ?? []) as $rename) {
+            if (!is_array($rename)) {
+                continue;
+            }
+
+            $line = trim((string) ($rename['from'] ?? '')) . ' -> ' . trim((string) ($rename['to'] ?? '')) . ' [' . trim((string) ($rename['status'] ?? '')) . ']';
+            $error = trim((string) ($rename['error'] ?? ''));
+            if ($error !== '') {
+                $line .= ' ' . $error;
+            }
+            $lines[] = $line;
+        }
+
+        foreach ((array) ($summary['warnings'] ?? []) as $warning) {
+            $warning = trim((string) $warning);
+            if ($warning !== '') {
+                $lines[] = 'Warning: ' . $warning;
+            }
+        }
+
+        return [
+            'level' => $errors > 0 ? 'warning' : 'message',
+            'summary' => 'Historical table rename: scanned ' . $scanned . ' tables, issues ' . $issues . ', repaired ' . $repaired . ', unchanged ' . $unchanged . ', errors ' . $errors . '.',
+            'lines' => $lines,
+        ];
     }
 
     private function buildTableEncodingStepResult(array $summary): array
@@ -2257,6 +2671,39 @@ final class AboutController extends BaseController
                 (int) ($summary['unchanged'] ?? 0),
                 (int) ($summary['errors'] ?? 0)
             ),
+            'lines' => $lines,
+        ];
+    }
+
+    private function buildBfFieldSyncStepResult(array $auditReport): array
+    {
+        $issues = (array) ($auditReport['bf_view_field_sync_issues'] ?? []);
+        $summary = (array) ($auditReport['summary'] ?? []);
+        $views = (int) ($summary['bf_view_field_sync_views'] ?? count($issues));
+        $missing = (int) ($summary['bf_view_field_sync_missing_in_cb'] ?? 0);
+        $orphan = (int) ($summary['bf_view_field_sync_orphan_in_cb'] ?? 0);
+        $lines = [
+            'Diagnostic only. No automatic repair is available for BF field synchronization.',
+            'Review the impacted CB views in index.php?option=com_contentbuilderng&view=forms',
+            'Review storage mappings in index.php?option=com_contentbuilderng&view=storages when the issue is storage-related.',
+        ];
+
+        foreach ($issues as $issue) {
+            if (!is_array($issue)) {
+                continue;
+            }
+
+            $lines[] = 'View #' . (int) ($issue['form_id'] ?? 0)
+                . ' "' . trim((string) ($issue['form_name'] ?? '')) . '"'
+                . ' missing=' . (int) ($issue['missing_count'] ?? 0)
+                . ' extra=' . (int) ($issue['orphan_count'] ?? 0);
+        }
+
+        return [
+            'level' => $views > 0 ? 'warning' : 'message',
+            'summary' => $views > 0
+                ? 'BF field sync diagnostic: ' . $views . ' views require manual review (' . $missing . ' source fields missing in CB, ' . $orphan . ' extra fields in CB).'
+                : 'No BF field synchronization issue detected.',
             'lines' => $lines,
         ];
     }

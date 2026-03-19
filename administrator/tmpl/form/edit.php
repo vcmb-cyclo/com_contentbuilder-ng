@@ -68,6 +68,12 @@ $wa->addInlineStyle(
         . 'joomla-tab#view-pane > div[role="tablist"] > button[role="tab"]:focus-visible,joomla-tab#perm-pane > div[role="tablist"] > button[role="tab"]:focus-visible{outline:2px solid var(--bs-primary);outline-offset:1px}'
         . 'joomla-tab#view-pane > div[role="tablist"] > button[role="tab"][aria-selected="true"],joomla-tab#perm-pane > div[role="tablist"] > button[role="tab"][aria-selected="true"]{color:var(--joomla-tab-btn-hvr)!important;background:var(--joomla-tab-btn-aria-exp-bg)!important;box-shadow:none!important}'
         . 'joomla-tab#view-pane > div[role="tablist"] > button[role="tab"][aria-selected="true"]::after,joomla-tab#perm-pane > div[role="tablist"] > button[role="tab"][aria-selected="true"]::after{content:"";position:absolute;left:0;right:0;bottom:0;height:3px;border-radius:0;background:var(--btn-primary-bg)}'
+        . '.cb-perm-group-label{display:inline-flex;align-items:center;gap:.35rem}'
+        . '.cb-perm-group-tree{display:inline-flex;align-items:center;gap:0;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace}'
+        . '.cb-perm-group-text{font-family:var(--body-font-family,inherit)}'
+        . '.cb-perm-group-branch{color:#8a94a6;line-height:1;display:inline-block}'
+        . '.cb-perm-group-branch-guide{width:.85rem;text-align:center}'
+        . '.cb-perm-group-branch-node{margin-inline-end:.1rem}'
         . '@media (max-width:991.98px){joomla-tab#view-pane > div[role="tablist"],joomla-tab#perm-pane > div[role="tablist"]{flex-wrap:nowrap;overflow:auto;-webkit-overflow-scrolling:touch}joomla-tab#view-pane > div[role="tablist"] > button[role="tab"],joomla-tab#perm-pane > div[role="tablist"] > button[role="tab"]{white-space:nowrap}}'
 );
 
@@ -230,6 +236,27 @@ $permHeaderLabel = static function (string $labelKey, string $tipKey): string {
     return '<span class="cb-perm-header-tip" tabindex="0" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="'
         . htmlspecialchars($tip, ENT_QUOTES, 'UTF-8') . '" title="' . htmlspecialchars($tip, ENT_QUOTES, 'UTF-8') . '">'
         . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '</span>';
+};
+
+$permGroupLabel = static function (string $groupText, int $groupId = 0, string $groupPath = '', string $groupTitle = ''): string {
+    $visibleLabel = trim(html_entity_decode(strip_tags($groupText), ENT_QUOTES, 'UTF-8'));
+    $titleLabel = trim($groupTitle) !== '' ? trim($groupTitle) : $visibleLabel;
+    $tooltipLines = [$titleLabel];
+
+    if ($groupId > 0) {
+        $tooltipLines[] = 'ID: ' . $groupId;
+    }
+
+    $groupPath = trim($groupPath);
+    if ($groupPath !== '') {
+        $tooltipLines[] = 'Path: ' . $groupPath;
+    }
+
+    $tooltip = implode(' | ', $tooltipLines);
+
+    return '<span class="cb-perm-header-tip" tabindex="0" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="'
+        . htmlspecialchars($tooltip, ENT_QUOTES, 'UTF-8') . '" title="' . htmlspecialchars($tooltip, ENT_QUOTES, 'UTF-8') . '">'
+        . '<span class="cb-perm-group-text">' . htmlspecialchars($titleLabel, ENT_QUOTES, 'UTF-8') . '</span></span>';
 };
 
 $viewTabLabel = static function (string $iconClass, string $labelKey): string {
@@ -2973,6 +3000,7 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
                 'defaultCheckedForNewPermissions' => $defaultCheckedForNewPermissions,
                 'renderCheckbox' => $renderCheckbox,
                 'permHeaderLabel' => $permHeaderLabel,
+                'permGroupLabel' => $permGroupLabel,
             ],
             $componentLayoutBase
         );

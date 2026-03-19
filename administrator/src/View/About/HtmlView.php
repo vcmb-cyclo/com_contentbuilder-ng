@@ -71,7 +71,7 @@ class HtmlView extends BaseHtmlView
         );
 
         ToolbarHelper::title(
-            Text::_('COM_CONTENTBUILDERNG') .' :: ' . Text::_('COM_CONTENTBUILDERNG_ABOUT'),
+            Text::_('COM_CONTENTBUILDERNG') . ' / ' . Text::_('COM_CONTENTBUILDERNG_ABOUT'),
             'logo_left'
         );
 

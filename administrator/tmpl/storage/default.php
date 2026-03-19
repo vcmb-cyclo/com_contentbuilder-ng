@@ -128,7 +128,6 @@ $wa->addInlineStyle(
 );
 
 ?>
-
 <script>
 const cbSaveAnimationDurationMs = 500;
 const cbPublishedTitle = <?php echo json_encode(Text::_('JPUBLISHED'), JSON_UNESCAPED_UNICODE); ?>;

@@ -54,7 +54,6 @@ $filterStateRaw = strtoupper((string) $this->state->get('filter.state', ''));
 $filterState = in_array($filterStateRaw, ['P', '1', 'PUBLISHED'], true)
     ? 'P'
     : (in_array($filterStateRaw, ['U', '0', 'UNPUBLISHED'], true) ? 'U' : '');
-
 $___tableOrdering = "Joomla.tableOrdering = function";
 ?>
 <script type="text/javascript">

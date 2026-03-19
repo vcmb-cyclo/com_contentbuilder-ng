@@ -81,7 +81,7 @@ class HtmlView extends BaseHtmlView
      */
     protected function addToolbar()
     {
-        ToolbarHelper::title(Text::_('COM_CONTENTBUILDERNG') .' :: ' . Text::_('COM_CONTENTBUILDERNG_STORAGES'), 'logo_left');
+        ToolbarHelper::title(Text::_('COM_CONTENTBUILDERNG') . ' / ' . Text::_('COM_CONTENTBUILDERNG_STORAGES'), 'logo_left');
 
         ToolbarHelper::addNew('storage.add');
         ToolbarHelper::editList('storage.edit');

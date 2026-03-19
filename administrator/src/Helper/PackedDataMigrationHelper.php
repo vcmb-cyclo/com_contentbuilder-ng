@@ -147,7 +147,22 @@ final class PackedDataMigrationHelper
      */
     public static function migratePackedPayloadsStep(?DatabaseInterface $db = null): array
     {
-        return self::migratePackedPayloads($db ?? Factory::getContainer()->get(DatabaseInterface::class));
+        return self::migratePackedPayloads($db ?? Factory::getContainer()->get(DatabaseInterface::class), true);
+    }
+
+    /**
+     * @return array{
+     *   scanned:int,
+     *   candidates:int,
+     *   migrated:int,
+     *   unchanged:int,
+     *   errors:int,
+     *   tables:array<int,array{table:string,column:string,scanned:int,candidates:int,migrated:int,unchanged:int,errors:int}>
+     * }
+     */
+    public static function auditPackedPayloadsStep(?DatabaseInterface $db = null): array
+    {
+        return self::migratePackedPayloads($db ?? Factory::getContainer()->get(DatabaseInterface::class), false);
     }
 
     /**
@@ -201,7 +216,7 @@ final class PackedDataMigrationHelper
      *   tables:array<int,array{table:string,column:string,scanned:int,candidates:int,migrated:int,unchanged:int,errors:int}>
      * }
      */
-    private static function migratePackedPayloads(DatabaseInterface $db): array
+    private static function migratePackedPayloads(DatabaseInterface $db, bool $applyChanges = true): array
     {
         $summary = [
             'scanned' => 0,
@@ -290,18 +305,20 @@ final class PackedDataMigrationHelper
                     continue;
                 }
 
-                try {
-                    $update = $db->getQuery(true)
-                        ->update($db->quoteName($target['table']))
-                        ->set($db->quoteName($target['column']) . ' = ' . $db->quote($encoded))
-                        ->where($db->quoteName($target['primaryKey']) . ' = ' . $id);
+                if ($applyChanges) {
+                    try {
+                        $update = $db->getQuery(true)
+                            ->update($db->quoteName($target['table']))
+                            ->set($db->quoteName($target['column']) . ' = ' . $db->quote($encoded))
+                            ->where($db->quoteName($target['primaryKey']) . ' = ' . $id);
 
-                    $db->setQuery($update);
-                    $db->execute();
-                } catch (\Throwable $e) {
-                    $tableStats['errors']++;
-                    $summary['errors']++;
-                    continue;
+                        $db->setQuery($update);
+                        $db->execute();
+                    } catch (\Throwable $e) {
+                        $tableStats['errors']++;
+                        $summary['errors']++;
+                        continue;
+                    }
                 }
 
                 $tableStats['migrated']++;

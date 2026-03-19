@@ -106,10 +106,17 @@ class HtmlView extends BaseHtmlView
 
         $isNew = ((int) ($this->item->id ?? 0) < 1);
         $text  = $isNew ? Text::_('COM_CONTENTBUILDERNG_NEW') : Text::_('COM_CONTENTBUILDERNG_EDIT');
+        $storageLabel = trim((string) ($this->item->title ?? ''));
+        if ($storageLabel === '') {
+            $storageLabel = trim((string) ($this->item->name ?? ''));
+        }
+        if ($storageLabel === '') {
+            $storageLabel = $isNew ? Text::_('COM_CONTENTBUILDERNG_STORAGES') : ('#' . $storageId);
+        }
 
         ToolbarHelper::title(
-            Text::_('COM_CONTENTBUILDERNG') .' :: ' . ($isNew ? Text::_('COM_CONTENTBUILDERNG_STORAGES') : ($this->item->title ?? ''))
-            . ' : <small><small>[ ' . $text . ' ]</small></small>',
+            Text::_('COM_CONTENTBUILDERNG') . ' / ' . Text::_('COM_CONTENTBUILDERNG_STORAGES') . ' / ' . $storageLabel
+            . ' <small><small>[ ' . $text . ' ]</small></small>',
             'logo_left'
         );
 

@@ -89,7 +89,6 @@ $sortLink = function (string $label, string $field) use ($order, $orderDir, $lim
 
     return '<a href="' . $url . '">' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . $indicator . '</a>';
 };
-
 ?>
 <style>
     .cb-forms-preview-link::before,

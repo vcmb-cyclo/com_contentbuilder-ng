@@ -103,10 +103,14 @@ class HtmlView extends BaseHtmlView
 
         $isNew = ($formId < 1);
         $text  = $isNew ? Text::_('COM_CONTENTBUILDERNG_NEW') : Text::_('COM_CONTENTBUILDERNG_EDIT');
+        $formLabel = trim((string) ($this->item->name ?? ''));
+        if ($formLabel === '') {
+            $formLabel = $isNew ? Text::_('COM_CONTENTBUILDERNG_FORM') : ('#' . $formId);
+        }
 
         ToolbarHelper::title(
-            Text::_('COM_CONTENTBUILDERNG') .' :: ' . ($isNew ? Text::_('COM_CONTENTBUILDERNG_FORM') : ($this->item->name ?? '')) .
-                ' : <small><small>[ ' . $text . ' ]</small></small>',
+            Text::_('COM_CONTENTBUILDERNG') . ' / ' . Text::_('COM_CONTENTBUILDERNG_FORMS') . ' / ' . $formLabel
+                . ' <small><small>[ ' . $text . ' ]</small></small>',
             'logo_left'
         );
 
@@ -369,7 +373,13 @@ class HtmlView extends BaseHtmlView
         // Données additionnelles
         $db = Factory::getContainer()->get(DatabaseInterface::class);
         $q = $db->getQuery(true)
-            ->select("CONCAT(REPEAT('..', COUNT(parent.id) - 1), node.title) AS " . $db->quoteName('text') . ", node.id AS " . $db->quoteName('value'))
+            ->select([
+                'node.title AS ' . $db->quoteName('text'),
+                'node.id AS ' . $db->quoteName('value'),
+                'node.title AS ' . $db->quoteName('title'),
+                '(COUNT(parent.id) - 1) AS ' . $db->quoteName('depth'),
+                "GROUP_CONCAT(parent.title ORDER BY parent.lft SEPARATOR ' / ') AS " . $db->quoteName('path'),
+            ])
             ->from($db->quoteName('#__usergroups', 'node'))
             ->from($db->quoteName('#__usergroups', 'parent'))
             ->where('node.lft BETWEEN parent.lft AND parent.rgt')

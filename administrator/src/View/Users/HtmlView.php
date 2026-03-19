@@ -11,6 +11,7 @@ namespace CB\Component\Contentbuilderng\Administrator\View\Users;
 
 \defined('_JEXEC') or die;
 
+use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
 use Joomla\CMS\Toolbar\ToolbarHelper;
@@ -41,10 +42,16 @@ class HtmlView extends BaseHtmlView
         $this->state      = $model->getState();
 
         // Toolbar
-        ToolbarHelper::title(
-            Text::_('COM_CONTENTBUILDERNG') .' :: ' .Text::_('COM_CONTENTBUILDERNG_USERS'),
-            'users'
-        );
+        $formId = Factory::getApplication()->input->getInt('form_id', 0);
+        $title = Text::_('COM_CONTENTBUILDERNG') . ' / ';
+
+        if ($formId > 0) {
+            $title .= Text::_('COM_CONTENTBUILDERNG_FORMS') . ' / #' . $formId . ' / ';
+        }
+
+        $title .= Text::_('COM_CONTENTBUILDERNG_USERS');
+
+        ToolbarHelper::title($title, 'users');
 
         ToolbarHelper::editList();
 
