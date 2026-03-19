@@ -26,7 +26,7 @@ class MultiformsField extends FormField
         $class = (string) ($this->element['class'] ?: '');
         $multiple = 'multiple="multiple" ';
         $db = Factory::getContainer()->get(DatabaseInterface::class);
-        $db->setQuery("Select id,`name` From #__contentbuilderng_forms Where published = 1 Order By `ordering`");
+        $db->setQuery("Select id,`name` From #__contentbuilderng_forms Where published = 1 Order By `name` ASC, `id` ASC");
         $status = $db->loadObjectList();
 
         return HTMLHelper::_(
