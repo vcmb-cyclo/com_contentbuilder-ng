@@ -40,7 +40,7 @@ $wa->addInlineStyle(
         . '.cb-order-head .saveorder{float:none!important;margin-left:6px}'
         . '.cb-item-label-cell{display:flex;flex-direction:column;gap:4px}'
         . '.cb-item-label-display{cursor:pointer;width:100%;display:block}'
-        . '.cb-item-type-badge{display:inline-flex;align-items:center;gap:.3rem;padding:.22rem .5rem;border-radius:999px;border:1px solid transparent;font-size:.72rem;font-weight:700;line-height:1.2;text-transform:uppercase}'
+        . '.cb-item-type-badge{display:inline-flex;align-items:center;gap:.3rem;padding:.22rem .5rem;border-radius:999px;border:1px solid transparent;font-size:.72rem;font-weight:700;line-height:1.2}'
         . '.cb-item-type-badge a{text-decoration:none;color:inherit}'
         . '.cb-item-type-badge.is-default{color:var(--bs-secondary-color);background:var(--bs-secondary-bg);border-color:var(--bs-border-color)}'
         . '.cb-item-type-badge.is-modified{color:#842029;background:#f8d7da;border-color:#f1aeb5}'
