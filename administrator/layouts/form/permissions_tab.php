@@ -150,11 +150,17 @@ echo HTMLHelper::_('uitab.addTab', 'perm-pane', 'permtab1', Text::_('COM_CONTENT
         <?php endforeach; ?>
     </tr>
 
-    <?php $groupBranchState = []; ?>
+    <?php $groupLineage = []; ?>
     <?php foreach ($gmap as $groupIndex => $entry) : ?>
         <?php
         $k = 0;
         $depth = max(0, (int) ($entry->depth ?? 0));
+        foreach (array_keys($groupLineage) as $lineageDepth) {
+            if ($lineageDepth >= $depth) {
+                unset($groupLineage[$lineageDepth]);
+            }
+        }
+        $ancestorGroupIds = array_values($groupLineage);
         $nextEntry = $gmap[$groupIndex + 1] ?? null;
         $nextDepth = max(0, (int) ($nextEntry->depth ?? 0));
         $isLastAtDepth = $nextDepth <= $depth;
@@ -170,13 +176,7 @@ echo HTMLHelper::_('uitab.addTab', 'perm-pane', 'permtab1', Text::_('COM_CONTENT
                 . '</span>';
         }
 
-        $groupBranchState[$depth] = !$isLastAtDepth;
-
-        if ($nextDepth < $depth) {
-            for ($level = $depth; $level > $nextDepth; $level--) {
-                unset($groupBranchState[$level]);
-            }
-        }
+        $groupLineage[$depth] = (int) ($entry->value ?? 0);
         ?>
         <tr class="<?php echo 'row' . $k; ?>">
             <td>
@@ -208,7 +208,20 @@ echo HTMLHelper::_('uitab.addTab', 'perm-pane', 'permtab1', Text::_('COM_CONTENT
                     $isChecked = !empty($groupPermissions[$permKey]);
                 }
 
-                echo '<td>' . (is_callable($renderCheckbox) ? $renderCheckbox($permName, $permId, $isChecked) : '') . '</td>';
+                $ancestorIds = implode(',', array_map('intval', $ancestorGroupIds));
+                $tdClass = '';
+                $tdTitle = '';
+
+                echo '<td' . $tdClass . $tdTitle . '>'
+                    . (is_callable($renderCheckbox)
+                        ? $renderCheckbox($permName, $permId, $isChecked, '1', [
+                            'data-cb-perm-matrix' => '1',
+                            'data-cb-group-id' => (int) ($entry->value ?? 0),
+                            'data-cb-perm-key' => $permKey,
+                            'data-cb-ancestor-ids' => $ancestorIds,
+                        ])
+                        : '')
+                    . '</td>';
             }
             ?>
         </tr>

@@ -74,6 +74,10 @@ $wa->addInlineStyle(
         . '.cb-perm-group-branch{color:#8a94a6;line-height:1;display:inline-block}'
         . '.cb-perm-group-branch-guide{width:.85rem;text-align:center}'
         . '.cb-perm-group-branch-node{margin-inline-end:.1rem}'
+        . '.cb-perm-inherited{background:#eef1f4}'
+        . '.cb-perm-inherited .form-check-input{background-color:#dce2e8;border-color:#b8c2cc}'
+        . '.cb-perm-inherited .form-check-input:not(:checked){box-shadow:none}'
+        . '.cb-perm-inherited .form-check-input:indeterminate{background-color:#e7ecf1!important;border-color:#cdd6df!important;background-image:linear-gradient(#9aa5b1,#9aa5b1)!important}'
         . '@media (max-width:991.98px){joomla-tab#view-pane > div[role="tablist"],joomla-tab#perm-pane > div[role="tablist"]{flex-wrap:nowrap;overflow:auto;-webkit-overflow-scrolling:touch}joomla-tab#view-pane > div[role="tablist"] > button[role="tab"],joomla-tab#perm-pane > div[role="tablist"] > button[role="tab"]{white-space:nowrap}}'
 );
 
@@ -459,7 +463,14 @@ $formatTypeDisplay = static function (string $type) use ($typeDisplayAliases): a
 
 $renderCheckbox = static function (string $name, string $id, bool $checked = false, string $value = '1', array $attributes = []): string {
     $html = '<span class="form-check d-inline-block mb-0">';
-    $html .= '<input class="form-check-input" type="checkbox"';
+    $inputClass = 'form-check-input';
+
+    if (!empty($attributes['class'])) {
+        $inputClass .= ' ' . trim((string) $attributes['class']);
+        unset($attributes['class']);
+    }
+
+    $html .= '<input class="' . htmlspecialchars($inputClass, ENT_QUOTES, 'UTF-8') . '" type="checkbox"';
 
     if ($name !== '') {
         $html .= ' name="' . htmlspecialchars($name, ENT_QUOTES, 'UTF-8') . '"';
@@ -2229,6 +2240,85 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
     }
 
     document.addEventListener('DOMContentLoaded', cbInitDirtyTracking);
+
+    function cbRefreshInheritedPermissionMatrix() {
+        const matrixInputs = Array.from(document.querySelectorAll('input[data-cb-perm-matrix="1"]'));
+
+        if (!matrixInputs.length) {
+            return;
+        }
+
+        const checkedMap = new Map();
+        const labelMap = new Map();
+
+        matrixInputs.forEach((input) => {
+            const groupId = String(input.dataset.cbGroupId || '');
+            const permKey = String(input.dataset.cbPermKey || '');
+
+            if (!groupId || !permKey) {
+                return;
+            }
+
+            const cellKey = `${groupId}:${permKey}`;
+
+            if (input.checked) {
+                checkedMap.set(cellKey, true);
+            }
+
+            const row = input.closest('tr');
+            const label = row ? row.querySelector('.cb-perm-group-text') : null;
+            if (label) {
+                labelMap.set(groupId, label.textContent.trim());
+            }
+        });
+
+        matrixInputs.forEach((input) => {
+            const permKey = String(input.dataset.cbPermKey || '');
+            const ancestorIds = String(input.dataset.cbAncestorIds || '')
+                .split(',')
+                .map((value) => value.trim())
+                .filter(Boolean);
+            const td = input.closest('td');
+
+            input.indeterminate = false;
+
+            if (!td) {
+                return;
+            }
+
+            td.classList.remove('cb-perm-inherited');
+            td.removeAttribute('title');
+
+            if (input.checked) {
+                return;
+            }
+
+            for (const ancestorId of ancestorIds) {
+                if (!checkedMap.has(`${ancestorId}:${permKey}`)) {
+                    continue;
+                }
+
+                input.indeterminate = true;
+                td.classList.add('cb-perm-inherited');
+
+                const ancestorLabel = labelMap.get(ancestorId);
+                if (ancestorLabel) {
+                    td.setAttribute('title', `Inherited from ${ancestorLabel}`);
+                }
+
+                break;
+            }
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', cbRefreshInheritedPermissionMatrix);
+    document.addEventListener('change', function(event) {
+        if (!event.target || !event.target.matches('input[data-cb-perm-matrix="1"]')) {
+            return;
+        }
+
+        cbRefreshInheritedPermissionMatrix();
+    }, true);
     window.addEventListener('load', cbInitDirtyTracking);
     window.setTimeout(cbRefreshDirtyState, 200);
     window.setTimeout(cbRefreshDirtyState, 900);
