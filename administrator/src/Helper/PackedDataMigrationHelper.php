@@ -145,6 +145,62 @@ final class PackedDataMigrationHelper
      *   tables:array<int,array{table:string,column:string,scanned:int,candidates:int,migrated:int,unchanged:int,errors:int}>
      * }
      */
+    public static function migratePackedPayloadsStep(?DatabaseInterface $db = null): array
+    {
+        return self::migratePackedPayloads($db ?? Factory::getContainer()->get(DatabaseInterface::class));
+    }
+
+    /**
+     * @return array{
+     *   target_collation:string,
+     *   target_charset:string,
+     *   supported:bool,
+     *   scanned:int,
+     *   converted:int,
+     *   unchanged:int,
+     *   errors:int,
+     *   tables:array<int,array{table:string,from:string,to:string,status:string,error:string}>,
+     *   warnings:array<int,string>
+     * }
+     */
+    public static function repairTableCollationsStep(?DatabaseInterface $db = null): array
+    {
+        return self::repairTableCollations($db ?? Factory::getContainer()->get(DatabaseInterface::class));
+    }
+
+    /**
+     * @return array{
+     *   scanned:int,
+     *   issues:int,
+     *   repaired:int,
+     *   unchanged:int,
+     *   errors:int,
+     *   entries:array<int,array{
+     *     menu_id:int,
+     *     old_title:string,
+     *     new_title:string,
+     *     link:string,
+     *     status:string,
+     *     error:string
+     *   }>,
+     *   warnings:array<int,string>
+     * }
+     */
+    public static function repairLegacyMenuEntriesStep(?DatabaseInterface $db = null): array
+    {
+        return self::repairLegacyMenuEntries($db ?? Factory::getContainer()->get(DatabaseInterface::class));
+    }
+
+    /**
+     * @return array{
+     *   scanned:int,
+     *   candidates:int,
+     *   migrated:int,
+     *   unchanged:int,
+     *   errors:int,
+     *   tables:array<int,array{table:string,column:string,scanned:int,candidates:int,migrated:int,unchanged:int,errors:int}>
+     * }
+     */
     private static function migratePackedPayloads(DatabaseInterface $db): array
     {
         $summary = [

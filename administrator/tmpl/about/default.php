@@ -156,9 +156,34 @@ if ($logDisplayContent !== '') {
 }
 $logTruncated = (int) ($logReport['truncated'] ?? 0) === 1;
 $logTailBytes = (int) ($logReport['tail_bytes'] ?? 0);
-$dbRepairConfirmMessage = str_replace('\n', "\n", Text::_('COM_CONTENTBUILDERNG_DB_REPAIR_CONFIRMATION'));
-$dbRepairPromptMessage = str_replace('\n', "\n", Text::_('COM_CONTENTBUILDERNG_DB_REPAIR_CONFIRMATION_PROMPT'));
-$dbRepairPromptFailedMessage = str_replace('\n', "\n", Text::_('COM_CONTENTBUILDERNG_DB_REPAIR_CONFIRMATION_FAILED'));
+$repairWorkflow = is_array($this->repairWorkflow ?? null) ? $this->repairWorkflow : [];
+$repairWorkflowSteps = array_values((array) ($repairWorkflow['steps'] ?? []));
+$repairWorkflowCurrentIndex = (int) ($repairWorkflow['current_step'] ?? 0);
+$repairWorkflowCurrentStep = $repairWorkflowSteps[$repairWorkflowCurrentIndex] ?? null;
+$repairWorkflowCurrentStepId = is_array($repairWorkflowCurrentStep) ? (string) ($repairWorkflowCurrentStep['id'] ?? '') : '';
+$repairWorkflowCurrentStatus = is_array($repairWorkflowCurrentStep) ? (string) ($repairWorkflowCurrentStep['status'] ?? 'pending') : 'pending';
+$repairWorkflowCurrentResult = is_array($repairWorkflowCurrentStep) ? (array) ($repairWorkflowCurrentStep['result'] ?? []) : [];
+$repairWorkflowIsActive = !empty($repairWorkflow) && (bool) ($repairWorkflow['active'] ?? false);
+$repairWorkflowIsCompleted = (bool) ($repairWorkflow['completed'] ?? false);
+$repairWorkflowHasNext = $repairWorkflowIsActive && $repairWorkflowCurrentIndex < count($repairWorkflowSteps) - 1;
+$repairWorkflowDisplayCurrentIndex = $repairWorkflowCurrentIndex;
+if ($repairWorkflowCurrentStatus !== 'pending' && $repairWorkflowHasNext) {
+    $repairWorkflowDisplayCurrentIndex++;
+}
+$repairWorkflowStepLabels = [
+    'table_encoding' => Text::_('COM_CONTENTBUILDERNG_DB_REPAIR_STEP_TABLE_ENCODING_TITLE'),
+    'packed_data' => Text::_('COM_CONTENTBUILDERNG_DB_REPAIR_STEP_PACKED_DATA_TITLE'),
+    'audit_columns' => Text::_('COM_CONTENTBUILDERNG_DB_REPAIR_STEP_AUDIT_COLUMNS_TITLE'),
+    'plugin_duplicates' => Text::_('COM_CONTENTBUILDERNG_DB_REPAIR_STEP_PLUGIN_DUPLICATES_TITLE'),
+    'historical_menu_entries' => Text::_('COM_CONTENTBUILDERNG_DB_REPAIR_STEP_HISTORICAL_MENU_TITLE'),
+];
+$repairWorkflowStepDescriptions = [
+    'table_encoding' => Text::_('COM_CONTENTBUILDERNG_DB_REPAIR_STEP_TABLE_ENCODING_DESC'),
+    'packed_data' => Text::_('COM_CONTENTBUILDERNG_DB_REPAIR_STEP_PACKED_DATA_DESC'),
+    'audit_columns' => Text::_('COM_CONTENTBUILDERNG_DB_REPAIR_STEP_AUDIT_COLUMNS_DESC'),
+    'plugin_duplicates' => Text::_('COM_CONTENTBUILDERNG_DB_REPAIR_STEP_PLUGIN_DUPLICATES_DESC'),
+    'historical_menu_entries' => Text::_('COM_CONTENTBUILDERNG_DB_REPAIR_STEP_HISTORICAL_MENU_DESC'),
+];
 $phpLibrariesCount = count((array) $this->phpLibraries);
 $javascriptLibrariesCount = count((array) $this->javascriptLibraries);
 $columnEncodingIssueLimit = 200;
@@ -167,7 +192,7 @@ $columnEncodingIssueHiddenCount = max(0, count($columnEncodingIssues) - count($c
 $hasAuditIssues = (int) ($auditSummary['issues_total'] ?? 0) > 0;
 $hasDuplicateIndexIssues = !empty($duplicateIndexes);
 $hasDuplicateIndexDropIssues = (int) ($auditSummary['duplicate_indexes_to_drop'] ?? 0) > 0;
-$hasLegacyTableIssues = !empty($legacyTables);
+$hasLegacyTableIssues = !empty($historicalTables);
 $hasLegacyMenuIssues = $legacyMenuEntriesCount > 0;
 $hasTableEncodingIssues = !empty($tableEncodingIssues);
 $hasColumnEncodingIssues = !empty($columnEncodingIssues);
@@ -477,6 +502,71 @@ $formatAuditIssueList = static function (array $values, int $limit = 8): string 
         max-height: 240px;
         overflow-y: auto;
     }
+    .cb-repair-workflow-steps {
+        display: grid;
+        gap: .65rem;
+        margin-bottom: 1rem;
+    }
+    .cb-repair-workflow-step {
+        border: 1px solid rgba(0, 0, 0, .08);
+        border-radius: .85rem;
+        padding: .75rem .9rem;
+        background: linear-gradient(135deg, rgba(248, 249, 250, .95), rgba(255, 255, 255, .98));
+    }
+    .cb-repair-workflow-step.is-current {
+        border-color: rgba(13, 110, 253, .35);
+        box-shadow: 0 0 0 .2rem rgba(13, 110, 253, .08);
+    }
+    .cb-repair-workflow-step.is-done,
+    .cb-repair-workflow-step.is-skipped {
+        border-color: rgba(25, 135, 84, .22);
+    }
+    .cb-repair-workflow-step-head {
+        display: flex;
+        justify-content: space-between;
+        gap: 1rem;
+        align-items: center;
+    }
+    .cb-repair-workflow-step-title {
+        margin: 0;
+        font-weight: 600;
+    }
+    .cb-repair-workflow-step-desc {
+        margin: .4rem 0 0;
+        color: var(--bs-secondary-color);
+    }
+    .cb-repair-workflow-status {
+        font-size: .75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .04em;
+        border-radius: 999px;
+        padding: .25rem .55rem;
+        background: rgba(108, 117, 125, .12);
+        color: var(--bs-secondary-color);
+        white-space: nowrap;
+    }
+    .cb-repair-workflow-status.is-done,
+    .cb-repair-workflow-status.is-skipped {
+        background: rgba(25, 135, 84, .12);
+        color: #146c43;
+    }
+    .cb-repair-workflow-status.is-current {
+        background: rgba(13, 110, 253, .12);
+        color: #0a58ca;
+    }
+    .cb-repair-workflow-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: .75rem;
+        margin-top: 1rem;
+    }
+    .cb-repair-workflow-log {
+        max-height: 260px;
+        overflow: auto;
+        white-space: pre-wrap;
+        background: var(--bs-tertiary-bg);
+    }
 </style>
 <form
     action="<?php echo Route::_('index.php?option=com_contentbuilderng&view=about'); ?>"
@@ -527,6 +617,148 @@ $formatAuditIssueList = static function (array $values, int $limit = 8): string 
         </div>
     </div>
 </div>
+
+<?php if ($repairWorkflowIsActive) : ?>
+    <div class="card mt-3">
+        <div class="card-body">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+                <h3 class="h6 card-title mb-0"><?php echo Text::_('COM_CONTENTBUILDERNG_DB_REPAIR_WORKFLOW_TITLE'); ?></h3>
+                <small class="text-muted">
+                    <?php echo Text::sprintf(
+                        'COM_CONTENTBUILDERNG_DB_REPAIR_WORKFLOW_PROGRESS',
+                        min(count($repairWorkflowSteps), $repairWorkflowCurrentIndex + 1),
+                        count($repairWorkflowSteps)
+                    ); ?>
+                </small>
+            </div>
+
+            <p class="text-muted mb-3"><?php echo Text::_('COM_CONTENTBUILDERNG_DB_REPAIR_WORKFLOW_INTRO'); ?></p>
+
+            <div class="cb-repair-workflow-steps">
+                <?php foreach ($repairWorkflowSteps as $stepIndex => $repairWorkflowStep) : ?>
+                    <?php
+                    if (!is_array($repairWorkflowStep)) {
+                        continue;
+                    }
+
+                    $stepId = (string) ($repairWorkflowStep['id'] ?? '');
+                    $stepStatus = (string) ($repairWorkflowStep['status'] ?? 'pending');
+                    $stepIsCurrent = $stepIndex === $repairWorkflowDisplayCurrentIndex;
+                    $stepClasses = ['cb-repair-workflow-step'];
+                    $statusClasses = ['cb-repair-workflow-status'];
+
+                    if ($stepIsCurrent) {
+                        $stepClasses[] = 'is-current';
+                        $statusClasses[] = 'is-current';
+                    } elseif ($stepStatus === 'done' || $stepStatus === 'skipped') {
+                        $stepClasses[] = 'is-' . $stepStatus;
+                        $statusClasses[] = 'is-' . $stepStatus;
+                    }
+
+                    $stepLabel = $repairWorkflowStepLabels[$stepId] ?? $stepId;
+                    $stepDescription = $repairWorkflowStepDescriptions[$stepId] ?? '';
+                    $statusLabelKey = match ($stepStatus) {
+                        'done' => 'COM_CONTENTBUILDERNG_DB_REPAIR_WORKFLOW_STATUS_DONE',
+                        'skipped' => 'COM_CONTENTBUILDERNG_DB_REPAIR_WORKFLOW_STATUS_SKIPPED',
+                        default => $stepIsCurrent
+                            ? 'COM_CONTENTBUILDERNG_DB_REPAIR_WORKFLOW_STATUS_CURRENT'
+                            : 'COM_CONTENTBUILDERNG_DB_REPAIR_WORKFLOW_STATUS_PENDING',
+                    };
+                    ?>
+                    <div class="<?php echo implode(' ', $stepClasses); ?>">
+                        <div class="cb-repair-workflow-step-head">
+                            <p class="cb-repair-workflow-step-title">
+                                <?php echo ($stepIndex + 1) . '. ' . htmlspecialchars($stepLabel, ENT_QUOTES, 'UTF-8'); ?>
+                            </p>
+                            <span class="<?php echo implode(' ', $statusClasses); ?>">
+                                <?php echo Text::_($statusLabelKey); ?>
+                            </span>
+                        </div>
+                        <?php if ($stepDescription !== '') : ?>
+                            <p class="cb-repair-workflow-step-desc"><?php echo htmlspecialchars($stepDescription, ENT_QUOTES, 'UTF-8'); ?></p>
+                        <?php endif; ?>
+                        <?php if ($stepIsCurrent && $stepStatus === 'pending') : ?>
+                            <div class="alert alert-warning mt-3 mb-0">
+                                <?php echo Text::_('COM_CONTENTBUILDERNG_DB_REPAIR_WORKFLOW_CONFIRM_PROMPT'); ?>
+                            </div>
+                            <div class="cb-repair-workflow-actions">
+                                <button
+                                    type="submit"
+                                    class="btn btn-success"
+                                    onclick="document.getElementById('repair_step').value=<?php echo json_encode($stepId, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>;document.getElementById('repair_action').value='apply';document.getElementById('adminForm').task.value='about.executeRepairWorkflowStep';"
+                                ><?php echo Text::_('COM_CONTENTBUILDERNG_DB_REPAIR_WORKFLOW_APPLY'); ?></button>
+                                <button
+                                    type="submit"
+                                    class="btn btn-outline-secondary"
+                                    onclick="document.getElementById('repair_step').value=<?php echo json_encode($stepId, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>;document.getElementById('repair_action').value='skip';document.getElementById('adminForm').task.value='about.executeRepairWorkflowStep';"
+                                ><?php echo Text::_('COM_CONTENTBUILDERNG_DB_REPAIR_WORKFLOW_SKIP'); ?></button>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+
+            <?php if (is_array($repairWorkflowCurrentStep)) : ?>
+                <?php
+                $currentStepTitle = $repairWorkflowStepLabels[$repairWorkflowCurrentStepId] ?? $repairWorkflowCurrentStepId;
+                $currentStepDescription = $repairWorkflowStepDescriptions[$repairWorkflowCurrentStepId] ?? '';
+                $currentStepLines = (array) ($repairWorkflowCurrentResult['lines'] ?? []);
+                $currentStepSummary = trim((string) ($repairWorkflowCurrentResult['summary'] ?? ''));
+                $currentStepLevel = (string) ($repairWorkflowCurrentResult['level'] ?? 'info');
+                $currentStepAlertClass = match ($currentStepLevel) {
+                    'error' => 'danger',
+                    'warning' => 'warning',
+                    'message' => 'success',
+                    default => 'info',
+                };
+                ?>
+                <div class="border rounded p-3 bg-body-tertiary">
+                    <h4 class="h6 mb-2"><?php echo htmlspecialchars($currentStepTitle, ENT_QUOTES, 'UTF-8'); ?></h4>
+                    <?php if ($currentStepDescription !== '') : ?>
+                        <p class="mb-2"><?php echo htmlspecialchars($currentStepDescription, ENT_QUOTES, 'UTF-8'); ?></p>
+                    <?php endif; ?>
+
+                    <?php if ($repairWorkflowCurrentStatus !== 'pending') : ?>
+                        <?php if ($currentStepSummary !== '') : ?>
+                            <div class="alert alert-<?php echo htmlspecialchars($currentStepAlertClass, ENT_QUOTES, 'UTF-8'); ?> mb-3">
+                                <?php echo htmlspecialchars($currentStepSummary, ENT_QUOTES, 'UTF-8'); ?>
+                            </div>
+                        <?php endif; ?>
+
+                        <h5 class="h6"><?php echo Text::_('COM_CONTENTBUILDERNG_DB_REPAIR_WORKFLOW_LOG_TITLE'); ?></h5>
+                        <?php if ($currentStepLines === []) : ?>
+                            <div class="alert alert-info mb-0">
+                                <?php echo Text::_('COM_CONTENTBUILDERNG_DB_REPAIR_WORKFLOW_NO_LOG'); ?>
+                            </div>
+                        <?php else : ?>
+                            <pre class="cb-repair-workflow-log border rounded p-3 mb-0"><?php echo htmlspecialchars(implode(PHP_EOL, $currentStepLines), ENT_QUOTES, 'UTF-8'); ?></pre>
+                        <?php endif; ?>
+
+                        <div class="cb-repair-workflow-actions">
+                            <?php if ($repairWorkflowHasNext) : ?>
+                                <button
+                                    type="submit"
+                                    class="btn btn-primary"
+                                    onclick="document.getElementById('repair_step').value='';document.getElementById('repair_action').value='';document.getElementById('adminForm').task.value='about.nextRepairWorkflowStep';"
+                                ><?php echo Text::_('COM_CONTENTBUILDERNG_DB_REPAIR_WORKFLOW_NEXT'); ?></button>
+                            <?php elseif ($repairWorkflowIsCompleted || !$repairWorkflowHasNext) : ?>
+                                <div class="alert alert-success mb-0">
+                                    <?php echo Text::_('COM_CONTENTBUILDERNG_DB_REPAIR_WORKFLOW_FINISHED'); ?>
+                                </div>
+                            <?php endif; ?>
+
+                            <button
+                                type="submit"
+                                class="btn btn-outline-dark"
+                                onclick="document.getElementById('repair_step').value='';document.getElementById('repair_action').value='';document.getElementById('adminForm').task.value='about.startRepairWorkflow';"
+                            ><?php echo Text::_('COM_CONTENTBUILDERNG_DB_REPAIR_WORKFLOW_RESTART'); ?></button>
+                        </div>
+                    <?php endif; ?>
+                </div>
+            <?php endif; ?>
+        </div>
+    </div>
+<?php endif; ?>
 
 <div class="card mt-3">
     <div class="card-body">
@@ -1261,7 +1493,7 @@ $formatAuditIssueList = static function (array $values, int $limit = 8): string 
                 label: <?php echo json_encode($labelAuditButton, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>,
                 fragments: ['about_audit', 'about-audit', 'runaudit', 'run-audit']
             },
-            'about.migratePackedData': {
+            'about.startRepairWorkflow': {
                 tooltip: <?php echo json_encode($tooltipDbRepair, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>,
                 label: <?php echo json_encode($labelDbRepairButton, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>,
                 fragments: ['about_migrate_packed_data', 'about-migrate-packed-data', 'migratepackeddata', 'migrate-packed-data']
@@ -1455,29 +1687,6 @@ $formatAuditIssueList = static function (array $values, int $limit = 8): string 
         }
 
         Joomla.submitbutton = function (task) {
-            if (task === 'about.migratePackedData') {
-                var confirmed = window.confirm(
-                    <?php echo json_encode($dbRepairConfirmMessage, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>
-                );
-
-                if (!confirmed) {
-                    return false;
-                }
-
-                var requiredToken = 'REPAIR';
-                var typedToken = window.prompt(
-                    <?php echo json_encode($dbRepairPromptMessage, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>,
-                    ''
-                );
-
-                if (typedToken === null || typedToken.trim() !== requiredToken) {
-                    window.alert(
-                        <?php echo json_encode($dbRepairPromptFailedMessage, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>
-                    );
-                    return false;
-                }
-            }
-
             if (typeof originalSubmitbutton === 'function') {
                 return originalSubmitbutton(task);
             }
@@ -1487,6 +1696,8 @@ $formatAuditIssueList = static function (array $values, int $limit = 8): string 
     })();
 </script>
     <input type="hidden" name="option" value="com_contentbuilderng">
+    <input type="hidden" name="repair_step" id="repair_step" value="">
+    <input type="hidden" name="repair_action" id="repair_action" value="">
     <input type="hidden" name="task" value="">
     <?php echo HTMLHelper::_('form.token'); ?>
 </form>

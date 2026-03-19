@@ -31,6 +31,7 @@ class HtmlView extends BaseHtmlView
     protected array $javascriptLibraries = [];
     protected array $auditReport = [];
     protected array $logReport = [];
+    protected array $repairWorkflow = [];
 
     public function display($tpl = null)
     {
@@ -91,7 +92,7 @@ class HtmlView extends BaseHtmlView
             ->listCheck(false);
 
         $maintenanceChildToolbar->standardButton('about_migrate_packed_data')
-            ->task('about.migratePackedData')
+            ->task('about.startRepairWorkflow')
             ->text('COM_CONTENTBUILDERNG_ABOUT_MIGRATE_PACKED_DATA')
             ->icon('fa fa-refresh')
             ->listCheck(false);
@@ -136,6 +137,8 @@ class HtmlView extends BaseHtmlView
         $logReport = $app->getUserState('com_contentbuilderng.about.log', []);
         $this->logReport = is_array($logReport) ? $logReport : [];
         $app->setUserState('com_contentbuilderng.about.log', []);
+        $repairWorkflow = $app->getUserState('com_contentbuilderng.about.repair_workflow', []);
+        $this->repairWorkflow = is_array($repairWorkflow) ? $repairWorkflow : [];
 
         // 3️⃣ Affichage du layout
         parent::display($tpl);

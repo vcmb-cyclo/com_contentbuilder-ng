@@ -29,6 +29,14 @@ final class AboutController extends BaseController
         'com_contentbuilderng.log',
     ];
     private const ABOUT_LOG_TAIL_BYTES = 262144;
+    private const REPAIR_WORKFLOW_STATE_KEY = 'com_contentbuilderng.about.repair_workflow';
+    private const REPAIR_WORKFLOW_STEPS = [
+        'table_encoding',
+        'packed_data',
+        'audit_columns',
+        'plugin_duplicates',
+        'historical_menu_entries',
+    ];
     private const CONFIG_IMPORT_MODE_MERGE = 'merge';
     private const CONFIG_IMPORT_MODE_REPLACE = 'replace';
     private const CONFIG_TRANSFER_ROOT_SECTIONS = [
@@ -56,404 +64,131 @@ final class AboutController extends BaseController
 
     public function migratePackedData(): void
     {
+        $this->startRepairWorkflow();
+    }
+
+    public function startRepairWorkflow(): void
+    {
         $this->checkToken();
 
-        $app = Factory::getApplication();
-        $user = $app->getIdentity();
+        $app = $this->getAuthorizedApplication();
+        $app->setUserState(self::REPAIR_WORKFLOW_STATE_KEY, $this->createRepairWorkflowState());
+        $this->setMessage(Text::_('COM_CONTENTBUILDERNG_DB_REPAIR_WORKFLOW_STARTED'), 'message');
+        $this->setRedirect(Route::_('index.php?option=com_contentbuilderng&view=about', false));
+    }
 
-        if (!$user->authorise('core.manage', 'com_contentbuilderng')) {
-            throw new \RuntimeException(Text::_('JERROR_ALERTNOAUTHOR'), 403);
+    public function executeRepairWorkflowStep(): void
+    {
+        $this->checkToken();
+
+        $app = $this->getAuthorizedApplication();
+        $workflow = $this->getRepairWorkflowState($app);
+
+        if ($workflow === []) {
+            $this->setMessage(Text::_('COM_CONTENTBUILDERNG_DB_REPAIR_WORKFLOW_MISSING'), 'warning');
+            $this->setRedirect(Route::_('index.php?option=com_contentbuilderng&view=about', false));
+
+            return;
+        }
+
+        $currentIndex = (int) ($workflow['current_step'] ?? 0);
+        $steps = array_values((array) ($workflow['steps'] ?? []));
+        $currentStep = $steps[$currentIndex] ?? null;
+        $requestedStepId = trim((string) $this->input->post->get('repair_step', '', 'cmd'));
+        $action = trim((string) $this->input->post->get('repair_action', '', 'cmd'));
+
+        if (!is_array($currentStep) || $requestedStepId === '' || $requestedStepId !== (string) ($currentStep['id'] ?? '')) {
+            $this->setMessage(Text::_('COM_CONTENTBUILDERNG_DB_REPAIR_WORKFLOW_INVALID_STEP'), 'warning');
+            $this->setRedirect(Route::_('index.php?option=com_contentbuilderng&view=about', false));
+
+            return;
+        }
+
+        if ($action !== 'apply' && $action !== 'skip') {
+            $this->setMessage(Text::_('COM_CONTENTBUILDERNG_DB_REPAIR_WORKFLOW_INVALID_ACTION'), 'warning');
+            $this->setRedirect(Route::_('index.php?option=com_contentbuilderng&view=about', false));
+
+            return;
+        }
+
+        if ((string) ($currentStep['status'] ?? 'pending') !== 'pending') {
+            $this->setMessage(Text::_('COM_CONTENTBUILDERNG_DB_REPAIR_WORKFLOW_ALREADY_DONE'), 'message');
+            $this->setRedirect(Route::_('index.php?option=com_contentbuilderng&view=about', false));
+
+            return;
         }
 
         try {
-            $summary = PackedDataMigrationHelper::migrate();
-            $scanned = (int) ($summary['scanned'] ?? 0);
-            $candidates = (int) ($summary['candidates'] ?? 0);
-            $migrated = (int) ($summary['migrated'] ?? 0);
-            $unchanged = (int) ($summary['unchanged'] ?? 0);
-            $errors = (int) ($summary['errors'] ?? 0);
-
-            $repair = is_array($summary['repair'] ?? null) ? $summary['repair'] : [];
-            $repairSupported = (bool) ($repair['supported'] ?? false);
-            $repairScanned = (int) ($repair['scanned'] ?? 0);
-            $repairConverted = (int) ($repair['converted'] ?? 0);
-            $repairUnchanged = (int) ($repair['unchanged'] ?? 0);
-            $repairErrors = (int) ($repair['errors'] ?? 0);
-            $repairTarget = (string) ($repair['target_collation'] ?? 'utf8mb4_0900_ai_ci');
-            $repairWarnings = is_array($repair['warnings'] ?? null) ? $repair['warnings'] : [];
-            $auditColumns = is_array($summary['audit_columns'] ?? null) ? $summary['audit_columns'] : [];
-            $auditScanned = (int) ($auditColumns['scanned'] ?? 0);
-            $auditIssues = (int) ($auditColumns['issues'] ?? 0);
-            $auditRepaired = (int) ($auditColumns['repaired'] ?? 0);
-            $auditUnchanged = (int) ($auditColumns['unchanged'] ?? 0);
-            $auditErrors = (int) ($auditColumns['errors'] ?? 0);
-            $auditWarnings = is_array($auditColumns['warnings'] ?? null) ? $auditColumns['warnings'] : [];
-            $pluginDuplicates = is_array($summary['plugin_duplicates'] ?? null) ? $summary['plugin_duplicates'] : [];
-            $pluginDuplicateScanned = (int) ($pluginDuplicates['scanned'] ?? 0);
-            $pluginDuplicateIssues = (int) ($pluginDuplicates['issues'] ?? 0);
-            $pluginDuplicateRepaired = (int) ($pluginDuplicates['repaired'] ?? 0);
-            $pluginDuplicateUnchanged = (int) ($pluginDuplicates['unchanged'] ?? 0);
-            $pluginDuplicateErrors = (int) ($pluginDuplicates['errors'] ?? 0);
-            $pluginDuplicateRowsRemoved = (int) ($pluginDuplicates['rows_removed'] ?? 0);
-            $pluginDuplicateWarnings = is_array($pluginDuplicates['warnings'] ?? null)
-                ? $pluginDuplicates['warnings']
-                : [];
-            $historicalMenuEntries = is_array($summary['historical_menu_entries'] ?? null) ? $summary['historical_menu_entries'] : [];
-            $historicalMenuScanned = (int) ($historicalMenuEntries['scanned'] ?? 0);
-            $historicalMenuIssues = (int) ($historicalMenuEntries['issues'] ?? 0);
-            $historicalMenuRepaired = (int) ($historicalMenuEntries['repaired'] ?? 0);
-            $historicalMenuUnchanged = (int) ($historicalMenuEntries['unchanged'] ?? 0);
-            $historicalMenuErrors = (int) ($historicalMenuEntries['errors'] ?? 0);
-            $historicalMenuWarnings = is_array($historicalMenuEntries['warnings'] ?? null)
-                ? $historicalMenuEntries['warnings']
-                : [];
-
-            if (
-                $migrated === 0
-                && $errors === 0
-                && $repairSupported
-                && $repairConverted === 0
-                && $repairErrors === 0
-                && $auditIssues === 0
-                && $auditErrors === 0
-                && $pluginDuplicateIssues === 0
-                && $pluginDuplicateErrors === 0
-                && $historicalMenuIssues === 0
-                && $historicalMenuErrors === 0
-            ) {
-                $message = Text::sprintf(
-                    'COM_CONTENTBUILDERNG_PACKED_MIGRATION_UP_TO_DATE',
-                    $scanned,
-                    $repairScanned
-                );
-                $message .= ' ' . Text::sprintf(
-                    'COM_CONTENTBUILDERNG_AUDIT_COLUMNS_REPAIR_UP_TO_DATE',
-                    $auditScanned
-                );
-                $message .= ' ' . Text::sprintf(
-                    'COM_CONTENTBUILDERNG_PLUGIN_DUPLICATES_REPAIR_UP_TO_DATE',
-                    $pluginDuplicateScanned
-                );
-                $message .= ' ' . Text::sprintf(
-                    'COM_CONTENTBUILDERNG_HISTORICAL_MENU_REPAIR_UP_TO_DATE',
-                    $historicalMenuScanned
-                );
-                $this->setMessage($message, 'message');
-                $this->setRedirect(Route::_('index.php?option=com_contentbuilderng&view=about', false));
-
-                return;
+            if ($action === 'skip') {
+                $result = [
+                    'level' => 'message',
+                    'summary' => Text::_('COM_CONTENTBUILDERNG_DB_REPAIR_WORKFLOW_SKIPPED_SUMMARY'),
+                    'lines' => [Text::_('COM_CONTENTBUILDERNG_DB_REPAIR_WORKFLOW_SKIPPED_LOG')],
+                ];
+                $currentStep['status'] = 'skipped';
+            } else {
+                $result = $this->runRepairWorkflowStep($requestedStepId);
+                $currentStep['status'] = 'done';
             }
-
-            $message = Text::sprintf(
-                'COM_CONTENTBUILDERNG_PACKED_MIGRATION_SUMMARY',
-                $scanned,
-                $candidates,
-                $migrated,
-                $unchanged,
-                $errors,
-                $repairScanned,
-                $repairConverted,
-                $repairUnchanged,
-                $repairErrors
-            );
-            $message .= ' ' . Text::sprintf(
-                'COM_CONTENTBUILDERNG_AUDIT_COLUMNS_REPAIR_SUMMARY',
-                $auditScanned,
-                $auditIssues,
-                $auditRepaired,
-                $auditUnchanged,
-                $auditErrors
-            );
-            $message .= ' ' . Text::sprintf(
-                'COM_CONTENTBUILDERNG_PLUGIN_DUPLICATES_REPAIR_SUMMARY',
-                $pluginDuplicateScanned,
-                $pluginDuplicateIssues,
-                $pluginDuplicateRepaired,
-                $pluginDuplicateUnchanged,
-                $pluginDuplicateRowsRemoved,
-                $pluginDuplicateErrors
-            );
-            $message .= ' ' . Text::sprintf(
-                'COM_CONTENTBUILDERNG_HISTORICAL_MENU_REPAIR_SUMMARY',
-                $historicalMenuScanned,
-                $historicalMenuIssues,
-                $historicalMenuRepaired,
-                $historicalMenuUnchanged,
-                $historicalMenuErrors
-            );
-
-            $tableMessages = [];
-            $tables = $summary['tables'] ?? [];
-
-            if (is_array($tables)) {
-                foreach ($tables as $tableStat) {
-                    if (!is_array($tableStat)) {
-                        continue;
-                    }
-
-                    $tableMessages[] = Text::sprintf(
-                        'COM_CONTENTBUILDERNG_PACKED_MIGRATION_TABLE_SUMMARY',
-                        (string) ($tableStat['table'] ?? ''),
-                        (string) ($tableStat['column'] ?? ''),
-                        (int) ($tableStat['scanned'] ?? 0),
-                        (int) ($tableStat['candidates'] ?? 0),
-                        (int) ($tableStat['migrated'] ?? 0),
-                        (int) ($tableStat['unchanged'] ?? 0),
-                        (int) ($tableStat['errors'] ?? 0)
-                    );
-                }
-            }
-
-            $repairTables = $repair['tables'] ?? [];
-
-            if (is_array($repairTables)) {
-                foreach ($repairTables as $repairStat) {
-                    if (!is_array($repairStat)) {
-                        continue;
-                    }
-
-                    $status = (string) ($repairStat['status'] ?? '');
-                    $table = (string) ($repairStat['table'] ?? '');
-                    $from = (string) ($repairStat['from'] ?? '');
-                    $to = (string) ($repairStat['to'] ?? $repairTarget);
-                    $errorMessage = (string) ($repairStat['error'] ?? '');
-
-                    if ($from === '') {
-                        $from = Text::_('COM_CONTENTBUILDERNG_NOT_AVAILABLE');
-                    }
-
-                    if ($status === 'converted') {
-                        $tableMessages[] = Text::sprintf(
-                            'COM_CONTENTBUILDERNG_COLLATION_REPAIR_TABLE_CONVERTED',
-                            $table,
-                            $from,
-                            $to
-                        );
-                        continue;
-                    }
-
-                    if ($status === 'error') {
-                        $tableMessages[] = Text::sprintf(
-                            'COM_CONTENTBUILDERNG_COLLATION_REPAIR_TABLE_ERROR',
-                            $table,
-                            $from,
-                            $to,
-                            $errorMessage
-                        );
-                    }
-                }
-            }
-
-            $auditTables = $auditColumns['tables'] ?? [];
-
-            if (is_array($auditTables)) {
-                foreach ($auditTables as $auditTable) {
-                    if (!is_array($auditTable)) {
-                        continue;
-                    }
-
-                    $status = (string) ($auditTable['status'] ?? '');
-                    $table = (string) ($auditTable['table'] ?? '');
-                    $missing = (array) ($auditTable['missing'] ?? []);
-                    $added = (array) ($auditTable['added'] ?? []);
-                    $errorMessage = (string) ($auditTable['error'] ?? '');
-
-                    if ($status !== 'repaired' && $status !== 'partial' && $status !== 'error') {
-                        continue;
-                    }
-
-                    $missingLabel = $missing !== [] ? implode(', ', $missing) : Text::_('COM_CONTENTBUILDERNG_NOT_AVAILABLE');
-                    $addedLabel = $added !== [] ? implode(', ', $added) : Text::_('COM_CONTENTBUILDERNG_NOT_AVAILABLE');
-
-                    if ($status === 'repaired') {
-                        $tableMessages[] = Text::sprintf(
-                            'COM_CONTENTBUILDERNG_AUDIT_COLUMNS_REPAIR_TABLE_REPAIRED',
-                            $table,
-                            $missingLabel,
-                            $addedLabel
-                        );
-                        continue;
-                    }
-
-                    if ($status === 'partial') {
-                        $tableMessages[] = Text::sprintf(
-                            'COM_CONTENTBUILDERNG_AUDIT_COLUMNS_REPAIR_TABLE_PARTIAL',
-                            $table,
-                            $missingLabel,
-                            $addedLabel,
-                            $errorMessage
-                        );
-                        continue;
-                    }
-
-                    $tableMessages[] = Text::sprintf(
-                        'COM_CONTENTBUILDERNG_AUDIT_COLUMNS_REPAIR_TABLE_ERROR',
-                        $table,
-                        $missingLabel,
-                        $errorMessage
-                    );
-                }
-            }
-
-            $pluginDuplicateGroups = $pluginDuplicates['groups'] ?? [];
-            if (is_array($pluginDuplicateGroups)) {
-                foreach ($pluginDuplicateGroups as $pluginDuplicateGroup) {
-                    if (!is_array($pluginDuplicateGroup)) {
-                        continue;
-                    }
-
-                    $status = (string) ($pluginDuplicateGroup['status'] ?? '');
-                    $canonicalFolder = trim((string) ($pluginDuplicateGroup['canonical_folder'] ?? ''));
-                    $canonicalElement = trim((string) ($pluginDuplicateGroup['canonical_element'] ?? ''));
-                    $canonicalLabel = $canonicalFolder !== '' || $canonicalElement !== ''
-                        ? $canonicalFolder . '/' . $canonicalElement
-                        : Text::_('COM_CONTENTBUILDERNG_NOT_AVAILABLE');
-                    $keepId = (int) ($pluginDuplicateGroup['keep_id'] ?? 0);
-                    $removedIds = array_values(array_map(
-                        static fn($id): int => (int) $id,
-                        (array) ($pluginDuplicateGroup['removed_ids'] ?? [])
-                    ));
-                    $removedLabel = $removedIds !== []
-                        ? implode(', ', $removedIds)
-                        : Text::_('COM_CONTENTBUILDERNG_NOT_AVAILABLE');
-                    $errorMessage = trim((string) ($pluginDuplicateGroup['error'] ?? ''));
-
-                    if ($status === 'repaired') {
-                        $tableMessages[] = Text::sprintf(
-                            'COM_CONTENTBUILDERNG_PLUGIN_DUPLICATES_REPAIR_GROUP_REPAIRED',
-                            $canonicalLabel,
-                            $keepId,
-                            $removedLabel
-                        );
-                        continue;
-                    }
-
-                    if ($status === 'error') {
-                        $tableMessages[] = Text::sprintf(
-                            'COM_CONTENTBUILDERNG_PLUGIN_DUPLICATES_REPAIR_GROUP_ERROR',
-                            $canonicalLabel,
-                            $keepId,
-                            $removedLabel,
-                            $errorMessage
-                        );
-                    }
-                }
-            }
-
-            $historicalMenuRows = $historicalMenuEntries['entries'] ?? [];
-            if (is_array($historicalMenuRows)) {
-                foreach ($historicalMenuRows as $historicalMenuRow) {
-                    if (!is_array($historicalMenuRow)) {
-                        continue;
-                    }
-
-                    $status = (string) ($historicalMenuRow['status'] ?? '');
-                    $menuId = (int) ($historicalMenuRow['menu_id'] ?? 0);
-                    $oldTitle = trim((string) ($historicalMenuRow['old_title'] ?? ''));
-                    $newTitle = trim((string) ($historicalMenuRow['new_title'] ?? ''));
-                    $errorMessage = trim((string) ($historicalMenuRow['error'] ?? ''));
-
-                    if ($status === 'repaired') {
-                        $tableMessages[] = Text::sprintf(
-                            'COM_CONTENTBUILDERNG_HISTORICAL_MENU_REPAIR_ENTRY_REPAIRED',
-                            $menuId,
-                            $oldTitle !== '' ? $oldTitle : Text::_('COM_CONTENTBUILDERNG_NOT_AVAILABLE'),
-                            $newTitle !== '' ? $newTitle : Text::_('COM_CONTENTBUILDERNG_NOT_AVAILABLE')
-                        );
-                        continue;
-                    }
-
-                    if ($status === 'error') {
-                        $tableMessages[] = Text::sprintf(
-                            'COM_CONTENTBUILDERNG_HISTORICAL_MENU_REPAIR_ENTRY_ERROR',
-                            $menuId,
-                            $oldTitle !== '' ? $oldTitle : Text::_('COM_CONTENTBUILDERNG_NOT_AVAILABLE'),
-                            $newTitle !== '' ? $newTitle : Text::_('COM_CONTENTBUILDERNG_NOT_AVAILABLE'),
-                            $errorMessage
-                        );
-                    }
-                }
-            }
-
-            if (!$repairSupported) {
-                $tableMessages[] = Text::sprintf(
-                    'COM_CONTENTBUILDERNG_COLLATION_REPAIR_UNSUPPORTED',
-                    $repairTarget
-                );
-            }
-
-            foreach ($repairWarnings as $repairWarning) {
-                $repairWarning = trim((string) $repairWarning);
-
-                if ($repairWarning === '') {
-                    continue;
-                }
-
-                $tableMessages[] = Text::sprintf(
-                    'COM_CONTENTBUILDERNG_COLLATION_REPAIR_WARNING',
-                    $repairWarning
-                );
-            }
-
-            foreach ($auditWarnings as $auditWarning) {
-                $auditWarning = trim((string) $auditWarning);
-
-                if ($auditWarning === '') {
-                    continue;
-                }
-
-                $tableMessages[] = Text::sprintf(
-                    'COM_CONTENTBUILDERNG_AUDIT_COLUMNS_REPAIR_WARNING',
-                    $auditWarning
-                );
-            }
-
-            foreach ($pluginDuplicateWarnings as $pluginDuplicateWarning) {
-                $pluginDuplicateWarning = trim((string) $pluginDuplicateWarning);
-
-                if ($pluginDuplicateWarning === '') {
-                    continue;
-                }
-
-                $tableMessages[] = Text::sprintf(
-                    'COM_CONTENTBUILDERNG_PLUGIN_DUPLICATES_REPAIR_WARNING',
-                    $pluginDuplicateWarning
-                );
-            }
-
-            foreach ($historicalMenuWarnings as $historicalMenuWarning) {
-                $historicalMenuWarning = trim((string) $historicalMenuWarning);
-
-                if ($historicalMenuWarning === '') {
-                    continue;
-                }
-
-                $tableMessages[] = Text::sprintf(
-                    'COM_CONTENTBUILDERNG_HISTORICAL_MENU_REPAIR_WARNING',
-                    $historicalMenuWarning
-                );
-            }
-
-            if ($tableMessages !== []) {
-                $message .= '<br>' . implode('<br>', $tableMessages);
-            }
-
-            $level = (
-                $errors > 0
-                || $repairErrors > 0
-                || !$repairSupported
-                || $auditErrors > 0
-                || $pluginDuplicateErrors > 0
-                || $historicalMenuErrors > 0
-            )
-                ? 'warning'
-                : 'message';
-            $this->setMessage($message, $level);
         } catch (\Throwable $e) {
-            $this->setMessage(
-                Text::sprintf('COM_CONTENTBUILDERNG_PACKED_MIGRATION_FAILED', $e->getMessage()),
-                'error'
-            );
+            $result = [
+                'level' => 'error',
+                'summary' => Text::sprintf('COM_CONTENTBUILDERNG_PACKED_MIGRATION_FAILED', $e->getMessage()),
+                'lines' => [],
+            ];
+            $currentStep['status'] = 'done';
+        }
+
+        $currentStep['decision'] = $action;
+        $currentStep['result'] = $result;
+        $currentStep['completed_at'] = $this->getJoomlaLocalDateTime();
+        $steps[$currentIndex] = $currentStep;
+        $workflow['steps'] = $steps;
+        if ($currentIndex >= count($steps) - 1) {
+            $workflow['completed'] = true;
+        }
+        $workflow['updated_at'] = $currentStep['completed_at'];
+        $app->setUserState(self::REPAIR_WORKFLOW_STATE_KEY, $workflow);
+
+        $this->setMessage((string) ($result['summary'] ?? ''), (string) ($result['level'] ?? 'message'));
+        $this->setRedirect(Route::_('index.php?option=com_contentbuilderng&view=about', false));
+    }
+
+    public function nextRepairWorkflowStep(): void
+    {
+        $this->checkToken();
+
+        $app = $this->getAuthorizedApplication();
+        $workflow = $this->getRepairWorkflowState($app);
+
+        if ($workflow === []) {
+            $this->setMessage(Text::_('COM_CONTENTBUILDERNG_DB_REPAIR_WORKFLOW_MISSING'), 'warning');
+            $this->setRedirect(Route::_('index.php?option=com_contentbuilderng&view=about', false));
+
+            return;
+        }
+
+        $currentIndex = (int) ($workflow['current_step'] ?? 0);
+        $steps = array_values((array) ($workflow['steps'] ?? []));
+        $currentStep = $steps[$currentIndex] ?? null;
+
+        if (!is_array($currentStep) || (string) ($currentStep['status'] ?? 'pending') === 'pending') {
+            $this->setMessage(Text::_('COM_CONTENTBUILDERNG_DB_REPAIR_WORKFLOW_COMPLETE_STEP_FIRST'), 'warning');
+            $this->setRedirect(Route::_('index.php?option=com_contentbuilderng&view=about', false));
+
+            return;
+        }
+
+        if ($currentIndex < count($steps) - 1) {
+            $workflow['current_step'] = $currentIndex + 1;
+            $workflow['updated_at'] = $this->getJoomlaLocalDateTime();
+            $app->setUserState(self::REPAIR_WORKFLOW_STATE_KEY, $workflow);
+            $this->setMessage(Text::_('COM_CONTENTBUILDERNG_DB_REPAIR_WORKFLOW_NEXT_STEP'), 'message');
+        } else {
+            $workflow['completed'] = true;
+            $workflow['updated_at'] = $this->getJoomlaLocalDateTime();
+            $app->setUserState(self::REPAIR_WORKFLOW_STATE_KEY, $workflow);
+            $this->setMessage(Text::_('COM_CONTENTBUILDERNG_DB_REPAIR_WORKFLOW_FINISHED'), 'message');
         }
 
         $this->setRedirect(Route::_('index.php?option=com_contentbuilderng&view=about', false));
@@ -2189,6 +1924,341 @@ final class AboutController extends BaseController
         }
 
         return (new \DateTimeImmutable('now', $timezone))->format('Y-m-d H:i:s');
+    }
+
+    private function getAuthorizedApplication(): AdministratorApplication
+    {
+        /** @var AdministratorApplication $app */
+        $app = Factory::getApplication();
+        $user = $app->getIdentity();
+
+        if (!$user->authorise('core.manage', 'com_contentbuilderng')) {
+            throw new \RuntimeException(Text::_('JERROR_ALERTNOAUTHOR'), 403);
+        }
+
+        return $app;
+    }
+
+    private function createRepairWorkflowState(): array
+    {
+        $steps = [];
+
+        foreach (self::REPAIR_WORKFLOW_STEPS as $stepId) {
+            $steps[] = [
+                'id' => $stepId,
+                'status' => 'pending',
+                'decision' => '',
+                'completed_at' => '',
+                'result' => [
+                    'level' => 'message',
+                    'summary' => '',
+                    'lines' => [],
+                ],
+            ];
+        }
+
+        $now = $this->getJoomlaLocalDateTime();
+
+        return [
+            'active' => true,
+            'completed' => false,
+            'current_step' => 0,
+            'steps' => $steps,
+            'started_at' => $now,
+            'updated_at' => $now,
+        ];
+    }
+
+    private function getRepairWorkflowState(AdministratorApplication $app): array
+    {
+        $workflow = $app->getUserState(self::REPAIR_WORKFLOW_STATE_KEY, []);
+
+        return is_array($workflow) ? $workflow : [];
+    }
+
+    private function runRepairWorkflowStep(string $stepId): array
+    {
+        $db = Factory::getContainer()->get(DatabaseInterface::class);
+
+        return match ($stepId) {
+            'table_encoding' => $this->buildTableEncodingStepResult(PackedDataMigrationHelper::repairTableCollationsStep($db)),
+            'packed_data' => $this->buildPackedDataStepResult(PackedDataMigrationHelper::migratePackedPayloadsStep($db)),
+            'audit_columns' => $this->buildAuditColumnsStepResult(\CB\Component\Contentbuilderng\Administrator\Helper\StorageAuditColumnsHelper::repair($db)),
+            'plugin_duplicates' => $this->buildPluginDuplicateStepResult(\CB\Component\Contentbuilderng\Administrator\Helper\PluginExtensionDedupHelper::repair($db)),
+            'historical_menu_entries' => $this->buildHistoricalMenuStepResult(PackedDataMigrationHelper::repairLegacyMenuEntriesStep($db)),
+            default => throw new \RuntimeException('Unknown repair step: ' . $stepId),
+        };
+    }
+
+    private function buildTableEncodingStepResult(array $summary): array
+    {
+        $supported = (bool) ($summary['supported'] ?? false);
+        $target = (string) ($summary['target_collation'] ?? 'utf8mb4_0900_ai_ci');
+        $scanned = (int) ($summary['scanned'] ?? 0);
+        $converted = (int) ($summary['converted'] ?? 0);
+        $unchanged = (int) ($summary['unchanged'] ?? 0);
+        $errors = (int) ($summary['errors'] ?? 0);
+        $lines = [];
+
+        if (!$supported) {
+            $lines[] = Text::sprintf('COM_CONTENTBUILDERNG_COLLATION_REPAIR_UNSUPPORTED', $target);
+
+            return [
+                'level' => 'warning',
+                'summary' => Text::sprintf('COM_CONTENTBUILDERNG_DB_REPAIR_WORKFLOW_ENCODING_SUMMARY', $scanned, $converted, $unchanged, $errors),
+                'lines' => $lines,
+            ];
+        }
+
+        foreach ((array) ($summary['tables'] ?? []) as $table) {
+            if (!is_array($table)) {
+                continue;
+            }
+
+            $from = trim((string) ($table['from'] ?? ''));
+            if ($from === '') {
+                $from = Text::_('COM_CONTENTBUILDERNG_NOT_AVAILABLE');
+            }
+
+            $status = (string) ($table['status'] ?? '');
+            if ($status === 'converted') {
+                $lines[] = Text::sprintf(
+                    'COM_CONTENTBUILDERNG_COLLATION_REPAIR_TABLE_CONVERTED',
+                    (string) ($table['table'] ?? ''),
+                    $from,
+                    (string) ($table['to'] ?? $target)
+                );
+            } elseif ($status === 'error') {
+                $lines[] = Text::sprintf(
+                    'COM_CONTENTBUILDERNG_COLLATION_REPAIR_TABLE_ERROR',
+                    (string) ($table['table'] ?? ''),
+                    $from,
+                    (string) ($table['to'] ?? $target),
+                    (string) ($table['error'] ?? '')
+                );
+            }
+        }
+
+        foreach ((array) ($summary['warnings'] ?? []) as $warning) {
+            $warning = trim((string) $warning);
+            if ($warning !== '') {
+                $lines[] = Text::sprintf('COM_CONTENTBUILDERNG_COLLATION_REPAIR_WARNING', $warning);
+            }
+        }
+
+        return [
+            'level' => $errors > 0 ? 'warning' : 'message',
+            'summary' => Text::sprintf('COM_CONTENTBUILDERNG_DB_REPAIR_WORKFLOW_ENCODING_SUMMARY', $scanned, $converted, $unchanged, $errors),
+            'lines' => $lines,
+        ];
+    }
+
+    private function buildPackedDataStepResult(array $summary): array
+    {
+        $lines = [];
+
+        foreach ((array) ($summary['tables'] ?? []) as $table) {
+            if (!is_array($table)) {
+                continue;
+            }
+
+            $lines[] = Text::sprintf(
+                'COM_CONTENTBUILDERNG_PACKED_MIGRATION_TABLE_SUMMARY',
+                (string) ($table['table'] ?? ''),
+                (string) ($table['column'] ?? ''),
+                (int) ($table['scanned'] ?? 0),
+                (int) ($table['candidates'] ?? 0),
+                (int) ($table['migrated'] ?? 0),
+                (int) ($table['unchanged'] ?? 0),
+                (int) ($table['errors'] ?? 0)
+            );
+        }
+
+        return [
+            'level' => (int) ($summary['errors'] ?? 0) > 0 ? 'warning' : 'message',
+            'summary' => Text::sprintf(
+                'COM_CONTENTBUILDERNG_DB_REPAIR_WORKFLOW_PACKED_DATA_SUMMARY',
+                (int) ($summary['scanned'] ?? 0),
+                (int) ($summary['candidates'] ?? 0),
+                (int) ($summary['migrated'] ?? 0),
+                (int) ($summary['unchanged'] ?? 0),
+                (int) ($summary['errors'] ?? 0)
+            ),
+            'lines' => $lines,
+        ];
+    }
+
+    private function buildAuditColumnsStepResult(array $summary): array
+    {
+        $lines = [];
+
+        foreach ((array) ($summary['tables'] ?? []) as $table) {
+            if (!is_array($table)) {
+                continue;
+            }
+
+            $status = (string) ($table['status'] ?? '');
+            $missing = (array) ($table['missing'] ?? []);
+            $added = (array) ($table['added'] ?? []);
+            $missingLabel = $missing !== [] ? implode(', ', $missing) : Text::_('COM_CONTENTBUILDERNG_NOT_AVAILABLE');
+            $addedLabel = $added !== [] ? implode(', ', $added) : Text::_('COM_CONTENTBUILDERNG_NOT_AVAILABLE');
+
+            if ($status === 'repaired') {
+                $lines[] = Text::sprintf(
+                    'COM_CONTENTBUILDERNG_AUDIT_COLUMNS_REPAIR_TABLE_REPAIRED',
+                    (string) ($table['table'] ?? ''),
+                    $missingLabel,
+                    $addedLabel
+                );
+            } elseif ($status === 'partial') {
+                $lines[] = Text::sprintf(
+                    'COM_CONTENTBUILDERNG_AUDIT_COLUMNS_REPAIR_TABLE_PARTIAL',
+                    (string) ($table['table'] ?? ''),
+                    $missingLabel,
+                    $addedLabel,
+                    (string) ($table['error'] ?? '')
+                );
+            } elseif ($status === 'error') {
+                $lines[] = Text::sprintf(
+                    'COM_CONTENTBUILDERNG_AUDIT_COLUMNS_REPAIR_TABLE_ERROR',
+                    (string) ($table['table'] ?? ''),
+                    $missingLabel,
+                    (string) ($table['error'] ?? '')
+                );
+            }
+        }
+
+        foreach ((array) ($summary['warnings'] ?? []) as $warning) {
+            $warning = trim((string) $warning);
+            if ($warning !== '') {
+                $lines[] = Text::sprintf('COM_CONTENTBUILDERNG_AUDIT_COLUMNS_REPAIR_WARNING', $warning);
+            }
+        }
+
+        return [
+            'level' => (int) ($summary['errors'] ?? 0) > 0 ? 'warning' : 'message',
+            'summary' => Text::sprintf(
+                'COM_CONTENTBUILDERNG_AUDIT_COLUMNS_REPAIR_SUMMARY',
+                (int) ($summary['scanned'] ?? 0),
+                (int) ($summary['issues'] ?? 0),
+                (int) ($summary['repaired'] ?? 0),
+                (int) ($summary['unchanged'] ?? 0),
+                (int) ($summary['errors'] ?? 0)
+            ),
+            'lines' => $lines,
+        ];
+    }
+
+    private function buildPluginDuplicateStepResult(array $summary): array
+    {
+        $lines = [];
+
+        foreach ((array) ($summary['groups'] ?? []) as $group) {
+            if (!is_array($group)) {
+                continue;
+            }
+
+            $canonicalFolder = trim((string) ($group['canonical_folder'] ?? ''));
+            $canonicalElement = trim((string) ($group['canonical_element'] ?? ''));
+            $canonicalLabel = $canonicalFolder !== '' || $canonicalElement !== ''
+                ? $canonicalFolder . '/' . $canonicalElement
+                : Text::_('COM_CONTENTBUILDERNG_NOT_AVAILABLE');
+            $removedIds = array_values(array_map(static fn($id): int => (int) $id, (array) ($group['removed_ids'] ?? [])));
+            $removedLabel = $removedIds !== [] ? implode(', ', $removedIds) : Text::_('COM_CONTENTBUILDERNG_NOT_AVAILABLE');
+            $status = (string) ($group['status'] ?? '');
+
+            if ($status === 'repaired') {
+                $lines[] = Text::sprintf(
+                    'COM_CONTENTBUILDERNG_PLUGIN_DUPLICATES_REPAIR_GROUP_REPAIRED',
+                    $canonicalLabel,
+                    (int) ($group['keep_id'] ?? 0),
+                    $removedLabel
+                );
+            } elseif ($status === 'error') {
+                $lines[] = Text::sprintf(
+                    'COM_CONTENTBUILDERNG_PLUGIN_DUPLICATES_REPAIR_GROUP_ERROR',
+                    $canonicalLabel,
+                    (int) ($group['keep_id'] ?? 0),
+                    $removedLabel,
+                    (string) ($group['error'] ?? '')
+                );
+            }
+        }
+
+        foreach ((array) ($summary['warnings'] ?? []) as $warning) {
+            $warning = trim((string) $warning);
+            if ($warning !== '') {
+                $lines[] = Text::sprintf('COM_CONTENTBUILDERNG_PLUGIN_DUPLICATES_REPAIR_WARNING', $warning);
+            }
+        }
+
+        return [
+            'level' => (int) ($summary['errors'] ?? 0) > 0 ? 'warning' : 'message',
+            'summary' => Text::sprintf(
+                'COM_CONTENTBUILDERNG_PLUGIN_DUPLICATES_REPAIR_SUMMARY',
+                (int) ($summary['scanned'] ?? 0),
+                (int) ($summary['issues'] ?? 0),
+                (int) ($summary['repaired'] ?? 0),
+                (int) ($summary['unchanged'] ?? 0),
+                (int) ($summary['rows_removed'] ?? 0),
+                (int) ($summary['errors'] ?? 0)
+            ),
+            'lines' => $lines,
+        ];
+    }
+
+    private function buildHistoricalMenuStepResult(array $summary): array
+    {
+        $lines = [];
+
+        foreach ((array) ($summary['entries'] ?? []) as $entry) {
+            if (!is_array($entry)) {
+                continue;
+            }
+
+            $oldTitle = trim((string) ($entry['old_title'] ?? ''));
+            $newTitle = trim((string) ($entry['new_title'] ?? ''));
+            $oldTitle = $oldTitle !== '' ? $oldTitle : Text::_('COM_CONTENTBUILDERNG_NOT_AVAILABLE');
+            $newTitle = $newTitle !== '' ? $newTitle : Text::_('COM_CONTENTBUILDERNG_NOT_AVAILABLE');
+            $status = (string) ($entry['status'] ?? '');
+
+            if ($status === 'repaired') {
+                $lines[] = Text::sprintf(
+                    'COM_CONTENTBUILDERNG_HISTORICAL_MENU_REPAIR_ENTRY_REPAIRED',
+                    (int) ($entry['menu_id'] ?? 0),
+                    $oldTitle,
+                    $newTitle
+                );
+            } elseif ($status === 'error') {
+                $lines[] = Text::sprintf(
+                    'COM_CONTENTBUILDERNG_HISTORICAL_MENU_REPAIR_ENTRY_ERROR',
+                    (int) ($entry['menu_id'] ?? 0),
+                    $oldTitle,
+                    $newTitle,
+                    (string) ($entry['error'] ?? '')
+                );
+            }
+        }
+
+        foreach ((array) ($summary['warnings'] ?? []) as $warning) {
+            $warning = trim((string) $warning);
+            if ($warning !== '') {
+                $lines[] = Text::sprintf('COM_CONTENTBUILDERNG_HISTORICAL_MENU_REPAIR_WARNING', $warning);
+            }
+        }
+
+        return [
+            'level' => (int) ($summary['errors'] ?? 0) > 0 ? 'warning' : 'message',
+            'summary' => Text::sprintf(
+                'COM_CONTENTBUILDERNG_HISTORICAL_MENU_REPAIR_SUMMARY',
+                (int) ($summary['scanned'] ?? 0),
+                (int) ($summary['issues'] ?? 0),
+                (int) ($summary['repaired'] ?? 0),
+                (int) ($summary['unchanged'] ?? 0),
+                (int) ($summary['errors'] ?? 0)
+            ),
+            'lines' => $lines,
+        ];
     }
 
     private function resolveLogDirectory(): string
