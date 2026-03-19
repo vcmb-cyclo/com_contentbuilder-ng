@@ -645,7 +645,7 @@ by this block. -->
 
 										<?php if ($this->export_xls && empty($this->invalid_list_setup)) : ?>
 											<a class="btn btn-sm btn-outline-success align-self-center d-inline-flex align-items-center gap-1 rounded-pill"
-												href="<?php echo Route::_('index.php?option=com_contentbuilderng&view=export&id=' . (int) Factory::getApplication()->input->getInt('id', 0) . '&type=xls&format=raw&tmpl=component'); ?>"
+												href="<?php echo Route::_('index.php?option=com_contentbuilderng&view=export&id=' . (int) Factory::getApplication()->input->getInt('id', 0) . '&type=xls&format=raw&tmpl=component&Itemid=' . (int) Factory::getApplication()->input->getInt('Itemid', 0)); ?>"
 												title="<?php echo Text::_('COM_CONTENTBUILDERNG_EXPORT_XLSX_TOOLTIP'); ?>">
 												<span class="fa-solid fa-download" aria-hidden="true"></span>
 												<span>XLSX</span>

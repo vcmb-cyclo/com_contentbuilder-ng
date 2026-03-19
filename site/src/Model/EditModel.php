@@ -503,6 +503,10 @@ class EditModel extends BaseDatabaseModel
                         }
                     }
 
+                    if (!$this->isRecordAllowedByMenuFilter($data, $ids)) {
+                        throw new \Exception(Text::_('COM_CONTENTBUILDERNG_RECORD_NOT_FOUND'), 404);
+                    }
+
                     $data->items = $data->form->getRecord(
                         $this->_record_id,
                         $data->published_only,
@@ -707,6 +711,44 @@ var contentbuilderng = new function(){
         $msg = '';
         eval($code);
         return $msg;
+    }
+
+    private function isRecordAllowedByMenuFilter(object $data, array $ids): bool
+    {
+        if ((int) $this->_record_id <= 0 || empty($this->_menu_filter)) {
+            return true;
+        }
+
+        $isAdminPreview = $this->app->input->getBool('cb_preview_ok', false);
+        $publishedOnly = $isAdminPreview ? false : (bool) ($data->published_only ?? false);
+        $ownerFilterUserId = $this->frontend
+            ? $this->getEffectiveOwnershipUserId((bool) ($data->own_only_fe ?? false))
+            : $this->getEffectiveOwnershipUserId((bool) ($data->own_only ?? false));
+        $showAllLanguages = $isAdminPreview ? true : ($this->frontend ? (bool) ($data->show_all_languages_fe ?? false) : true);
+
+        $matches = $data->form->getListRecords(
+            $ids,
+            '',
+            [],
+            0,
+            1,
+            '',
+            [],
+            'desc',
+            (int) $this->_record_id,
+            $publishedOnly,
+            $ownerFilterUserId,
+            0,
+            -1,
+            -1,
+            -1,
+            -1,
+            $this->_menu_filter,
+            $showAllLanguages,
+            null
+        );
+
+        return is_array($matches) && count($matches) > 0;
     }
 
     function store()

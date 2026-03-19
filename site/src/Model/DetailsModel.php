@@ -345,7 +345,27 @@ class DetailsModel extends ListModel
 
                     if ($this->_latest) {
 
-                        $rec = $data->form->getListRecords($ids, '', array(), 0, 1, '', array(), 'desc', 0, false, (int) ($app->getIdentity()->id ?? 0), 0, -1, -1, -1, -1, array(), true, null);
+                        $rec = $data->form->getListRecords(
+                            $ids,
+                            '',
+                            array(),
+                            0,
+                            1,
+                            '',
+                            array(),
+                            'desc',
+                            0,
+                            false,
+                            (int) ($app->getIdentity()->id ?? 0),
+                            0,
+                            -1,
+                            -1,
+                            -1,
+                            -1,
+                            $this->_menu_filter,
+                            true,
+                            null
+                        );
 
                         if (count($rec) > 0) {
                             $rec = $rec[0];
@@ -405,6 +425,11 @@ class DetailsModel extends ListModel
                                 ? ($data->own_only_fe ? (int) ($app->getIdentity()->id ?? 0) : -1)
                                 : ($data->own_only ? (int) ($app->getIdentity()->id ?? 0) : -1));
                         $showAllLanguages = $isAdminPreview ? true : ($this->frontend ? $data->show_all_languages_fe : true);
+
+                        if (!$this->isRecordAllowedByMenuFilter($data, $ids)) {
+                            throw new \Exception(Text::_('COM_CONTENTBUILDERNG_RECORD_NOT_FOUND'), 404);
+                        }
+
                         $data->items = $data->form->getRecord($this->_record_id, $publishedOnly, $ownerFilterUserId, $showAllLanguages);
                     }
 
@@ -645,5 +670,45 @@ class DetailsModel extends ListModel
         $scope = $this->isDirectStorageMode() ? ('storage.' . $formId) : (string) $formId;
 
         return $option . '.liststate.' . $scope . '.' . $layout . '.' . $itemId;
+    }
+
+    private function isRecordAllowedByMenuFilter(object $data, array $ids): bool
+    {
+        if ((int) $this->_record_id <= 0 || empty($this->_menu_filter)) {
+            return true;
+        }
+
+        $isAdminPreview = $this->app->input->getBool('cb_preview_ok', false);
+        $publishedOnly = $isAdminPreview ? false : (bool) ($data->published_only ?? false);
+        $ownerFilterUserId = $isAdminPreview
+            ? -1
+            : ($this->frontend
+                ? (!empty($data->own_only_fe) ? (int) ($this->app->getIdentity()->id ?? 0) : -1)
+                : (!empty($data->own_only) ? (int) ($this->app->getIdentity()->id ?? 0) : -1));
+        $showAllLanguages = $isAdminPreview ? true : ($this->frontend ? (bool) ($data->show_all_languages_fe ?? false) : true);
+
+        $matches = $data->form->getListRecords(
+            $ids,
+            '',
+            [],
+            0,
+            1,
+            '',
+            [],
+            'desc',
+            (int) $this->_record_id,
+            $publishedOnly,
+            $ownerFilterUserId,
+            0,
+            -1,
+            -1,
+            -1,
+            -1,
+            $this->_menu_filter,
+            $showAllLanguages,
+            null
+        );
+
+        return is_array($matches) && count($matches) > 0;
     }
 }
