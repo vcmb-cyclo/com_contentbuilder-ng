@@ -18,6 +18,7 @@
                         <option value="1">Yes</option>
                     </field>
                     <field name="cb_latest" type="hidden" default="1" />
+                    <field type="cbmenureset" label="" description="" name="cb_menu_reset" />
                 </fieldset>
             </fields>
         </config>

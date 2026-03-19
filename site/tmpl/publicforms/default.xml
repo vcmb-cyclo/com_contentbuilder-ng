@@ -70,6 +70,7 @@
                         <option value="0">COM_CONTENTBUILDERNG_NO</option>
                         <option value="1">COM_CONTENTBUILDERNG_YES</option>
                     </field>
+                    <field type="cbmenureset" label="" description="" name="cb_menu_reset" />
                     
                 </fieldset>
             </fields>

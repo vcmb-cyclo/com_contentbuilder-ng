@@ -7,7 +7,7 @@
             <fields name="params" addfieldprefix="CB\Component\Contentbuilderng\Site\Field">
                 <fieldset name="settings" group="settings" label="COM_CONTENTBUILDERNG_MENU_ITEM_LIST_CUSTOM4">
                     <field required="true" type="forms" label="COM_CONTENTBUILDERNG_SELECT_VIEW" description="COM_CONTENTBUILDERNG_SELECT_VIEW_DESC" name="form_id" default="0"/>
-                    <field type="categories" label="COM_CONTENTBUILDERNG_SELECT_CATEGORY" description="COM_CONTENTBUILDERNG_SELECT_CATEGORY_DESC" name="cb_category_id" default="0" />
+                    <field type="categories" label="COM_CONTENTBUILDERNG_SELECT_CATEGORY" description="COM_CONTENTBUILDERNG_SELECT_CATEGORY_DESC" name="cb_category_id" default="-2" />
                     
                     <field name="cb_category_menu_filter" type="radio" class="btn-group btn-group-yesno" default="0" description="COM_CONTENTBUILDERNG_CATEGORY_MENU_FILTER_DESC" label="COM_CONTENTBUILDERNG_CATEGORY_MENU_FILTER">
                         <option value="0">No</option>
@@ -64,6 +64,7 @@
                     <field type="cbfilterhidden" filter="raw" label="" description="" name="cb_list_filterhidden" default="" />
                     <field type="cborderhidden" label="" description="" name="cb_list_orderhidden" default="" />
                     <field type="cbfilter" filter="raw" label="COM_CONTENTBUILDERNG_SELECT_FILTER" description="COM_CONTENTBUILDERNG_SELECT_FILTER_DESC" name="cb_list_filter" default="" />
+                    <field type="cbmenureset" label="" description="" name="cb_menu_reset" />
 
                 </fieldset>
             </fields>
