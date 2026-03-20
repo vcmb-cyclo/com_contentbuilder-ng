@@ -153,6 +153,8 @@ class FormTable extends Table
 
     public $button_bar_sticky = 0;
 
+    public $list_header_sticky = 0;
+
     public $show_preview_link = 0;
 
     public $initial_list_limit = 20;

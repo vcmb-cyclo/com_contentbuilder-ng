@@ -95,6 +95,24 @@ if ($previewFormName === '') {
     $previewFormName = Text::_('COM_CONTENTBUILDERNG_NOT_AVAILABLE');
 }
 $previewFormName = htmlspecialchars($previewFormName, ENT_QUOTES, 'UTF-8');
+$previewConfigTabLabel = Text::sprintf('COM_CONTENTBUILDERNG_PREVIEW_CONFIG_TAB', Text::_('COM_CONTENTBUILDERNG_PREVIEW_TAB_VIEW'));
+$currentListLayout = trim((string) $input->getCmd('layout', 'default'));
+if ($currentListLayout === '') {
+    $currentListLayout = 'default';
+}
+$previewLayoutOptions = [
+    'default' => Text::_('COM_CONTENTBUILDERNG_PREVIEW_LIST_LAYOUT_DEFAULT'),
+    'listone' => Text::_('COM_CONTENTBUILDERNG_PREVIEW_LIST_LAYOUT_LISTONE'),
+    'listtwo' => Text::_('COM_CONTENTBUILDERNG_PREVIEW_LIST_LAYOUT_LISTTWO'),
+    'listthree' => Text::_('COM_CONTENTBUILDERNG_PREVIEW_LIST_LAYOUT_LISTTHREE'),
+    'listcard' => Text::_('COM_CONTENTBUILDERNG_PREVIEW_LIST_LAYOUT_LISTCARD'),
+    'listcompact' => Text::_('COM_CONTENTBUILDERNG_PREVIEW_LIST_LAYOUT_LISTCOMPACT'),
+    'listtiles' => Text::_('COM_CONTENTBUILDERNG_PREVIEW_LIST_LAYOUT_LISTTILES'),
+];
+if (!isset($previewLayoutOptions[$currentListLayout])) {
+    $currentListLayout = 'default';
+}
+$previewLayoutSelectOptions = [];
 $directStorageMode = !empty($this->direct_storage_mode);
 $directStorageId = (int) ($this->direct_storage_id ?? 0);
 $directStorageUnpublished = !empty($this->direct_storage_unpublished);
@@ -113,6 +131,25 @@ $listState = [
     'direction' => (string) ($this->lists['order_Dir'] ?? $input->getCmd('list[direction]', '')),
 ];
 $listQuery = http_build_query(['list' => $listState]);
+if ($isAdminPreview && !$directStorageMode) {
+    $previewLayoutBaseParams = Uri::getInstance()->getQuery(true);
+    foreach ($previewLayoutOptions as $layoutName => $layoutLabel) {
+        $params = $previewLayoutBaseParams;
+        if ($layoutName === 'default') {
+            unset($params['layout']);
+        } else {
+            $params['layout'] = $layoutName;
+        }
+        $previewLayoutSelectOptions[] = [
+            'value' => Route::_('index.php?' . http_build_query($params), false),
+            'label' => $layoutLabel,
+            'selected' => $layoutName === $currentListLayout,
+        ];
+    }
+    usort($previewLayoutSelectOptions, static function (array $a, array $b): int {
+        return strcasecmp((string) ($a['label'] ?? ''), (string) ($b['label'] ?? ''));
+    });
+}
 if ($directStorageMode) {
     $view_allowed = true;
     $publish_allowed = $directStoragePublishAllowed;
@@ -174,6 +211,61 @@ $wa->addInlineStyle(
 .cb-list-sticky .cb-list-filters{
 	margin:0;
 }
+.cb-list-has-sticky-header .cb-list-table{
+	border-collapse:separate;
+	border-spacing:0;
+}
+.cb-list-has-sticky-header .cb-scroll-x,
+.cb-list-has-sticky-header .cb-list-data-panel{
+	position:relative;
+	overflow-x:auto!important;
+	overflow-y:visible!important;
+}
+.cb-list-sticky-head-clone{
+	position:fixed;
+	top:var(--cb-list-table-header-sticky-top,.5rem);
+	left:0;
+	z-index:12;
+	display:none;
+	overflow:hidden;
+	pointer-events:none;
+}
+.cb-list-sticky-head-clone.is-visible{
+	display:block;
+}
+.cb-list-sticky-head-clone .cb-list-table{
+	margin:0;
+}
+.cb-list-sticky-head-clone a,
+.cb-list-sticky-head-clone button,
+.cb-list-sticky-head-clone input,
+.cb-list-sticky-head-clone select,
+.cb-list-sticky-head-clone label{
+	pointer-events:auto;
+}
+.cb-list-has-sticky-header .cb-list-table thead th{
+	position:static;
+	z-index:8;
+	background:linear-gradient(180deg, rgba(255,255,255,.98), rgba(248,250,252,.98))!important;
+	background-clip:padding-box;
+	border-top:1px solid rgba(15,23,42,.06);
+	border-bottom:1px solid rgba(15,23,42,.08);
+	box-shadow:0 10px 18px -18px rgba(15,23,42,.45), inset 0 -1px 0 rgba(15,23,42,.06);
+	backdrop-filter:blur(8px);
+}
+.cb-list-has-sticky-header .cb-list-table thead th.table-light{
+	background:linear-gradient(180deg, rgba(255,255,255,.98), rgba(248,250,252,.98))!important;
+}
+.cb-list-has-sticky-header .cb-list-table thead th a{
+	position:relative;
+	z-index:1;
+}
+.cb-list-has-sticky-header .cb-list-table thead th:first-child{
+	border-top-left-radius:.7rem;
+}
+.cb-list-has-sticky-header .cb-list-table thead th:last-child{
+	border-top-right-radius:.7rem;
+}
 .cb-list-titlebar{
 	display:flex;
 	align-items:center;
@@ -195,12 +287,73 @@ $wa->addInlineStyle(
 .cb-list-title::after{
 	display:none!important;
 }
+.cb-preview-config-help{
+	display:inline-flex;
+	align-items:center;
+	justify-content:center;
+	width:1.55rem;
+	height:1.55rem;
+	margin-left:.25rem;
+	border-radius:999px;
+	color:#7a4c07;
+	background:rgba(255,255,255,.45);
+	text-decoration:none;
+	vertical-align:middle;
+}
+.cb-preview-config-help:hover,
+.cb-preview-config-help:focus{
+	color:#5f3b00;
+	background:rgba(255,255,255,.62);
+	outline:none;
+}
+.cb-preview-layout-select{
+	min-width:160px;
+	appearance:none;
+	-webkit-appearance:none;
+	-moz-appearance:none;
+	border-color:#d6b07a!important;
+	background-color:#fff3e0!important;
+	color:#5f3b00!important;
+	box-shadow:none!important;
+	background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='none' stroke='%235f3b00' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.8' d='m3.5 6 4.5 4.5L12.5 6'/%3E%3C/svg%3E"), linear-gradient(180deg, #fff8ec 0%, #ffe9c8 100%)!important;
+	background-repeat:no-repeat, repeat!important;
+	background-position:right .75rem center, 0 0!important;
+	background-size:16px 12px, 100% 100%!important;
+	padding-right:2.25rem!important;
+}
+.cb-preview-layout-select:focus{
+	border-color:#c98a2e!important;
+	background-color:#fff7eb!important;
+	box-shadow:0 0 0 .18rem rgba(201,138,46,.18)!important;
+	color:#5f3b00!important;
+	background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='none' stroke='%235f3b00' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.8' d='m3.5 6 4.5 4.5L12.5 6'/%3E%3C/svg%3E"), linear-gradient(180deg, #fffaf0 0%, #ffefcf 100%)!important;
+}
+.cb-preview-layout-select option{
+	color:#2f2416;
+	background:#fffaf2;
+}
 .cb-list-template-cards .cb-pagination-summary{
 	font-weight:500;
 }
 @media (prefers-color-scheme: dark){
 	.cb-list-titlebar{
 		border-bottom-color:rgba(255,255,255,.16);
+	}
+	.cb-preview-config-help{
+		color:#f5d38f;
+		background:rgba(255,255,255,.08);
+	}
+	.cb-preview-config-help:hover,
+	.cb-preview-config-help:focus{
+		color:#ffe8b3;
+		background:rgba(255,255,255,.14);
+	}
+	.cb-list-has-sticky-header .cb-list-table thead th,
+	.cb-list-has-sticky-header .cb-list-table thead th.table-light{
+		background:linear-gradient(180deg, rgba(16,25,36,.98), rgba(20,32,46,.98))!important;
+		border-top-color:rgba(148,163,184,.14);
+		border-bottom-color:rgba(148,163,184,.16);
+		box-shadow:0 10px 18px -18px rgba(0,0,0,.7), inset 0 -1px 0 rgba(148,163,184,.14);
 	}
 }
 @media (max-width:767.98px){
@@ -214,6 +367,87 @@ $wa->addInlineStyle(
 }
 CSS
 );
+if (!empty($this->list_header_sticky)) {
+	$wa->addInlineScript(
+		<<<'JS'
+(() => {
+	const initStickyHeader = (form) => {
+		const scrollBox = form.querySelector('.cb-scroll-x');
+		const table = form.querySelector('.cb-list-table');
+		const thead = table ? table.querySelector('thead') : null;
+
+		if (!scrollBox || !table || !thead) {
+			return;
+		}
+
+		const stickyBar = form.querySelector('.cb-list-sticky');
+		const cloneHost = document.createElement('div');
+		cloneHost.className = 'cb-list-sticky-head-clone';
+
+		const cloneTable = document.createElement('table');
+		cloneTable.className = table.className;
+
+		const cloneHead = thead.cloneNode(true);
+		cloneTable.appendChild(cloneHead);
+		cloneHost.appendChild(cloneTable);
+		document.body.appendChild(cloneHost);
+
+		const sourceHeaders = Array.from(thead.querySelectorAll('th'));
+		const cloneHeaders = Array.from(cloneHead.querySelectorAll('th'));
+
+		const getTopOffset = () => {
+			const offset = stickyBar ? Math.ceil(stickyBar.getBoundingClientRect().height) + 12 : 8;
+			form.style.setProperty('--cb-list-table-header-sticky-top', `${offset}px`);
+			return offset;
+		};
+
+		const syncGeometry = () => {
+			const scrollRect = scrollBox.getBoundingClientRect();
+			const tableRect = table.getBoundingClientRect();
+			const headHeight = thead.getBoundingClientRect().height;
+			const topOffset = getTopOffset();
+			const shouldShow = tableRect.top < topOffset && tableRect.bottom - headHeight > topOffset;
+
+			cloneHost.style.left = `${scrollRect.left}px`;
+			cloneHost.style.width = `${scrollRect.width}px`;
+			cloneHost.style.top = `${topOffset}px`;
+			cloneTable.style.width = `${table.offsetWidth}px`;
+			cloneTable.style.transform = `translateX(${-scrollBox.scrollLeft}px)`;
+
+			sourceHeaders.forEach((header, index) => {
+				if (!cloneHeaders[index]) {
+					return;
+				}
+				const width = header.getBoundingClientRect().width;
+				cloneHeaders[index].style.width = `${width}px`;
+				cloneHeaders[index].style.minWidth = `${width}px`;
+				cloneHeaders[index].style.maxWidth = `${width}px`;
+			});
+
+			cloneHost.classList.toggle('is-visible', shouldShow);
+		};
+
+		scrollBox.addEventListener('scroll', syncGeometry, { passive: true });
+		window.addEventListener('scroll', syncGeometry, { passive: true });
+		window.addEventListener('resize', syncGeometry);
+		window.addEventListener('load', syncGeometry);
+
+		syncGeometry();
+	};
+
+	const boot = () => {
+		document.querySelectorAll('form.cb-list-has-sticky-header').forEach(initStickyHeader);
+	};
+
+	if (document.readyState === 'loading') {
+		document.addEventListener('DOMContentLoaded', boot, { once: true });
+	} else {
+		boot();
+	}
+})();
+JS
+	);
+}
 $wa->addInlineStyle(
 	<<<'CSS'
 .cb-list-template-cards .cb-list-cards{
@@ -484,6 +718,23 @@ $wa->addInlineStyle(
 	box-shadow:0 20px 38px rgba(13,110,253,.16);
 }
 @media (prefers-color-scheme: dark){
+	.cb-preview-layout-select{
+		border-color:#7c5a2b!important;
+		background-color:#3b2a14!important;
+		color:#ffe6bf!important;
+		background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='none' stroke='%23ffe6bf' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.8' d='m3.5 6 4.5 4.5L12.5 6'/%3E%3C/svg%3E"), linear-gradient(180deg, #4a3316 0%, #35230f 100%)!important;
+	}
+	.cb-preview-layout-select:focus{
+		border-color:#c98a2e!important;
+		background-color:#4a3316!important;
+		color:#fff2dc!important;
+		box-shadow:0 0 0 .18rem rgba(201,138,46,.24)!important;
+		background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='none' stroke='%23fff2dc' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.8' d='m3.5 6 4.5 4.5L12.5 6'/%3E%3C/svg%3E"), linear-gradient(180deg, #573a18 0%, #3f2912 100%)!important;
+	}
+	.cb-preview-layout-select option{
+		color:#fff2dc;
+		background:#2d2113;
+	}
 	.cb-list-template-compact .cb-list-panel{
 		background:#101924;
 		border-color:rgba(148,163,184,.2);
@@ -798,18 +1049,39 @@ CSS
 		</h1>
 	</div>
 <?php endif; ?>
-<?php if ($isAdminPreview || $directStorageMode): ?>
-		<div class="alert alert-warning d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
-			<span>
-				<?php echo Text::_('COM_CONTENTBUILDERNG_PREVIEW_MODE') . ' - ' . Text::sprintf($directStorageMode ? 'COM_CONTENTBUILDERNG_PREVIEW_CURRENT_STORAGE' : 'COM_CONTENTBUILDERNG_PREVIEW_CURRENT_FORM', $previewFormName); ?>
-                <?php if ($previewActorLabel !== ''): ?>
-                    <span class="badge text-bg-secondary ms-2">Preview actor: <?php echo htmlspecialchars($previewActorLabel, ENT_QUOTES, 'UTF-8'); ?><?php echo $previewActorId > 0 ? ' (#' . (int) $previewActorId . ')' : ''; ?></span>
-                <?php endif; ?>
+	<?php if ($isAdminPreview || $directStorageMode): ?>
+			<div class="alert alert-warning d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+				<span>
+					<strong><?php echo Text::_('COM_CONTENTBUILDERNG_PREVIEW_MODE'); ?></strong>
+					<?php if ($directStorageMode) : ?>
+						<?php echo ' - ' . Text::sprintf('COM_CONTENTBUILDERNG_PREVIEW_CURRENT_STORAGE', $previewFormName); ?>
+					<?php elseif (!empty($previewLayoutSelectOptions)) : ?>
+						<span class="d-inline-flex align-items-center gap-2 ms-2">
+							<span><?php echo Text::_('COM_CONTENTBUILDERNG_PREVIEW_LIST_LAYOUT'); ?></span>
+							<select
+								class="form-select form-select-sm w-auto cb-preview-layout-select"
+								title="<?php echo htmlspecialchars(Text::_('COM_CONTENTBUILDERNG_PREVIEW_LIST_LAYOUT_TOOLTIP'), ENT_QUOTES, 'UTF-8'); ?>"
+								aria-label="<?php echo htmlspecialchars(Text::_('COM_CONTENTBUILDERNG_PREVIEW_LIST_LAYOUT_TOOLTIP'), ENT_QUOTES, 'UTF-8'); ?>"
+								onchange="if (this.value) { window.location.href = this.value; }">
+								<?php foreach ($previewLayoutSelectOptions as $layoutOption) : ?>
+									<option value="<?php echo htmlspecialchars($layoutOption['value'], ENT_QUOTES, 'UTF-8'); ?>"<?php echo $layoutOption['selected'] ? ' selected' : ''; ?>>
+										<?php echo htmlspecialchars($layoutOption['label'], ENT_QUOTES, 'UTF-8'); ?>
+									</option>
+								<?php endforeach; ?>
+							</select>
+						</span>
+					<?php endif; ?>
+					<?php echo ' - ' . Text::sprintf($directStorageMode ? 'COM_CONTENTBUILDERNG_PREVIEW_CURRENT_STORAGE' : 'COM_CONTENTBUILDERNG_PREVIEW_CURRENT_FORM', $previewFormName); ?>
+	                <?php if ($previewActorLabel !== ''): ?>
+	                    <span class="badge text-bg-secondary ms-2">Preview actor: <?php echo htmlspecialchars($previewActorLabel, ENT_QUOTES, 'UTF-8'); ?><?php echo $previewActorId > 0 ? ' (#' . (int) $previewActorId . ')' : ''; ?></span>
+	                <?php endif; ?>
                 <?php if ($showPreviewSessionBadge): ?>
                     <span class="badge text-bg-secondary ms-1">Session: <?php echo htmlspecialchars($currentSessionLabel, ENT_QUOTES, 'UTF-8'); ?></span>
                 <?php endif; ?>
 				<?php if (!$directStorageMode) : ?>
-					<?php echo ' - ' . Text::sprintf('COM_CONTENTBUILDERNG_PREVIEW_CONFIG_TAB', Text::_('COM_CONTENTBUILDERNG_PREVIEW_TAB_VIEW')); ?>
+					<span class="cb-preview-config-help" title="<?php echo htmlspecialchars($previewConfigTabLabel, ENT_QUOTES, 'UTF-8'); ?>" aria-label="<?php echo htmlspecialchars($previewConfigTabLabel, ENT_QUOTES, 'UTF-8'); ?>" tabindex="0">
+						<span class="fa-solid fa-circle-question" aria-hidden="true"></span>
+					</span>
 				<?php endif; ?>
 			</span>
 			<a class="btn btn-sm btn-outline-secondary" href="<?php echo $adminReturnUrl; ?>">
@@ -838,7 +1110,7 @@ Fix search, delete, pagination and 404 behavior.
 Replace line 144 of media/com_contentbuilderng/images/list/tmpl/default.php
 by this block. -->
 	<form action="<?php echo Route::_('index.php?option=com_contentbuilderng&task=list.display&' . $listTarget . '&Itemid=' . (int) Factory::getApplication()->input->getInt('Itemid', 0) . $previewQuery); ?>"
-		method="<?php echo $___getpost; ?>" name="adminForm" id="adminForm" class="cb-list-template-<?php echo htmlspecialchars($cbListTemplateVariant, ENT_QUOTES, 'UTF-8'); ?>">
+		method="<?php echo $___getpost; ?>" name="adminForm" id="adminForm" class="cb-list-template-<?php echo htmlspecialchars($cbListTemplateVariant, ENT_QUOTES, 'UTF-8'); ?><?php echo !empty($this->list_header_sticky) && !$isCardsVariant && !$isTilesVariant ? ' cb-list-has-sticky-header' : ''; ?>">
 
 	<!-- 2023-12-19 END -->
 	<?php

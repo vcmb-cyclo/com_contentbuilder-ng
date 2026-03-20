@@ -2910,6 +2910,16 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
                                                         </span>
                                                     </label>
                                                 </div>
+                                                <div class="w-100"></div>
+                                                <div>
+                                                    <input type="hidden" name="jform[list_header_sticky]" value="0" />
+                                                    <?php echo $renderCheckbox('jform[list_header_sticky]', 'list_header_sticky', (bool) ($this->item->list_header_sticky ?? 0)); ?>
+                                                    <label class="form-check-label" for="list_header_sticky">
+                                                        <span class="editlinktip hasTip" title="<?php echo Text::_('COM_CONTENTBUILDERNG_LIST_HEADER_STICKY_TIP'); ?>">
+                                                            <?php echo Text::_('COM_CONTENTBUILDERNG_LIST_HEADER_STICKY'); ?>
+                                                        </span>
+                                                    </label>
+                                                </div>
                                                 <div>
                                                     <input type="hidden" name="jform[show_preview_link]" value="0" />
                                                     <?php echo $renderCheckbox('jform[show_preview_link]', 'show_preview_link', (bool) ($this->item->show_preview_link ?? 0)); ?>

@@ -91,6 +91,7 @@ if ($previewFormName === '') {
 }
 
 $previewFormName = htmlspecialchars($previewFormName, ENT_QUOTES, 'UTF-8');
+$previewConfigTabLabel = Text::sprintf('COM_CONTENTBUILDERNG_PREVIEW_CONFIG_TAB', Text::_('COM_CONTENTBUILDERNG_PREVIEW_TAB_CONTENT_TEMPLATE'));
 $detailsTemplateMissing = $isAdminPreview && trim((string) ($this->tpl ?? '')) === '';
 $detailsScreenAdminUrl = Uri::root() . 'administrator/index.php?option=com_contentbuilderng&view=form&layout=edit&id=' . (int) $input->getInt('id', 0) . '&tab=tab3&force_view_tab=tab3';
 
@@ -171,6 +172,25 @@ $wa->addInlineStyle(
 .cbDetailsWrapper .cbToolBar.cbToolBar--top .btn{
     white-space:nowrap;
 }
+.cb-preview-config-help{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    width:1.55rem;
+    height:1.55rem;
+    margin-left:.25rem;
+    border-radius:999px;
+    color:#7a4c07;
+    background:rgba(255,255,255,.45);
+    text-decoration:none;
+    vertical-align:middle;
+}
+.cb-preview-config-help:hover,
+.cb-preview-config-help:focus{
+    color:#5f3b00;
+    background:rgba(255,255,255,.62);
+    outline:none;
+}
 @media (prefers-color-scheme: dark){
     .cbDetailsWrapper .cbToolBar.cbToolBar--top{
         border-color:rgba(173,193,216,.3);
@@ -187,6 +207,15 @@ $wa->addInlineStyle(
         border-color:rgba(173,193,216,.45);
         background:#22344a;
         color:#f2f7ff;
+    }
+    .cb-preview-config-help{
+        color:#f5d38f;
+        background:rgba(255,255,255,.08);
+    }
+    .cb-preview-config-help:hover,
+    .cb-preview-config-help:focus{
+        color:#ffe8b3;
+        background:rgba(255,255,255,.14);
     }
 }
 @media (max-width:767.98px){
@@ -226,7 +255,9 @@ CSS
                     <span class="badge text-bg-secondary ms-1">Session: <?php echo htmlspecialchars($currentSessionLabel, ENT_QUOTES, 'UTF-8'); ?></span>
                 <?php endif; ?>
                 <?php if (!$directStorageMode) : ?>
-                    <?php echo ' - ' . Text::sprintf('COM_CONTENTBUILDERNG_PREVIEW_CONFIG_TAB', Text::_('COM_CONTENTBUILDERNG_PREVIEW_TAB_CONTENT_TEMPLATE')); ?>
+                    <span class="cb-preview-config-help" title="<?php echo htmlspecialchars($previewConfigTabLabel, ENT_QUOTES, 'UTF-8'); ?>" aria-label="<?php echo htmlspecialchars($previewConfigTabLabel, ENT_QUOTES, 'UTF-8'); ?>" tabindex="0">
+                        <span class="fa-solid fa-circle-question" aria-hidden="true"></span>
+                    </span>
                 <?php endif; ?>
                 <?php if ($isAdminPreview && $detailsTemplateMissing): ?>
                     <br />

@@ -99,6 +99,7 @@ if ($previewFormName === '') {
     $previewFormName = Text::_('COM_CONTENTBUILDERNG_NOT_AVAILABLE');
 }
 $previewFormName = htmlspecialchars($previewFormName, ENT_QUOTES, 'UTF-8');
+$previewConfigTabLabel = Text::sprintf('COM_CONTENTBUILDERNG_PREVIEW_CONFIG_TAB', Text::_('COM_CONTENTBUILDERNG_PREVIEW_TAB_EDITABLE_TEMPLATE'));
 $editableTemplateMissing = $isAdminPreview && trim((string) ($this->tpl ?? '')) === '';
 $editScreenAdminUrl = Uri::root() . 'administrator/index.php?option=com_contentbuilderng&view=form&layout=edit&id=' . (int) $id . '&tab=tab5&force_view_tab=tab5';
 if ($previewEnabled && $previewUntil > 0 && $previewSig !== '') {
@@ -219,6 +220,41 @@ if (!empty($this->theme_css) || !empty($this->theme_js)) {
         $wa->addInlineScript($themeJs);
     }
 }
+$wa = $app->getDocument()->getWebAssetManager();
+$wa->addInlineStyle(
+    <<<'CSS'
+.cb-preview-config-help{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    width:1.55rem;
+    height:1.55rem;
+    margin-left:.25rem;
+    border-radius:999px;
+    color:#7a4c07;
+    background:rgba(255,255,255,.45);
+    text-decoration:none;
+    vertical-align:middle;
+}
+.cb-preview-config-help:hover,
+.cb-preview-config-help:focus{
+    color:#5f3b00;
+    background:rgba(255,255,255,.62);
+    outline:none;
+}
+@media (prefers-color-scheme: dark){
+    .cb-preview-config-help{
+        color:#f5d38f;
+        background:rgba(255,255,255,.08);
+    }
+    .cb-preview-config-help:hover,
+    .cb-preview-config-help:focus{
+        color:#ffe8b3;
+        background:rgba(255,255,255,.14);
+    }
+}
+CSS
+);
 ?>
 <a name="article_up"></a>
 <script type="text/javascript">
@@ -473,13 +509,16 @@ if (!empty($this->theme_css) || !empty($this->theme_js)) {
     <?php if ($isAdminPreview): ?>
         <div class="alert alert-warning d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
             <span>
-                <?php echo Text::_('COM_CONTENTBUILDERNG_PREVIEW_MODE') . ' - ' . Text::sprintf('COM_CONTENTBUILDERNG_PREVIEW_CURRENT_FORM', $previewFormName) . ' - ' . Text::sprintf('COM_CONTENTBUILDERNG_PREVIEW_CONFIG_TAB', Text::_('COM_CONTENTBUILDERNG_PREVIEW_TAB_EDITABLE_TEMPLATE')); ?>
+                <?php echo Text::_('COM_CONTENTBUILDERNG_PREVIEW_MODE') . ' - ' . Text::sprintf('COM_CONTENTBUILDERNG_PREVIEW_CURRENT_FORM', $previewFormName); ?>
                 <?php if ($previewActorLabel !== ''): ?>
                     <span class="badge text-bg-secondary ms-2">Preview actor: <?php echo htmlspecialchars($previewActorLabel, ENT_QUOTES, 'UTF-8'); ?><?php echo $previewActorId > 0 ? ' (#' . (int) $previewActorId . ')' : ''; ?></span>
                 <?php endif; ?>
                 <?php if ($showPreviewSessionBadge): ?>
                     <span class="badge text-bg-secondary ms-1">Session: <?php echo htmlspecialchars($currentSessionLabel, ENT_QUOTES, 'UTF-8'); ?></span>
                 <?php endif; ?>
+                <span class="cb-preview-config-help" title="<?php echo htmlspecialchars($previewConfigTabLabel, ENT_QUOTES, 'UTF-8'); ?>" aria-label="<?php echo htmlspecialchars($previewConfigTabLabel, ENT_QUOTES, 'UTF-8'); ?>" tabindex="0">
+                    <span class="fa-solid fa-circle-question" aria-hidden="true"></span>
+                </span>
                 <?php if ($editableTemplateMissing): ?>
                     <br />
                     <strong><?php echo Text::_('COM_CONTENTBUILDERNG_PREVIEW_EDITABLE_TEMPLATE_MISSING'); ?></strong>

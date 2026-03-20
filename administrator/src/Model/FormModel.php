@@ -126,6 +126,7 @@ class FormModel extends AdminModel
 
         $requiredColumns = [
             'button_bar_sticky' => 'TINYINT(1) NOT NULL DEFAULT 0',
+            'list_header_sticky' => 'TINYINT(1) NOT NULL DEFAULT 0',
             'show_preview_link' => 'TINYINT(1) NOT NULL DEFAULT 0',
         ];
 
@@ -699,6 +700,8 @@ class FormModel extends AdminModel
 
             $data->button_bar_sticky = 0;
 
+            $data->list_header_sticky = 0;
+
             $data->show_preview_link = 0;
 
             $data->initial_list_limit = 20;
@@ -718,6 +721,10 @@ class FormModel extends AdminModel
 
         if (!isset($data->button_bar_sticky)) {
             $data->button_bar_sticky = 0;
+        }
+
+        if (!isset($data->list_header_sticky)) {
+            $data->list_header_sticky = 0;
         }
 
         if (!isset($data->show_preview_link)) {
@@ -940,6 +947,7 @@ class FormModel extends AdminModel
             'show_filter',
             'show_records_per_page',
             'button_bar_sticky',
+            'list_header_sticky',
             'show_preview_link',
             'metadata',
             'export_xls',

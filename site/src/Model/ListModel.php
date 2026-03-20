@@ -496,6 +496,7 @@ class ListModel extends BaseListModel
             'show_filter' => 1,
             'show_records_per_page' => 1,
             'button_bar_sticky' => 0,
+            'list_header_sticky' => 0,
             'show_preview_link' => 1,
             'show_page_heading' => $this->_show_page_heading,
             'page_class' => $this->_page_class,
@@ -679,6 +680,7 @@ class ListModel extends BaseListModel
                 $data->linkable_elements = [];
                 $data->preview_no_list_fields = false;
                 $data->invalid_list_setup = false;
+                $data->list_header_sticky = (int) ($data->list_header_sticky ?? 0);
                 $isAdminPreview = $app->input->getBool('cb_preview_ok', false);
 
                 if (!$isAdminPreview) {
