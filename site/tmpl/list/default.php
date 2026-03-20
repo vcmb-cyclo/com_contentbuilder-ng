@@ -127,13 +127,15 @@ $listTarget = $directStorageMode
     : ('id=' . (int) $input->getInt('id', 0));
 $listState = [
     'limit' => (int) ($this->pagination?->limit ?? $input->getInt('list[limit]', 0)),
-    'start' => (int) ($this->pagination?->limitstart ?? $input->getInt('list[start]', 0)),
+    'start' => (int) ($this->lists['liststart'] ?? $this->pagination?->limitstart ?? $input->getInt('list[start]', 0)),
     'ordering' => (string) ($this->lists['order'] ?? $input->getCmd('list[ordering]', '')),
     'direction' => (string) ($this->lists['order_Dir'] ?? $input->getCmd('list[direction]', '')),
 ];
 $listQuery = http_build_query(['list' => $listState]);
 if ($isAdminPreview && !$directStorageMode) {
     $previewLayoutBaseParams = Uri::getInstance()->getQuery(true);
+    $previewLayoutBaseParams['list'] = $listState;
+
     foreach ($previewLayoutOptions as $layoutName => $layoutLabel) {
         $params = $previewLayoutBaseParams;
         if ($layoutName === 'default') {

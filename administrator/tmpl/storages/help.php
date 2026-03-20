@@ -9,7 +9,6 @@
 \defined('_JEXEC') or die('Restricted access');
 
 use Joomla\CMS\Language\Text;
-use Joomla\CMS\Router\Route;
 ?>
 <div class="container-fluid p-3">
     <h1 class="h3 mb-3"><?php echo Text::_('COM_CONTENTBUILDERNG_HELP_STORAGES_TITLE'); ?></h1>
@@ -19,7 +18,4 @@ use Joomla\CMS\Router\Route;
         <li><?php echo Text::_('COM_CONTENTBUILDERNG_HELP_STORAGES_POINT_2'); ?></li>
         <li><?php echo Text::_('COM_CONTENTBUILDERNG_HELP_STORAGES_POINT_3'); ?></li>
     </ul>
-    <a class="btn btn-primary btn-sm" href="<?php echo Route::_('index.php?option=com_contentbuilderng&view=storages'); ?>">
-        <?php echo Text::_('COM_CONTENTBUILDERNG_HELP_BACK_TO_STORAGES'); ?>
-    </a>
 </div>
