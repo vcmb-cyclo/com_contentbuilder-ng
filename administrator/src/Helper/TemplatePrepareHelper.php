@@ -14,13 +14,18 @@
 namespace CB\Component\Contentbuilderng\Administrator\Helper;
 
 // No direct access
-\defined('_JEXEC') or die('Restricted access');
+\defined('_JEXEC') or die;
 
 use Joomla\CMS\Factory;
 use Joomla\CMS\Log\Log;
 
 final class TemplatePrepareHelper
 {
+    private static function getApp()
+    {
+        return Factory::getApplication();
+    }
+
     public static function execute(string $prepareCode, string $fieldName, callable $executor): void
     {
         if ($prepareCode === '') {
@@ -33,7 +38,7 @@ final class TemplatePrepareHelper
             $fieldLabel = ucwords(str_replace('_', ' ', trim($fieldName)));
             $msg = 'Invalid ' . $fieldName . ' code; skipped. Check the ' . $fieldLabel . ' field for stray HTML (editor).';
             Log::add($msg . ' Error: ' . $e->getMessage(), Log::WARNING, 'com_contentbuilderng');
-            Factory::getApplication()->enqueueMessage($msg, 'warning');
+            self::getApp()->enqueueMessage($msg, 'warning');
         }
     }
 }

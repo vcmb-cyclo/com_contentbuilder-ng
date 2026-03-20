@@ -35,6 +35,11 @@ class VerifyModel extends BaseDatabaseModel
     private $frontend = false;
     private AdministratorApplication|SiteApplication $app;
 
+    private function getInput(): Input
+    {
+        return $this->app->input;
+    }
+
     private function decodePackedQueryString(string $encoded): array
     {
         if ($encoded === '') {
@@ -89,16 +94,17 @@ class VerifyModel extends BaseDatabaseModel
 
         $option = 'com_contentbuilderng';
 
-        $plugin = Factory::getApplication()->input->get('plugin', '', 'string');
-        $verification_name = Factory::getApplication()->input->get('verification_name', '', 'string');
+        $input = $this->getInput();
+        $plugin = $input->get('plugin', '', 'string');
+        $verification_name = $input->get('verification_name', '', 'string');
 
-        $verification_id = Factory::getApplication()->input->get('verification_id', '', 'string');
+        $verification_id = $input->get('verification_id', '', 'string');
         $setup = '';
         $user_id = 0;
 
-        if (Factory::getApplication()->input->getBool('verify_by_admin', 0)) {
+        if ($input->getBool('verify_by_admin', 0)) {
 
-            $this->activate_by_admin(Factory::getApplication()->input->get('token', '', 'string'));
+            $this->activate_by_admin($input->get('token', '', 'string'));
         }
 
         if (!$verification_id) {
@@ -173,7 +179,7 @@ class VerifyModel extends BaseDatabaseModel
             }
 
             if (intval($user_id) == 0) {
-                $this->app->redirect('index.php?option=com_contentbuilderng&lang=' . Factory::getApplication()->input->getCmd('lang', '') . '&return=' . base64_encode(Uri::getInstance()->toString()) . '&task=edit.display&record_id=&id=' . $id . '&rand=' . rand(0, getrandmax()));
+                $this->app->redirect('index.php?option=com_contentbuilderng&lang=' . $input->getCmd('lang', '') . '&return=' . base64_encode(Uri::getInstance()->toString()) . '&task=edit.display&record_id=&id=' . $id . '&rand=' . rand(0, getrandmax()));
             }
 
             $rec = $form->getListRecords($ids, '', array(), 0, 1, '', array(), 'desc', 0, false, $user_id, 0, -1, -1, -1, -1, array(), true, null);
@@ -184,7 +190,7 @@ class VerifyModel extends BaseDatabaseModel
             }
 
             if (!$form->getListRecordsTotal($ids)) {
-                $this->app->redirect('index.php?option=com_contentbuilderng&lang=' . Factory::getApplication()->input->getCmd('lang', '') . '&return=' . base64_encode(Uri::getInstance()->toString()) . '&task=edit.display&record_id=&id=' . $id . '&rand=' . rand(0, getrandmax()));
+                $this->app->redirect('index.php?option=com_contentbuilderng&lang=' . $input->getCmd('lang', '') . '&return=' . base64_encode(Uri::getInstance()->toString()) . '&task=edit.display&record_id=&id=' . $id . '&rand=' . rand(0, getrandmax()));
             }
         }
 
@@ -199,7 +205,7 @@ class VerifyModel extends BaseDatabaseModel
             $verification_data = rtrim($verification_data, '&');
         }
 
-        if (!Factory::getApplication()->input->getBool('verify', 0) && !Factory::getApplication()->input->get('token', '', 'string')) {
+        if (!$input->getBool('verify', 0) && !$input->get('token', '', 'string')) {
             $___now = $_now->toSql();
 
             $verification_id = md5(uniqid("", true) . mt_rand(0, mt_getrandmax()) . $user_id);
@@ -252,7 +258,7 @@ class VerifyModel extends BaseDatabaseModel
         $setup_result = $eventResult->getArgument('result') ?: [];
         if (!implode('', $setup_result)) {
 
-            if (!Factory::getApplication()->input->getBool('verify', 0)) {
+            if (!$input->getBool('verify', 0)) {
 
                 if ($this->app->isClient('administrator')) {
                     $local = explode('/', Uri::getInstance()->base());
@@ -302,9 +308,9 @@ class VerifyModel extends BaseDatabaseModel
 
                             if ((!$out['client'] && (!isset($out['return-site']) || !$out['return-site'])) || ($out['client'] && (!isset($out['return-admin']) || !$out['return-admin']))) {
                                 if (intval($out['client']) && !$this->app->isClient('administrator')) {
-                                    $redirect_view = Uri::getInstance()->base() . 'administrator/index.php?option=com_contentbuilderng&task=list.display&lang=' . Factory::getApplication()->input->getCmd('lang', '') . '&id=' . $out['verify_view'];
+                                    $redirect_view = Uri::getInstance()->base() . 'administrator/index.php?option=com_contentbuilderng&task=list.display&lang=' . $input->getCmd('lang', '') . '&id=' . $out['verify_view'];
                                 } else {
-                                    $redirect_view = 'index.php?option=com_contentbuilderng&task=list.display&lang=' . Factory::getApplication()->input->getCmd('lang', '') . '&id=' . $out['verify_view'];
+                                    $redirect_view = 'index.php?option=com_contentbuilderng&task=list.display&lang=' . $input->getCmd('lang', '') . '&id=' . $out['verify_view'];
                                 }
                             }
 
@@ -373,8 +379,8 @@ class VerifyModel extends BaseDatabaseModel
                             $this->getDatabase()->execute();
 
                             // token check if given
-                            if (Factory::getApplication()->input->get('token', '', 'string')) {
-                                $this->activate(Factory::getApplication()->input->get('token', '', 'string'));
+                            if ($input->get('token', '', 'string')) {
+                                $this->activate($input->get('token', '', 'string'));
                             }
 
                             // exit if requested

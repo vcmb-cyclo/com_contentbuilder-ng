@@ -25,13 +25,23 @@ class ArticleService
         $this->textUtilityService = new TextUtilityService();
     }
 
+    private function getApp(): CMSApplication
+    {
+        return Factory::getApplication();
+    }
+
+    private function getCurrentUserId(): int
+    {
+        return (int) ($this->getApp()->getIdentity()->id ?? 0);
+    }
+
     public function createArticle($contentbuilderngFormId, $recordId, array $record, array $elementsAllowed, $titleField = '', $metadata = null, $config = [], $full = false, $limitedOptions = true, $menuCatId = null)
     {
-        $app = Factory::getApplication();
+        $app = $this->getApp();
         $input = $app->input;
         $skipDetailsTemplateOnSave = $app->isClient('site') && $input->getCmd('task', '') === 'edit.save';
 
-        $tz = new \DateTimeZone(Factory::getApplication()->get('offset'));
+        $tz = new \DateTimeZone($app->get('offset'));
 
         foreach (['publish_up', 'created', 'publish_down'] as $dateKey) {
             if (isset($config[$dateKey]) && $config[$dateKey]) {
@@ -71,8 +81,8 @@ class ArticleService
                 $meta = $formObject->getRecordMetadata($recordId);
                 $db->setQuery('Select * From #__users Where id = ' . $meta->created_id);
                 $user = $db->loadObject();
-            } elseif ((int) (Factory::getApplication()->getIdentity()->id ?? 0)) {
-                $db->setQuery('Select * From #__users Where id = ' . (int) (Factory::getApplication()->getIdentity()->id ?? 0));
+            } elseif ($this->getCurrentUserId()) {
+                $db->setQuery('Select * From #__users Where id = ' . $this->getCurrentUserId());
                 $user = $db->loadObject();
             }
         }
@@ -182,7 +192,7 @@ class ArticleService
         $ignoreLangCode = '*';
 
         if ($form['default_lang_code_ignore']) {
-            $db->setQuery("Select lang_code From #__languages Where published = 1 And sef = " . $db->quote(Factory::getApplication()->input->getCmd('lang', '')));
+            $db->setQuery("Select lang_code From #__languages Where published = 1 And sef = " . $db->quote($input->getCmd('lang', '')));
             $ignoreLangCode = $db->loadResult() ?: '*';
         }
 
@@ -261,7 +271,7 @@ class ArticleService
             if (!$limitedOptions) {
                 $createdArticle = $config['created'] ?? null;
 
-                if (Factory::getApplication()->isClient('administrator')) {
+                if ($app->isClient('administrator')) {
                     $createdBy = $config['created_by'] ?? 0;
                 }
 
@@ -306,7 +316,7 @@ class ArticleService
                 $isNew = false;
             }
 
-            $dispatcher = Factory::getApplication()->getDispatcher();
+            $dispatcher = $app->getDispatcher();
             $event = new \Joomla\CMS\Event\Model\BeforeSaveEvent('onContentBeforeSave', [
                 'context' => 'com_content.article',
                 'subject' => $table,
@@ -359,9 +369,9 @@ class ArticleService
                           ' . $db->quote($state) . ',
                           ' . (int) $form['default_category'] . ',
                           ' . $db->quote($created) . ',
-                          ' . $db->quote($createdBy ? $createdBy : (int) (Factory::getApplication()->getIdentity()->id ?? 0)) . ',
+                          ' . $db->quote($createdBy ? $createdBy : $this->getCurrentUserId()) . ',
                           ' . $db->quote($created) . ',
-                          ' . $db->quote($createdBy ? $createdBy : (int) (Factory::getApplication()->getIdentity()->id ?? 0)) . ",
+                          ' . $db->quote($createdBy ? $createdBy : $this->getCurrentUserId()) . ",
                           NULL,NULL,
                           " . ($publishUp ? $db->quote($publishUp) : 'NULL') . ',
                           ' . ($publishDown ? $db->quote($publishDown) : 'NULL') . ',
@@ -417,7 +427,7 @@ class ArticleService
         } else {
             $___datenow = Factory::getDate()->toSql();
             $modified = $___datenow;
-            $currentUserId = (int) (Factory::getApplication()->getIdentity()->id ?? 0);
+            $currentUserId = $this->getCurrentUserId();
             $metadataModifiedBy = isset($metadata->modified_id) ? (int) $metadata->modified_id : 0;
             $modifiedBy = $currentUserId > 0 ? $currentUserId : $metadataModifiedBy;
 
@@ -431,7 +441,7 @@ class ArticleService
                         `state` = " . $db->quote($state) . ",
                         `catid` = " . (int) $form['default_category'] . ",
                         `modified` = " . $db->quote($modified) . ",
-                        `modified_by` = " . $db->quote($modifiedBy ? $modifiedBy : (int) (Factory::getApplication()->getIdentity()->id ?? 0)) . ",
+                        `modified_by` = " . $db->quote($modifiedBy ? $modifiedBy : $this->getCurrentUserId()) . ",
                         `attribs` = " . $db->quote($attribs !== '' ? $attribs : '{"article_layout":"","show_title":"","link_titles":"","show_tags":"","show_intro":"","info_block_position":"","info_block_show_title":"","show_category":"","link_category":"","show_parent_category":"","link_parent_category":"","show_author":"","link_author":"","show_create_date":"","show_modify_date":"","show_publish_date":"","show_item_navigation":"","show_hits":"","show_noauth":"","urls_position":"","alternative_readmore":"","article_page_title":"","show_publishing_options":"","show_article_options":"","show_urls_images_backend":"","show_urls_images_frontend":""}') . ",
                         `metakey` = " . $db->quote($metakey) . ",
                         `metadesc` = " . $db->quote($metadesc) . ",
@@ -478,7 +488,7 @@ class ArticleService
                         `fulltext` = " . $db->quote($fulltext . '<div style=\'display:none;\'><!--(cbArticleId:' . $article . ')--></div>') . ",
                         `state` = " . $db->quote($state) . ",
                         `modified` = " . $db->quote($modified) . ",
-                        `modified_by` = " . $db->quote($modifiedBy ? $modifiedBy : (int) (Factory::getApplication()->getIdentity()->id ?? 0)) . ",
+                        `modified_by` = " . $db->quote($modifiedBy ? $modifiedBy : $this->getCurrentUserId()) . ",
                         `version` = `version`+1,
                         language=" . $db->quote($language) . "
                     Where id = $article"
@@ -497,8 +507,7 @@ class ArticleService
             $db->execute();
         }
 
-        /** @var CMSApplication $app */
-        $app = Factory::getApplication();
+        $app = $this->getApp();
         $conf = $app->getConfig();
         $options = [
             'defaultgroup' => 'com_content',
@@ -506,7 +515,7 @@ class ArticleService
         ];
         $this->cleanComponentCaches(['com_content', 'com_contentbuilderng'], ['cachebase' => $options['cachebase']]);
 
-        $dispatcher = Factory::getApplication()->getDispatcher();
+        $dispatcher = $app->getDispatcher();
         $dispatcher->dispatch('onContentCleanCache', new \Joomla\CMS\Event\Model\AfterCleanCacheEvent('onContentCleanCache', [
             'defaultgroup' => $options['defaultgroup'],
             'cachebase' => $options['cachebase'],
@@ -539,7 +548,7 @@ class ArticleService
         $msg = implode('', $results);
 
         if ($msg) {
-            Factory::getApplication()->enqueueMessage($msg);
+            $app->enqueueMessage($msg);
         }
 
         return $article;

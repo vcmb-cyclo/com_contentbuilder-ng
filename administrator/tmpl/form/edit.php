@@ -9,7 +9,7 @@
  */
 
 // No direct access
-\defined('_JEXEC') or die('Restricted access');
+\defined('_JEXEC') or die;
 
 use Joomla\CMS\Factory;
 use Joomla\CMS\Application\AdministratorApplication;
@@ -508,6 +508,10 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
     const cbIsBreezingFormsType = <?php echo $isBreezingFormsType ? 'true' : 'false'; ?>;
     const cbBreezingFormsEditableToken = <?php echo json_encode($breezingFormsEditableToken, JSON_UNESCAPED_UNICODE); ?>;
     const cbEditByTypeEnableConfirm = <?php echo json_encode(Text::_('COM_CONTENTBUILDERNG_TYPE_EDIT_ENABLE_BF_CONFIRM'), JSON_UNESCAPED_UNICODE); ?>;
+    const cbFormNotFoundMessage = <?php echo json_encode(Text::_('COM_CONTENTBUILDERNG_FORM_NOT_FOUND'), JSON_UNESCAPED_UNICODE); ?>;
+    const cbSaveFailedMessage = <?php echo json_encode(Text::_('COM_CONTENTBUILDERNG_SAVE_FAILED'), JSON_UNESCAPED_UNICODE); ?>;
+    const cbUnnamedLabel = <?php echo json_encode(Text::_('COM_CONTENTBUILDERNG_UNNAMED'), JSON_UNESCAPED_UNICODE); ?>;
+    const cbInheritedFromLabel = <?php echo json_encode(Text::_('COM_CONTENTBUILDERNG_INHERITED_FROM'), JSON_UNESCAPED_UNICODE); ?>;
     const cbFirefoxVersionMatch = String(window.navigator.userAgent || '').match(/\bfirefox\/(\d+)/i);
     const cbFirefoxMajorVersion = cbFirefoxVersionMatch ? parseInt(cbFirefoxVersionMatch[1], 10) : 0;
     const cbIsFirefoxBrowser = cbFirefoxMajorVersion > 0;
@@ -938,7 +942,7 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
         var form = document.getElementById('adminForm') || document.adminForm;
         if (!form) {
             if (typeof onError === 'function') {
-                onError("Form not found.");
+                onError(cbFormNotFoundMessage);
             }
             return;
         }
@@ -982,7 +986,7 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
                     }
 
                     if (!response.ok || !payload || payload.success === false) {
-                        throw new Error((payload && payload.message) ? payload.message : 'Save failed');
+                        throw new Error((payload && payload.message) ? payload.message : cbSaveFailedMessage);
                     }
 
                     return payload;
@@ -996,10 +1000,10 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
             })
             .catch(function(error) {
                 if (typeof onError === 'function') {
-                    onError(error && error.message ? error.message : 'Save failed');
+                    onError(error && error.message ? error.message : cbSaveFailedMessage);
                     return;
                 }
-                alert(error && error.message ? error.message : 'Save failed');
+                alert(error && error.message ? error.message : cbSaveFailedMessage);
             })
             .finally(function() {
                 cbDismissTransientTooltips();
@@ -1157,7 +1161,7 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
 
         var value = String(input.value || '').trim();
         if (value === '') {
-            value = 'Unnamed';
+            value = cbUnnamedLabel;
         }
 
         input.value = value;
@@ -1186,7 +1190,7 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
             },
             function(message) {
                 input.setAttribute('data-cb-last-saved', lastSaved);
-                alert(message || 'Save failed');
+                alert(message || cbSaveFailedMessage);
             }
         );
     }
@@ -1215,10 +1219,87 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
         var api = window.JoomlaEditor;
 
         if (api && typeof api.get === 'function') {
-            return api.get(editorId) || api.get(fieldName) || null;
+            var joomlaInstance = api.get(editorId) || api.get(fieldName) || null;
+            if (joomlaInstance) {
+                return joomlaInstance;
+            }
+        }
+
+        var codeMirrorHost = document.querySelector('joomla-editor-codemirror textarea#' + editorId + ', joomla-editor-codemirror textarea[name="jform[' + fieldName + ']"]');
+        if (codeMirrorHost && typeof codeMirrorHost.closest === 'function') {
+            var codeMirrorElement = codeMirrorHost.closest('joomla-editor-codemirror');
+            if (codeMirrorElement && codeMirrorElement.jEditor) {
+                return codeMirrorElement.jEditor;
+            }
+        }
+
+        if (window.tinymce && typeof window.tinymce.get === 'function') {
+            var tinyInstance = window.tinymce.get(editorId);
+            if (tinyInstance) {
+                return tinyInstance;
+            }
         }
 
         return null;
+    }
+
+    function cbGetCodeMirrorEditorView(fieldName) {
+        var editorId = 'jform_' + fieldName;
+        var textarea = document.getElementById(editorId)
+            || document.querySelector('textarea[name="jform[' + fieldName + ']"]');
+
+        if (!textarea || typeof textarea.closest !== 'function') {
+            return null;
+        }
+
+        var host = textarea.closest('joomla-editor-codemirror');
+        if (!host) {
+            return null;
+        }
+
+        if (host.instance) {
+            return host.instance;
+        }
+
+        var editorDom = host.querySelector('.cm-editor');
+        if (editorDom && editorDom.cmView && editorDom.cmView.view) {
+            return editorDom.cmView.view;
+        }
+
+        return null;
+    }
+
+    function cbBindCodeMirrorViewDirtyTracking(fieldName) {
+        var editorView = cbGetCodeMirrorEditorView(fieldName);
+        if (!editorView || editorView.__cbDirtyTrackingBound) {
+            return 0;
+        }
+
+        editorView.__cbDirtyTrackingBound = true;
+
+        var targets = [];
+        if (editorView.dom) {
+            targets.push(editorView.dom);
+        }
+        if (editorView.contentDOM && targets.indexOf(editorView.contentDOM) === -1) {
+            targets.push(editorView.contentDOM);
+        }
+
+        targets.forEach(function(target) {
+            if (!target || target.__cbDirtyTrackingListenersBound) {
+                return;
+            }
+
+            target.__cbDirtyTrackingListenersBound = true;
+
+            ['beforeinput', 'input', 'change', 'keyup', 'keydown', 'paste', 'cut'].forEach(function(eventName) {
+                target.addEventListener(eventName, function() {
+                    window.requestAnimationFrame(cbHandleDirtyInteraction);
+                }, true);
+            });
+        });
+
+        return 1;
     }
 
     function cbGetEditorInstancesFromFields(root) {
@@ -1227,18 +1308,17 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
         var seen = {};
 
         scope.querySelectorAll('textarea[name^="jform["], input[name^="jform["]').forEach(function(field) {
-            var match = String(field.name || '').match(/^jform\[(.+)\]$/);
-
-            if (!match || !match[1]) {
+            var fieldName = cbExtractSimpleJformFieldName(field.name || '');
+            if (!fieldName) {
                 return;
             }
 
-            var instance = cbGetJoomlaEditorInstance(match[1]);
+            var instance = cbGetJoomlaEditorInstance(fieldName);
             if (!instance) {
                 return;
             }
 
-            var key = String(match[1]);
+            var key = String(fieldName);
             if (seen[key]) {
                 return;
             }
@@ -1393,10 +1473,30 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
         }
     }
 
-    function cbOpenPrepareExamples() {
+    function cbGetPrepareExamplesModalElement() {
         var modalElement = document.getElementById('cb-prepare-examples-modal');
+        if (!modalElement) {
+            return null;
+        }
+
+        if (modalElement.parentNode !== document.body) {
+            document.body.appendChild(modalElement);
+        }
+
+        return modalElement;
+    }
+
+    function cbOpenPrepareExamples(triggerElement) {
+        var modalElement = cbGetPrepareExamplesModalElement();
         if (!modalElement || !window.bootstrap || typeof window.bootstrap.Modal !== 'function') {
             return;
+        }
+
+        if (triggerElement && window.bootstrap && typeof window.bootstrap.Tooltip === 'function') {
+            var tooltipInstance = window.bootstrap.Tooltip.getInstance(triggerElement);
+            if (tooltipInstance && typeof tooltipInstance.hide === 'function') {
+                tooltipInstance.hide();
+            }
         }
 
         window.bootstrap.Modal.getOrCreateInstance(modalElement).show();
@@ -1887,6 +1987,8 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
     var cbDirtySnapshot = '';
     var cbEditorObserver = null;
     var cbEditorPollHandle = null;
+    var cbDirtyTrackingInitialized = false;
+    var cbDirtyUserInteracted = false;
 
     function cbShouldTrackField(field) {
         if (!field || field.disabled) {
@@ -1907,6 +2009,11 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
         return true;
     }
 
+    function cbExtractSimpleJformFieldName(name) {
+        var match = String(name || '').match(/^jform\[([^\]]+)\]$/);
+        return match && match[1] ? match[1] : '';
+    }
+
     function cbSerializeTrackedFormState(form) {
         if (!form || !form.elements) {
             return '';
@@ -1924,12 +2031,7 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
 
             var type = String(field.type || '').toLowerCase();
             var key = String(field.name || '');
-            var editorFieldName = '';
-            var editorMatch = key.match(/^jform\[(.+)\]$/);
-
-            if (editorMatch && editorMatch[1]) {
-                editorFieldName = editorMatch[1];
-            }
+            var editorFieldName = cbExtractSimpleJformFieldName(key);
 
             if (type === 'checkbox' || type === 'radio') {
                 parts.push(key + '=' + (field.checked ? '1' : '0'));
@@ -1980,13 +2082,12 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
 
         fields.forEach(function(field) {
             var key = String(field.name || '');
-            var match = key.match(/^jform\[(.+)\]$/);
+            var fieldName = cbExtractSimpleJformFieldName(key);
 
-            if (!match || !match[1] || seen[key]) {
+            if (!fieldName || seen[key]) {
                 return;
             }
 
-            var fieldName = match[1];
             var textarea = document.getElementById('jform_' + fieldName);
             var hasEditorInstance = !!cbGetJoomlaEditorInstance(fieldName);
             var looksLikeEditorField = hasEditorInstance
@@ -2015,20 +2116,62 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
     function cbBindEditorDirtyTracking() {
         var boundCount = 0;
 
+        document.querySelectorAll('textarea[name^="jform["], input[name^="jform["]').forEach(function(field) {
+            var fieldName = cbExtractSimpleJformFieldName(field.name || '');
+            if (!fieldName) {
+                return;
+            }
+
+            boundCount += cbBindCodeMirrorViewDirtyTracking(fieldName);
+        });
+
         cbGetEditorInstancesFromFields(document).forEach(function(instance) {
             if (!instance || instance.__cbDirtyTrackingBound) {
                 return;
             }
 
-            instance.__cbDirtyTrackingBound = true;
-
             if (typeof instance.on === 'function') {
-                ['change', 'input', 'keyup', 'undo', 'redo', 'SetContent'].forEach(function(eventName) {
+                instance.__cbDirtyTrackingBound = true;
+                ['change', 'input', 'keyup', 'undo', 'redo'].forEach(function(eventName) {
                     try {
-                        instance.on(eventName, cbRefreshDirtyState);
+                        instance.on(eventName, cbHandleDirtyInteraction);
                     } catch (e) {
                     }
                 });
+                boundCount++;
+                return;
+            }
+
+            if (typeof instance.getType === 'function' && instance.getType() === 'codemirror') {
+                instance.__cbDirtyTrackingBound = true;
+
+                var rawInstance = typeof instance.getRawInstance === 'function' ? instance.getRawInstance() : null;
+                if (rawInstance && !rawInstance.__cbDirtyTrackingBound) {
+                    rawInstance.__cbDirtyTrackingBound = true;
+
+                    var targets = [];
+                    if (rawInstance.dom) {
+                        targets.push(rawInstance.dom);
+                    }
+                    if (rawInstance.contentDOM && targets.indexOf(rawInstance.contentDOM) === -1) {
+                        targets.push(rawInstance.contentDOM);
+                    }
+
+                    targets.forEach(function(target) {
+                        if (!target || target.__cbDirtyTrackingListenersBound) {
+                            return;
+                        }
+
+                        target.__cbDirtyTrackingListenersBound = true;
+
+                        ['beforeinput', 'input', 'change', 'keyup', 'keydown', 'paste', 'cut'].forEach(function(eventName) {
+                            target.addEventListener(eventName, function() {
+                                window.requestAnimationFrame(cbHandleDirtyInteraction);
+                            }, true);
+                        });
+                    });
+                }
+
                 boundCount++;
             }
         });
@@ -2047,26 +2190,19 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
 
                 editor.__cbDirtyTrackingBound = true;
 
-                ['input', 'change', 'keyup', 'NodeChange', 'Undo', 'Redo', 'SetContent'].forEach(function(eventName) {
+                ['input', 'change', 'keyup', 'Undo', 'Redo'].forEach(function(eventName) {
                     try {
-                        editor.on(eventName, cbRefreshDirtyState);
+                        editor.on(eventName, cbHandleDirtyInteraction);
                     } catch (e) {
                     }
                 });
-
-                try {
-                    editor.on('init', function() {
-                        cbRefreshDirtyState();
-                    });
-                } catch (e) {
-                }
 
                 try {
                     var doc = editor.getDoc && editor.getDoc();
                     if (doc && !doc.__cbDirtyTrackingBound) {
                         doc.__cbDirtyTrackingBound = true;
                         ['input', 'keyup', 'paste', 'cut'].forEach(function(eventName) {
-                            doc.addEventListener(eventName, cbRefreshDirtyState, true);
+                            doc.addEventListener(eventName, cbHandleDirtyInteraction, true);
                         });
                     }
                 } catch (e) {
@@ -2077,7 +2213,7 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
                     if (body && !body.__cbDirtyTrackingBound) {
                         body.__cbDirtyTrackingBound = true;
                         ['input', 'keyup', 'paste', 'cut'].forEach(function(eventName) {
-                            body.addEventListener(eventName, cbRefreshDirtyState, true);
+                            body.addEventListener(eventName, cbHandleDirtyInteraction, true);
                         });
                     }
                 } catch (e) {
@@ -2096,7 +2232,7 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
                 if (container && container.classList && container.classList.contains('tox-tinymce') && !container.__cbDirtyTrackingBound) {
                     container.__cbDirtyTrackingBound = true;
                     ['input', 'keyup', 'paste', 'cut'].forEach(function(eventName) {
-                        container.addEventListener(eventName, cbRefreshDirtyState, true);
+                        container.addEventListener(eventName, cbHandleDirtyInteraction, true);
                     });
                 }
 
@@ -2126,7 +2262,7 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
             boundCount++;
 
             ['input', 'change', 'keyup'].forEach(function(eventName) {
-                field.addEventListener(eventName, cbRefreshDirtyState, true);
+                field.addEventListener(eventName, cbHandleDirtyInteraction, true);
             });
         });
 
@@ -2193,13 +2329,38 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
         cbSetSaveButtonsEnabled(cbDirtyState);
     }
 
+    function cbHandleDirtyInteraction() {
+        cbDirtyUserInteracted = true;
+        cbRefreshDirtyState();
+    }
+
+    function cbStabilizeDirtySnapshot() {
+        if (cbDirtyUserInteracted) {
+            cbRefreshDirtyState();
+            return;
+        }
+
+        cbMarkDirtySnapshot();
+    }
+
     function cbRefreshDirtyState() {
         var form = document.getElementById('adminForm') || document.adminForm;
         if (!form) {
             return;
         }
 
-        cbSetDirtyState(cbSerializeTrackedFormState(form) !== cbDirtySnapshot);
+        var currentState = cbSerializeTrackedFormState(form);
+
+        if (!cbDirtyUserInteracted) {
+            if (currentState !== cbDirtySnapshot) {
+                cbDirtySnapshot = currentState;
+            }
+
+            cbSetDirtyState(false);
+            return;
+        }
+
+        cbSetDirtyState(currentState !== cbDirtySnapshot);
     }
 
     function cbMarkDirtySnapshot() {
@@ -2214,21 +2375,28 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
 
     function cbInitDirtyTracking() {
         var form = document.getElementById('adminForm') || document.adminForm;
-        if (!form) {
+        if (!form || cbDirtyTrackingInitialized) {
             return;
         }
 
+        cbDirtyTrackingInitialized = true;
         cbMarkDirtySnapshot();
 
-        form.addEventListener('input', cbRefreshDirtyState, true);
-        form.addEventListener('change', cbRefreshDirtyState, true);
+        form.addEventListener('input', cbHandleDirtyInteraction, true);
+        form.addEventListener('change', cbHandleDirtyInteraction, true);
         cbEnsureEditorDirtyTracking(form);
         window.setTimeout(function() {
             cbEnsureEditorDirtyTracking(form);
+            cbStabilizeDirtySnapshot();
         }, 250);
         window.setTimeout(function() {
             cbEnsureEditorDirtyTracking(form);
+            cbStabilizeDirtySnapshot();
         }, 1000);
+        window.setTimeout(function() {
+            cbEnsureEditorDirtyTracking(form);
+            cbStabilizeDirtySnapshot();
+        }, 1600);
         window.addEventListener('focus', cbRefreshDirtyState);
         document.addEventListener('visibilitychange', cbRefreshDirtyState);
 
@@ -2326,7 +2494,7 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
 
                 const ancestorLabel = labelMap.get(ancestorId);
                 if (ancestorLabel) {
-                    td.setAttribute('title', `Inherited from ${ancestorLabel}`);
+                    td.setAttribute('title', cbInheritedFromLabel + ' ' + ancestorLabel);
                 }
 
                 break;
@@ -2342,9 +2510,8 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
 
         cbRefreshInheritedPermissionMatrix();
     }, true);
-    window.addEventListener('load', cbInitDirtyTracking);
-    window.setTimeout(cbRefreshDirtyState, 200);
-    window.setTimeout(cbRefreshDirtyState, 900);
+    window.setTimeout(cbStabilizeDirtySnapshot, 200);
+    window.setTimeout(cbStabilizeDirtySnapshot, 900);
 </script>
 <form action="index.php" method="post" name="adminForm" id="adminForm">
     <div class="w-100 row g-0" style="max-width: 100%; overflow-x: auto;">
@@ -2352,9 +2519,6 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
         $advancedOptionsContent = '';
         // Démarrer les onglets
         $activeViewTab = trim((string) $app->input->getCmd('tab', ''));
-        if ($activeViewTab === '') {
-            $activeViewTab = trim((string) $session->get('tabStartOffset', 'tab0', 'com_contentbuilderng'));
-        }
         $allowedViewTabs = ['tab0', 'tab1', 'tab2', 'tab3', 'tab5', 'tab6', 'tab7', 'tab8', 'tab9'];
         if (!in_array($activeViewTab, $allowedViewTabs, true)) {
             $activeViewTab = 'tab0';
@@ -2446,7 +2610,7 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
                         <?php
                         if ($this->item->id < 1) {
                         ?>
-                            <label for="types">
+                            <label for="cb_form_type_select">
                                 <span class="editlinktip hasTip"
                                     title="<?php echo Text::_('COM_CONTENTBUILDERNG_TYPE_TIP'); ?>"><b>
                                         <?php echo Text::_('COM_CONTENTBUILDERNG_TYPE'); ?>:
@@ -2492,7 +2656,7 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
                             <div></div>
 
                             <div class="alert">
-                                <label for="name">
+                                <label<?php echo !$this->item->reference_id ? ' for="cb_form_reference_select"' : ''; ?>>
                                     <b>
                                         <?php echo Text::_('COM_CONTENTBUILDERNG_FORM_SOURCE'); ?>:
                                     </b>
@@ -2501,7 +2665,7 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
 
                                 if (!$this->item->reference_id) {
                                 ?>
-                                    <select class="form-select-sm" name="jform[reference_id]" style="max-width: 200px;">
+                                    <select class="form-select-sm" name="jform[reference_id]" id="cb_form_reference_select" style="max-width: 200px;">
                                         <?php
                                         foreach ($this->item->forms as $reference_id => $title) {
                                         ?>
@@ -2522,7 +2686,7 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
                                 }
                                 ?>
 
-                                <label for="types">
+                                <label>
                                     <span class="editlinktip hasTip"
                                         title="<?php echo Text::_('COM_CONTENTBUILDERNG_TYPE_TIP'); ?>"><b>
                                             <?php echo Text::_('COM_CONTENTBUILDERNG_TYPE'); ?>:
@@ -3136,7 +3300,7 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
     <input type="hidden" name="list[direction]" value="<?php echo htmlspecialchars($listDirn, ENT_QUOTES, 'UTF-8'); ?>" />
     <input type="hidden" name="boxchecked" value="0" />
     <input type="hidden" name="hidemainmenu" value="0" />
-    <input type="hidden" name="tabStartOffset" value="<?php echo htmlspecialchars((string) $session->get('tabStartOffset', 'tab0', 'com_contentbuilderng'), ENT_QUOTES, 'UTF-8'); ?>" />
+    <input type="hidden" name="tabStartOffset" value="tab0" />
     <input type="hidden" name="slideStartOffset"
         value="<?php echo htmlspecialchars((string) $session->get('slideStartOffset', 'permtab1', 'com_contentbuilderng'), ENT_QUOTES, 'UTF-8'); ?>" />
     <input type="hidden" name="jform[email_users]"
@@ -3211,177 +3375,22 @@ $jsonFlags = JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QU
         body.css('display', '');
     });
 
-    (() => {
-        // Clés de stockage
-        const KEY_VIEW = 'cb_active_view_tab';
+        (() => {
+        const adminUi = window.ContentBuilderNgAdmin || null;
         const KEY_PERM = 'cb_active_perm_tab';
-        const tooltipSelector = '[data-bs-toggle="tooltip"]';
         const viewTabTooltips = <?php echo json_encode($viewTabTooltips, $jsonFlags); ?>;
         const permTabTooltips = <?php echo json_encode($permTabTooltips, $jsonFlags); ?>;
-
-        // Helpers
-        const $ = (sel, root = document) => root.querySelector(sel);
-
-        function getTabTargetId(el) {
-            if (!el || typeof el.getAttribute !== 'function') {
-                return null;
-            }
-
-            return (
-                el.getAttribute('aria-controls') ||
-                el.getAttribute('data-tab') ||
-                (el.getAttribute('data-bs-target') && el.getAttribute('data-bs-target').startsWith('#') ? el.getAttribute('data-bs-target').slice(1) : null) ||
-                (el.getAttribute('href') && el.getAttribute('href').startsWith('#') ? el.getAttribute('href').slice(1) : null) ||
-                (el.getAttribute('data-target') && el.getAttribute('data-target').startsWith('#') ? el.getAttribute('data-target').slice(1) : null)
-            );
+        if (!adminUi) {
+            return;
         }
 
-        function initBootstrapTooltips(root = document) {
-            if (!window.bootstrap || typeof window.bootstrap.Tooltip !== 'function') {
-                return;
-            }
-
-            root.querySelectorAll(tooltipSelector).forEach((el) => {
-                if (!window.bootstrap.Tooltip.getInstance(el)) {
-                    new window.bootstrap.Tooltip(el);
-                }
-            });
-        }
-
-        function applyTabTooltips(tabsetId, tips, attempt = 0) {
-            const tabset = document.getElementById(tabsetId);
-            if (!tabset || !tips) {
-                return;
-            }
-
-            const jTab = tabset.matches('joomla-tab') ? tabset : tabset.querySelector('joomla-tab');
-            if (!jTab) {
-                return;
-            }
-
-            const selector = 'button[aria-controls],button[data-tab],button[data-target],button[data-bs-target],a[aria-controls],a[data-tab],a[data-target],a[data-bs-target],a[href^="#"]';
-            const roots = [jTab];
-            if (jTab.shadowRoot) {
-                roots.push(jTab.shadowRoot);
-            }
-
-            let applied = 0;
-
-            roots.forEach((root) => {
-                root.querySelectorAll(selector).forEach((trigger) => {
-                    const id = getTabTargetId(trigger);
-                    const tip = id ? tips[id] : null;
-
-                    if (!tip) {
-                        return;
-                    }
-
-                    trigger.setAttribute('title', String(tip));
-                    trigger.setAttribute('data-bs-toggle', 'tooltip');
-                    trigger.setAttribute('data-bs-placement', 'top');
-                    trigger.setAttribute('data-bs-title', String(tip));
-                    applied++;
-                });
-
-                initBootstrapTooltips(root);
-            });
-
-            if (applied === 0 && attempt < 12) {
-                window.setTimeout(() => applyTabTooltips(tabsetId, tips, attempt + 1), 120);
-            }
-        }
-
-        function setHidden(name, value) {
-            const el = document.querySelector(`input[name="${name}"], input[name="jform[${name}]"]`);
-            if (el) el.value = value;
-        }
-
-        /**
-         * Persistance d'un joomla-tab (uitab)
-         * @param {string} tabsetId  ex: 'view-pane' ou 'perm-pane'
-         * @param {string} storageKey
-         * @param {(value:string)=>void} onSave  callback optionnel (ex: hidden input)
-         */
-        function persistJoomlaTabset(tabsetId, storageKey, onSave) {
-            const tabset = document.getElementById(tabsetId);
-            if (!tabset) return;
-
-            // Joomla génère souvent un <joomla-tab> avec des <button> ou des liens internes.
-            const jTab = tabset.matches('joomla-tab') ? tabset : tabset.querySelector('joomla-tab');
-            if (!jTab) return;
-
-            // Restauration : si on a une valeur stockée, on tente d'activer cet onglet
-            const saved = localStorage.getItem(storageKey);
-            if (saved) {
-                // 1) tente via API si dispo
-                if (typeof jTab.show === 'function') {
-                    try {
-                        jTab.show(saved);
-                    } catch (e) {}
-                }
-
-                // 2) fallback : cliquer un bouton correspondant
-                // Les boutons ont souvent aria-controls ou data-tab / data-target
-                const btn =
-                    jTab.querySelector(`button[aria-controls="${saved}"]`) ||
-                    jTab.querySelector(`button[data-tab="${saved}"]`) ||
-                    jTab.querySelector(`button[data-bs-target="#${saved}"]`) ||
-                    jTab.querySelector(`button[data-target="#${saved}"]`) ||
-                    jTab.querySelector(`a[aria-controls="${saved}"]`) ||
-                    jTab.querySelector(`a[href="#${saved}"]`) ||
-                    (jTab.shadowRoot && (
-                        jTab.shadowRoot.querySelector(`button[aria-controls="${saved}"]`) ||
-                        jTab.shadowRoot.querySelector(`button[data-tab="${saved}"]`) ||
-                        jTab.shadowRoot.querySelector(`button[data-bs-target="#${saved}"]`) ||
-                        jTab.shadowRoot.querySelector(`button[data-target="#${saved}"]`) ||
-                        jTab.shadowRoot.querySelector(`a[aria-controls="${saved}"]`) ||
-                        jTab.shadowRoot.querySelector(`a[href="#${saved}"]`)
-                    ));
-
-                if (btn) {
-                    btn.click();
-                    btn.blur?.();
-                }
-            }
-
-            // Sauvegarde : écouter les clics sur onglets
-            const saveActiveTab = (ev) => {
-                const trigger = ev.target?.closest?.('button,a') || ev.target;
-                const id = getTabTargetId(trigger);
-
-                if (!id) return;
-
-                localStorage.setItem(storageKey, id);
-                if (typeof onSave === 'function') onSave(id);
-            };
-
-            jTab.addEventListener('click', saveActiveTab, {
-                passive: true
-            });
-
-            if (jTab.shadowRoot) {
-                jTab.shadowRoot.addEventListener('click', saveActiveTab, {
-                    passive: true
-                });
-            }
-        }
-
-        // 1) onglets principaux view-pane (tab0, tab1, tab2…)
-        persistJoomlaTabset('view-pane', KEY_VIEW, (id) => {
-            // Optionnel : si tu veux continuer avec tabStartOffset
-            // Ici je stocke l'id, si tu veux l'index, dis-moi et je te donne la variante.
-            setHidden('tabStartOffset', id);
+        adminUi.persistJoomlaTabset('perm-pane', KEY_PERM, (id) => {
+            adminUi.setHiddenInputValue('slideStartOffset', id);
         });
 
-        // 2) onglets internes permissions perm-pane (permtab1, permtab2…)
-        persistJoomlaTabset('perm-pane', KEY_PERM, (id) => {
-            setHidden('slideStartOffset', id);
-        });
-
-        applyTabTooltips('view-pane', viewTabTooltips);
-        applyTabTooltips('perm-pane', permTabTooltips);
-
-        initBootstrapTooltips();
+        adminUi.applyTabTooltips('view-pane', viewTabTooltips);
+        adminUi.applyTabTooltips('perm-pane', permTabTooltips);
+        adminUi.initBootstrapTooltips(document);
 
     })();
 </script>

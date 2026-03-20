@@ -39,6 +39,16 @@ class StorageController extends BaseFormController
     protected $view_list = 'storages';
     protected $view_item = 'storage';
 
+    private function getApp()
+    {
+        return Factory::getApplication();
+    }
+
+    private function closeApp(): void
+    {
+        $this->getApp()->close();
+    }
+
     public function edit($key = null, $urlVar = null)
     {
         try {
@@ -357,9 +367,8 @@ class StorageController extends BaseFormController
             $headers = $model->extractHeaderColumnsFromUpload($file, $delimiter, $repairEncoding);
         }
 
-        $app = Factory::getApplication();
         echo new JsonResponse($headers);
-        $app->close();
+        $this->closeApp();
     }
 
 
@@ -439,8 +448,7 @@ class StorageController extends BaseFormController
     {
         $this->checkToken();
 
-        $app = Factory::getApplication();
-        $input = $app->getInput();
+        $input = $this->getApp()->getInput();
 
         $cid = $input->get('cid', [], 'array');
         ArrayHelper::toInteger($cid);
@@ -664,7 +672,7 @@ class StorageController extends BaseFormController
                 throw new \RuntimeException(Text::_('JERROR_NO_ITEMS_SELECTED'));
             }
 
-            if (!Factory::getApplication()->getIdentity()->authorise('core.edit.state', 'com_contentbuilderng')) {
+            if (!$this->getApp()->getIdentity()->authorise('core.edit.state', 'com_contentbuilderng')) {
                 throw new \RuntimeException(Text::_('JERROR_ALERTNOAUTHOR'), 403);
             }
 
@@ -680,7 +688,7 @@ class StorageController extends BaseFormController
             if ($tabStartOffset === '') {
                 $tabStartOffset = 'tab1';
             }
-            Factory::getApplication()->getSession()->set('tabStartOffset', $tabStartOffset, 'com_contentbuilderng');
+            $this->getApp()->getSession()->set('tabStartOffset', $tabStartOffset, 'com_contentbuilderng');
 
             $this->setRedirect(
                 Route::_(
@@ -714,6 +722,6 @@ class StorageController extends BaseFormController
     private function respondAjax(bool $success, string $message = ''): void
     {
         echo new JsonResponse(['ok' => $success], $message, !$success);
-        Factory::getApplication()->close();
+        $this->closeApp();
     }
 }

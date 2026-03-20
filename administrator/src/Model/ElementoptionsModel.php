@@ -30,6 +30,21 @@ class ElementoptionsModel extends BaseDatabaseModel
 {
     private $_element_id = 0;
 
+    private function getApp()
+    {
+        return Factory::getApplication();
+    }
+
+    private function getInput()
+    {
+        return $this->getApp()->input;
+    }
+
+    private function getDispatcher()
+    {
+        return $this->getApp()->getDispatcher();
+    }
+
     public function __construct(
         $config,
         MVCFactoryInterface $factory
@@ -39,7 +54,7 @@ class ElementoptionsModel extends BaseDatabaseModel
 
         $this->_db = Factory::getContainer()->get(DatabaseInterface::class);
 
-        $input = Factory::getApplication()->input;
+        $input = $this->getInput();
         $formId = $input->getInt('id', $input->getInt('form_id', 0));
         $elementId = $input->getInt('element_id', 0);
 
@@ -157,8 +172,10 @@ class ElementoptionsModel extends BaseDatabaseModel
 
     function store()
     {
-        if (Factory::getApplication()->input->getInt('type_change', 0)) {
-            $this->getDatabase()->setQuery("Update #__contentbuilderng_elements Set `type`=" . $this->getDatabase()->quote(Factory::getApplication()->input->getCmd('type_selection', '')) . " Where id = " . $this->_element_id);
+        $input = $this->getInput();
+
+        if ($input->getInt('type_change', 0)) {
+            $this->getDatabase()->setQuery("Update #__contentbuilderng_elements Set `type`=" . $this->getDatabase()->quote($input->getCmd('type_selection', '')) . " Where id = " . $this->_element_id);
             $this->getDatabase()->execute();
             return 1;
         }
@@ -166,18 +183,18 @@ class ElementoptionsModel extends BaseDatabaseModel
         $formSupportService = new FormSupportService(new PathService());
         $pathService = new PathService();
         $plugins = $formSupportService->getFormElementsPlugins();
-        $type = Factory::getApplication()->input->getCmd('field_type', '');
+        $type = $input->getCmd('field_type', '');
         switch ($type) {
-            case in_array(Factory::getApplication()->input->getCmd('field_type', ''), $formSupportService->getFormElementsPlugins()):
+            case in_array($input->getCmd('field_type', ''), $formSupportService->getFormElementsPlugins()):
 
-                $hint = Factory::getApplication()->input->post->get('hint', '', 'html');
+                $hint = $input->post->get('hint', '', 'html');
 
-                \Joomla\CMS\Plugin\PluginHelper::importPlugin('contentbuilderng_form_elements', Factory::getApplication()->input->getCmd('field_type', ''));
+                \Joomla\CMS\Plugin\PluginHelper::importPlugin('contentbuilderng_form_elements', $input->getCmd('field_type', ''));
 
-                $dispatcher = Factory::getApplication()->getDispatcher();
+                $dispatcher = $this->getDispatcher();
                 $eventResult = $dispatcher->dispatch('onSettingsStore', new \Joomla\CMS\Event\GenericEvent('onSettingsStore', array()));
                 $results = $eventResult->getArgument('result') ?: [];
-                Factory::getApplication()->getDispatcher()->clearListeners('onSettingsStore');
+                $this->getDispatcher()->clearListeners('onSettingsStore');
 
                 if (count($results)) {
                     $results = $results[0];
@@ -185,20 +202,20 @@ class ElementoptionsModel extends BaseDatabaseModel
 
                 $the_item = $results;
 
-                $query = " `options`='" . PackedDataHelper::encodePackedData($the_item['options']) . "', `type`=" . $this->getDatabase()->quote(Factory::getApplication()->input->getCmd('field_type', '')) . ", `change_type`=" . $this->getDatabase()->quote(Factory::getApplication()->input->getCmd('field_type', '')) . ", `hint`=" . $this->getDatabase()->quote($hint) . ", `default_value`=" . $this->getDatabase()->quote($the_item['default_value']) . " ";
+                $query = " `options`='" . PackedDataHelper::encodePackedData($the_item['options']) . "', `type`=" . $this->getDatabase()->quote($input->getCmd('field_type', '')) . ", `change_type`=" . $this->getDatabase()->quote($input->getCmd('field_type', '')) . ", `hint`=" . $this->getDatabase()->quote($hint) . ", `default_value`=" . $this->getDatabase()->quote($the_item['default_value']) . " ";
                 break;
 
             case '':
             case 'text':
-                $length = Factory::getApplication()->input->get('length', '', 'string');
-                $maxlength = Factory::getApplication()->input->getInt('maxlength', '');
-                $password = Factory::getApplication()->input->getInt('password', 0);
-                $readonly = Factory::getApplication()->input->getInt('readonly', 0);
-                $default_value = Factory::getApplication()->input->post->get('default_value', '', 'raw');
-                $class = Factory::getApplication()->input->get('class', '', 'string');
-                $allow_raw = Factory::getApplication()->input->getInt('allow_encoding', 0) == 2 ? true : false; // 0 = filter on, 1 = allow html, 2 = allow raw
-                $allow_html = Factory::getApplication()->input->getInt('allow_encoding', 0) == 1 ? true : false;
-                $hint = Factory::getApplication()->input->post->get('hint', '', 'html');
+                $length = $input->get('length', '', 'string');
+                $maxlength = $input->getInt('maxlength', '');
+                $password = $input->getInt('password', 0);
+                $readonly = $input->getInt('readonly', 0);
+                $default_value = $input->post->get('default_value', '', 'raw');
+                $class = $input->get('class', '', 'string');
+                $allow_raw = $input->getInt('allow_encoding', 0) == 2 ? true : false; // 0 = filter on, 1 = allow html, 2 = allow raw
+                $allow_html = $input->getInt('allow_encoding', 0) == 1 ? true : false;
+                $hint = $input->post->get('hint', '', 'html');
 
                 $options = new \stdClass();
                 $options->length = $length;
@@ -213,15 +230,15 @@ class ElementoptionsModel extends BaseDatabaseModel
                 break;
 
             case 'textarea':
-                $maxlength = Factory::getApplication()->input->getInt('maxlength', '');
-                $width = Factory::getApplication()->input->get('width', '', 'string');
-                $height = Factory::getApplication()->input->get('height', '', 'string');
-                $default_value = Factory::getApplication()->input->post->get('default_value', '', 'raw');
-                $class = Factory::getApplication()->input->get('class', '', 'string');
-                $readonly = Factory::getApplication()->input->getInt('readonly', 0);
-                $allow_raw = Factory::getApplication()->input->getInt('allow_encoding', 0) == 2 ? true : false; // 0 = filter on, 1 = allow html, 2 = allow raw
-                $allow_html = Factory::getApplication()->input->getInt('allow_encoding', 0) == 1 ? true : false;
-                $hint = Factory::getApplication()->input->post->get('hint', '', 'html');
+                $maxlength = $input->getInt('maxlength', '');
+                $width = $input->get('width', '', 'string');
+                $height = $input->get('height', '', 'string');
+                $default_value = $input->post->get('default_value', '', 'raw');
+                $class = $input->get('class', '', 'string');
+                $readonly = $input->getInt('readonly', 0);
+                $allow_raw = $input->getInt('allow_encoding', 0) == 2 ? true : false; // 0 = filter on, 1 = allow html, 2 = allow raw
+                $allow_html = $input->getInt('allow_encoding', 0) == 1 ? true : false;
+                $hint = $input->post->get('hint', '', 'html');
 
                 $options = new \stdClass();
                 $options->class = $class;
@@ -238,18 +255,18 @@ class ElementoptionsModel extends BaseDatabaseModel
             case 'checkboxgroup':
             case 'radiogroup':
             case 'select':
-                $seperator = Factory::getApplication()->input->post->get('seperator', ',', 'raw');
+                $seperator = $input->post->get('seperator', ',', 'raw');
 
                 if ($seperator == '\n') {
                     $seperator = "\n";
                 }
 
-                $defaultValues = Factory::getApplication()->input->post->get('default_value', [], 'array');
+                $defaultValues = $input->post->get('default_value', [], 'array');
                 $default_value = implode($seperator, $defaultValues);
-                $class = Factory::getApplication()->input->get('class', '', 'string');
-                $allow_raw = Factory::getApplication()->input->getInt('allow_encoding', 0) == 2 ? true : false; // 0 = filter on, 1 = allow html, 2 = allow raw
-                $allow_html = Factory::getApplication()->input->getInt('allow_encoding', 0) == 1 ? true : false;
-                $hint = Factory::getApplication()->input->post->get('hint', '', 'html');
+                $class = $input->get('class', '', 'string');
+                $allow_raw = $input->getInt('allow_encoding', 0) == 2 ? true : false; // 0 = filter on, 1 = allow html, 2 = allow raw
+                $allow_html = $input->getInt('allow_encoding', 0) == 1 ? true : false;
+                $hint = $input->post->get('hint', '', 'html');
 
                 $options = new \stdClass();
                 $options->class = $class;
@@ -258,14 +275,14 @@ class ElementoptionsModel extends BaseDatabaseModel
                 $options->allow_html = $allow_html;
 
                 if ($type == 'select') {
-                    $multi = Factory::getApplication()->input->getInt('multiple', 0);
+                    $multi = $input->getInt('multiple', 0);
                     $options->multiple = $multi;
-                    $options->length = Factory::getApplication()->input->get('length', '', 'string');
+                    $options->length = $input->get('length', '', 'string');
                 }
 
                 if ($type == 'checkboxgroup' || $type == 'radiogroup') {
-                    $options->horizontal = Factory::getApplication()->input->getBool('horizontal', 0);
-                    $options->horizontal_length = Factory::getApplication()->input->get('horizontal_length', '', 'string');
+                    $options->horizontal = $input->getBool('horizontal', 0);
+                    $options->horizontal_length = $input->get('horizontal_length', '', 'string');
                 }
 
                 $query = " `options`='" . PackedDataHelper::encodePackedData($options) . "', `type`='" . $type . "', `change_type`='" . $type . "', `hint`=" . $this->getDatabase()->quote($hint) . ", `default_value`=" . $this->getDatabase()->quote($default_value) . " ";
@@ -296,7 +313,7 @@ class ElementoptionsModel extends BaseDatabaseModel
                     $setupUploadDirectory = 'media/com_contentbuilderng' . substr($setupUploadDirectory, strlen('media/contentbuilderng'));
                 }
 
-                $upl_ex2 = explode('|', trim((string) Factory::getApplication()->input->get('upload_directory', '', 'string')), 2);
+                $upl_ex2 = explode('|', trim((string) $input->get('upload_directory', '', 'string')), 2);
                 $optionUploadDirectory = trim((string) ($upl_ex2[0] ?? ''));
                 $optionUploadDirectory = str_replace('\\', '/', $optionUploadDirectory);
                 $optionUploadDirectory = str_ireplace(
@@ -309,7 +326,7 @@ class ElementoptionsModel extends BaseDatabaseModel
                 } elseif (stripos($optionUploadDirectory, 'media/contentbuilderng') === 0) {
                     $optionUploadDirectory = 'media/com_contentbuilderng' . substr($optionUploadDirectory, strlen('media/contentbuilderng'));
                 }
-                Factory::getApplication()->input->set('upload_directory', $optionUploadDirectory);
+                $input->set('upload_directory', $optionUploadDirectory);
 
                 $siteRoot = rtrim(str_replace('\\', '/', JPATH_SITE), '/');
 
@@ -390,32 +407,32 @@ class ElementoptionsModel extends BaseDatabaseModel
 
                 }
 
-                $default_value = Factory::getApplication()->input->get('default_value', '', 'string');
-                $hint = Factory::getApplication()->input->post->get('hint', '', 'html');
+                $default_value = $input->get('default_value', '', 'string');
+                $hint = $input->post->get('hint', '', 'html');
 
                 $options = new \stdClass();
                 $options->upload_directory = is_dir($upload_directory) ? ($is_relative ? $tmp_upload_directory : $upload_directory) . $tokens : '';
-                $options->allowed_file_extensions = Factory::getApplication()->input->get('allowed_file_extensions', '', 'string');
-                $options->max_filesize = Factory::getApplication()->input->get('max_filesize', '', 'string');
+                $options->allowed_file_extensions = $input->get('allowed_file_extensions', '', 'string');
+                $options->max_filesize = $input->get('max_filesize', '', 'string');
 
                 $query = " `options`='" . PackedDataHelper::encodePackedData($options) . "', `type`='" . $type . "', `change_type`='" . $type . "', `hint`=" . $this->getDatabase()->quote($hint) . ", `default_value`=" . $this->getDatabase()->quote($default_value) . " ";
                 break;
             case 'captcha':
-                $default_value = Factory::getApplication()->input->get('default_value', '', 'string');
-                $hint = Factory::getApplication()->input->post->get('hint', '', 'html');
+                $default_value = $input->get('default_value', '', 'string');
+                $hint = $input->post->get('hint', '', 'html');
 
                 $options = new \stdClass();
 
                 $query = " `options`='" . PackedDataHelper::encodePackedData($options) . "', `type`='" . $type . "', `change_type`='" . $type . "', `hint`=" . $this->getDatabase()->quote($hint) . ", `default_value`=" . $this->getDatabase()->quote($default_value) . " ";
                 break;
             case 'calendar':
-                $length = Factory::getApplication()->input->get('length', '', 'string');
-                $format = Factory::getApplication()->input->get('format', '', 'string');
-                $transfer_format = Factory::getApplication()->input->get('transfer_format', '', 'string');
-                $maxlength = Factory::getApplication()->input->getInt('maxlength', '');
-                $readonly = Factory::getApplication()->input->getInt('readonly', 0);
-                $default_value = Factory::getApplication()->input->post->get('default_value', '', 'raw');
-                $hint = Factory::getApplication()->input->post->get('hint', '', 'html');
+                $length = $input->get('length', '', 'string');
+                $format = $input->get('format', '', 'string');
+                $transfer_format = $input->get('transfer_format', '', 'string');
+                $maxlength = $input->getInt('maxlength', '');
+                $readonly = $input->getInt('readonly', 0);
+                $default_value = $input->post->get('default_value', '', 'raw');
+                $hint = $input->post->get('hint', '', 'html');
 
                 $options = new \stdClass();
                 $options->length = $length;
@@ -428,9 +445,9 @@ class ElementoptionsModel extends BaseDatabaseModel
 
                 break;
             case 'hidden':
-                $allow_raw = Factory::getApplication()->input->getInt('allow_encoding', 0) == 2 ? true : false; // 0 = filter on, 1 = allow html, 2 = allow raw
-                $allow_html = Factory::getApplication()->input->getInt('allow_encoding', 0) == 1 ? true : false;
-                $default_value = Factory::getApplication()->input->post->get('default_value', '', 'raw');
+                $allow_raw = $input->getInt('allow_encoding', 0) == 2 ? true : false; // 0 = filter on, 1 = allow html, 2 = allow raw
+                $allow_html = $input->getInt('allow_encoding', 0) == 1 ? true : false;
+                $default_value = $input->post->get('default_value', '', 'raw');
                 $hint = '';
 
                 $options = new \stdClass();
@@ -442,11 +459,11 @@ class ElementoptionsModel extends BaseDatabaseModel
         }
 
         if ($query) {
-            $custom_init_script = Factory::getApplication()->input->post->get('custom_init_script', '', 'raw');
-            $custom_action_script = Factory::getApplication()->input->post->get('custom_action_script', '', 'raw');
-            $custom_validation_script = Factory::getApplication()->input->post->get('custom_validation_script', '', 'raw');
-            $validation_message = Factory::getApplication()->input->get('validation_message', '', 'string');
-            $validations = Factory::getApplication()->input->get('validations', [], 'array');
+            $custom_init_script = $input->post->get('custom_init_script', '', 'raw');
+            $custom_action_script = $input->post->get('custom_action_script', '', 'raw');
+            $custom_validation_script = $input->post->get('custom_validation_script', '', 'raw');
+            $validation_message = $input->get('validation_message', '', 'string');
+            $validations = $input->get('validations', [], 'array');
             $validations = is_array($validations) ? $validations : [];
 
             $other = " `validations`=" . $this->getDatabase()->quote(implode(',', $validations)) . ", ";

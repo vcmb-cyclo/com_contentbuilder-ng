@@ -21,10 +21,25 @@ class PermissionService
         $this->formResolverService = new FormResolverService();
     }
 
+    private function getApp(): CMSApplication
+    {
+        return Factory::getApplication();
+    }
+
+    private function getInput()
+    {
+        return $this->getApp()->input;
+    }
+
+    private function getCurrentUserId(): int
+    {
+        return (int) ($this->getApp()->getIdentity()->id ?? 0);
+    }
+
     public function setPermissions($formId, $recordId = 0, string $suffix = ''): void
     {
         /** @var CMSApplication $app */
-        $app = Factory::getApplication();
+        $app = $this->getApp();
         $session = $app->getSession();
         $key = 'com_contentbuilderng.permissions' . $suffix;
         $isAdminPreview = $this->isSignedAdminPreviewRequest((int) $formId) || $app->input->getBool('cb_preview_ok', false);
@@ -49,14 +64,14 @@ class PermissionService
                 $class = 'CB\\Component\\Contentbuilderng\\Administrator\\types\\contentbuilderng_' . $resolvedType;
 
                 if (class_exists($class)) {
-                    $numRecordsQuery = call_user_func([$class, 'getNumRecordsQuery'], $referenceId, (int) (Factory::getApplication()->getIdentity()->id ?? 0));
+                    $numRecordsQuery = call_user_func([$class, 'getNumRecordsQuery'], $referenceId, $this->getCurrentUserId());
                 }
             } elseif (file_exists(JPATH_SITE . '/media/contentbuilderng/types/' . $resolvedType . '.php')) {
                 require_once JPATH_SITE . '/media/contentbuilderng/types/' . $resolvedType . '.php';
                 $class = 'contentbuilderng_' . $resolvedType;
 
                 if (class_exists($class)) {
-                    $numRecordsQuery = call_user_func([$class, 'getNumRecordsQuery'], $referenceId, (int) (Factory::getApplication()->getIdentity()->id ?? 0));
+                    $numRecordsQuery = call_user_func([$class, 'getNumRecordsQuery'], $referenceId, $this->getCurrentUserId());
                 }
             }
         }
@@ -92,7 +107,7 @@ class PermissionService
                 #__contentbuilderng_forms As forms
                 Left Join
                     #__contentbuilderng_users As contentbuilderng_users
-                On ( contentbuilderng_users.form_id = forms.id And contentbuilderng_users.userid = " . (int) (Factory::getApplication()->getIdentity()->id ?? 0) . " )
+                On ( contentbuilderng_users.form_id = forms.id And contentbuilderng_users.userid = " . $this->getCurrentUserId() . " )
                 " . ($recordId && !is_array($recordId) ? "Left Join
                     #__contentbuilderng_records As contentbuilderng_records
                 On ( contentbuilderng_records.`type` = " . $db->quote(isset($_type) ? $_type : '') . " And contentbuilderng_records.reference_id = forms.reference_id And contentbuilderng_records.record_id = " . $db->quote($recordId) . " )
@@ -158,7 +173,7 @@ class PermissionService
             }
         }
 
-        $groups = Access::getGroupsByUser((int) (Factory::getApplication()->getIdentity()->id ?? 0), false);
+        $groups = Access::getGroupsByUser($this->getCurrentUserId(), false);
 
         foreach ($groups as $group) {
             foreach (['view', 'new', 'edit', 'delete', 'state', 'publish', 'fullarticle', 'language', 'rating', 'api', 'listaccess'] as $action) {
@@ -176,7 +191,7 @@ class PermissionService
     {
         $allowed = false;
         /** @var CMSApplication $app */
-        $app = Factory::getApplication();
+        $app = $this->getApp();
         $session = $app->getSession();
         $currentSessionId = $session->getId();
         $key = 'com_contentbuilderng.permissions' . $suffix;
@@ -215,7 +230,7 @@ class PermissionService
         }
 
         if (!isset($permissions['own' . $suffix])) {
-            $gids = Access::getGroupsByUser((int) (Factory::getApplication()->getIdentity()->id ?? 0));
+            $gids = Access::getGroupsByUser($this->getCurrentUserId());
 
             foreach ($permissions as $groupId => $groupAction) {
                 if (isset($groupAction[$action]) && $groupAction[$action] && in_array($groupId, $gids, true)) {
@@ -252,7 +267,7 @@ class PermissionService
                             );
                             $sessionId = $db->loadResult();
 
-                            if ($form && $sessionId != $currentSessionId && !$form->isOwner((int) (Factory::getApplication()->getIdentity()->id ?? 0), $recid)) {
+                            if ($form && $sessionId != $currentSessionId && !$form->isOwner($this->getCurrentUserId(), $recid)) {
                                 $allowed = false;
                                 break;
                             }
@@ -267,7 +282,7 @@ class PermissionService
                         );
                         $sessionId = $db->loadResult();
 
-                        if ($form && ($userReturn['record_id'] == false || $sessionId == $currentSessionId || $form->isOwner((int) (Factory::getApplication()->getIdentity()->id ?? 0), $userReturn['record_id']))) {
+                        if ($form && ($userReturn['record_id'] == false || $sessionId == $currentSessionId || $form->isOwner($this->getCurrentUserId(), $userReturn['record_id']))) {
                             $allowed = true;
                         }
                     }
@@ -281,8 +296,8 @@ class PermissionService
             }
 
             $actionLabel = $action ?: 'action';
-            $recordId = Factory::getApplication()->input->getInt('record_id', 0);
-            $formId = Factory::getApplication()->input->getInt('id', 0);
+            $recordId = $this->getInput()->getInt('record_id', 0);
+            $formId = $this->getInput()->getInt('id', 0);
             $details = [];
 
             if ($formId) {
@@ -296,7 +311,7 @@ class PermissionService
             $context = $details ? ' (' . implode(', ', $details) . ')' : '';
             $fallbackMsg = 'Accès refusé : vous n’avez pas l’autorisation pour l’action "' . $actionLabel . '"' . $context . '.';
             $msg = trim((string) $errorMsg) !== '' ? $errorMsg : $fallbackMsg;
-            Factory::getApplication()->enqueueMessage($msg, 'error');
+            $this->getApp()->enqueueMessage($msg, 'error');
             throw new NotAllowed($msg, 403);
         }
 
@@ -315,7 +330,7 @@ class PermissionService
 
     private function isSignedAdminPreviewRequest(int $formId): bool
     {
-        $app = Factory::getApplication();
+        $app = $this->getApp();
         $input = $app->input;
 
         if ($formId < 1 || !$input->getBool('cb_preview', false)) {
@@ -377,7 +392,7 @@ class PermissionService
             return false;
         }
 
-        Factory::getApplication()->enqueueMessage($errorMsg, 'error');
+        $this->getApp()->enqueueMessage($errorMsg, 'error');
         throw new NotAllowed($errorMsg, 403);
     }
 }

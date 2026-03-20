@@ -33,6 +33,36 @@ class TemplateRenderService
         return new TextUtilityService();
     }
 
+    private function getApp(): CMSApplication
+    {
+        return Factory::getApplication();
+    }
+
+    private function getInput()
+    {
+        return $this->getApp()->input;
+    }
+
+    private function getCurrentUserId(): int
+    {
+        return (int) ($this->getApp()->getIdentity()->id ?? 0);
+    }
+
+    private function getCurrentUsername(): string
+    {
+        return (string) ($this->getApp()->getIdentity()->username ?? '');
+    }
+
+    private function getCurrentUserFullName(): string
+    {
+        return (string) ($this->getApp()->getIdentity()->name ?? '');
+    }
+
+    private function getDispatcher()
+    {
+        return $this->getApp()->getDispatcher();
+    }
+
     private function helperClassName(): string
     {
         return 'CB\\Component\\Contentbuilderng\\Administrator\\Helper\\ContentbuilderngHelper';
@@ -131,7 +161,7 @@ class TemplateRenderService
                         $recc->recElementId = $wrapper['reference_id'];
                         $recc->colRecord = $item->colRecord;
 
-                        $dispatcher = Factory::getApplication()->getDispatcher();
+                        $dispatcher = $this->getDispatcher();
                         $dispatcher->dispatch(
                             $onContentPrepare,
                             new ContentPrepareEvent($onContentPrepare, array('com_content.article', &$article, &$registry, 0, true, $form, $recc))
@@ -248,9 +278,8 @@ class TemplateRenderService
 
     public function getTemplate($contentbuilderngFormId, $recordId, array $record, array $elementsAllowed, $quietSkip = false)
     {
-        /** @var CMSApplication $app */
-        $app = Factory::getApplication();
-        $input = $app->input;
+        $app = $this->getApp();
+        $input = $this->getInput();
 
         if (
             $app->isClient('site')
@@ -472,9 +501,9 @@ class TemplateRenderService
             $template = preg_replace($regex3, '$4', $template);
 
             $template = str_replace(array('{RECORD_ID}', '{record_id}'), $recordId, $template);
-            $template = str_replace(array('{USER_ID}', '{user_id}'), Factory::getApplication()->getIdentity()->id, $template);
-            $template = str_replace(array('{USERNAME}', '{username}'), Factory::getApplication()->getIdentity()->username, $template);
-            $template = str_replace(array('{USER_FULL_NAME}', '{user_full_name}'), Factory::getApplication()->getIdentity()->name, $template);
+            $template = str_replace(array('{USER_ID}', '{user_id}'), $this->getCurrentUserId(), $template);
+            $template = str_replace(array('{USERNAME}', '{username}'), $this->getCurrentUsername(), $template);
+            $template = str_replace(array('{USER_FULL_NAME}', '{user_full_name}'), $this->getCurrentUserFullName(), $template);
             $template = str_replace(array('{VIEW_NAME}', '{view_name}'), $result['name'], $template);
             $template = str_replace(array('{VIEW_ID}', '{view_id}'), $contentbuilderngFormId, $template);
             $template = str_replace(array('{IP}', '{ip}'), $_SERVER['REMOTE_ADDR'], $template);
@@ -494,8 +523,7 @@ class TemplateRenderService
 
     public function getEditableTemplate($contentbuilderngFormId, $recordId, array $record, array $elementsAllowed, $execPrepare = true)
     {
-        /** @var CMSApplication $app */
-        $app = Factory::getApplication();
+        $app = $this->getApp();
         $session = $app->getSession();
 
         $failedValues = $session->get('cb_failed_values', null, 'com_contentbuilderng.' . $contentbuilderngFormId);
@@ -510,9 +538,9 @@ class TemplateRenderService
 
         if (!is_array($result) || trim((string) ($result['editable_template'] ?? '')) === '') {
             if (!is_array($result)) {
-                Factory::getApplication()->enqueueMessage(Text::_('COM_CONTENTBUILDERNG_FORM_NOT_FOUND'), 'error');
+                $app->enqueueMessage(Text::_('COM_CONTENTBUILDERNG_FORM_NOT_FOUND'), 'error');
             } else {
-                Factory::getApplication()->enqueueMessage(Text::_('COM_CONTENTBUILDERNG_EDITABLE_TEMPLATE_NOT_SET'), 'error');
+                $app->enqueueMessage(Text::_('COM_CONTENTBUILDERNG_EDITABLE_TEMPLATE_NOT_SET'), 'error');
             }
 
             return '';
@@ -525,8 +553,8 @@ class TemplateRenderService
                 $meta = $form->getRecordMetadata($recordId);
                 $db->setQuery("Select * From #__users Where id = " . $meta->created_id);
                 $user = $db->loadObject();
-            } elseif ((int) (Factory::getApplication()->getIdentity()->id ?? 0)) {
-                $db->setQuery("Select * From #__users Where id = " . (int) (Factory::getApplication()->getIdentity()->id ?? 0));
+            } elseif ($this->getCurrentUserId()) {
+                $db->setQuery("Select * From #__users Where id = " . $this->getCurrentUserId());
                 $user = $db->loadObject();
             }
         }
@@ -691,7 +719,7 @@ class TemplateRenderService
             switch ($elementType) {
                 case in_array($elementType, $this->getFormElementsPlugins()):
                     PluginHelper::importPlugin('contentbuilderng_form_elements', $elementType);
-                    $dispatcher = Factory::getApplication()->getDispatcher();
+                    $dispatcher = $this->getDispatcher();
                     $eventResult = $dispatcher->dispatch('onRenderElement', new \Joomla\CMS\Event\GenericEvent('onRenderElement', array($item, $element, $options, $failedValues, $result, $hasRecords)));
                     $results = $eventResult->getArgument('result') ?: [];
                     $dispatcher->clearListeners('onRenderElement');
@@ -718,7 +746,7 @@ class TemplateRenderService
                     $options->allow_raw = $options->allow_raw ?? false;
                     $textareaValue = $normalizeScalarValue($failedValues !== null && isset($failedValues[$element['reference_id']]) ? $failedValues[$element['reference_id']] : ($hasRecords ? $item['value'] : $element['default_value']));
                     if ($options->allow_html || $options->allow_raw) {
-                        $editor = Editor::getInstance(Factory::getApplication()->get('editor'));
+                        $editor = Editor::getInstance($app->get('editor'));
                         $theItem = '<div class="cbFormField cbTextArea">' . $editor->display('cb_' . $item['id'], htmlentities($textareaValue, ENT_QUOTES, 'UTF-8'), $options->width ? $options->width : '100%', $options->height ? $options->height : '550', '75', '20') . '</div>';
                     } else {
                         $theItem = '<div class="cbFormField cbTextArea form-control form-control-sm"><textarea class="form-control form-control-sm" ' . ($options->readonly ? 'readonly="readonly" ' : '') . 'style="' . ($options->width || $options->height ? ($options->width ? 'width:' . $options->width . ';' : '') . ($options->height ? 'height:' . $options->height . ';' : '') : '') . '" id="cb_' . $item['id'] . '" name="cb_' . $item['id'] . '">' . htmlentities($textareaValue, ENT_QUOTES, 'UTF-8') . '</textarea></div>';
@@ -791,7 +819,7 @@ class TemplateRenderService
                     break;
                 case 'captcha':
                     $theItem = '<div class="cbFormField cbCaptchaField">';
-                    $captchaUrl = Factory::getApplication()->isClient('site')
+                    $captchaUrl = $app->isClient('site')
                         ? Uri::root(true) . '/components/com_contentbuilderng/images/securimage/securimage_show.php'
                         : Uri::root(true) . '/administrator/components/com_contentbuilderng/assets/images/securimage_show.php';
                     $theItem .= '<img width="250" height="80" id="cbCaptcha" alt="captcha" src="' . $captchaUrl . '?rand=' . rand(0, getrandmax()) . '"/>';

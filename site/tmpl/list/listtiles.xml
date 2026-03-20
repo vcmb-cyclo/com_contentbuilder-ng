@@ -1,19 +1,16 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <metadata>
-    <!-- Joomla! 1.6 compatibility -->
-    <layout title="COM_CONTENTBUILDERNG_MENU_ITEM_LIST_CUSTOM4">
-        <message>COM_CONTENTBUILDERNG_SELECT_VIEW_MESSAGE</message>
+    <layout title="COM_CONTENTBUILDERNG_MENU_ITEM_LIST_TILES">
+        <message>COM_CONTENTBUILDERNG_SELECT_VIEW_MESSAGE_TILES</message>
         <config>
             <fields name="params" addfieldprefix="CB\Component\Contentbuilderng\Site\Field">
-                <fieldset name="settings" group="settings" label="COM_CONTENTBUILDERNG_MENU_ITEM_LIST_CUSTOM4">
+                <fieldset name="settings" group="settings" label="COM_CONTENTBUILDERNG_MENU_ITEM_LIST_TILES">
                     <field required="true" type="forms" label="COM_CONTENTBUILDERNG_SELECT_VIEW" description="COM_CONTENTBUILDERNG_SELECT_VIEW_DESC" name="form_id" default="0"/>
                     <field type="categories" label="COM_CONTENTBUILDERNG_SELECT_CATEGORY" description="COM_CONTENTBUILDERNG_SELECT_CATEGORY_DESC" name="cb_category_id" default="-2" />
-                    
                     <field name="cb_category_menu_filter" type="radio" class="btn-group btn-group-yesno" default="0" description="COM_CONTENTBUILDERNG_CATEGORY_MENU_FILTER_DESC" label="COM_CONTENTBUILDERNG_CATEGORY_MENU_FILTER">
                         <option value="0">No</option>
                         <option value="1">Yes</option>
                     </field>
-                    
                     <field name="cb_show_author" type="radio" class="btn-group btn-group-yesno" default="-1" description="COM_CONTENTBUILDERNG_SHOW_AUTHOR_DESC" label="COM_CONTENTBUILDERNG_SHOW_AUTHOR">
                         <option value="-1">JOPTION_USE_DEFAULT</option>
                         <option value="0">No</option>
@@ -29,7 +26,6 @@
                         <option value="0">No</option>
                         <option value="1">Yes</option>
                     </field>
-                    
                     <field name="cb_show_details_top_bar" type="radio" class="btn-group btn-group-yesno" default="-1" description="COM_CONTENTBUILDERNG_SHOW_DETAILS_TOP_BAR_DESC" label="COM_CONTENTBUILDERNG_SHOW_DETAILS_TOP_BAR">
                         <option value="-1">JOPTION_USE_DEFAULT</option>
                         <option value="0">No</option>
@@ -40,32 +36,26 @@
                         <option value="0">No</option>
                         <option value="1">Yes</option>
                     </field>
-                    
                     <field name="cb_show_details_back_button" type="radio" class="btn-group btn-group-yesno" default="-1" label="COM_CONTENTBUILDERNG_SHOW_BACK_BUTTON" description="COM_CONTENTBUILDERNG_SHOW_BACK_BUTTON_DESC">
                         <option value="-1">JOPTION_USE_DEFAULT</option>
                         <option value="0">COM_CONTENTBUILDERNG_NO</option>
                         <option value="1">COM_CONTENTBUILDERNG_YES</option>
                     </field>
-                    
                     <field name="cb_filter_in_title" type="radio" class="btn-group btn-group-yesno" default="-1" label="COM_CONTENTBUILDERNG_FILTER_IN_TITLE" description="">
                         <option value="-1">JOPTION_USE_DEFAULT</option>
                         <option value="0">COM_CONTENTBUILDERNG_NO</option>
                         <option value="1">COM_CONTENTBUILDERNG_YES</option>
                     </field>
-                    
                     <field name="cb_prefix_in_title" type="radio" class="btn-group btn-group-yesno" default="-1" label="COM_CONTENTBUILDERNG_PREFIX_IN_TITLE" description="">
                         <option value="-1">JOPTION_USE_DEFAULT</option>
                         <option value="0">COM_CONTENTBUILDERNG_NO</option>
                         <option value="1">COM_CONTENTBUILDERNG_YES</option>
                     </field>
-                    
                     <field required="true" type="text" label="COM_CONTENTBUILDERNG_LIST_LIMIT" description="COM_CONTENTBUILDERNG_LIST_LIMIT_DESC" name="cb_list_limit" default="20" />
-
                     <field type="cbfilterhidden" filter="raw" label="" description="" name="cb_list_filterhidden" default="" />
                     <field type="cborderhidden" label="" description="" name="cb_list_orderhidden" default="" />
                     <field type="cbfilter" filter="raw" label="COM_CONTENTBUILDERNG_SELECT_FILTER" description="COM_CONTENTBUILDERNG_SELECT_FILTER_DESC" name="cb_list_filter" default="" />
                     <field type="cbmenureset" label="" description="" name="cb_menu_reset" />
-
                 </fieldset>
             </fields>
         </config>

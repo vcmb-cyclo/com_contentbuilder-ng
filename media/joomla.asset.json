@@ -26,6 +26,17 @@
             }
         },
         {
+            "name": "com_contentbuilderng.admin-ui",
+            "type": "script",
+            "uri": "com_contentbuilderng/js/admin-ui.js",
+            "dependencies": [
+                "core"
+            ],
+            "attributes": {
+                "defer": true
+            }
+        },
+        {
             "name": "com_contentbuilderng.contentbuilderng",
             "type": "script",
             "uri": "com_contentbuilderng/js/contentbuilderng.js",

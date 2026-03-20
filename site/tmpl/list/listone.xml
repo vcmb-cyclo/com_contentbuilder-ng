@@ -2,7 +2,7 @@
 <metadata>
     <!-- Joomla! 1.6 compatibility -->
     <layout title="COM_CONTENTBUILDERNG_MENU_ITEM_LIST_CUSTOM1">
-        <message>COM_CONTENTBUILDERNG_SELECT_VIEW_MESSAGE</message>
+        <message>COM_CONTENTBUILDERNG_SELECT_VIEW_MESSAGE_CUSTOM1</message>
         <config>
             <fields name="params" addfieldprefix="CB\Component\Contentbuilderng\Site\Field">
                 <fieldset name="settings" group="settings" label="COM_CONTENTBUILDERNG_MENU_ITEM_LIST_CUSTOM1">

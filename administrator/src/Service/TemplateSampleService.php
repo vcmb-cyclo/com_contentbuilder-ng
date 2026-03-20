@@ -12,6 +12,16 @@ use Joomla\Database\DatabaseInterface;
 
 class TemplateSampleService
 {
+    private function getApp()
+    {
+        return Factory::getApplication();
+    }
+
+    private function getDispatcher()
+    {
+        return $this->getApp()->getDispatcher();
+    }
+
     public function createDetailsSample($formId, $form, $plugin)
     {
         if (!$formId || !is_object($form)) {
@@ -24,7 +34,7 @@ class TemplateSampleService
         if (!PluginHelper::isEnabled('contentbuilderng_themes', $activePlugin)) {
             $msg = "ContentBuilder NG theme plugin not enabled: contentbuilderng_themes/{$activePlugin}";
             Log::add($msg, Log::WARNING, 'com_contentbuilderng');
-            Factory::getApplication()->enqueueMessage($msg, 'warning');
+            $this->getApp()->enqueueMessage($msg, 'warning');
         }
 
         if (!PluginHelper::importPlugin('contentbuilderng_themes', $activePlugin)) {
@@ -34,7 +44,7 @@ class TemplateSampleService
             Log::add($msg, Log::WARNING, 'com_contentbuilderng');
         }
 
-        $dispatcher = Factory::getApplication()->getDispatcher();
+        $dispatcher = $this->getDispatcher();
         $eventResult = $dispatcher->dispatch(
             'onContentTemplateSample',
             new \Joomla\CMS\Event\GenericEvent('onContentTemplateSample', [$formId, $form, 'theme' => $activePlugin])
@@ -45,7 +55,7 @@ class TemplateSampleService
         if ($activePlugin !== '' && $out === '') {
             $msg = "ContentBuilder NG theme plugin returned empty sample: contentbuilderng_themes/{$activePlugin}";
             Log::add($msg, Log::WARNING, 'com_contentbuilderng');
-            Factory::getApplication()->enqueueMessage($msg, 'warning');
+            $this->getApp()->enqueueMessage($msg, 'warning');
         }
 
         return $out;
@@ -106,7 +116,7 @@ class TemplateSampleService
         if (!PluginHelper::isEnabled('contentbuilderng_themes', $activePlugin)) {
             $msg = "ContentBuilder NG theme plugin not enabled: contentbuilderng_themes/{$activePlugin}";
             Log::add($msg, Log::WARNING, 'com_contentbuilderng');
-            Factory::getApplication()->enqueueMessage($msg, 'warning');
+            $this->getApp()->enqueueMessage($msg, 'warning');
         }
 
         if (!PluginHelper::importPlugin('contentbuilderng_themes', $activePlugin)) {
@@ -116,7 +126,7 @@ class TemplateSampleService
             Log::add($msg, Log::WARNING, 'com_contentbuilderng');
         }
 
-        $dispatcher = Factory::getApplication()->getDispatcher();
+        $dispatcher = $this->getDispatcher();
         $eventResult = $dispatcher->dispatch(
             'onEditableTemplateSample',
             new \Joomla\CMS\Event\GenericEvent('onEditableTemplateSample', [$formId, $form, 'theme' => $activePlugin])
@@ -127,7 +137,7 @@ class TemplateSampleService
         if ($activePlugin !== '' && $out === '') {
             $msg = "ContentBuilder NG theme plugin returned empty editable sample: contentbuilderng_themes/{$activePlugin}";
             Log::add($msg, Log::WARNING, 'com_contentbuilderng');
-            Factory::getApplication()->enqueueMessage($msg, 'warning');
+            $this->getApp()->enqueueMessage($msg, 'warning');
         }
 
         return $out;

@@ -14,7 +14,6 @@ defined( '_JEXEC' ) or die( 'Restricted access' );
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Router\Route;
 use Joomla\CMS\MVC\Controller\BaseController;
-use Joomla\CMS\Factory;
 use Joomla\CMS\Response\JsonResponse;
 use Joomla\CMS\Application\CMSApplicationInterface;
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
@@ -24,6 +23,20 @@ use CB\Component\Contentbuilderng\Administrator\Model\UsersModel;
 
 class UsersController extends BaseController
 {
+    private function getApp(): CMSApplicationInterface
+    {
+        return $this->app;
+    }
+
+    private function getUsersListLink(int $limitstart = 0, string $additionalParams = ''): string
+    {
+        return 'index.php?option=com_contentbuilderng&view=users'
+            . '&form_id=' . $this->input->getInt('form_id', 0)
+            . '&tmpl=' . $this->input->getCmd('tmpl', '')
+            . '&limitstart=' . $limitstart
+            . $additionalParams;
+    }
+
     private function getUserModelForListActions(): UserModel
     {
         $model = $this->getModel('User');
@@ -193,11 +206,11 @@ class UsersController extends BaseController
     
     public function edit()
     {
-        Factory::getApplication()->input->set( 'view', 'User' );
-        Factory::getApplication()->input->set( 'layout', 'default'  );
-        Factory::getApplication()->input->set( 'hidemainmenu', 1 );
-        Factory::getApplication()->input->set( 'filter_order', 'ordering' );
-        Factory::getApplication()->input->set( 'filter_order_Dir', 'asc' );
+        $this->input->set('view', 'User');
+        $this->input->set('layout', 'default');
+        $this->input->set('hidemainmenu', 1);
+        $this->input->set('filter_order', 'ordering');
+        $this->input->set('filter_order_Dir', 'asc');
         parent::display();
     }
 
@@ -223,7 +236,7 @@ class UsersController extends BaseController
             $this->setMessage($e->getMessage(), 'warning');
         }
 
-        $this->setRedirect( Route::_('index.php?option=com_contentbuilderng&view=users&form_id='.Factory::getApplication()->input->getInt('form_id',0).'&tmpl='.Factory::getApplication()->input->getCmd('tmpl','').'&limitstart='.Factory::getApplication()->input->getInt('limitstart'), false), Text::_('COM_CONTENTBUILDERNG_PUBLISHED') );
+        $this->setRedirect(Route::_($this->getUsersListLink($this->input->getInt('limitstart')), false), Text::_('COM_CONTENTBUILDERNG_PUBLISHED'));
     }
     
     public function unpublish() {
@@ -243,7 +256,7 @@ class UsersController extends BaseController
             $this->setMessage($e->getMessage(), 'warning');
         }
 
-        $this->setRedirect( Route::_('index.php?option=com_contentbuilderng&view=users&form_id='.Factory::getApplication()->input->getInt('form_id',0).'&tmpl='.Factory::getApplication()->input->getCmd('tmpl','').'&limitstart='.Factory::getApplication()->input->getInt('limitstart'), false), Text::_('COM_CONTENTBUILDERNG_UNPUBLISHED') );
+        $this->setRedirect(Route::_($this->getUsersListLink($this->input->getInt('limitstart')), false), Text::_('COM_CONTENTBUILDERNG_UNPUBLISHED'));
     }
     
     public function save($keep_task = false)
@@ -262,19 +275,19 @@ class UsersController extends BaseController
         if($keep_task){
             if($id){
                 $additionalParams = '&task=User.edit&joomla_userid='.$id;
-                $limit = Factory::getApplication()->input->getInt('limitstart');
+                $limit = $this->input->getInt('limitstart');
             }
         }
 
         // Check the table in so it can be edited.... we are done with it anyway
-        $link = 'index.php?option=com_contentbuilderng&view=users&form_id='.Factory::getApplication()->input->getInt('form_id',0).'&tmpl='.Factory::getApplication()->input->getCmd('tmpl','').'&limitstart='.$limit.$additionalParams;
+        $link = $this->getUsersListLink($limit, $additionalParams);
         $this->setRedirect(Route::_($link, false), $msg);
     }
 
     public function cancel()
     {
         $msg = Text::_( 'COM_CONTENTBUILDERNG_CANCELLED' );
-        $this->setRedirect( Route::_('index.php?option=com_contentbuilderng&view=users&form_id='.Factory::getApplication()->input->getInt('form_id',0).'&tmpl='.Factory::getApplication()->input->getCmd('tmpl','').'&limitstart=0', false), $msg );
+        $this->setRedirect(Route::_($this->getUsersListLink(0), false), $msg);
     }
 
     public function display($cachable = false, $urlparams = array())
@@ -284,9 +297,9 @@ class UsersController extends BaseController
 
     private function renderUsersList(): void
     {
-        Factory::getApplication()->input->set('tmpl', Factory::getApplication()->input->getWord('tmpl',null));
-        Factory::getApplication()->input->set('layout', Factory::getApplication()->input->getWord('layout',null));
-        Factory::getApplication()->input->set('view', 'users');
+        $this->input->set('tmpl', $this->input->getWord('tmpl', null));
+        $this->input->set('layout', $this->input->getWord('layout', null));
+        $this->input->set('view', 'users');
 
         parent::display();
     }
@@ -299,6 +312,6 @@ class UsersController extends BaseController
     private function respondAjax(bool $success, string $message = ''): void
     {
         echo new JsonResponse(['ok' => $success], $message, !$success);
-        Factory::getApplication()->close();
+        $this->getApp()->close();
     }
 }

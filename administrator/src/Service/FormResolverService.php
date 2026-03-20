@@ -10,6 +10,11 @@ use Joomla\CMS\Factory;
 
 class FormResolverService
 {
+    private function getApp()
+    {
+        return Factory::getApplication();
+    }
+
     public function getForm($type, $referenceId)
     {
         static $forms;
@@ -28,7 +33,7 @@ class FormResolverService
             return $forms[$type][$referenceId];
         }
 
-        $app = Factory::getApplication();
+        $app = $this->getApp();
         $isAdminPreview = $app->input->getBool('cb_preview_ok', false);
         $isAdministrator = $app->isClient('administrator');
         $allowUnpublishedSource = $isAdminPreview || $isAdministrator;

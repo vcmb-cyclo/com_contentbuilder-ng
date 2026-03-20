@@ -8,7 +8,7 @@
  * @license     GNU General Public License version 2 or later; see LICENSE.txt
  */
 
-\defined('_JEXEC') or die('Restricted access');
+\defined('_JEXEC') or die;
 
 use Joomla\CMS\Editor\Editor;
 use Joomla\CMS\Language\Text;
@@ -86,7 +86,7 @@ if (trim($value) === '' && $emptyValue !== '') {
         data-bs-placement="top"
         data-bs-title="<?php echo Text::_('COM_CONTENTBUILDERNG_PREPARE_EXAMPLES_BUTTON_TIP'); ?>"
         aria-label="<?php echo Text::_('COM_CONTENTBUILDERNG_PREPARE_EXAMPLES_BUTTON_TIP'); ?>"
-        onclick="cbOpenPrepareExamples();">
+        onclick="cbOpenPrepareExamples(this);">
         <span class="fa-solid fa-circle-question" aria-hidden="true"></span>
     </button>
     <small id="<?php echo $hintId; ?>" class="text-success d-none">

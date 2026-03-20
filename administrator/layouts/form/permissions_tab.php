@@ -8,7 +8,7 @@
  * @license     GNU General Public License version 2 or later; see LICENSE.txt
  */
 
-\defined('_JEXEC') or die('Restricted access');
+\defined('_JEXEC') or die;
 
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
@@ -59,7 +59,7 @@ echo HTMLHelper::_('uitab.addTab', 'perm-pane', 'permtab1', Text::_('COM_CONTENT
     </tr>
     <tr class="row0">
         <td width="20%" align="right" class="key">
-            <label for="own_fe_view">
+            <label>
                 <span class="editlinktip hasTip"
                     title="<?php echo Text::_('COM_CONTENTBUILDERNG_PERM_OWN_TIP'); ?>">
                     <?php echo Text::_('COM_CONTENTBUILDERNG_PERM_OWN'); ?>
@@ -320,7 +320,7 @@ echo HTMLHelper::_('uitab.addTab', 'perm-pane', 'permtab2', Text::_('COM_CONTENT
                 for="verification_days_edit">
                 <?php echo Text::_('COM_CONTENTBUILDERNG_PERM_VERIFICATION_DAYS'); ?>
             </label>
-            <input class="form-control form-control-sm" style="width: 300px;" id="verification_url_new"
+            <input class="form-control form-control-sm" style="width: 300px;" id="verification_url_edit"
                 name="jform[verification_url_edit]" type="text"
                 value="<?php echo htmlentities($item->verification_url_edit ?? '', ENT_QUOTES, 'UTF-8'); ?>" />
             <label for="verification_url_edit">

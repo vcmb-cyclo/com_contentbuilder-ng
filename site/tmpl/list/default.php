@@ -24,6 +24,13 @@ use CB\Component\Contentbuilderng\Site\Helper\MenuParamHelper;
 
 /** @var SiteApplication $app */
 $app = Factory::getApplication();
+$cbListTemplateVariant = isset($cbListTemplateVariant) && is_string($cbListTemplateVariant)
+	? trim(strtolower($cbListTemplateVariant))
+	: 'default';
+$isCardsVariant = $cbListTemplateVariant === 'cards';
+$isCompactVariant = $cbListTemplateVariant === 'compact';
+$isTilesVariant = $cbListTemplateVariant === 'tiles';
+$usesCardLayout = $isCardsVariant || $isTilesVariant;
 $frontend = $app->isClient('site');
 $permissionService = new PermissionService();
 $language_allowed = $permissionService->authorizeFe('language');
@@ -36,6 +43,22 @@ $publish_allowed = $frontend ? $permissionService->authorizeFe('publish') : $per
 $rating_allowed = $frontend ? $permissionService->authorizeFe('rating') : $permissionService->authorize('rating');
 $wordwrapLabel = static function (string $label): string {
 	return (string) ContentbuilderngHelper::contentbuilderng_wordwrap($label, 20, "\n", true);
+};
+$getStateBadgeStyle = static function ($recordId, array $stateColors): string {
+	$color = strtoupper(trim((string) ($stateColors[$recordId] ?? '')));
+	$color = ltrim($color, '#');
+
+	if ($color === '' || !preg_match('/^[0-9A-F]{6}$/', $color)) {
+		return '';
+	}
+
+	$r = hexdec(substr($color, 0, 2));
+	$g = hexdec(substr($color, 2, 2));
+	$b = hexdec(substr($color, 4, 2));
+	$brightness = (($r * 299) + ($g * 587) + ($b * 114)) / 1000;
+	$textColor = $brightness >= 150 ? '#16324F' : '#FFFFFF';
+
+	return 'background-color:#' . $color . ';color:' . $textColor . ';';
 };
 
 $input = $app->input;
@@ -172,6 +195,9 @@ $wa->addInlineStyle(
 .cb-list-title::after{
 	display:none!important;
 }
+.cb-list-template-cards .cb-pagination-summary{
+	font-weight:500;
+}
 @media (prefers-color-scheme: dark){
 	.cb-list-titlebar{
 		border-bottom-color:rgba(255,255,255,.16);
@@ -184,6 +210,380 @@ $wa->addInlineStyle(
 	.cb-list-titlebar{
 		padding:0 0 .45rem;
 		margin-bottom:.75rem;
+	}
+}
+CSS
+);
+$wa->addInlineStyle(
+	<<<'CSS'
+.cb-list-template-cards .cb-list-cards{
+	display:grid;
+	grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));
+	gap:1rem;
+}
+.cb-list-template-cards .cb-list-card{
+	display:flex;
+	flex-direction:column;
+	height:100%;
+	border:1px solid rgba(0,0,0,.08);
+	border-radius:18px;
+	background:linear-gradient(180deg, rgba(255,255,255,.98), rgba(248,250,252,.98));
+	box-shadow:0 14px 30px rgba(15,23,42,.08);
+	overflow:hidden;
+}
+.cb-list-template-cards .cb-list-card-header{
+	display:flex;
+	align-items:flex-start;
+	justify-content:space-between;
+	gap:1rem;
+	padding:1rem 1rem .85rem;
+	border-bottom:1px solid rgba(0,0,0,.06);
+}
+.cb-list-template-cards .cb-list-card-title{
+	margin:0;
+	font-size:1.02rem;
+	font-weight:700;
+	line-height:1.35;
+}
+.cb-list-template-cards .cb-list-card-title a{
+	text-decoration:none;
+}
+.cb-list-template-cards .cb-list-card-subtitle{
+	margin:.2rem 0 0;
+	font-size:.75rem;
+	letter-spacing:.05em;
+	text-transform:uppercase;
+	color:#64748b;
+}
+.cb-list-template-cards .cb-list-card-actions{
+	display:flex;
+	flex-wrap:wrap;
+	gap:.45rem;
+	justify-content:flex-end;
+}
+.cb-list-template-cards .cb-list-card-meta{
+	display:flex;
+	flex-wrap:wrap;
+	gap:.5rem;
+	padding:.85rem 1rem 0;
+}
+.cb-list-template-cards .cb-list-card-badge{
+	display:inline-flex;
+	align-items:center;
+	gap:.35rem;
+	padding:.28rem .55rem;
+	border-radius:999px;
+	background:rgba(15,23,42,.06);
+	font-size:.78rem;
+	font-weight:600;
+}
+.cb-list-template-cards .cb-list-card-body{
+	display:grid;
+	gap:.85rem;
+	padding:1rem;
+}
+.cb-list-template-cards .cb-list-card-field{
+	display:grid;
+	gap:.2rem;
+}
+.cb-list-template-cards .cb-list-card-label{
+	font-size:.76rem;
+	font-weight:700;
+	letter-spacing:.04em;
+	text-transform:uppercase;
+	color:#64748b;
+}
+.cb-list-template-cards .cb-list-card-value{
+	font-size:.95rem;
+	line-height:1.45;
+	word-break:break-word;
+}
+.cb-list-template-cards .cb-list-card-value a{
+	text-decoration:none;
+}
+.cb-list-template-cards .cb-list-card-footer{
+	display:flex;
+	align-items:center;
+	justify-content:space-between;
+	gap:.75rem;
+	padding:0 1rem 1rem;
+	margin-top:auto;
+}
+.cb-list-template-cards .cb-list-card-selection{
+	display:flex;
+	align-items:center;
+	gap:.45rem;
+	font-size:.82rem;
+	color:#475569;
+}
+.cb-list-template-cards .cb-list-card-state{
+	min-width:150px;
+}
+.cb-list-template-compact .cb-list-panel{
+	border-radius:.75rem;
+	padding:.45rem .55rem;
+	box-shadow:0 .22rem .6rem rgba(0,0,0,.05);
+}
+.cb-list-template-compact .cb-list-table{
+	margin-top:.1rem!important;
+}
+.cb-list-template-compact .cb-list-table th{
+	font-size:.76rem;
+	letter-spacing:.03em;
+	text-transform:uppercase;
+	padding:.52rem .45rem!important;
+}
+.cb-list-template-compact .cb-list-table td{
+	padding:.45rem .45rem!important;
+	font-size:.89rem;
+	line-height:1.28;
+}
+.cb-list-template-compact .cb-list-table .btn,
+.cb-list-template-compact .cb-list-table .form-select,
+.cb-list-template-compact .cb-list-table .form-control{
+	font-size:.82rem;
+}
+.cb-list-template-compact .cb-list-table .form-select{
+	padding-top:.22rem;
+	padding-bottom:.22rem;
+}
+.cb-list-template-tiles .cb-list-cards{
+	display:grid;
+	grid-template-columns:repeat(auto-fit, minmax(210px, 1fr));
+	gap:1rem;
+}
+.cb-list-template-tiles .cb-list-card{
+	display:flex;
+	flex-direction:column;
+	min-height:100%;
+	position:relative;
+	border:0;
+	border-radius:22px;
+	background:
+		radial-gradient(circle at top right, rgba(13,110,253,.18), transparent 38%),
+		linear-gradient(180deg, rgba(255,255,255,.99), rgba(242,247,255,.98));
+	box-shadow:0 16px 34px rgba(13,110,253,.12);
+	overflow:hidden;
+	padding:.1rem;
+}
+.cb-list-template-tiles .cb-list-card-header{
+	position:relative;
+	display:grid;
+	grid-template-columns:minmax(0, 1fr) auto;
+	align-items:start;
+	gap:.65rem;
+	padding:1rem 1rem .35rem;
+	background:linear-gradient(180deg, rgba(13,110,253,.08), rgba(13,110,253,0));
+	border-bottom:0;
+}
+.cb-list-template-tiles .cb-list-card-header-main{
+	min-width:0;
+}
+.cb-list-template-tiles .cb-list-card-title{
+	font-size:1.02rem;
+	font-weight:800;
+	line-height:1.25;
+}
+.cb-list-template-tiles .cb-list-card-subtitle{
+	margin-top:.25rem;
+	font-size:.68rem;
+	letter-spacing:.08em;
+	color:#2563eb;
+}
+.cb-list-template-tiles .cb-list-card-actions{
+	align-items:center;
+	justify-content:flex-end;
+	gap:.55rem;
+}
+.cb-list-template-tiles .cb-list-card-actions .btn{
+	display:inline-flex;
+	align-items:center;
+	justify-content:center;
+	min-width:auto;
+	min-height:auto;
+	border:0;
+	width:auto;
+	height:auto;
+	padding:0;
+	background:transparent;
+	box-shadow:none;
+	line-height:1;
+	color:#1e3a8a;
+}
+.cb-list-template-tiles .cb-list-card-actions .btn:hover,
+.cb-list-template-tiles .cb-list-card-actions .btn:focus{
+	background:transparent;
+	box-shadow:none;
+	color:#0b5ed7;
+	transform:translateY(-1px);
+}
+.cb-list-template-tiles .cb-list-card-actions .btn .fa-solid{
+	font-size:1.12rem;
+}
+.cb-list-template-tiles .cb-list-card-meta{
+	padding:0 1rem .45rem;
+	gap:.4rem;
+}
+.cb-list-template-tiles .cb-list-card-badge{
+	padding:.24rem .52rem;
+	font-size:.7rem;
+	font-weight:700;
+	letter-spacing:.03em;
+	background:#e8f1ff;
+	color:#1d4ed8;
+}
+.cb-list-template-tiles .cb-list-card-body{
+	display:grid;
+	grid-template-columns:repeat(2, minmax(0, 1fr));
+	gap:.65rem;
+	padding:.65rem 1rem 1rem;
+}
+.cb-list-template-tiles .cb-list-card-field{
+	padding:.6rem .65rem;
+	border-radius:14px;
+	background:#f8fbff;
+	border:1px solid rgba(37,99,235,.08);
+	gap:.16rem;
+}
+.cb-list-template-tiles .cb-list-card-label{
+	font-size:.68rem;
+	letter-spacing:.06em;
+	color:#64748b;
+}
+.cb-list-template-tiles .cb-list-card-value{
+	font-size:.82rem;
+	font-weight:600;
+	line-height:1.28;
+}
+.cb-list-template-tiles .cb-list-card-footer{
+	margin-top:auto;
+	padding:0 1rem .9rem;
+	gap:.6rem;
+	border-top:1px solid rgba(37,99,235,.08);
+}
+.cb-list-template-tiles .cb-list-card-footer.is-selection-only{
+	border-top:0;
+	padding-top:0;
+}
+.cb-list-template-tiles .cb-list-card-footer.is-empty{
+	display:none;
+}
+.cb-list-template-tiles .cb-list-card-state{
+	min-width:110px;
+}
+.cb-list-template-tiles .cb-list-card-selection{
+	font-size:.74rem;
+}
+.cb-list-template-tiles .cb-list-card-title a{
+	color:inherit;
+	text-decoration:none;
+}
+.cb-list-template-tiles .cb-list-card:hover{
+	transform:translateY(-2px);
+	transition:transform .18s ease, box-shadow .18s ease;
+	box-shadow:0 20px 38px rgba(13,110,253,.16);
+}
+@media (prefers-color-scheme: dark){
+	.cb-list-template-compact .cb-list-panel{
+		background:#101924;
+		border-color:rgba(148,163,184,.2);
+		box-shadow:0 .35rem .9rem rgba(0,0,0,.32);
+	}
+	.cb-list-template-compact .cb-list-table{
+		--bs-table-bg:#101924;
+		--bs-table-color:#e8eef7;
+		--bs-table-border-color:rgba(148,163,184,.16);
+		--bs-table-striped-bg:#162231;
+		--bs-table-striped-color:#eef4fb;
+		--bs-table-hover-bg:#1c2b3d;
+		--bs-table-hover-color:#ffffff;
+	}
+	.cb-list-template-compact .cb-list-table th{
+		color:#9fb7d4;
+	}
+	.cb-list-template-compact .cb-list-table td{
+		color:#eef4fb;
+	}
+	.cb-list-template-compact .cb-list-table a{
+		color:#b7d4ff;
+	}
+	.cb-list-template-cards .cb-list-card{
+		background:linear-gradient(180deg, rgba(30,41,59,.96), rgba(15,23,42,.96));
+		border-color:rgba(255,255,255,.08);
+		box-shadow:0 14px 30px rgba(0,0,0,.28);
+	}
+	.cb-list-template-cards .cb-list-card-header{
+		border-bottom-color:rgba(255,255,255,.08);
+	}
+	.cb-list-template-cards .cb-list-card-badge{
+		background:rgba(255,255,255,.08);
+	}
+	.cb-list-template-cards .cb-list-card-subtitle,
+	.cb-list-template-cards .cb-list-card-label,
+	.cb-list-template-cards .cb-list-card-selection{
+		color:#cbd5e1;
+	}
+	.cb-list-template-cards .cb-list-card-title,
+	.cb-list-template-cards .cb-list-card-title a,
+	.cb-list-template-cards .cb-list-card-value{
+		color:#f8fbff;
+	}
+	.cb-list-template-cards .cb-list-card-value a{
+		color:#9ec5fe;
+	}
+	.cb-list-template-cards .cb-list-card-field{
+		border-color:rgba(148,163,184,.12);
+	}
+	.cb-list-template-tiles .cb-list-card{
+		background:
+			radial-gradient(circle at top right, rgba(96,165,250,.18), transparent 36%),
+			linear-gradient(180deg, rgba(23,34,49,.98), rgba(14,23,36,.98));
+		box-shadow:0 16px 34px rgba(0,0,0,.34);
+	}
+	.cb-list-template-tiles .cb-list-card-title,
+	.cb-list-template-tiles .cb-list-card-title a{
+		color:#f8fbff;
+	}
+	.cb-list-template-tiles .cb-list-card-badge{
+		background:rgba(96,165,250,.16);
+		color:#bfdbfe;
+	}
+	.cb-list-template-tiles .cb-list-card-actions .btn{
+		color:#dbeafe;
+	}
+	.cb-list-template-tiles .cb-list-card-actions .btn:hover,
+	.cb-list-template-tiles .cb-list-card-actions .btn:focus{
+		color:#ffffff;
+	}
+	.cb-list-template-tiles .cb-list-card-field{
+		background:rgba(15,23,42,.42);
+		border-color:rgba(148,163,184,.14);
+	}
+	.cb-list-template-tiles .cb-list-card-label{
+		color:#96a9bf;
+	}
+	.cb-list-template-tiles .cb-list-card-value{
+		color:#f3f7fc;
+	}
+	.cb-list-template-tiles .cb-list-card-value a{
+		color:#9ec5fe;
+	}
+	.cb-list-template-tiles .cb-list-card-subtitle{
+		color:#93c5fd;
+	}
+	.cb-list-template-tiles .cb-list-card-footer{
+		border-top-color:rgba(148,163,184,.14);
+	}
+}
+@media (max-width:767.98px){
+	.cb-list-template-cards .cb-list-cards{
+		grid-template-columns:1fr;
+	}
+	.cb-list-template-tiles .cb-list-card-header{
+		grid-template-columns:1fr;
+	}
+	.cb-list-template-tiles .cb-list-card-body{
+		grid-template-columns:1fr;
 	}
 }
 CSS
@@ -438,7 +838,7 @@ Fix search, delete, pagination and 404 behavior.
 Replace line 144 of media/com_contentbuilderng/images/list/tmpl/default.php
 by this block. -->
 	<form action="<?php echo Route::_('index.php?option=com_contentbuilderng&task=list.display&' . $listTarget . '&Itemid=' . (int) Factory::getApplication()->input->getInt('Itemid', 0) . $previewQuery); ?>"
-		method="<?php echo $___getpost; ?>" name="adminForm" id="adminForm">
+		method="<?php echo $___getpost; ?>" name="adminForm" id="adminForm" class="cb-list-template-<?php echo htmlspecialchars($cbListTemplateVariant, ENT_QUOTES, 'UTF-8'); ?>">
 
 	<!-- 2023-12-19 END -->
 	<?php
@@ -662,19 +1062,289 @@ by this block. -->
 			</div>
 		</div>
 	<?php endif; ?>
+		<?php if ($usesCardLayout) : ?>
+		<div class="cb-list-panel cb-list-data-panel">
+			<div class="cb-list-cards">
+				<?php
+				$n = count((array) $this->items);
+				for ($i = 0; $i < $n; $i++) {
+					$row = $this->items[$i];
+					$link = Route::_('index.php?option=com_contentbuilderng&task=details.display&' . ($directStorageMode ? 'storage_id=' . $directStorageId : 'id=' . $this->form_id) . '&record_id=' . $row->colRecord . '&Itemid=' . $input->getInt('Itemid', 0) . ($input->get('tmpl', '', 'string') != '' ? '&tmpl=' . $input->get('tmpl', '', 'string') : '') . ($input->get('layout', '', 'string') != '' ? '&layout=' . $input->get('layout', '', 'string') : '') . $previewQuery);
+					$edit_link = Route::_('index.php?option=com_contentbuilderng&task=edit.display&backtolist=1&id=' . $this->form_id . '&record_id=' . $row->colRecord . '&Itemid=' . $input->getInt('Itemid', 0) . ($input->get('tmpl', '', 'string') != '' ? '&tmpl=' . $input->get('tmpl', '', 'string') : '') . ($input->get('layout', '', 'string') != '' ? '&layout=' . $input->get('layout', '', 'string') : '') . $previewQuery);
+					$isPublished = isset($this->published_items[$row->colRecord]) && $this->published_items[$row->colRecord];
+					$togglePublish = $isPublished ? 0 : 1;
+					$toggle_link = Route::_(
+						'index.php?option=com_contentbuilderng&task=edit.publish&backtolist=1&'
+						. ($directStorageMode ? 'storage_id=' . $directStorageId : 'id=' . $this->form_id)
+						. '&list_publish=' . $togglePublish
+						. '&cid[]=' . $row->colRecord
+						. '&Itemid=' . $input->getInt('Itemid', 0)
+						. ($input->get('tmpl', '', 'string') != '' ? '&tmpl=' . $input->get('tmpl', '', 'string') : '')
+						. ($input->get('layout', '', 'string') != '' ? '&layout=' . $input->get('layout', '', 'string') : '')
+						. ($listQuery !== '' ? '&' . $listQuery : '')
+						. $previewQuery
+					);
+						$visibleFields = [];
+						foreach ($row as $key => $value) {
+							if (strpos((string) $key, 'col') !== 0) {
+								continue;
+							}
+							$referenceId = str_replace('col', '', $key);
+							if (!in_array($referenceId, $this->visible_cols)) {
+								continue;
+							}
+							$visibleFields[] = [
+							'reference_id' => $referenceId,
+							'label' => (string) ($this->labels[$referenceId] ?? $referenceId),
+							'value' => $value,
+								'linkable' => in_array($referenceId, $this->linkable_elements) && ($view_allowed || $this->own_only),
+							];
+						}
+						$nonEmptyVisibleFields = array_values(array_filter($visibleFields, static function (array $field): bool {
+							return trim(strip_tags((string) ($field['value'] ?? ''))) !== '';
+						}));
+						$titleLabelPatterns = '/\b(nom|name|title|titre|subject|libell|label)\b/i';
+						$subtitleLabelPatterns = '/\b(pr[ée]nom|first\s*name|firstname)\b/i';
+						$preferredTitleParts = [];
+						foreach ($nonEmptyVisibleFields as $field) {
+							$fieldLabel = (string) ($field['label'] ?? '');
+							$fieldValueText = trim(strip_tags((string) ($field['value'] ?? '')));
+							if ($fieldValueText === '') {
+								continue;
+							}
+							if (preg_match($titleLabelPatterns, $fieldLabel)) {
+								$preferredTitleParts[] = $field;
+								break;
+							}
+						}
+						if (!empty($preferredTitleParts)) {
+							foreach ($nonEmptyVisibleFields as $field) {
+								$fieldLabel = (string) ($field['label'] ?? '');
+								if (preg_match($subtitleLabelPatterns, $fieldLabel)) {
+									$preferredTitleParts[] = $field;
+									break;
+								}
+							}
+						}
+						$preferredTitleField = null;
+						foreach ($nonEmptyVisibleFields as $field) {
+							$fieldValueText = trim(strip_tags((string) ($field['value'] ?? '')));
+							if ($fieldValueText === '') {
+								continue;
+							}
+							if (!preg_match('/^\d+$/', $fieldValueText)) {
+								$preferredTitleField = $field;
+								break;
+							}
+						}
+						$primaryField = $preferredTitleParts[0] ?? $preferredTitleField ?? ($nonEmptyVisibleFields[0] ?? ($visibleFields[0] ?? null));
+						$secondaryFields = [];
+						foreach ($visibleFields as $field) {
+							if ($primaryField !== null && (string) $field['reference_id'] === (string) $primaryField['reference_id']) {
+								continue;
+							}
+							if (!empty($preferredTitleParts[1]) && (string) $field['reference_id'] === (string) $preferredTitleParts[1]['reference_id']) {
+								continue;
+							}
+							if (trim(strip_tags((string) ($field['value'] ?? ''))) === '') {
+								continue;
+							}
+							$secondaryFields[] = $field;
+						}
+						if ($isTilesVariant) {
+							$secondaryFields = array_slice($secondaryFields, 0, 4);
+						}
+						$cardTitle = $primaryField !== null && trim(strip_tags((string) $primaryField['value'])) !== ''
+							? $primaryField['value']
+							: ('#' . (int) $row->colRecord);
+						if (count($preferredTitleParts) > 1) {
+							$cardTitle = implode(' ', array_map(static function (array $field): string {
+								return trim(strip_tags((string) ($field['value'] ?? '')));
+							}, $preferredTitleParts));
+						}
+						$cardSubtitle = $primaryField !== null
+							? (string) $primaryField['label']
+							: Text::_('COM_CONTENTBUILDERNG_RECORD_ID');
+						$hasSelectionControl = $this->select_column && ($delete_allowed || $state_allowed || $publish_allowed);
+						$hasStateControl = $this->list_state && $state_allowed && count($this->states);
+						$hasStaticStateBadge = $this->list_state && !$hasStateControl && isset($this->state_titles[$row->colRecord]) && $this->state_titles[$row->colRecord] !== '';
+						$stateBadgeStyle = $getStateBadgeStyle($row->colRecord, $this->state_colors);
+						$showFooter = $hasSelectionControl || ($hasStateControl || ($hasStaticStateBadge && !$isTilesVariant));
+						$footerClass = 'cb-list-card-footer';
+						if (!$showFooter) {
+							$footerClass .= ' is-empty';
+						} elseif ($hasSelectionControl && !$hasStateControl && !$hasStaticStateBadge) {
+							$footerClass .= ' is-selection-only';
+						}
+					?>
+						<article class="cb-list-card">
+							<header class="cb-list-card-header">
+								<div class="cb-list-card-header-main">
+									<h2 class="cb-list-card-title">
+										<?php if (($primaryField['linkable'] ?? false) && ($view_allowed || $this->own_only)) : ?>
+											<a href="<?php echo $link; ?>"><?php echo $cardTitle; ?></a>
+									<?php else : ?>
+										<?php echo $cardTitle; ?>
+									<?php endif; ?>
+								</h2>
+								<p class="cb-list-card-subtitle"><?php echo htmlspecialchars($cardSubtitle, ENT_QUOTES, 'UTF-8'); ?></p>
+							</div>
+							<div class="cb-list-card-actions">
+								<?php if ($showPreviewLink && ($view_allowed || $this->own_only)) : ?>
+									<a class="btn btn-sm btn-outline-primary" href="<?php echo $link; ?>" title="<?php echo $directStorageMode ? Text::_('COM_CONTENTBUILDERNG_PREVIEW') : Text::_('COM_CONTENTBUILDERNG_DETAILS'); ?>">
+										<span class="fa-solid fa-eye" aria-hidden="true"></span>
+									</a>
+								<?php endif; ?>
+								<?php if ($this->edit_button && $edit_allowed) : ?>
+									<a class="btn btn-sm btn-outline-secondary" href="<?php echo $edit_link; ?>" title="<?php echo Text::_('COM_CONTENTBUILDERNG_EDIT'); ?>">
+										<span class="fa-solid fa-pen" aria-hidden="true"></span>
+									</a>
+								<?php endif; ?>
+								<?php if (($this->list_publish || $directStorageMode) && $publish_allowed) : ?>
+									<a class="btn btn-sm btn-outline-secondary" href="<?php echo $toggle_link; ?>" title="<?php echo $isPublished ? Text::_('JPUBLISHED') : Text::_('JUNPUBLISHED'); ?>">
+										<span class="<?php echo $isPublished ? 'fa-solid fa-check text-success' : 'fa-solid fa-circle-xmark text-danger'; ?>" aria-hidden="true"></span>
+									</a>
+								<?php endif; ?>
+							</div>
+						</header>
+
+							<div class="cb-list-card-meta">
+								<span class="cb-list-card-badge">#<?php echo (int) $row->colRecord; ?></span>
+								<?php if ($this->list_state && isset($this->state_titles[$row->colRecord]) && $this->state_titles[$row->colRecord] !== '') : ?>
+									<span class="cb-list-card-badge"<?php echo $stateBadgeStyle !== '' ? ' style="' . htmlspecialchars($stateBadgeStyle, ENT_QUOTES, 'UTF-8') . '"' : ''; ?>><?php echo htmlspecialchars($this->state_titles[$row->colRecord], ENT_QUOTES, 'UTF-8'); ?></span>
+								<?php endif; ?>
+								<?php if ($this->list_language) : ?>
+									<span class="cb-list-card-badge"><?php echo htmlspecialchars((string) (isset($this->lang_codes[$row->colRecord]) && $this->lang_codes[$row->colRecord] ? $this->lang_codes[$row->colRecord] : '*'), ENT_QUOTES, 'UTF-8'); ?></span>
+							<?php endif; ?>
+						</div>
+
+							<div class="cb-list-card-body">
+							<?php foreach ($secondaryFields as $field) : ?>
+								<div class="cb-list-card-field">
+									<div class="cb-list-card-label"><?php echo htmlspecialchars((string) $field['label'], ENT_QUOTES, 'UTF-8'); ?></div>
+									<div class="cb-list-card-value">
+										<?php if ($field['linkable']) : ?>
+											<a href="<?php echo $link; ?>"><?php echo $field['value']; ?></a>
+										<?php else : ?>
+											<?php echo $field['value']; ?>
+										<?php endif; ?>
+									</div>
+								</div>
+							<?php endforeach; ?>
+								<?php if ($this->list_article && !empty($row->colArticleId)) : ?>
+								<div class="cb-list-card-field">
+									<div class="cb-list-card-label"><?php echo Text::_('COM_CONTENTBUILDERNG_ARTICLE'); ?></div>
+									<div class="cb-list-card-value"><?php echo (int) ($row->colArticleId ?? 0); ?></div>
+								</div>
+							<?php endif; ?>
+							<?php if ($this->list_author) : ?>
+								<div class="cb-list-card-field">
+									<div class="cb-list-card-label"><?php echo Text::_('COM_CONTENTBUILDERNG_AUTHOR'); ?></div>
+									<div class="cb-list-card-value"><?php echo htmlspecialchars((string) ($row->colAuthor ?? ''), ENT_QUOTES, 'UTF-8'); ?></div>
+								</div>
+							<?php endif; ?>
+							<?php if ($this->list_rating) : ?>
+								<div class="cb-list-card-field">
+									<div class="cb-list-card-label"><?php echo Text::_('COM_CONTENTBUILDERNG_RATING'); ?></div>
+									<div class="cb-list-card-value">
+										<?php echo RatingHelper::getRating($input->getInt('id', 0), $row->colRecord, $row->colRating, $this->rating_slots, $input->getCmd('lang', ''), $rating_allowed, $row->colRatingCount, $row->colRatingSum); ?>
+									</div>
+								</div>
+							<?php endif; ?>
+							</div>
+
+							<footer class="<?php echo $footerClass; ?>">
+								<?php if ($hasSelectionControl) : ?>
+										<label class="cb-list-card-selection">
+											<input class="form-check-input" type="checkbox" name="cid[]" value="<?php echo (int) $row->colRecord; ?>"/>
+											<span><?php echo Text::_('COM_CONTENTBUILDERNG_SELECT_COLUMN'); ?></span>
+										</label>
+								<?php elseif (!$isTilesVariant) : ?>
+									<span></span>
+								<?php endif; ?>
+
+								<?php if ($this->list_state && !$isTilesVariant) : ?>
+									<div class="cb-list-card-state">
+										<?php if ($hasStateControl) : ?>
+											<?php $currentStateTitle = $this->state_titles[$row->colRecord] ?? ''; ?>
+											<select class="form-select form-select-sm" onchange="contentbuilderng_state_single(this.value, <?php echo (int) $row->colRecord; ?>);" title="<?php echo Text::_('COM_CONTENTBUILDERNG_EDIT_STATE'); ?>">
+											<option value="" <?php echo $currentStateTitle === '' ? 'selected' : ''; ?>>-</option>
+											<?php foreach ($this->states as $state) : ?>
+												<option value="<?php echo (int) $state['id']; ?>" <?php echo $currentStateTitle === $state['title'] ? 'selected' : ''; ?>>
+													<?php echo htmlentities($state['title'], ENT_QUOTES, 'UTF-8'); ?>
+												</option>
+											<?php endforeach; ?>
+										</select>
+										<?php elseif ($hasStaticStateBadge) : ?>
+											<span class="cb-list-card-badge"<?php echo $stateBadgeStyle !== '' ? ' style="' . htmlspecialchars($stateBadgeStyle, ENT_QUOTES, 'UTF-8') . '"' : ''; ?>><?php echo htmlspecialchars((string) $this->state_titles[$row->colRecord], ENT_QUOTES, 'UTF-8'); ?></span>
+										<?php endif; ?>
+									</div>
+							<?php endif; ?>
+						</footer>
+					</article>
+				<?php } ?>
+			</div>
+			<?php
+			$pagTotal = (int) ($this->pagination->total ?? 0);
+			$pagLimit = max(1, (int) ($this->pagination->limit ?? 0));
+			$pagStart = (int) ($this->lists['liststart'] ?? $input->getInt('list[start]', 0));
+			$pagPages = (int) ceil($pagTotal / $pagLimit);
+			$pagCurrent = $pagPages > 0 ? (int) floor($pagStart / $pagLimit) + 1 : 1;
+			$pagLastStart = $pagPages > 0 ? max(0, ($pagPages - 1) * $pagLimit) : 0;
+			$showSummary = $pagTotal > 0;
+			$showPagination = $pagPages > 1;
+			$rangeStart = $pagTotal > 0 ? $pagStart + 1 : 0;
+			$rangeEnd = $pagTotal > 0 ? min($pagStart + $pagLimit, $pagTotal) : 0;
+			if ($showBottomBar && $showSummary) :
+				$params = Uri::getInstance()->getQuery(true);
+				$params['option'] = 'com_contentbuilderng';
+				$params['task'] = 'list.display';
+				$params['id'] = $input->getInt('id', 0);
+				$params['Itemid'] = $input->getInt('Itemid', 0);
+				$params['list'] = [
+					'limit' => $pagLimit,
+					'ordering' => $this->lists['order'],
+					'direction' => $this->lists['order_Dir'],
+					'start' => 0,
+				];
+				$buildPageLink = static function (int $start) use ($params): string {
+					$params['list']['start'] = max(0, $start);
+					return Route::_('index.php?' . http_build_query($params), false);
+				};
+			?>
+				<nav class="pagination__wrapper d-flex flex-wrap align-items-center justify-content-start gap-2 mt-3" aria-label="Pagination">
+					<div class="small text-muted me-2 cb-pagination-summary">
+						<?php echo $rangeStart . ' - ' . $rangeEnd . ' / ' . $pagTotal . ' items'; ?>
+					</div>
+					<?php if ($showPagination) : ?>
+						<ul class="pagination pagination-sm mb-0">
+							<li class="page-item<?php echo $pagCurrent <= 1 ? ' disabled' : ''; ?>"><a class="page-link" href="<?php echo $buildPageLink(0); ?>">&lt;&lt;</a></li>
+							<li class="page-item<?php echo $pagCurrent <= 1 ? ' disabled' : ''; ?>"><a class="page-link" href="<?php echo $buildPageLink($pagStart - $pagLimit); ?>">&lt;</a></li>
+							<?php for ($p = 1; $p <= $pagPages; $p++) : $startForPage = ($p - 1) * $pagLimit; ?>
+								<li class="page-item<?php echo $p === $pagCurrent ? ' active' : ''; ?>">
+									<a class="page-link" href="<?php echo $buildPageLink($startForPage); ?>"><?php echo $p; ?></a>
+								</li>
+							<?php endfor; ?>
+							<li class="page-item<?php echo $pagCurrent >= $pagPages ? ' disabled' : ''; ?>"><a class="page-link" href="<?php echo $buildPageLink($pagStart + $pagLimit); ?>">&gt;</a></li>
+							<li class="page-item<?php echo $pagCurrent >= $pagPages ? ' disabled' : ''; ?>"><a class="page-link" href="<?php echo $buildPageLink($pagLastStart); ?>">&gt;&gt;</a></li>
+						</ul>
+					<?php endif; ?>
+				</nav>
+			<?php endif; ?>
+		</div>
+	<?php else : ?>
 	<div class="cb-scroll-x cb-list-panel cb-list-data-panel">
 			<table class="table table-striped table-hover align-middle cb-list-table">
 			<thead>
 				<tr>
 					<?php
-					if ($showPreviewLink && ($view_allowed || $this->own_only)) {
-					?>
-						<th class="table-light" width="20">
-							<span class="fa-solid fa-eye" aria-hidden="true"></span>
-							<span class="visually-hidden"><?php echo Text::_('COM_CONTENTBUILDERNG_DETAILS'); ?></span>
-						</th>
-					<?php
-					}
+						if ($showPreviewLink && ($view_allowed || $this->own_only)) {
+						?>
+							<th class="table-light" width="20">
+								<span class="visually-hidden"><?php echo Text::_('COM_CONTENTBUILDERNG_DETAILS'); ?></span>
+							</th>
+						<?php
+						}
 
 					if ($this->show_id_column) {
 					?>
@@ -1066,8 +1736,9 @@ by this block. -->
 				<?php endif; ?>
 			</table>
 		</div>
-	<?php
-	if (Factory::getApplication()->input->get('tmpl', '', 'string') != '') {
+		<?php endif; ?>
+		<?php
+		if (Factory::getApplication()->input->get('tmpl', '', 'string') != '') {
 	?>
 		<input type="hidden" name="tmpl" value="<?php echo Factory::getApplication()->input->get('tmpl', '', 'string'); ?>" />
 	<?php

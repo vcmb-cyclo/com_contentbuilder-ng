@@ -81,6 +81,27 @@ class ElementsModel extends ListModel
         $this->formId = $formid;
     }
 
+    private function getApp(): CMSApplication
+    {
+        return Factory::getApplication();
+    }
+
+    private function getInput()
+    {
+        return $this->getApp()->input;
+    }
+
+    private function resolveCurrentFormId(): int
+    {
+        $formId = (int) $this->getInput()->getInt('id', 0);
+
+        if (!$formId) {
+            $formId = (int) $this->getState('form.id', 0);
+        }
+
+        return $formId;
+    }
+
 
     /**
      * Méthode pour initialiser les états (filtres, pagination, tri)
@@ -268,15 +289,12 @@ class ElementsModel extends ListModel
     public function move($direction): bool
     {
         // Assure formId même si populateState n’a pas tourné
-        $formId = (int) Factory::getApplication()->input->getInt('id', 0);
-        if (!$formId) {
-            $formId = (int) $this->getState('form.id', 0);
-        }
+        $formId = $this->resolveCurrentFormId();
         if (!$formId) {
             return false;
         }
 
-        $cid = Factory::getApplication()->input->get('cid', [], 'array');
+        $cid = $this->getInput()->get('cid', [], 'array');
         ArrayHelper::toInteger($cid);
         $pk = (int) ($cid[0] ?? 0);
 
@@ -296,10 +314,7 @@ class ElementsModel extends ListModel
 
     public function saveorder($pks = null, $order = null): bool
     {
-        $formId = (int) Factory::getApplication()->input->getInt('id', 0);
-        if (!$formId) {
-            $formId = (int) $this->getState('form.id', 0);
-        }
+        $formId = $this->resolveCurrentFormId();
         if (!$formId) {
             return false;
         }
@@ -367,10 +382,7 @@ class ElementsModel extends ListModel
 
     public function reorder($pks = null, $delta = 0, $where = ''): bool
     {
-        $formId = (int) Factory::getApplication()->input->getInt('id', 0);
-        if (!$formId) {
-            $formId = (int) $this->getState('form.id', 0);
-        }
+        $formId = $this->resolveCurrentFormId();
         if (!$formId) {
             return false;
         }
@@ -383,9 +395,6 @@ class ElementsModel extends ListModel
 
     private function buildOrderBy()
     {
-        $app = Factory::getApplication();
-        $option = 'com_contentbuilderng';
-
         $orderby = '';
         $filter_order = $this->getState('elements_filter_order');
         $filter_order_Dir = $this->getState('elements_filter_order_Dir');

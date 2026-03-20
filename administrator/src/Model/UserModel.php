@@ -10,7 +10,7 @@
 namespace CB\Component\Contentbuilderng\Administrator\Model;
 
 // No direct access
-defined( '_JEXEC' ) or die( 'Restricted access' );
+\defined('_JEXEC') or die;
 
 use Joomla\Utilities\ArrayHelper;
 use Joomla\CMS\Factory;
@@ -20,11 +20,47 @@ class UserModel extends BaseDatabaseModel
 {
     private $_form_id = 0;
 
+    private function getApp()
+    {
+        return Factory::getApplication();
+    }
+
+    private function getInput()
+    {
+        return $this->getApp()->input;
+    }
+
+    private function getCurrentFormId(): int
+    {
+        return (int) $this->getInput()->getInt('form_id', 0);
+    }
+
+    private function getSelectedUserIds(): array
+    {
+        $items = (array) $this->getInput()->post->get('cid', [], 'array');
+        ArrayHelper::toInteger($items);
+        return $items;
+    }
+
+    private function ensureContentbuilderngUserRow(int $formId, int $userId): void
+    {
+        if ($formId <= 0 || $userId <= 0) {
+            return;
+        }
+
+        $this->getDatabase()->setQuery("Select id From #__contentbuilderng_users Where form_id = " . $formId . " And userid = " . $userId);
+        if (!$this->getDatabase()->loadResult()) {
+            $this->getDatabase()->setQuery("Insert Into #__contentbuilderng_users (form_id, userid, published) Values (" . $formId . ", " . $userId . ", 1)");
+            $this->getDatabase()->execute();
+        }
+    }
+
     function  __construct($config)
     {
         parent::__construct($config);
 
-        $this->setIds(Factory::getApplication()->input->getInt('joomla_userid',  0), Factory::getApplication()->input->getInt('form_id',  ''));
+        $input = $this->getInput();
+        $this->setIds($input->getInt('joomla_userid', 0), $input->getInt('form_id', 0));
         
     }
 
@@ -44,22 +80,16 @@ class UserModel extends BaseDatabaseModel
     }
 
     private function _buildQuery(){
-        return 'Select users.*, contentbuilderng_users.limit_edit, contentbuilderng_users.limit_add, contentbuilderng_users.id As cb_id, contentbuilderng_users.form_id, contentbuilderng_users.verification_date_edit, contentbuilderng_users.verification_date_new, contentbuilderng_users.verification_date_view, contentbuilderng_users.verified_view, contentbuilderng_users.verified_new, contentbuilderng_users.verified_edit, contentbuilderng_users.records, contentbuilderng_users.published From #__users As users Left Join #__contentbuilderng_users As contentbuilderng_users On ( users.id = contentbuilderng_users.userid And contentbuilderng_users.form_id = '.Factory::getApplication()->input->getInt('form_id',0).' ) Where users.id = ' . $this->_id;
+        return 'Select users.*, contentbuilderng_users.limit_edit, contentbuilderng_users.limit_add, contentbuilderng_users.id As cb_id, contentbuilderng_users.form_id, contentbuilderng_users.verification_date_edit, contentbuilderng_users.verification_date_new, contentbuilderng_users.verification_date_view, contentbuilderng_users.verified_view, contentbuilderng_users.verified_new, contentbuilderng_users.verified_edit, contentbuilderng_users.records, contentbuilderng_users.published From #__users As users Left Join #__contentbuilderng_users As contentbuilderng_users On ( users.id = contentbuilderng_users.userid And contentbuilderng_users.form_id = ' . $this->getCurrentFormId() . ' ) Where users.id = ' . $this->_id;
                 
     }
     
     function setListVerifiedView()
     {
-        $items	= Factory::getApplication()->input->post->get('cid', [], 'array');
-        ArrayHelper::toInteger($items);
+        $items = $this->getSelectedUserIds();
         if (count($items)) {
-            $cids = $items;
-            foreach($cids As $cid){
-                $this->getDatabase()->setQuery("Select id From #__contentbuilderng_users Where form_id = ".Factory::getApplication()->input->getInt('form_id',0)." And userid = " . $cid);
-                if(!$this->getDatabase()->loadResult() && Factory::getApplication()->input->getInt('form_id',0) && $cid){
-                    $this->getDatabase()->setQuery("Insert Into #__contentbuilderng_users (form_id, userid, published) Values (".Factory::getApplication()->input->getInt('form_id',0).", $cid, 1)");
-                    $this->getDatabase()->execute();
-                }
+            foreach ($items as $cid) {
+                $this->ensureContentbuilderngUserRow($this->getCurrentFormId(), (int) $cid);
             }
             
             $this->getDatabase()->setQuery( ' Update #__contentbuilderng_users '.
@@ -70,17 +100,11 @@ class UserModel extends BaseDatabaseModel
     
     function setListNotVerifiedView()
     {
-        $items	= Factory::getApplication()->input->post->get('cid', [], 'array');
-        ArrayHelper::toInteger($items);
+        $items = $this->getSelectedUserIds();
         if (count($items)) {
             
-            $cids = $items;
-            foreach($cids As $cid){
-                $this->getDatabase()->setQuery("Select id From #__contentbuilderng_users Where form_id = ".Factory::getApplication()->input->getInt('form_id',0)." And userid = " . $cid);
-                if(!$this->getDatabase()->loadResult() && Factory::getApplication()->input->getInt('form_id',0) && $cid){
-                    $this->getDatabase()->setQuery("Insert Into #__contentbuilderng_users (form_id, userid, published) Values (".Factory::getApplication()->input->getInt('form_id',0).", $cid, 1)");
-                    $this->getDatabase()->execute();
-                }
+            foreach ($items as $cid) {
+                $this->ensureContentbuilderngUserRow($this->getCurrentFormId(), (int) $cid);
             }
             
             $this->getDatabase()->setQuery( ' Update #__contentbuilderng_users '.
@@ -91,16 +115,10 @@ class UserModel extends BaseDatabaseModel
 
     function setListVerifiedNew()
     {
-        $items	= Factory::getApplication()->input->post->get('cid', [], 'array');
-        ArrayHelper::toInteger($items);
+        $items = $this->getSelectedUserIds();
         if (count($items)) {
-            $cids = $items;
-            foreach($cids As $cid){
-                $this->getDatabase()->setQuery("Select id From #__contentbuilderng_users Where form_id = ".Factory::getApplication()->input->getInt('form_id',0)." And userid = " . $cid);
-                if(!$this->getDatabase()->loadResult() && Factory::getApplication()->input->getInt('form_id',0) && $cid){
-                    $this->getDatabase()->setQuery("Insert Into #__contentbuilderng_users (form_id, userid, published) Values (".Factory::getApplication()->input->getInt('form_id',0).", $cid, 1)");
-                    $this->getDatabase()->execute();
-                }
+            foreach ($items as $cid) {
+                $this->ensureContentbuilderngUserRow($this->getCurrentFormId(), (int) $cid);
             }
             
             $this->getDatabase()->setQuery( ' Update #__contentbuilderng_users '.
@@ -111,17 +129,11 @@ class UserModel extends BaseDatabaseModel
     
     function setListNotVerifiedNew()
     {
-        $items	= Factory::getApplication()->input->post->get('cid', [], 'array');
-        ArrayHelper::toInteger($items);
+        $items = $this->getSelectedUserIds();
         if (count($items)) {
             
-            $cids = $items;
-            foreach($cids As $cid){
-                $this->getDatabase()->setQuery("Select id From #__contentbuilderng_users Where form_id = ".Factory::getApplication()->input->getInt('form_id',0)." And userid = " . $cid);
-                if(!$this->getDatabase()->loadResult() && Factory::getApplication()->input->getInt('form_id',0) && $cid){
-                    $this->getDatabase()->setQuery("Insert Into #__contentbuilderng_users (form_id, userid, published) Values (".Factory::getApplication()->input->getInt('form_id',0).", $cid, 1)");
-                    $this->getDatabase()->execute();
-                }
+            foreach ($items as $cid) {
+                $this->ensureContentbuilderngUserRow($this->getCurrentFormId(), (int) $cid);
             }
             
             $this->getDatabase()->setQuery( ' Update #__contentbuilderng_users '.
@@ -132,16 +144,10 @@ class UserModel extends BaseDatabaseModel
     
     function setListVerifiedEdit()
     {
-        $items	= Factory::getApplication()->input->post->get('cid', [], 'array');
-        ArrayHelper::toInteger($items);
+        $items = $this->getSelectedUserIds();
         if (count($items)) {
-            $cids = $items;
-            foreach($cids As $cid){
-                $this->getDatabase()->setQuery("Select id From #__contentbuilderng_users Where form_id = ".Factory::getApplication()->input->getInt('form_id',0)." And userid = " . $cid);
-                if(!$this->getDatabase()->loadResult() && Factory::getApplication()->input->getInt('form_id',0) && $cid){
-                    $this->getDatabase()->setQuery("Insert Into #__contentbuilderng_users (form_id, userid, published) Values (".Factory::getApplication()->input->getInt('form_id',0).", $cid, 1)");
-                    $this->getDatabase()->execute();
-                }
+            foreach ($items as $cid) {
+                $this->ensureContentbuilderngUserRow($this->getCurrentFormId(), (int) $cid);
             }
             
             $this->getDatabase()->setQuery( ' Update #__contentbuilderng_users '.
@@ -152,17 +158,11 @@ class UserModel extends BaseDatabaseModel
     
     function setListNotVerifiedEdit()
     {
-        $items	= Factory::getApplication()->input->post->get('cid', [], 'array');
-        ArrayHelper::toInteger($items);
+        $items = $this->getSelectedUserIds();
         if (count($items)) {
             
-            $cids = $items;
-            foreach($cids As $cid){
-                $this->getDatabase()->setQuery("Select id From #__contentbuilderng_users Where form_id = ".Factory::getApplication()->input->getInt('form_id',0)." And userid = " . $cid);
-                if(!$this->getDatabase()->loadResult() && Factory::getApplication()->input->getInt('form_id',0) && $cid){
-                    $this->getDatabase()->setQuery("Insert Into #__contentbuilderng_users (form_id, userid, published) Values (".Factory::getApplication()->input->getInt('form_id',0).", $cid, 1)");
-                    $this->getDatabase()->execute();
-                }
+            foreach ($items as $cid) {
+                $this->ensureContentbuilderngUserRow($this->getCurrentFormId(), (int) $cid);
             }
             
             $this->getDatabase()->setQuery( ' Update #__contentbuilderng_users '.
@@ -192,14 +192,17 @@ class UserModel extends BaseDatabaseModel
     function store()
     {
         $insert = 0;
-        $this->getDatabase()->setQuery("Select id From #__contentbuilderng_users Where form_id = ".Factory::getApplication()->input->getInt('form_id',0)." And userid = " . Factory::getApplication()->input->getInt('joomla_userid',0));
-        if(!$this->getDatabase()->loadResult() && Factory::getApplication()->input->getInt('form_id',0) && Factory::getApplication()->input->getInt('joomla_userid',0)){
-            $this->getDatabase()->setQuery("Insert Into #__contentbuilderng_users (form_id, userid, published) Values (".Factory::getApplication()->input->getInt('form_id',0).", ".Factory::getApplication()->input->getInt('joomla_userid',0).", 1)");
+        $input = $this->getInput();
+        $formId = $this->getCurrentFormId();
+        $joomlaUserId = (int) $input->getInt('joomla_userid', 0);
+        $this->getDatabase()->setQuery("Select id From #__contentbuilderng_users Where form_id = " . $formId . " And userid = " . $joomlaUserId);
+        if(!$this->getDatabase()->loadResult() && $formId && $joomlaUserId){
+            $this->getDatabase()->setQuery("Insert Into #__contentbuilderng_users (form_id, userid, published) Values (" . $formId . ", " . $joomlaUserId . ", 1)");
             $this->getDatabase()->execute();
             $insert = $this->getDatabase()->insertid();
         }
         
-        $data = Factory::getApplication()->input->post->getArray();
+        $data = $input->post->getArray();
         
         if(!$insert){
             $data['id'] = intval($data['cb_id']);
@@ -210,10 +213,10 @@ class UserModel extends BaseDatabaseModel
         $data['userid'] = $data['joomla_userid'];
         
         
-        $data['verified_view'] = Factory::getApplication()->input->getInt('verified_view',0);
-        $data['verified_new'] = Factory::getApplication()->input->getInt('verified_new',0);
-        $data['verified_edit'] = Factory::getApplication()->input->getInt('verified_edit',0);
-        $data['published'] = Factory::getApplication()->input->getInt('published',0);
+        $data['verified_view'] = $input->getInt('verified_view',0);
+        $data['verified_new'] = $input->getInt('verified_new',0);
+        $data['verified_edit'] = $input->getInt('verified_edit',0);
+        $data['published'] = $input->getInt('published',0);
         
         $row = $this->getTable('Cbuser');
         

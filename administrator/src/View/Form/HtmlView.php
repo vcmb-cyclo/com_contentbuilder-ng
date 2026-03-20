@@ -43,6 +43,8 @@ class HtmlView extends BaseHtmlView
         $document = $app->getDocument();
         $wa = $document->getWebAssetManager();
         $wa->getRegistry()->addExtensionRegistryFile('com_contentbuilderng');
+        $wa->useScript('com_contentbuilderng.admin-ui');
+        HTMLHelper::_('script', 'com_contentbuilderng/admin-ui.js', ['version' => 'auto', 'relative' => true], ['defer' => true]);
         $wa->useStyle('com_contentbuilderng.coloris.css');
         $wa->useScript('com_contentbuilderng.coloris.js');
 
@@ -62,7 +64,9 @@ class HtmlView extends BaseHtmlView
         $this->item = $model->getItem();
 
         // Chargement sécurisé des éléments
-        $formId = (int) ($this->item->id ?? $app->input->getInt('id', 0));
+        $input = $app->input;
+        $identity = $app->getIdentity();
+        $formId = (int) ($this->item->id ?? $input->getInt('id', 0));
 
         $this->elements = [];
         $this->all_elements = [];
@@ -75,14 +79,14 @@ class HtmlView extends BaseHtmlView
                 /** @var ContentbuilderngComponent $component */
                 $component = $app->bootComponent('com_contentbuilderng');
                 if (!$component instanceof ContentbuilderngComponent) {
-                    throw new \RuntimeException('Composant com_contentbuilderng introuvable (factory)');
+                    throw new \RuntimeException(Text::_('COM_CONTENTBUILDERNG_COMPONENT_FACTORY_NOT_FOUND'));
                 }
                 $factory = $component->getMVCFactory();
                 /** @var ElementsModel $elementsModel */
                 $elementsModel = $factory->createModel('Elements', 'Administrator');
 
                 if (!$elementsModel) {
-                    throw new \RuntimeException('Modèle Elements introuvable (factory)');
+                    throw new \RuntimeException(Text::_('COM_CONTENTBUILDERNG_ELEMENTS_MODEL_NOT_FOUND'));
                 }
 
                 // IMPORTANT : fournir le form id au ListModel
@@ -95,10 +99,10 @@ class HtmlView extends BaseHtmlView
                 $this->state      = $elementsModel->getState();
             }
         } catch (\Throwable $e) {
-                $app->enqueueMessage(
-                    'Erreur lors du chargement des éléments : ' . $e->getMessage(),
-                    'warning'
-                );
+            $app->enqueueMessage(
+                Text::sprintf('COM_CONTENTBUILDERNG_ELEMENTS_LOAD_ERROR', $e->getMessage()),
+                'warning'
+            );
         }
 
         $isNew = ($formId < 1);
@@ -326,10 +330,10 @@ class HtmlView extends BaseHtmlView
 
         if ($formId > 0) {
             $previewUntil = time() + 600;
-            $previewActorId = (int) ($app->getIdentity()->id ?? 0);
-            $previewActorName = trim((string) ($app->getIdentity()->name ?? ''));
+            $previewActorId = (int) ($identity->id ?? 0);
+            $previewActorName = trim((string) ($identity->name ?? ''));
             if ($previewActorName === '') {
-                $previewActorName = trim((string) ($app->getIdentity()->username ?? ''));
+                $previewActorName = trim((string) ($identity->username ?? ''));
             }
             if ($previewActorName === '') {
                 $previewActorName = 'administrator';

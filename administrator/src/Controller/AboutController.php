@@ -69,6 +69,18 @@ final class AboutController extends BaseController
         'storage_content' => ['type' => 'storage_content'],
     ];
 
+    private function getApp(): AdministratorApplication
+    {
+        /** @var AdministratorApplication $app */
+        $app = Factory::getApplication();
+        return $app;
+    }
+
+    private function getCurrentUserId(): int
+    {
+        return (int) ($this->getApp()->getIdentity()->id ?? 0);
+    }
+
     public function migratePackedData(): void
     {
         $this->startRepairWorkflow();
@@ -215,8 +227,7 @@ final class AboutController extends BaseController
     {
         $this->checkToken();
 
-        /** @var AdministratorApplication $app */
-        $app = Factory::getApplication();
+        $app = $this->getApp();
         $user = $app->getIdentity();
 
         if (!$user->authorise('core.manage', 'com_contentbuilderng')) {
@@ -263,8 +274,7 @@ final class AboutController extends BaseController
     {
         $this->checkToken();
 
-        /** @var AdministratorApplication $app */
-        $app = Factory::getApplication();
+        $app = $this->getApp();
         $user = $app->getIdentity();
 
         if (!$user->authorise('core.manage', 'com_contentbuilderng')) {
@@ -295,8 +305,7 @@ final class AboutController extends BaseController
     {
         $this->checkToken();
 
-        /** @var AdministratorApplication $app */
-        $app = Factory::getApplication();
+        $app = $this->getApp();
         $user = $app->getIdentity();
         $selectedSections = [];
         $selectedFormIds = [];
@@ -373,8 +382,7 @@ final class AboutController extends BaseController
     {
         $this->checkToken();
 
-        /** @var AdministratorApplication $app */
-        $app = Factory::getApplication();
+        $app = $this->getApp();
         $user = $app->getIdentity();
         $selectedSections = [];
         $importMode = self::CONFIG_IMPORT_MODE_MERGE;
@@ -464,7 +472,7 @@ final class AboutController extends BaseController
 
     private function getSelectedConfigSections(): array
     {
-        $selectedRaw = (array) Factory::getApplication()->input->get('cb_config_sections', [], 'array');
+        $selectedRaw = (array) $this->getApp()->input->get('cb_config_sections', [], 'array');
         $selected = [];
 
         foreach ($selectedRaw as $sectionKey) {
@@ -541,7 +549,7 @@ final class AboutController extends BaseController
         return [
             'meta' => [
                 'generated_at' => Factory::getDate()->toSql(),
-                'generated_by' => (int) (Factory::getApplication()->getIdentity()->id ?? 0),
+                'generated_by' => $this->getCurrentUserId(),
                 'component' => 'com_contentbuilderng',
                 'format' => 'cbng-config-export-v1',
             ],
@@ -652,7 +660,7 @@ final class AboutController extends BaseController
 
     private function getSelectedConfigImportNames(string $inputKey): array
     {
-        $selectedRaw = (array) Factory::getApplication()->input->get($inputKey, [], 'array');
+        $selectedRaw = (array) $this->getApp()->input->get($inputKey, [], 'array');
         $selected = [];
 
         foreach ($selectedRaw as $selectedName) {
@@ -730,7 +738,7 @@ final class AboutController extends BaseController
 
     private function getSelectedNumericIds(string $inputKey): array
     {
-        $selectedRaw = (array) Factory::getApplication()->input->get($inputKey, [], 'array');
+        $selectedRaw = (array) $this->getApp()->input->get($inputKey, [], 'array');
         $selected = [];
 
         foreach ($selectedRaw as $selectedId) {
@@ -900,7 +908,7 @@ final class AboutController extends BaseController
 
     private function buildConfigTransferRedirect(string $fallbackMode = 'export'): string
     {
-        $app = Factory::getApplication();
+        $app = $this->getApp();
         $returnView = $app->input->getCmd('return_view', '');
         $returnMode = $app->input->getCmd('return_mode', $fallbackMode);
         $returnMode = in_array($returnMode, ['export', 'import'], true) ? $returnMode : $fallbackMode;
@@ -914,8 +922,7 @@ final class AboutController extends BaseController
 
     private function rememberConfigTransferSelection(): void
     {
-        /** @var AdministratorApplication $app */
-        $app = Factory::getApplication();
+        $app = $this->getApp();
         $postData = (array) $app->input->post->getArray();
         $previous = (array) $app->getUserState(self::CONFIG_TRANSFER_SELECTION_STATE_KEY, []);
 
@@ -981,7 +988,7 @@ final class AboutController extends BaseController
 
     private function shouldExportStorageContent(): bool
     {
-        return Factory::getApplication()->input->getInt('cb_export_storage_content', 0) === 1;
+        return $this->getApp()->input->getInt('cb_export_storage_content', 0) === 1;
     }
 
     private function resolveEffectiveExportSections(array $selectedSections, array $selectedFormIds, array $selectedStorageIds): array
@@ -1022,7 +1029,7 @@ final class AboutController extends BaseController
 
     private function getImportMode(): string
     {
-        $mode = strtolower((string) Factory::getApplication()->input->getCmd('cb_config_import_mode', self::CONFIG_IMPORT_MODE_MERGE));
+        $mode = strtolower((string) $this->getApp()->input->getCmd('cb_config_import_mode', self::CONFIG_IMPORT_MODE_MERGE));
         return in_array($mode, [self::CONFIG_IMPORT_MODE_MERGE, self::CONFIG_IMPORT_MODE_REPLACE], true)
             ? $mode
             : self::CONFIG_IMPORT_MODE_MERGE;
@@ -1774,7 +1781,7 @@ final class AboutController extends BaseController
     private function applyImportAuditColumns(string $tableAlias, array $row, bool $isNew): array
     {
         $now = Factory::getDate()->toSql();
-        $user = Factory::getApplication()->getIdentity();
+        $user = $this->getApp()->getIdentity();
 
         if ($tableAlias === '#__contentbuilderng_forms') {
             if ($isNew) {
@@ -1931,7 +1938,7 @@ final class AboutController extends BaseController
 
     private function getJoomlaLocalDateTime(): string
     {
-        $app = Factory::getApplication();
+        $app = $this->getApp();
         $offset = is_object($app) && method_exists($app, 'get') ? (string) $app->get('offset', 'UTC') : 'UTC';
 
         try {
@@ -1945,8 +1952,7 @@ final class AboutController extends BaseController
 
     private function getAuthorizedApplication(): AdministratorApplication
     {
-        /** @var AdministratorApplication $app */
-        $app = Factory::getApplication();
+        $app = $this->getApp();
         $user = $app->getIdentity();
 
         if (!$user->authorise('core.manage', 'com_contentbuilderng')) {
@@ -2710,7 +2716,7 @@ final class AboutController extends BaseController
 
     private function resolveLogDirectory(): string
     {
-        $app = Factory::getApplication();
+        $app = $this->getApp();
         $configuredPath = '';
 
         if (is_object($app) && method_exists($app, 'get')) {

@@ -8,7 +8,7 @@
  * @license     GNU General Public License version 2 or later; see LICENSE.txt
  */
 
-\defined('_JEXEC') or die('Restricted access');
+\defined('_JEXEC') or die;
 
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
@@ -165,12 +165,12 @@ TXT;
                 <?php endforeach; ?>
             </select>
             <br /><br />
-            <label for="article_record_impact_language"><span class="editlinktip hasTip"
+            <label for="article_record_impact_language_yes"><span class="editlinktip hasTip"
                     title="<?php echo Text::_('COM_CONTENTBUILDERNG_ARTICLE_RECORD_IMPACT_TIP'); ?>">
                     <?php echo Text::_('COM_CONTENTBUILDERNG_ARTICLE_RECORD_IMPACT'); ?>
                 </span></label>
             <input class="form-check-input" <?php echo !empty($item->article_record_impact_language) ? 'checked="checked" ' : '' ?>type="radio" name="jform[article_record_impact_language]"
-                id="article_record_impact_language" value="1" />
+                id="article_record_impact_language_yes" value="1" />
             <label for="article_record_impact_language_yes">
                 <?php echo Text::_('COM_CONTENTBUILDERNG_YES'); ?>
             </label>
@@ -211,12 +211,12 @@ TXT;
             <input class="form-control form-control-sm w-100" type="text" name="jform[default_publish_up_days]"
                 id="default_publish_up_days" value="<?php echo $item->default_publish_up_days; ?>" />
             <br /><br />
-            <label for="article_record_impact_publish"><span class="editlinktip hasTip"
+            <label for="article_record_impact_publish_yes"><span class="editlinktip hasTip"
                     title="<?php echo Text::_('COM_CONTENTBUILDERNG_ARTICLE_RECORD_PUBLISH_IMPACT_TIP'); ?>">
                     <?php echo Text::_('COM_CONTENTBUILDERNG_ARTICLE_RECORD_PUBLISH_IMPACT'); ?>
                 </span></label>
             <input class="form-check-input" <?php echo !empty($item->article_record_impact_publish) ? 'checked="checked" ' : '' ?>type="radio" name="jform[article_record_impact_publish]"
-                id="article_record_impact_publish" value="1" />
+                id="article_record_impact_publish_yes" value="1" />
             <label for="article_record_impact_publish_yes">
                 <?php echo Text::_('COM_CONTENTBUILDERNG_YES'); ?>
             </label>

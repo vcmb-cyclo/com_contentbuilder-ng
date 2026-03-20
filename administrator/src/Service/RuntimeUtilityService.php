@@ -12,6 +12,11 @@ use Joomla\CMS\Uri\Uri;
 
 class RuntimeUtilityService
 {
+    private function getApp()
+    {
+        return Factory::getApplication();
+    }
+
     public function sanitizeHiddenFilterValue(string $value): string
     {
         $value = trim(str_replace(["\r", "\n"], '', $value));
@@ -30,7 +35,7 @@ class RuntimeUtilityService
             return '';
         }
 
-        $identity = Factory::getApplication()->getIdentity();
+        $identity = $this->getApp()->getIdentity();
         $now = Factory::getDate();
         $identityId = is_object($identity) && method_exists($identity, 'get')
             ? (int) $identity->get('id', 0)

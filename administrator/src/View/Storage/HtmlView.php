@@ -12,6 +12,7 @@ namespace CB\Component\Contentbuilderng\Administrator\View\Storage;
 \defined('_JEXEC') or die;
 
 use Joomla\CMS\Factory;
+use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Toolbar\ToolbarHelper;
 use Joomla\CMS\Uri\Uri;
@@ -41,16 +42,16 @@ class HtmlView extends BaseHtmlView
         }
 
         $app = Factory::getApplication();
+        $input = $app->input;
+        $identity = $app->getIdentity();
         $app->input->set('hidemainmenu', true);
 
-        // JS
         $wa = $app->getDocument()->getWebAssetManager();
         $wa->getRegistry()->addExtensionRegistryFile('com_contentbuilderng');
+        $wa->useScript('com_contentbuilderng.admin-ui');
+        HTMLHelper::_('script', 'com_contentbuilderng/admin-ui.js', ['version' => 'auto', 'relative' => true], ['defer' => true]);
 
 		if (!$this->frontend) {
-            // 1️⃣ Récupération du WebAssetManager
-            $document = $this->getDocument();
-            $wa = $document->getWebAssetManager();
             $wa->addInlineStyle(
                 '.icon-logo_left{
                     background-image:url(' . Uri::root(true) . '/media/com_contentbuilderng/images/logo_left.png);
@@ -76,20 +77,20 @@ class HtmlView extends BaseHtmlView
         $this->tables     = $this->get('DbTables');
 
         // Chargement sécurisé des éléments
-        $storageId = (int) ($this->item->id ?? $app->input->getInt('id', 0));
+        $storageId = (int) ($this->item->id ?? $input->getInt('id', 0));
 
         $this->fields = [];
         $this->pagination = null;
         $this->state = null;
 
         try {
-            $storageId  = (int) ($this->item->id ?? $app->input->getInt('id', 0));
+            $storageId = (int) ($this->item->id ?? $input->getInt('id', 0));
             if ($storageId > 0) {
                 $factory = $app->bootComponent('com_contentbuilderng')->getMVCFactory();
                 $fieldsModel = $factory->createModel('Storagefields', 'Administrator');
 
                 if (!$fieldsModel) {
-                    throw new \RuntimeException('Modèle Storagefields introuvable (factory)');
+                    throw new \RuntimeException(Text::_('COM_CONTENTBUILDERNG_STORAGEFIELDS_MODEL_NOT_FOUND'));
                 }
 
                 // IMPORTANT : fournir le form id au ListModel
@@ -103,7 +104,7 @@ class HtmlView extends BaseHtmlView
             }
         } catch (\Throwable $e) {
             $app->enqueueMessage(
-                'Erreur lors du chargement des champs : ' . $e->getMessage(),
+                Text::sprintf('COM_CONTENTBUILDERNG_STORAGE_LOAD_FIELDS_ERROR', $e->getMessage()),
                 'warning'
             );
         }
@@ -310,10 +311,10 @@ class HtmlView extends BaseHtmlView
 
         if ($id > 0 && !$isExternalTable) {
             $previewUntil = time() + 600;
-            $previewActorId = (int) ($app->getIdentity()->id ?? 0);
-            $previewActorName = trim((string) ($app->getIdentity()->name ?? ''));
+            $previewActorId = (int) ($identity->id ?? 0);
+            $previewActorName = trim((string) ($identity->name ?? ''));
             if ($previewActorName === '') {
-                $previewActorName = trim((string) ($app->getIdentity()->username ?? ''));
+                $previewActorName = trim((string) ($identity->username ?? ''));
             }
             if ($previewActorName === '') {
                 $previewActorName = 'administrator';
@@ -435,7 +436,7 @@ class HtmlView extends BaseHtmlView
             $this->storageTableExists = in_array($resolvedName, $tableList, true);
 
             if ($this->storageTableExists === false) {
-                $this->storageTableErrorMessage = 'Table "' . $db->replacePrefix($lookupName) . '" does not exist.';
+                $this->storageTableErrorMessage = Text::sprintf('COM_CONTENTBUILDERNG_STORAGE_TABLE_DOES_NOT_EXIST', $db->replacePrefix($lookupName));
             }
         } catch (\Throwable $e) {
             $this->storageTableExists = null;

@@ -38,18 +38,7 @@ class FormModel extends AdminModel
 {
     protected int $formId = 0;
 
-    private $_default_list_states = array(
-        array('id' => -1, 'action' => '', 'title' => 'State 1', 'color' => '60E309', 'published' => 1),
-        array('id' => -2, 'action' => '', 'title' => 'State 2', 'color' => 'FCFC00', 'published' => 1),
-        array('id' => -3, 'action' => '', 'title' => 'State 3', 'color' => 'FC0000', 'published' => 1),
-        array('id' => -4, 'action' => '', 'title' => 'State 4', 'color' => 'FFFFFF', 'published' => 0),
-        array('id' => -5, 'action' => '', 'title' => 'State 5', 'color' => 'FFFFFF', 'published' => 0),
-        array('id' => -6, 'action' => '', 'title' => 'State 6', 'color' => 'FFFFFF', 'published' => 0),
-        array('id' => -7, 'action' => '', 'title' => 'State 7', 'color' => 'FFFFFF', 'published' => 0),
-        array('id' => -8, 'action' => '', 'title' => 'State 8', 'color' => 'FFFFFF', 'published' => 0),
-        array('id' => -9, 'action' => '', 'title' => 'State 9', 'color' => 'FFFFFF', 'published' => 0),
-        array('id' => -10, 'action' => '', 'title' => 'State 10', 'color' => 'FFFFFF', 'published' => 0)
-    );
+    private array $_default_list_states = [];
 
     public function __construct(
         $config,
@@ -58,6 +47,47 @@ class FormModel extends AdminModel
         // IMPORTANT : on transmet factory/app/input à ListModel
         parent::__construct($config, $factory);
         $this->option = 'com_contentbuilderng';
+        $this->_default_list_states = $this->buildDefaultListStates();
+    }
+
+    private function getApp(): CMSApplication
+    {
+        return Factory::getApplication();
+    }
+
+    private function getInput()
+    {
+        return $this->getApp()->input;
+    }
+
+    private function getCurrentFormId(): int
+    {
+        return (int) $this->getState($this->getName() . '.id');
+    }
+
+    private function getSelectedElementIdsFromRequest(): array
+    {
+        $items = $this->getInput()->post->get('cid', [], 'array');
+        ArrayHelper::toInteger($items);
+
+        return array_values(array_filter($items, static fn (int $item): bool => $item > 0));
+    }
+
+    private function buildDefaultListStates(): array
+    {
+        $states = [];
+
+        for ($index = 1; $index <= 10; $index++) {
+            $states[] = [
+                'id' => -1 * $index,
+                'action' => '',
+                'title' => Text::sprintf('COM_CONTENTBUILDERNG_LIST_STATE_DEFAULT_TITLE', $index),
+                'color' => $index === 1 ? '60E309' : ($index === 2 ? 'FCFC00' : ($index === 3 ? 'FC0000' : 'FFFFFF')),
+                'published' => $index <= 3 ? 1 : 0,
+            ];
+        }
+
+        return $states;
     }
 
     private function normalizeListStateColor($value): string
@@ -229,7 +259,7 @@ class FormModel extends AdminModel
             );
         }
 
-        Factory::getApplication()->enqueueMessage($msg, 'warning');
+        $this->getApp()->enqueueMessage($msg, 'warning');
     }
 
     public function saveElementListSettingsFromRequest(int $formId): bool
@@ -239,7 +269,7 @@ class FormModel extends AdminModel
         }
 
         try {
-            $input = Factory::getApplication()->input;
+            $input = $this->getInput();
             $jform = (array) $input->post->get('jform', [], 'array');
             $jformRaw = (array) $input->post->get('jform', [], 'raw');
 
@@ -279,7 +309,7 @@ class FormModel extends AdminModel
 
         // 2) ID depuis l'URL (standard Joomla en admin)
         /** @var CMSApplication $app */
-        $app   = Factory::getApplication();
+        $app   = $this->getApp();
         $input = $app->input;
         $formId = $input->getInt('id', 0);
 
@@ -297,7 +327,7 @@ class FormModel extends AdminModel
     protected function loadFormData()
     {
         /** @var CMSApplication $app */
-        $app = Factory::getApplication();
+        $app = $this->getApp();
         $data = $app->getUserState('com_contentbuilderng.edit.form.data', []);
 
         return !empty($data) ? $data : (array) $this->getItem();
@@ -306,16 +336,14 @@ class FormModel extends AdminModel
 
     function setListEditable()
     {
-        $formId = (int) $this->getState($this->getName() . '.id');
-        $formId = (int) $this->getState($this->getName() . '.id');
+        $formId = $this->getCurrentFormId();
         if ($formId <= 0) {
             return;
         }
 
 
         $db = $this->getDatabase();
-        $items = Factory::getApplication()->input->post->get('cid', [], 'array');
-        ArrayHelper::toInteger($items);
+        $items = $this->getSelectedElementIdsFromRequest();
         if (count($items)) {
             $db->setQuery(' Update #__contentbuilderng_elements ' .
                 '  Set editable = 1 Where form_id = ' . $formId . ' And id In ( ' . implode(',', $items) . ')');
@@ -325,15 +353,13 @@ class FormModel extends AdminModel
 
     function setListListInclude()
     {
-        $formId = (int) $this->getState($this->getName() . '.id');
-        $formId = (int) $this->getState($this->getName() . '.id');
+        $formId = $this->getCurrentFormId();
         if ($formId <= 0) {
             return;
         }
 
         $db = $this->getDatabase();
-        $items = Factory::getApplication()->input->post->get('cid', [], 'array');
-        ArrayHelper::toInteger($items);
+        $items = $this->getSelectedElementIdsFromRequest();
         if (count($items)) {
             $db->setQuery(' Update #__contentbuilderng_elements ' .
                 '  Set list_include = 1 Where form_id = ' . $formId . ' And id In ( ' . implode(',', $items) . ')');
@@ -349,8 +375,7 @@ class FormModel extends AdminModel
         }
 
         $db = $this->getDatabase();
-        $items = Factory::getApplication()->input->post->get('cid', [], 'array');
-        ArrayHelper::toInteger($items);
+        $items = $this->getSelectedElementIdsFromRequest();
         if (count($items)) {
             $db->setQuery(' Update #__contentbuilderng_elements ' .
                 '  Set search_include = 1 Where form_id = ' . $formId . ' And id In ( ' . implode(',', $items) . ')');
@@ -360,15 +385,13 @@ class FormModel extends AdminModel
 
     function setListNotLinkable()
     {
-        $formId = (int) $this->getState($this->getName() . '.id');
-        $formId = (int) $this->getState($this->getName() . '.id');
+        $formId = $this->getCurrentFormId();
         if ($formId <= 0) {
             return;
         }
 
         $db = $this->getDatabase();
-        $items = Factory::getApplication()->input->post->get('cid', [], 'array');
-        ArrayHelper::toInteger($items);
+        $items = $this->getSelectedElementIdsFromRequest();
         if (count($items)) {
             $db->setQuery(' Update #__contentbuilderng_elements ' .
                 '  Set linkable = 0 Where form_id = ' . $formId . ' And id In ( ' . implode(',', $items) . ')');
@@ -378,15 +401,13 @@ class FormModel extends AdminModel
 
     function setListNotEditable()
     {
-        $formId = (int) $this->getState($this->getName() . '.id');
-        $formId = (int) $this->getState($this->getName() . '.id');
+        $formId = $this->getCurrentFormId();
         if ($formId <= 0) {
             return;
         }
 
         $db = $this->getDatabase();
-        $items = Factory::getApplication()->input->post->get('cid', [], 'array');
-        ArrayHelper::toInteger($items);
+        $items = $this->getSelectedElementIdsFromRequest();
         if (count($items)) {
             $db->setQuery(' Update #__contentbuilderng_elements ' .
                 '  Set editable = 0 Where form_id = ' . $formId . ' And id In ( ' . implode(',', $items) . ')');
@@ -396,15 +417,13 @@ class FormModel extends AdminModel
 
     function setListNoListInclude()
     {
-        $formId = (int) $this->getState($this->getName() . '.id');
-        $formId = (int) $this->getState($this->getName() . '.id');
+        $formId = $this->getCurrentFormId();
         if ($formId <= 0) {
             return;
         }
 
         $db = $this->getDatabase();
-        $items = Factory::getApplication()->input->post->get('cid', [], 'array');
-        ArrayHelper::toInteger($items);
+        $items = $this->getSelectedElementIdsFromRequest();
         if (count($items)) {
             $db->setQuery(' Update #__contentbuilderng_elements ' .
                 '  Set list_include = 0 Where form_id = ' . $formId . ' And id In ( ' . implode(',', $items) . ')');
@@ -414,15 +433,13 @@ class FormModel extends AdminModel
 
     function setListNoSearchInclude()
     {
-        $formId = (int) $this->getState($this->getName() . '.id');
-        $formId = (int) $this->getState($this->getName() . '.id');
+        $formId = $this->getCurrentFormId();
         if ($formId <= 0) {
             return;
         }
 
         $db = $this->getDatabase();
-        $items = Factory::getApplication()->input->post->get('cid', [], 'array');
-        ArrayHelper::toInteger($items);
+        $items = $this->getSelectedElementIdsFromRequest();
         if (count($items)) {
             $db->setQuery(' Update #__contentbuilderng_elements ' .
                 '  Set search_include = 0 Where form_id = ' . $formId . ' And id In ( ' . implode(',', $items) . ')');
@@ -722,12 +739,12 @@ class FormModel extends AdminModel
             $data->form = FormSourceFactory::getForm((string) $data->type, (string) $data->reference_id);
             if (!$data->form || !$data->form->exists) {
                 if ((string) $data->type === 'com_breezingforms') {
-                    Factory::getApplication()->enqueueMessage(
+                    $this->getApp()->enqueueMessage(
                         Text::sprintf('COM_CONTENTBUILDERNG_BREEZINGFORMS_SOURCE_NOT_FOUND', (int) $data->reference_id),
                         'warning'
                     );
                 } else {
-                    Factory::getApplication()->enqueueMessage(Text::_('COM_CONTENTBUILDERNG_FORM_NOT_FOUND'), 'warning');
+                    $this->getApp()->enqueueMessage(Text::_('COM_CONTENTBUILDERNG_FORM_NOT_FOUND'), 'warning');
                 }
 
                 // Keep the form editable and let admin choose a new source.
@@ -803,7 +820,7 @@ class FormModel extends AdminModel
         } catch (\Exception $e) {
             Logger::exception($e);
             // Check for a database error.
-            Factory::getApplication()->enqueueMessage($e->getMessage(), 'error');
+            $this->getApp()->enqueueMessage($e->getMessage(), 'error');
         }
 
         // Pad the option text with spaces using depth level as a multiplier.
@@ -834,7 +851,7 @@ class FormModel extends AdminModel
         parent::prepareTable($table);
 
         $now  = Factory::getDate()->toSql();
-        $user = Factory::getApplication()->getIdentity();
+        $user = $this->getApp()->getIdentity();
 
         $table->name  = trim((string) $table->name);
         $table->title = trim((string) $table->title);
@@ -862,7 +879,7 @@ class FormModel extends AdminModel
 
     public function save($data): bool
     {
-        $app   = Factory::getApplication();
+        $app   = $this->getApp();
         $input = $app->input;
         $db    = $this->getDatabase();
         $formSupportService = new FormSupportService(new PathService());
@@ -1015,7 +1032,7 @@ class FormModel extends AdminModel
         // Create the configured folder when missing (no fallback path switching).
         if (!is_dir($resolved)) {
             if (!Folder::create($resolved)) {
-                $app->enqueueMessage('Could not create upload folder: ' . $resolved, 'error');
+                $app->enqueueMessage(Text::sprintf('COM_CONTENTBUILDERNG_UPLOAD_FOLDER_CREATE_FAILED', $resolved), 'error');
             } else {
                 File::write($resolved . '/index.html', '');
                 if ($protect) {
@@ -1122,7 +1139,13 @@ class FormModel extends AdminModel
                 'sample_length' => is_string($sample) ? strlen($sample) : null,
             ]);
             if ($sample === '' || $sample === null) {
-                $app->enqueueMessage('Details sample generation returned empty output (theme: ' . ($jform['theme_plugin'] ?? 'none') . ').', 'warning');
+                $app->enqueueMessage(
+                    Text::sprintf(
+                        'COM_CONTENTBUILDERNG_DETAILS_SAMPLE_EMPTY',
+                        (string) ($jform['theme_plugin'] ?? Text::_('COM_CONTENTBUILDERNG_NONE'))
+                    ),
+                    'warning'
+                );
             }
             $jform['details_template'] = (string) $sample;
         }
@@ -1149,7 +1172,7 @@ class FormModel extends AdminModel
             if (!$formObj) {
                 $app->enqueueMessage(Text::_('COM_CONTENTBUILDERNG_FORM_NOT_FOUND'), 'warning');
             }
-            $jform['email_template'] = $formSupportService->createEmailSample($id, $formObj, Factory::getApplication()->input->getBool('email_html', false));
+            $jform['email_template'] = $formSupportService->createEmailSample($id, $formObj, $this->getInput()->getBool('email_html', false));
         }
 
         $isBreezingFormsType = in_array(
@@ -1466,7 +1489,7 @@ class FormModel extends AdminModel
 
     private function copyByIds($cids): bool
     {
-        $cids = Factory::getApplication()->input->get('cid', [], 'array');
+        $cids = array_values((array) $cids);
         ArrayHelper::toInteger($cids);
 
         if (!count($cids))
@@ -1482,13 +1505,13 @@ class FormModel extends AdminModel
             $origId = $obj->id;
             unset($obj->id);
 
-            $obj->name = 'Copy of ' . $obj->name;
+            $obj->name = Text::sprintf('COM_CONTENTBUILDERNG_COPY_OF', $obj->name);
             $obj->published = 0;
 
             // $obj->created = Factory::getDate()->toSql();
             // $obj->created_by = Factory::getApplication()->getIdentity()->id;
             $obj->modified = Factory::getDate()->toSql();
-            $obj->modified_by = Factory::getApplication()->getIdentity()->id;
+            $obj->modified_by = $this->getApp()->getIdentity()->id;
             
             $db->insertObject('#__contentbuilderng_forms', $obj);
             $insertId = $db->insertid();

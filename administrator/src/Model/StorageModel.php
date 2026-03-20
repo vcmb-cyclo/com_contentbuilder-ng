@@ -46,6 +46,21 @@ class StorageModel extends AdminModel
     /** @var array<string,mixed> */
     private array $lastImportSummary = [];
 
+    private function getApp(): CMSApplication
+    {
+        return Factory::getApplication();
+    }
+
+    private function getInput()
+    {
+        return $this->getApp()->input;
+    }
+
+    private function getCurrentUser()
+    {
+        return $this->getApp()->getIdentity();
+    }
+
     private function normalizeFieldIdentifier(string $value): string
     {
         $value = trim($value);
@@ -172,15 +187,14 @@ class StorageModel extends AdminModel
     protected function loadFormData()
     {
         $data = $this->getItem();
-        /** @var CMSApplication $app */
-        $app  = Factory::getApplication();
+        $app  = $this->getApp();
         return $app->getUserState($this->option . '.edit.storage.data', $data);
     }
 
     protected function populateState()
     {
         parent::populateState();
-        $id = (int) Factory::getApplication()->input->getInt('id', 0);
+        $id = (int) $this->getInput()->getInt('id', 0);
         $this->setState($this->getName() . '.id', $id);
     }
 
@@ -198,7 +212,7 @@ class StorageModel extends AdminModel
         }
 
         // Lire le POST
-        $input = Factory::getApplication()->input;
+        $input = $this->getInput();
         $jform = $input->post->get('jform', [], 'array');
 
         $fieldname = trim((string) ($jform['fieldname'] ?? ''));
@@ -269,7 +283,7 @@ class StorageModel extends AdminModel
         parent::prepareTable($table);
 
         // "bytable" is a flag in DB, but the form sends the table name.
-        $jform = Factory::getApplication()->input->post->get('jform', [], 'array');
+        $jform = $this->getInput()->post->get('jform', [], 'array');
         $rawBytable = isset($jform['bytable']) ? trim((string) $jform['bytable']) : '';
 
         $bytable = (string) ($table->bytable ?? '');
@@ -312,7 +326,7 @@ class StorageModel extends AdminModel
 
         // Standard Joomla-style audit fields for storages.
         $now = Factory::getDate()->toSql();
-        $user = Factory::getApplication()->getIdentity();
+        $user = $this->getCurrentUser();
         $actor = trim((string) (($user->username ?? '') !== '' ? $user->username : ($user->name ?? '')));
         if ($actor === '') {
             $actor = 'system';
@@ -397,7 +411,7 @@ class StorageModel extends AdminModel
             return;
         }
 
-        $input = Factory::getApplication()->input;
+        $input = $this->getInput();
         $jform = $input->post->get('jform', [], 'array');
 
         $fieldname = trim((string)($jform['fieldname'] ?? ''));
@@ -707,7 +721,7 @@ class StorageModel extends AdminModel
      */
     private function syncEditedFields(int $storageId, int $bytable, \Joomla\CMS\Table\Table $storageTable): void
     {
-        $input = Factory::getApplication()->input;
+        $input = $this->getInput();
         $db = Factory::getContainer()->get(DatabaseInterface::class);
 
         $listnames  = $input->post->get('itemNames', [], 'array');
@@ -894,7 +908,7 @@ class StorageModel extends AdminModel
     {
         $this->lastImportSummary = [];
         $start = microtime(true);
-        $data = Factory::getApplication()->input->post->getArray();
+        $data = $this->getInput()->post->getArray();
         $fileName = (string) ($file['name'] ?? '');
 
         $resolvedStorageId = (int) ($storageId ?? 0);
@@ -950,7 +964,7 @@ class StorageModel extends AdminModel
         $tmpFiles = [$dest];
 
         if (in_array($extension, ['xlsx', 'xls'], true)) {
-            $delimiter = Factory::getApplication()->input->get('csv_delimiter', ',', 'string');
+            $delimiter = $this->getInput()->get('csv_delimiter', ',', 'string');
             $converted = $this->convertSpreadsheetFileToCsv($dest, $delimiter);
             if ($converted === null) {
                 foreach ($tmpFiles as $tmpFile) {
@@ -1229,7 +1243,7 @@ class StorageModel extends AdminModel
     {
 
         $encoding = $this->resolveCsvRepairEncoding(
-            Factory::getApplication()->input->get('csv_repair_encoding', '', 'string')
+            $this->getInput()->get('csv_repair_encoding', '', 'string')
         );
 
         $handle = null;
@@ -1259,7 +1273,7 @@ class StorageModel extends AdminModel
             $droppedMetaRecords = 0;
             $droppedArticleLinks = 0;
 
-            $columns = fgetcsv($handle, $max_line_length, Factory::getApplication()->input->get('csv_delimiter', ',', 'string'), '"');
+            $columns = fgetcsv($handle, $max_line_length, $this->getInput()->get('csv_delimiter', ',', 'string'), '"');
             if ($columns === false || !is_array($columns) || empty($columns)) {
                 fclose($handle);
                 return Text::_('COM_CONTENTBUILDERNG_CSV_IMPORT_COLUMN_COUNT_ERROR');
@@ -1284,7 +1298,7 @@ class StorageModel extends AdminModel
                 $data['id'] = $this->storageId;
             }
 
-            if (Factory::getApplication()->input->getBool('csv_drop_records', false)) {
+            if ($this->getInput()->getBool('csv_drop_records', false)) {
                 $this->getDatabase()->setQuery("Select Count(*) From #__" . $this->target_table);
                 $droppedDataRecords = (int) $this->getDatabase()->loadResult();
                 $this->getDatabase()->setQuery("Select Count(*) From #__contentbuilderng_records Where `type` = 'com_contentbuilderng' And reference_id = " . $this->getDatabase()->quote($this->storageId));
@@ -1302,7 +1316,7 @@ class StorageModel extends AdminModel
 
             $insert_query_prefix = "INSERT INTO #__" . $this->target_table . " (" . join(",", $fieldnames) . ")\nVALUES";
 
-            while (($data = fgetcsv($handle, $max_line_length, Factory::getApplication()->input->get('csv_delimiter', ',', 'string'), '"')) !== FALSE) {
+            while (($data = fgetcsv($handle, $max_line_length, $this->getInput()->get('csv_delimiter', ',', 'string'), '"')) !== FALSE) {
                 $rowReadCount++;
                 while (count($data) < count($columns))
                     array_push($data, NULL);
@@ -1322,7 +1336,7 @@ class StorageModel extends AdminModel
                 $query = "$insert_query_prefix (" . join(", ", $this->quote_all_array($data)) . ")";
                 $this->getDatabase()->setQuery($query);
                 $this->getDatabase()->execute();
-                $this->getDatabase()->setQuery("Insert Into #__contentbuilderng_records (`type`,last_update,is_future,lang_code, sef, published, record_id, reference_id) Values ('com_contentbuilderng'," . $this->getDatabase()->quote($last_update) . ",0,'*',''," . Factory::getApplication()->input->getInt('csv_published', 0) . ", " . $this->getDatabase()->quote(intval($this->getDatabase()->insertid())) . ", " . $this->getDatabase()->quote($this->storageId) . ")");
+                $this->getDatabase()->setQuery("Insert Into #__contentbuilderng_records (`type`,last_update,is_future,lang_code, sef, published, record_id, reference_id) Values ('com_contentbuilderng'," . $this->getDatabase()->quote($last_update) . ",0,'*',''," . $this->getInput()->getInt('csv_published', 0) . ", " . $this->getDatabase()->quote(intval($this->getDatabase()->insertid())) . ", " . $this->getDatabase()->quote($this->storageId) . ")");
                 $this->getDatabase()->execute();
                 $rowImportedCount++;
             }
@@ -1335,8 +1349,8 @@ class StorageModel extends AdminModel
                 'rows_read' => $rowReadCount,
                 'rows_imported' => $rowImportedCount,
                 'rows_skipped_empty' => $rowSkippedEmptyCount,
-                'published' => Factory::getApplication()->input->getInt('csv_published', 0),
-                'drop_records' => Factory::getApplication()->input->getBool('csv_drop_records', false),
+                'published' => $this->getInput()->getInt('csv_published', 0),
+                'drop_records' => $this->getInput()->getBool('csv_drop_records', false),
                 'dropped_data_records' => $droppedDataRecords,
                 'dropped_meta_records' => $droppedMetaRecords,
                 'dropped_article_links' => $droppedArticleLinks,
