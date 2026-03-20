@@ -25,7 +25,11 @@ $exportTablesCount = (int) ($exportSummary['tables'] ?? 0);
 $exportRowsCount = (int) ($exportSummary['rows'] ?? 0);
 $importReport = is_array($this->importReport ?? null) ? $this->importReport : [];
 $importSummary = is_array($importReport['summary'] ?? null) ? $importReport['summary'] : [];
-$importDetails = array_values(array_filter(array_map('strval', (array) ($importSummary['details'] ?? [])), static fn(string $v): bool => trim($v) !== ''));
+$importDetails = array_values(array_filter(
+    array_map('strval', (array) ($importSummary['details'] ?? [])),
+    static fn(string $v): bool => trim($v) !== '' && !str_starts_with(trim($v), '[UPDATED] ')
+));
+$importHighlights = array_values(array_filter(array_map('strval', (array) ($importSummary['highlights'] ?? [])), static fn(string $v): bool => trim($v) !== ''));
 $importGeneratedAt = (string) ($importReport['generated_at'] ?? Text::_('COM_CONTENTBUILDERNG_NOT_AVAILABLE'));
 $importTablesCount = (int) ($importSummary['tables'] ?? 0);
 $importRowsCount = (int) ($importSummary['rows'] ?? 0);
@@ -349,6 +353,16 @@ $exportStorageContent = (int) (($this->exportStorageContent ?? false) ? 1 : 0) =
                                 <p class="text-muted small mb-2">
                                     <?php echo Text::sprintf('COM_CONTENTBUILDERNG_ABOUT_IMPORT_LOG_LAST_RUN', $importGeneratedAt, $importTablesCount, $importRowsCount); ?>
                                 </p>
+                                <?php if ($importHighlights !== []) : ?>
+                                    <div class="alert alert-warning">
+                                        <div class="fw-semibold mb-2"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_IMPORT_HIGHLIGHTS_TITLE'); ?></div>
+                                        <ul class="mb-0 ps-3">
+                                            <?php foreach ($importHighlights as $importHighlight) : ?>
+                                                <li><?php echo htmlspecialchars($importHighlight, ENT_QUOTES, 'UTF-8'); ?></li>
+                                            <?php endforeach; ?>
+                                        </ul>
+                                    </div>
+                                <?php endif; ?>
                                 <?php if ($importDetails === []) : ?>
                                     <div class="alert alert-secondary mb-0"><?php echo Text::_('COM_CONTENTBUILDERNG_NOT_AVAILABLE'); ?></div>
                                 <?php else : ?>

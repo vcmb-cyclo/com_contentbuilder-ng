@@ -70,26 +70,35 @@ $filterState = in_array($filterStateRaw, ['P', '1', 'PUBLISHED'], true)
     : (in_array($filterStateRaw, ['U', '0', 'UNPUBLISHED'], true) ? 'U' : '');
 $filterTag = (string) ($this->lists['filter_tag'] ?? '');
 $previewLinks = is_array($this->previewLinks ?? null) ? $this->previewLinks : [];
-
-$sortLink = function (string $label, string $field) use ($order, $orderDir, $limitValue, $filterSearch, $filterState, $filterTag): string {
-    $isActive = ($order === $field);
-    $nextDir = ($isActive && $orderDir === 'asc') ? 'desc' : 'asc';
-    $indicator = $isActive
-        ? ($orderDir === 'asc'
-            ? ' <span class="ms-1 fa-solid fa-sort fa-solid fa-sort-up" aria-hidden="true"></span>'
-            : ' <span class="ms-1 fa-solid fa-sort fa-solid fa-sort-down" aria-hidden="true"></span>')
-        : '';
-    $url = Route::_(
-        'index.php?option=com_contentbuilderng&view=forms&list[start]=0&list[ordering]='
-        . $field . '&list[direction]=' . $nextDir . '&list[limit]=' . $limitValue
-        . '&filter_search=' . rawurlencode($filterSearch)
-        . '&filter_state=' . rawurlencode($filterState)
-        . '&filter_tag=' . rawurlencode($filterTag)
-    );
-
-    return '<a href="' . $url . '">' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . $indicator . '</a>';
-};
+$___tableOrdering = "Joomla.tableOrdering = function";
 ?>
+<script type="text/javascript">
+<?php echo $___tableOrdering; ?>(order, dir, task) {
+var form = document.adminForm;
+if (!form) {
+    return;
+}
+
+task = task || '';
+
+var setValue = function(name, value) {
+    var element = form.elements[name];
+    if (element) {
+        element.value = value;
+    }
+};
+
+setValue('filter_order', order);
+setValue('filter_order_Dir', dir);
+setValue('list[ordering]', order);
+setValue('list[direction]', dir);
+setValue('limitstart', 0);
+setValue('list[start]', 0);
+setValue('task', task);
+
+form.submit();
+};
+</script>
 <style>
     .cb-forms-preview-link::before,
     .cb-forms-preview-link::after {
@@ -171,7 +180,7 @@ $sortLink = function (string $label, string $field) use ($order, $orderDir, $lim
             <thead>
                 <tr>
                     <th width="5">
-                        <?php echo $sortLink(Text::_('COM_CONTENTBUILDERNG_ID'), 'a.id'); ?>
+                        <?php echo HTMLHelper::_('grid.sort', Text::_('COM_CONTENTBUILDERNG_ID'), 'a.id', $orderDir, $order); ?>
                     </th>
                     <th width="20">
                         <?php echo HTMLHelper::_('grid.checkall'); ?>
@@ -180,30 +189,30 @@ $sortLink = function (string $label, string $field) use ($order, $orderDir, $lim
                         <?php echo Text::_('COM_CONTENTBUILDERNG_PREVIEW'); ?>
                     </th>
                     <th>
-                        <?php echo $sortLink(Text::_('COM_CONTENTBUILDERNG_VIEW_NAME'), 'a.name'); ?>
+                        <?php echo HTMLHelper::_('grid.sort', Text::_('COM_CONTENTBUILDERNG_VIEW_NAME'), 'a.name', $orderDir, $order); ?>
                     </th>
                     <th>
-                        <?php echo $sortLink(Text::_('COM_CONTENTBUILDERNG_TAG'), 'a.tag'); ?>
+                        <?php echo HTMLHelper::_('grid.sort', Text::_('COM_CONTENTBUILDERNG_TAG'), 'a.tag', $orderDir, $order); ?>
                     </th>
                     <th>
-                        <?php echo $sortLink(Text::_('COM_CONTENTBUILDERNG_FORM_SOURCE'), 'a.title'); ?>
+                        <?php echo HTMLHelper::_('grid.sort', Text::_('COM_CONTENTBUILDERNG_FORM_SOURCE'), 'a.title', $orderDir, $order); ?>
                     </th>
                     <th width="90" class="text-center">
-                        <?php echo $sortLink(Text::_('COM_CONTENTBUILDERNG_TYPE'), 'a.type'); ?>
+                        <?php echo HTMLHelper::_('grid.sort', Text::_('COM_CONTENTBUILDERNG_TYPE'), 'a.type', $orderDir, $order); ?>
                     </th>
                     <th>
-                        <?php echo $sortLink(Text::_('COM_CONTENTBUILDERNG_DISPLAY'), 'a.display_in'); ?>
+                        <?php echo HTMLHelper::_('grid.sort', Text::_('COM_CONTENTBUILDERNG_DISPLAY'), 'a.display_in', $orderDir, $order); ?>
                     </th>
 
 
                     <th class="w-10 text-nowrap">
-                        <?php echo $sortLink(Text::_('COM_CONTENTBUILDERNG_ORDERBY'), 'a.ordering'); ?>
+                        <?php echo HTMLHelper::_('grid.sort', Text::_('COM_CONTENTBUILDERNG_ORDERBY'), 'a.ordering', $orderDir, $order); ?>
                     </th>
                     <th class="text-nowrap">
-                        <?php echo $sortLink(Text::_('JGLOBAL_MODIFIED'), 'a.modified'); ?>
+                        <?php echo HTMLHelper::_('grid.sort', Text::_('JGLOBAL_MODIFIED'), 'a.modified', $orderDir, $order); ?>
                     </th>
                     <th class="w-1 text-center">
-                        <?php echo $sortLink(Text::_('COM_CONTENTBUILDERNG_PUBLISHED'), 'a.published'); ?>
+                        <?php echo HTMLHelper::_('grid.sort', Text::_('COM_CONTENTBUILDERNG_PUBLISHED'), 'a.published', $orderDir, $order); ?>
                     </th>
                 </tr>
             </thead>
@@ -339,6 +348,8 @@ $sortLink = function (string $label, string $field) use ($order, $orderDir, $lim
     <input type="hidden" name="limitstart" value="<?php echo (int) $listStart; ?>" />
     <input type="hidden" name="list[start]" value="<?php echo (int) $listStart; ?>" />
     <input type="hidden" name="boxchecked" value="0" />
+    <input type="hidden" name="filter_order" value="<?php echo htmlspecialchars($order, ENT_QUOTES, 'UTF-8'); ?>">
+    <input type="hidden" name="filter_order_Dir" value="<?php echo htmlspecialchars($orderDir, ENT_QUOTES, 'UTF-8'); ?>">
     <input type="hidden" name="list[ordering]" value="<?php echo htmlspecialchars($order, ENT_QUOTES, 'UTF-8'); ?>">
     <input type="hidden" name="list[direction]" value="<?php echo htmlspecialchars($orderDir, ENT_QUOTES, 'UTF-8'); ?>">
     <?php echo HTMLHelper::_('form.token'); ?>

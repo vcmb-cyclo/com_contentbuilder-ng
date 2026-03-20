@@ -79,6 +79,10 @@ class com_contentbuilderngInstallerScript
     private bool $criticalFailureDetected = false;
     private array $criticalFailureMessages = [];
     private float $installStartedAt = 0.0;
+    private array $updateHighlights = [];
+    private array $libraryUpdateHighlights = [];
+    private array $preUpdatePhpLibraries = [];
+    private ?string $incomingPackageSourceRoot = null;
 
     // ---------------------------------------------------------------------
     // Lifecycle
@@ -132,6 +136,10 @@ class com_contentbuilderngInstallerScript
 
             if ($type !== 'uninstall') {
                 $context = 'preflight:' . $type;
+
+                if ($type === 'update') {
+                    $this->captureUpdatePackageSnapshot();
+                }
 
                 // Disable legacy plugins first, especially system/contentbuilder_system
                 $this->disableLegacyPluginsInPriorityOrder($context);
@@ -276,6 +284,7 @@ class com_contentbuilderngInstallerScript
 
             // Install / update plugins shipped in package
             $source = $this->resolveInstallSourcePath($parent);
+            $this->incomingPackageSourceRoot = $source;
             if ($source && is_dir($source)) {
                 $this->log('[INFO] Plugin install source resolved: ' . $source, Log::INFO);
             } else {
@@ -331,6 +340,8 @@ class com_contentbuilderngInstallerScript
             if ($type === 'update') {
                 $this->normalizeStoragesOrdering();
             }
+
+            $this->reportUpdatedPackageAssets($type);
 
             // Final cache purge (autoload + caches + opcache)
             $this->purgeCaches($context . ':final');
@@ -620,6 +631,147 @@ class com_contentbuilderngInstallerScript
             return $fn();
         } catch (\Throwable) {
             return $fallback;
+        }
+    }
+
+    private function captureUpdatePackageSnapshot(): void
+    {
+        $installedComponentRoot = JPATH_ADMINISTRATOR . '/components/com_contentbuilderng';
+        $this->preUpdatePhpLibraries = $this->readComposerLockLibraries($installedComponentRoot . '/composer.lock');
+    }
+
+    private function readComposerLockLibraries(string $lockPath): array
+    {
+        if (!is_file($lockPath)) {
+            return [];
+        }
+
+        try {
+            $raw = file_get_contents($lockPath);
+            if (!is_string($raw) || trim($raw) === '') {
+                return [];
+            }
+
+            $decoded = json_decode($raw, true);
+            if (!is_array($decoded)) {
+                return [];
+            }
+
+            $libraries = [];
+
+            foreach (['packages', 'packages-dev'] as $section) {
+                foreach ((array) ($decoded[$section] ?? []) as $package) {
+                    if (!is_array($package)) {
+                        continue;
+                    }
+
+                    $name = trim((string) ($package['name'] ?? ''));
+                    $version = trim((string) ($package['version'] ?? ''));
+
+                    if ($name === '' || $version === '') {
+                        continue;
+                    }
+
+                    $libraries[$name] = $version;
+                }
+            }
+
+            ksort($libraries);
+
+            return $libraries;
+        } catch (\Throwable) {
+            return [];
+        }
+    }
+
+    private function addUpdateHighlight(string $message): void
+    {
+        $message = trim($message);
+
+        if ($message === '' || in_array($message, $this->updateHighlights, true)) {
+            return;
+        }
+
+        $this->updateHighlights[] = $message;
+    }
+
+    private function addLibraryUpdateHighlight(string $message): void
+    {
+        $message = trim($message);
+
+        if ($message === '' || in_array($message, $this->libraryUpdateHighlights, true)) {
+            return;
+        }
+
+        $this->libraryUpdateHighlights[] = $message;
+    }
+
+    private function reportUpdatedPackageAssets(string $type): void
+    {
+        if ($type !== 'update') {
+            return;
+        }
+
+        $packageRoot = $this->incomingPackageSourceRoot ?: __DIR__;
+        $currentPhpLibraries = $this->readComposerLockLibraries(rtrim($packageRoot, '/\\') . '/administrator/composer.lock');
+        if ($currentPhpLibraries === []) {
+            $currentPhpLibraries = $this->readComposerLockLibraries(rtrim($packageRoot, '/\\') . '/composer.lock');
+        }
+
+        if ($currentPhpLibraries !== []) {
+            foreach ($currentPhpLibraries as $name => $version) {
+                $previousVersion = $this->preUpdatePhpLibraries[$name] ?? null;
+
+                if ($previousVersion === null) {
+                    $this->addLibraryUpdateHighlight("Bundled PHP library added: {$name} ({$version})");
+                    continue;
+                }
+
+                if ((string) $previousVersion !== (string) $version) {
+                    $this->addLibraryUpdateHighlight("Bundled PHP library updated: {$name} ({$previousVersion} -> {$version})");
+                }
+            }
+
+            foreach ($this->preUpdatePhpLibraries as $name => $version) {
+                if (!isset($currentPhpLibraries[$name])) {
+                    $this->addLibraryUpdateHighlight("Bundled PHP library removed: {$name} ({$version})");
+                }
+            }
+        } else {
+            $this->log('[INFO] Bundled library diff skipped: incoming composer.lock not found in update package.', Log::INFO);
+        }
+
+        if ($this->updateHighlights === [] && $this->libraryUpdateHighlights === []) {
+            $this->log('[INFO] No shipped plugin, script or bundled library change was detected during this update.', Log::INFO);
+            return;
+        }
+
+        if ($this->updateHighlights !== []) {
+            $this->log('[WARNING] Visible update summary: shipped plugins/scripts modified during this update.', Log::WARNING);
+            foreach ($this->updateHighlights as $highlight) {
+                $this->log('[UPDATED] ' . $highlight, Log::WARNING);
+            }
+        }
+
+        if ($this->libraryUpdateHighlights !== []) {
+            $this->log('[INFO] Bundled library changes detected during this update.', Log::INFO);
+            foreach ($this->libraryUpdateHighlights as $highlight) {
+                $this->log('[INFO] ' . $highlight, Log::INFO);
+            }
+        }
+
+        if ($this->updateHighlights !== []) {
+            try {
+                Factory::getApplication()->enqueueMessage(
+                    '<strong>Updated shipped plugins/scripts:</strong><br>' . implode('<br>', array_map(
+                        static fn(string $highlight): string => '- ' . htmlspecialchars($highlight, ENT_QUOTES, 'UTF-8'),
+                        $this->updateHighlights
+                    )),
+                    'warning'
+                );
+            } catch (\Throwable) {
+                // Best-effort only; installer log already contains the details.
+            }
         }
     }
 
@@ -1817,9 +1969,17 @@ class com_contentbuilderngInstallerScript
                 if ($forceUpdate) {
                     $i++;
                     $rank = $total > 0 ? " ({$i}/{$total})" : '';
+                    $manifestVersion = $this->getPluginManifestVersion($path);
+                    $versionChanged = !$installedVersion || !$manifestVersion || ((string) $installedVersion !== (string) $manifestVersion);
                     $ok = $this->safe(fn() => $this->installPluginFromPath($path), false);
                     if ($ok) {
                         $this->log("[OK] Plugin refreshed{$rank}: {$folder}/{$element}");
+                        if ($versionChanged) {
+                            $detail = $installedVersion && $manifestVersion
+                                ? " ({$installedVersion} -> {$manifestVersion})"
+                                : ($manifestVersion ? " ({$manifestVersion})" : '');
+                            $this->addUpdateHighlight("Plugin refreshed: {$folder}/{$element}{$detail}");
+                        }
                     } else {
                         $this->log("[ERROR] Plugin refresh failed{$rank}: {$folder}/{$element}", Log::ERROR);
                     }
@@ -1839,6 +1999,7 @@ class com_contentbuilderngInstallerScript
                     $ok = $this->safe(fn() => $this->installPluginFromPath($path), false);
                     if ($ok) {
                         $this->log("[OK] Plugin updated: {$folder}/{$element} (version {$installedVersion} -> {$manifestVersion})");
+                        $this->addUpdateHighlight("Plugin updated: {$folder}/{$element} ({$installedVersion} -> {$manifestVersion})");
                     } else {
                         $this->log("[ERROR] Plugin update failed: {$folder}/{$element}", Log::ERROR);
                     }
@@ -1847,6 +2008,8 @@ class com_contentbuilderngInstallerScript
                     $ok = $this->safe(fn() => $this->installPluginFromPath($path), false);
                     if ($ok) {
                         $this->log("[OK] Plugin installed: {$folder}/{$element}");
+                        $manifestVersion = $this->getPluginManifestVersion($path);
+                        $this->addUpdateHighlight("Plugin installed: {$folder}/{$element}" . ($manifestVersion ? " ({$manifestVersion})" : ''));
                     } else {
                         $this->log("[ERROR] Plugin install failed: {$folder}/{$element}", Log::ERROR);
                     }

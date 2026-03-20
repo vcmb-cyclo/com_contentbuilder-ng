@@ -1128,6 +1128,10 @@ final class AboutController extends BaseController
             'tables' => $tablesImported,
             'rows' => $tableRowsImported,
             'details' => $details,
+            'highlights' => array_values(array_filter(
+                array_map('strval', $details),
+                static fn(string $detail): bool => str_starts_with($detail, '[UPDATED] ')
+            )),
         ];
     }
 
@@ -1145,12 +1149,25 @@ final class AboutController extends BaseController
             'tables' => (int) ($summary['tables'] ?? 0),
             'rows' => (int) ($summary['rows'] ?? 0),
             'details_count' => count($details),
+            'highlights_count' => count((array) ($summary['highlights'] ?? [])),
         ]);
 
         foreach ($details as $detail) {
             Logger::info('Configuration import detail', [
                 'mode' => $importMode,
                 'detail' => $detail,
+            ]);
+        }
+
+        foreach ((array) ($summary['highlights'] ?? []) as $highlight) {
+            $highlight = trim((string) $highlight);
+            if ($highlight === '') {
+                continue;
+            }
+
+            Logger::warning('Configuration import updated template/script', [
+                'mode' => $importMode,
+                'detail' => $highlight,
             ]);
         }
     }
@@ -1333,7 +1350,7 @@ final class AboutController extends BaseController
         }
 
         $formRows = is_array($formsPayload['rows'] ?? null) ? $formsPayload['rows'] : [];
-        [$formIdMap, $formsImported] = $this->importRowsByNaturalKey(
+        [$formIdMap, $formsImported, $formHighlights] = $this->importRowsByNaturalKey(
             $db,
             '#__contentbuilderng_forms',
             $formRows,
@@ -1349,6 +1366,9 @@ final class AboutController extends BaseController
             '#__contentbuilderng_forms',
             $formsImported
         );
+        foreach ($formHighlights as $formHighlight) {
+            $details[] = (string) $formHighlight;
+        }
 
         if ($formIdMap === []) {
             return ['tables' => $tables, 'rows' => $rows, 'details' => $details];
@@ -1590,11 +1610,12 @@ final class AboutController extends BaseController
     ): array {
         $columns = array_keys((array) $db->getTableColumns($tableAlias, false));
         if ($columns === []) {
-            return [[], 0];
+            return [[], 0, []];
         }
 
         $trackedIds = [];
         $imported = 0;
+        $highlights = [];
         $hasIdColumn = in_array('id', $columns, true);
 
         foreach ($rows as $rowIndex => $row) {
@@ -1649,6 +1670,7 @@ final class AboutController extends BaseController
                     }
 
                     if ($this->rowHasDifferences($existingRow, $updateData)) {
+                        $rowHighlights = $this->collectImportTemplateScriptHighlights($tableAlias, $existingRow, $updateData, $keyValues);
                         $updateData = $this->applyImportAuditColumns($tableAlias, $updateData, false);
                         if ($hasIdColumn) {
                             $this->updateRowById($db, $tableAlias, $existingId, $updateData);
@@ -1656,6 +1678,9 @@ final class AboutController extends BaseController
                             $this->updateRowByColumns($db, $tableAlias, $keyValues, $updateData);
                         }
                         $imported++;
+                        foreach ($rowHighlights as $rowHighlight) {
+                            $highlights[] = $rowHighlight;
+                        }
                     }
 
                     continue;
@@ -1681,7 +1706,78 @@ final class AboutController extends BaseController
             }
         }
 
-        return [$trackedIds, $imported];
+        return [$trackedIds, $imported, array_values(array_unique($highlights))];
+    }
+
+    private function collectImportTemplateScriptHighlights(string $tableAlias, array $existingRow, array $incomingRow, array $keyValues): array
+    {
+        $trackedColumns = $this->getImportTrackedTemplateScriptColumns($tableAlias);
+
+        if ($trackedColumns === []) {
+            return [];
+        }
+
+        $entityLabel = $this->buildImportTrackedEntityLabel($tableAlias, $keyValues, $incomingRow, $existingRow);
+        if ($entityLabel === '') {
+            $entityLabel = $tableAlias;
+        }
+
+        $highlights = [];
+
+        foreach ($trackedColumns as $columnName => $labelKey) {
+            if (!array_key_exists($columnName, $incomingRow)) {
+                continue;
+            }
+
+            $existingValue = $existingRow[$columnName] ?? null;
+            $incomingValue = $incomingRow[$columnName] ?? null;
+            $normalizedExisting = $existingValue === null ? '' : trim((string) $existingValue);
+            $normalizedIncoming = $incomingValue === null ? '' : trim((string) $incomingValue);
+
+            if ($normalizedExisting === $normalizedIncoming) {
+                continue;
+            }
+
+            $highlights[] = '[UPDATED] ' . Text::sprintf(
+                'COM_CONTENTBUILDERNG_ABOUT_IMPORT_CONFIGURATION_DETAIL_TEMPLATE_SCRIPT_UPDATED',
+                $entityLabel,
+                Text::_($labelKey)
+            );
+        }
+
+        return $highlights;
+    }
+
+    private function getImportTrackedTemplateScriptColumns(string $tableAlias): array
+    {
+        if ($tableAlias !== '#__contentbuilderng_forms') {
+            return [];
+        }
+
+        return [
+            'intro_text' => 'COM_CONTENTBUILDERNG_IMPORT_TRACKED_FIELD_INTRO_TEXT',
+            'details_template' => 'COM_CONTENTBUILDERNG_IMPORT_TRACKED_FIELD_DETAILS_TEMPLATE',
+            'details_prepare' => 'COM_CONTENTBUILDERNG_IMPORT_TRACKED_FIELD_DETAILS_PREPARE',
+            'editable_template' => 'COM_CONTENTBUILDERNG_IMPORT_TRACKED_FIELD_EDITABLE_TEMPLATE',
+            'editable_prepare' => 'COM_CONTENTBUILDERNG_IMPORT_TRACKED_FIELD_EDITABLE_PREPARE',
+            'email_admin_template' => 'COM_CONTENTBUILDERNG_IMPORT_TRACKED_FIELD_EMAIL_ADMIN_TEMPLATE',
+            'email_template' => 'COM_CONTENTBUILDERNG_IMPORT_TRACKED_FIELD_EMAIL_TEMPLATE',
+        ];
+    }
+
+    private function buildImportTrackedEntityLabel(string $tableAlias, array $keyValues, array $incomingRow, array $existingRow): string
+    {
+        if ($tableAlias === '#__contentbuilderng_forms') {
+            $name = trim((string) ($keyValues['name'] ?? $incomingRow['name'] ?? $existingRow['name'] ?? ''));
+            return $name !== '' ? $name : '#form';
+        }
+
+        if ($tableAlias === '#__contentbuilderng_storages') {
+            $name = trim((string) ($keyValues['name'] ?? $incomingRow['name'] ?? $existingRow['name'] ?? ''));
+            return $name !== '' ? $name : '#storage';
+        }
+
+        return trim((string) ($keyValues['name'] ?? ''));
     }
 
     private function remapRowsForeignKey(array $rows, string $columnName, array $idMap): array
