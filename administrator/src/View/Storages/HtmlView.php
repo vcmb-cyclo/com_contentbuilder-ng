@@ -69,6 +69,8 @@ class HtmlView extends BaseHtmlView
         // Ajout du CSS personnalisé (méthode propre)
         $this->addToolbarIcon();
 
+        $this->document->getWebAssetManager()->useScript('table.columns');
+
         // Barre d'outils
         $this->addToolbar();
 

@@ -167,7 +167,7 @@ $sortLink = function (string $label, string $field) use ($order, $orderDir, $lim
             </div>
         </div>
 
-        <table class="table table-striped">
+        <table class="table table-striped" id="cb-forms-list" data-name="contentbuilderng-forms">
             <thead>
                 <tr>
                     <th width="5">

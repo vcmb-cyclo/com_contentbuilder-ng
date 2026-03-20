@@ -29,6 +29,7 @@ class HtmlView extends BaseHtmlView
         }
 
         $wa = $this->document->getWebAssetManager();
+        $wa->useScript('table.columns');
         $wa->addInlineStyle(
             '.icon-logo_left{
                 background-image:url(' . Uri::root(true) . '/media/com_contentbuilderng/images/logo_left.png);

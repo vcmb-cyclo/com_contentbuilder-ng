@@ -138,7 +138,7 @@ setValue('task', task);
     </div>
 
     <div class="table-responsive">
-        <table class="table table-striped">
+        <table class="table table-striped" id="cb-storages-list" data-name="contentbuilderng-storages">
             <thead>
                 <tr>
                     <th class="w-1 text-nowrap">
