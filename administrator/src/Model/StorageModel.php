@@ -56,7 +56,7 @@ class StorageModel extends AdminModel
         return $this->getApp()->input;
     }
 
-    private function getCurrentUser()
+    private function getCurrentIdentity()
     {
         return $this->getApp()->getIdentity();
     }
@@ -326,7 +326,7 @@ class StorageModel extends AdminModel
 
         // Standard Joomla-style audit fields for storages.
         $now = Factory::getDate()->toSql();
-        $user = $this->getCurrentUser();
+        $user = $this->getCurrentIdentity();
         $actor = trim((string) (($user->username ?? '') !== '' ? $user->username : ($user->name ?? '')));
         if ($actor === '') {
             $actor = 'system';
