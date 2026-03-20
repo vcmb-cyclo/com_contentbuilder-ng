@@ -120,6 +120,20 @@ document.querySelectorAll('#adminForm .js-stools-column-order').forEach(function
         form.submit();
     });
 });
+
+form.querySelectorAll('input[name^="jform[order]["]').forEach(function(input) {
+    var sanitize = function() {
+        input.value = String(input.value || '').replace(/[^0-9]/g, '');
+    };
+
+    input.setAttribute('inputmode', 'numeric');
+    input.setAttribute('pattern', '[0-9]*');
+
+    input.addEventListener('input', sanitize);
+    input.addEventListener('paste', function() {
+        window.setTimeout(sanitize, 0);
+    });
+});
 });
 </script>
 <?php
@@ -2289,6 +2303,8 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
 
     function cbGetSaveButtons() {
         var tasks = ['form.apply', 'form.save', 'form.save2new'];
+        var hostIds = ['save-group-children-apply', 'save-group-children-save', 'save-group-children-save2new'];
+        var classNames = ['button-apply', 'button-save', 'button-save-new'];
         var targets = [];
 
         var collectTarget = function(el) {
@@ -2307,6 +2323,24 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
             targets.push(el);
         };
 
+        var collectToolbarHostButtons = function(host) {
+            if (!host) {
+                return;
+            }
+
+            collectTarget(host);
+
+            if (host.shadowRoot) {
+                host.shadowRoot.querySelectorAll('button, a, [role="button"]').forEach(function(el) {
+                    collectTarget(el);
+                });
+            }
+
+            host.querySelectorAll('button, a, [role="button"]').forEach(function(el) {
+                collectTarget(el);
+            });
+        };
+
         tasks.forEach(function(task) {
             document.querySelectorAll('[data-task="' + task + '"]').forEach(function(el) {
                 collectTarget(el);
@@ -2322,6 +2356,27 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
                 }
 
                 host.shadowRoot.querySelectorAll('[data-task="' + task + '"], [onclick*="' + task + '"]').forEach(function(el) {
+                    collectTarget(el);
+                });
+            });
+        });
+
+        hostIds.forEach(function(hostId) {
+            collectToolbarHostButtons(document.getElementById(hostId));
+            collectToolbarHostButtons(document.querySelector('joomla-toolbar-button#' + hostId));
+        });
+
+        classNames.forEach(function(className) {
+            document.querySelectorAll('joomla-toolbar-button .' + className + ', #toolbar .' + className).forEach(function(el) {
+                collectTarget(el);
+            });
+
+            document.querySelectorAll('joomla-toolbar-button').forEach(function(host) {
+                if (!host || !host.shadowRoot) {
+                    return;
+                }
+
+                host.shadowRoot.querySelectorAll('.' + className).forEach(function(el) {
                     collectTarget(el);
                 });
             });
