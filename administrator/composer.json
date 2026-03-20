@@ -10,6 +10,14 @@
     "preferred-install": "dist",
     "sort-packages": true
   },
+  "scripts": {
+    "post-install-cmd": [
+      "@php scripts/prune-securimage-audio.php"
+    ],
+    "post-update-cmd": [
+      "@php scripts/prune-securimage-audio.php"
+    ]
+  },
   "require-dev": {
     "phpunit/phpunit": "^11"
   }

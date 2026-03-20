@@ -1,3 +1,4 @@
 .vscode/
 *.zip
 administrator/.phpunit.cache/
+administrator/vendor/
