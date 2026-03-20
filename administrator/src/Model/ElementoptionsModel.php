@@ -40,7 +40,7 @@ class ElementoptionsModel extends BaseDatabaseModel
         return $this->getApp()->input;
     }
 
-    private function getDispatcher()
+    private function getAppDispatcher()
     {
         return $this->getApp()->getDispatcher();
     }
@@ -191,10 +191,10 @@ class ElementoptionsModel extends BaseDatabaseModel
 
                 \Joomla\CMS\Plugin\PluginHelper::importPlugin('contentbuilderng_form_elements', $input->getCmd('field_type', ''));
 
-                $dispatcher = $this->getDispatcher();
+                $dispatcher = $this->getAppDispatcher();
                 $eventResult = $dispatcher->dispatch('onSettingsStore', new \Joomla\CMS\Event\GenericEvent('onSettingsStore', array()));
                 $results = $eventResult->getArgument('result') ?: [];
-                $this->getDispatcher()->clearListeners('onSettingsStore');
+                $this->getAppDispatcher()->clearListeners('onSettingsStore');
 
                 if (count($results)) {
                     $results = $results[0];
