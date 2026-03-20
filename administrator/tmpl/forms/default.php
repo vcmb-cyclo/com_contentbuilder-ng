@@ -105,6 +105,39 @@ document.querySelectorAll('#adminForm .js-stools-column-order').forEach(function
         form.submit();
     });
 });
+
+var clearButton = document.getElementById('cb-forms-clear');
+var searchInput = document.getElementById('filter_search');
+var stateInput = document.getElementById('filter_state');
+var tagInput = document.getElementById('filter_tag');
+
+var updateClearButtonState = function() {
+    if (!clearButton) {
+        return;
+    }
+
+    var hasSearch = !!String(searchInput && searchInput.value || '').trim();
+    var hasState = !!String(stateInput && stateInput.value || '').trim();
+    var hasTag = !!String(tagInput && tagInput.value || '').trim();
+    var isActive = hasSearch || hasState || hasTag;
+
+    clearButton.disabled = !isActive;
+    clearButton.classList.toggle('btn-primary', isActive);
+    clearButton.classList.toggle('btn-outline-secondary', !isActive);
+    clearButton.setAttribute('aria-disabled', isActive ? 'false' : 'true');
+};
+
+[searchInput, stateInput, tagInput].forEach(function(field) {
+    if (!field) {
+        return;
+    }
+
+    ['input', 'change'].forEach(function(eventName) {
+        field.addEventListener(eventName, updateClearButtonState);
+    });
+});
+
+updateClearButtonState();
 });
 </script>
 <style>
@@ -112,6 +145,12 @@ document.querySelectorAll('#adminForm .js-stools-column-order').forEach(function
     .cb-forms-preview-link::after {
         content: none !important;
         display: none !important;
+    }
+
+    .cb-preview-head-icon{
+        display:inline-flex;
+        align-items:center;
+        justify-content:center;
     }
 </style>
 <form action="<?php echo Route::_('index.php?option=com_contentbuilderng&view=forms'); ?>"
@@ -132,10 +171,16 @@ document.querySelectorAll('#adminForm .js-stools-column-order').forEach(function
                                 class="form-control"
                                 value="<?php echo htmlspecialchars($filterSearch, ENT_QUOTES, 'UTF-8'); ?>"
                                 placeholder="<?php echo Text::_('JSEARCH_FILTER'); ?>">
-                            <button type="submit" class="btn btn-primary">
-                                <?php echo Text::_('JSEARCH_FILTER_SUBMIT'); ?>
+                            <button
+                                type="submit"
+                                class="btn btn-primary"
+                                aria-label="<?php echo htmlspecialchars(Text::_('JSEARCH_FILTER_SUBMIT'), ENT_QUOTES, 'UTF-8'); ?>"
+                                title="<?php echo htmlspecialchars(Text::_('JSEARCH_FILTER_SUBMIT'), ENT_QUOTES, 'UTF-8'); ?>">
+                                <span class="icon-search" aria-hidden="true"></span>
+                                <span class="visually-hidden"><?php echo Text::_('JSEARCH_FILTER_SUBMIT'); ?></span>
                             </button>
                             <button
+                                id="cb-forms-clear"
                                 type="button"
                                 class="btn btn-outline-secondary"
                                 onclick="document.getElementById('filter_search').value='';document.getElementById('filter_state').value='';document.getElementById('filter_tag').value='';document.adminForm.submit();">
@@ -194,7 +239,14 @@ document.querySelectorAll('#adminForm .js-stools-column-order').forEach(function
                         <?php echo HTMLHelper::_('grid.checkall'); ?>
                     </th>
                     <th width="60" class="text-center">
-                        <?php echo Text::_('COM_CONTENTBUILDERNG_PREVIEW'); ?>
+                        <span
+                            class="cb-preview-head-icon hasTooltip"
+                            title="<?php echo htmlspecialchars(Text::_('COM_CONTENTBUILDERNG_PREVIEW'), ENT_QUOTES, 'UTF-8'); ?>"
+                            data-bs-placement="top"
+                        >
+                            <span class="fa-solid fa-eye" aria-hidden="true"></span>
+                            <span class="visually-hidden"><?php echo Text::_('COM_CONTENTBUILDERNG_PREVIEW'); ?></span>
+                        </span>
                     </th>
                     <th>
                         <?php echo HTMLHelper::_('searchtools.sort', 'COM_CONTENTBUILDERNG_VIEW_NAME', 'a.name', $orderDir, $order); ?>

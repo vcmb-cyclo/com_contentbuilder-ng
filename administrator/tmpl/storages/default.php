@@ -55,6 +55,7 @@ $filterState = in_array($filterStateRaw, ['P', '1', 'PUBLISHED'], true)
     ? 'P'
     : (in_array($filterStateRaw, ['U', '0', 'UNPUBLISHED'], true) ? 'U' : '');
 $fullOrdering = trim($listOrder . ' ' . strtoupper($listDirn));
+$previewLinks = is_array($this->previewLinks ?? null) ? $this->previewLinks : [];
 ?>
 <script type="text/javascript">
 document.addEventListener('DOMContentLoaded', function() {
@@ -90,8 +91,52 @@ document.querySelectorAll('#adminForm .js-stools-column-order').forEach(function
         form.submit();
     });
 });
+
+var clearButton = document.getElementById('cb-storages-clear');
+var searchInput = document.getElementById('filter_search');
+var stateInput = document.getElementById('filter_state');
+
+var updateClearButtonState = function() {
+    if (!clearButton) {
+        return;
+    }
+
+    var hasSearch = !!String(searchInput && searchInput.value || '').trim();
+    var hasState = !!String(stateInput && stateInput.value || '').trim();
+    var isActive = hasSearch || hasState;
+
+    clearButton.disabled = !isActive;
+    clearButton.classList.toggle('btn-primary', isActive);
+    clearButton.classList.toggle('btn-outline-secondary', !isActive);
+    clearButton.setAttribute('aria-disabled', isActive ? 'false' : 'true');
+};
+
+[searchInput, stateInput].forEach(function(field) {
+    if (!field) {
+        return;
+    }
+
+    ['input', 'change'].forEach(function(eventName) {
+        field.addEventListener(eventName, updateClearButtonState);
+    });
+});
+
+updateClearButtonState();
 });
 </script>
+<style>
+    .cb-storage-preview-link::before,
+    .cb-storage-preview-link::after {
+        content: none !important;
+        display: none !important;
+    }
+
+    .cb-preview-head-icon{
+        display:inline-flex;
+        align-items:center;
+        justify-content:center;
+    }
+</style>
 
 <form action="<?php echo Route::_('index.php?option=com_contentbuilderng&view=storages'); ?>"
     method="post"
@@ -110,10 +155,16 @@ document.querySelectorAll('#adminForm .js-stools-column-order').forEach(function
                             class="form-control"
                             value="<?php echo htmlspecialchars($filterSearch, ENT_QUOTES, 'UTF-8'); ?>"
                             placeholder="<?php echo Text::_('JSEARCH_FILTER'); ?>">
-                        <button type="submit" class="btn btn-primary">
-                            <?php echo Text::_('JSEARCH_FILTER_SUBMIT'); ?>
+                        <button
+                            type="submit"
+                            class="btn btn-primary"
+                            aria-label="<?php echo htmlspecialchars(Text::_('JSEARCH_FILTER_SUBMIT'), ENT_QUOTES, 'UTF-8'); ?>"
+                            title="<?php echo htmlspecialchars(Text::_('JSEARCH_FILTER_SUBMIT'), ENT_QUOTES, 'UTF-8'); ?>">
+                            <span class="icon-search" aria-hidden="true"></span>
+                            <span class="visually-hidden"><?php echo Text::_('JSEARCH_FILTER_SUBMIT'); ?></span>
                         </button>
                         <button
+                            id="cb-storages-clear"
                             type="button"
                             class="btn btn-outline-secondary"
                             onclick="document.getElementById('filter_search').value='';document.getElementById('filter_state').value='';document.adminForm.submit();">
@@ -154,6 +205,17 @@ document.querySelectorAll('#adminForm .js-stools-column-order').forEach(function
                         <?php echo HTMLHelper::_('grid.checkall'); ?>
                     </th>
 
+                    <th width="60" class="text-center">
+                        <span
+                            class="cb-preview-head-icon hasTooltip"
+                            title="<?php echo htmlspecialchars(Text::_('COM_CONTENTBUILDERNG_PREVIEW'), ENT_QUOTES, 'UTF-8'); ?>"
+                            data-bs-placement="top"
+                        >
+                            <span class="fa-solid fa-eye" aria-hidden="true"></span>
+                            <span class="visually-hidden"><?php echo Text::_('COM_CONTENTBUILDERNG_PREVIEW'); ?></span>
+                        </span>
+                    </th>
+
                     <th>
                         <?php echo HTMLHelper::_('searchtools.sort', 'COM_CONTENTBUILDERNG_NAME', 'a.name', $listDirn, $listOrder); ?>
                     </th>
@@ -183,7 +245,7 @@ document.querySelectorAll('#adminForm .js-stools-column-order').forEach(function
             <tbody>
                 <?php if ($n === 0) : ?>
                     <tr>
-                        <td colspan="8" class="text-center text-muted py-4">
+                        <td colspan="9" class="text-center text-muted py-4">
                             <?php echo Text::_('JGLOBAL_NO_MATCHING_RESULTS'); ?>
                         </td>
                     </tr>
@@ -206,11 +268,26 @@ document.querySelectorAll('#adminForm .js-stools-column-order').forEach(function
 
                         $checked   = HTMLHelper::_('grid.id', $i, $id);
                         $published = ContentbuilderngHelper::listPublish('storages', $row, $i);
+                        $previewUrl = (string) ($previewLinks[$id] ?? '');
 
                     ?>
                     <tr>
                         <td class="text-nowrap"><?php echo $id; ?></td>
                         <td class="text-center"><?php echo $checked; ?></td>
+                        <td class="text-center">
+                            <?php if ($previewUrl !== '') : ?>
+                                <a
+                                    class="btn btn-sm btn-link p-0 cb-storage-preview-link"
+                                    href="<?php echo htmlspecialchars($previewUrl, ENT_QUOTES, 'UTF-8'); ?>"
+                                    title="<?php echo Text::_('COM_CONTENTBUILDERNG_PREVIEW'); ?>"
+                                >
+                                    <span class="fa-solid fa-eye" aria-hidden="true"></span>
+                                    <span class="visually-hidden"><?php echo Text::_('COM_CONTENTBUILDERNG_PREVIEW'); ?></span>
+                                </a>
+                            <?php else : ?>
+                                <span class="text-muted">-</span>
+                            <?php endif; ?>
+                        </td>
 
                         <td><a href="<?php echo $link; ?>"><?php echo $name; ?></a></td>
                         <td><a href="<?php echo $link; ?>"><?php echo $title; ?></a></td>
@@ -241,7 +318,7 @@ document.querySelectorAll('#adminForm .js-stools-column-order').forEach(function
 
             <tfoot>
                 <tr>
-                    <td colspan="8">
+                    <td colspan="9">
                         <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
 
                             <div class="d-flex flex-wrap align-items-center gap-2">

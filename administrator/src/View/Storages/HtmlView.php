@@ -65,6 +65,7 @@ class HtmlView extends BaseHtmlView
 
         // Ton flag ordering (ton template compare à "ordering" mais toi tu utilises souvent "a.ordering")
         $this->ordering = ($this->lists['order'] === 'a.ordering' || $this->lists['order'] === 'ordering');
+        $this->previewLinks = $this->buildPreviewLinks($this->items);
 
         // Ajout du CSS personnalisé (méthode propre)
         $this->addToolbarIcon();
@@ -76,6 +77,58 @@ class HtmlView extends BaseHtmlView
 
         HTMLHelper::_('behavior.keepalive');
         parent::display($tpl);
+    }
+
+    /**
+     * @param array<int,object> $items
+     * @return array<int,string>
+     */
+    private function buildPreviewLinks(array $items): array
+    {
+        $app = Factory::getApplication();
+        $secret = (string) $app->get('secret');
+
+        if ($secret === '') {
+            return [];
+        }
+
+        $previewUntil = time() + 600;
+        $previewActorId = (int) ($app->getIdentity()->id ?? 0);
+        $previewActorName = trim((string) ($app->getIdentity()->name ?? ''));
+
+        if ($previewActorName === '') {
+            $previewActorName = trim((string) ($app->getIdentity()->username ?? ''));
+        }
+
+        if ($previewActorName === '') {
+            $previewActorName = 'administrator';
+        }
+
+        $links = [];
+
+        foreach ($items as $item) {
+            $storageId = (int) ($item->id ?? 0);
+            $isExternal = (int) ($item->bytable ?? 0) === 1;
+
+            if ($storageId < 1 || $isExternal) {
+                continue;
+            }
+
+            $previewPayload = 'storage:' . $storageId . '|' . $previewUntil . '|' . $previewActorId . '|' . $previewActorName;
+            $previewSig = hash_hmac('sha256', $previewPayload, $secret);
+
+            $links[$storageId] = Uri::root()
+                . 'index.php?option=com_contentbuilderng&task=list.display&storage_id='
+                . $storageId
+                . '&cb_preview=1'
+                . '&cb_preview_until=' . $previewUntil
+                . '&cb_preview_actor_id=' . $previewActorId
+                . '&cb_preview_actor_name=' . rawurlencode($previewActorName)
+                . '&cb_preview_sig=' . $previewSig
+                . '&cb_admin_return=storages';
+        }
+
+        return $links;
     }
 
     /**

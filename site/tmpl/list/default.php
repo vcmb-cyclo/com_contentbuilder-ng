@@ -86,6 +86,8 @@ $adminReturnContext = trim((string) $input->getCmd('cb_admin_return', ''));
 $adminReturnUrl = Uri::root() . 'administrator/index.php?option=com_contentbuilderng&task=form.edit&id=' . (int) $input->getInt('id', 0);
 if ($adminReturnContext === 'forms') {
     $adminReturnUrl = Uri::root() . 'administrator/index.php?option=com_contentbuilderng&view=forms';
+} elseif ($adminReturnContext === 'storages') {
+    $adminReturnUrl = Uri::root() . 'administrator/index.php?option=com_contentbuilderng&view=storages';
 }
 $previewFormName = trim((string) ($this->form_name ?? ''));
 if ($previewFormName === '') {
@@ -119,7 +121,7 @@ $directStorageId = (int) ($this->direct_storage_id ?? 0);
 $directStorageUnpublished = !empty($this->direct_storage_unpublished);
 $directStoragePublishAllowed = $directStorageMode
     && ($isAdminPreview || $app->getIdentity()->authorise('core.edit.state', 'com_contentbuilderng'));
-if ($directStorageMode && $directStorageId > 0) {
+if ($directStorageMode && $directStorageId > 0 && $adminReturnContext !== 'storages') {
     $adminReturnUrl = Uri::root() . 'administrator/index.php?option=com_contentbuilderng&view=storage&layout=edit&id=' . $directStorageId;
 }
 $listTarget = $directStorageMode
