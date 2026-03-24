@@ -91,8 +91,8 @@ class com_contentbuilderngInstallerScript
     {
         $this->installStartedAt = microtime(true);
         $this->bootLogger();
-        $this->log('[INFO] ---------------------------------------------------------', Log::INFO);
-        $this->log('[OK] ContentBuilder NG installer script booted.', Log::INFO);
+        $this->writeInstallLogEntry('[INFO] ---------------------------------------------------------', Log::INFO);
+        $this->log('[OK] <strong>ContentBuilder NG</strong> installer script booted.', Log::INFO);
 
         $this->log('[INFO] Joomla version: <strong>' . htmlspecialchars(defined('JVERSION') ? JVERSION : 'unknown', ENT_QUOTES, 'UTF-8') . '</strong>.', Log::INFO);
         $this->log('[INFO] PHP version: ' . PHP_VERSION . '.', Log::INFO);
@@ -103,12 +103,11 @@ class com_contentbuilderngInstallerScript
         } catch (\Throwable) {
             $detected = 'unknown';
         }
-        $this->log('[INFO] Detected installed version: ' . htmlspecialchars((string) $detected, ENT_QUOTES, 'UTF-8') . '.', Log::INFO);
+        $this->log('[INFO] Detected installed version: <strong>' . htmlspecialchars((string) $detected, ENT_QUOTES, 'UTF-8') . '</strong>.', Log::INFO);
 
         $this->logDatabaseRuntimeInfo();
         $this->log('[INFO] User agent: ' . ($_SERVER['HTTP_USER_AGENT'] ?? 'CLI') . '.', Log::INFO);
-        $this->log('[INFO] ===================================================================', Log::INFO);
-        $this->log('[INFO] ---------------------------------------------------------', Log::INFO);
+        $this->writeInstallLogEntry('[INFO] ===================================================================', Log::INFO);
     }
 
     // ---------------------------------------------------------------------
@@ -129,8 +128,8 @@ class com_contentbuilderngInstallerScript
 
             $this->log(
                 '[OK] Preflight: action <strong>' . htmlspecialchars(strtoupper($type), ENT_QUOTES, 'UTF-8') . '</strong>'
-                    . ' | package <strong>' . htmlspecialchars((string) $incomingVersion, ENT_QUOTES, 'UTF-8') . '</strong>'
-                    . ' | installed <strong>' . htmlspecialchars((string) $currentVersion, ENT_QUOTES, 'UTF-8') . '</strong>.',
+                    . ' | <strong>' . htmlspecialchars((string) $currentVersion, ENT_QUOTES, 'UTF-8') . '</strong>.'
+                    . ' -> <strong>' . htmlspecialchars((string) $incomingVersion, ENT_QUOTES, 'UTF-8') . '</strong>',
                 Log::INFO
             );
 
@@ -267,6 +266,7 @@ class com_contentbuilderngInstallerScript
             // Cleanup old directories/files (best-effort)
             $this->removeOldDirectories();
             $this->removeObsoleteFiles();
+            $this->removeObsoleteLanguageFiles();
 
             // Ensure media templates / upload dir
             $this->ensureMediaListTemplateInstalled();
@@ -1104,6 +1104,57 @@ class com_contentbuilderngInstallerScript
                 }
             } catch (\Throwable $e) {
                 $this->log("[WARNING] Failed removing obsolete file {$path}: " . $e->getMessage(), Log::WARNING);
+            }
+        }
+    }
+
+    private function removeObsoleteLanguageFiles(): void
+    {
+        $languageTags = ['en-GB', 'fr-FR', 'de-DE'];
+        $patterns = [
+            'com_contentbuilderng.ini',
+            'com_contentbuilderng.menu.ini',
+            'com_contentbuilderng.sys.ini',
+            '*.com_contentbuilder_ng.ini',
+            '*.com_contentbuilder_ng.menu.ini',
+            '*.com_contentbuilder_ng.sys.ini',
+            'com_contentbuilder_ng.ini',
+            'com_contentbuilder_ng.menu.ini',
+            'com_contentbuilder_ng.sys.ini',
+        ];
+
+        $basePaths = [
+            JPATH_ADMINISTRATOR . '/language',
+            JPATH_ROOT . '/language',
+        ];
+
+        foreach ($basePaths as $basePath) {
+            foreach ($languageTags as $tag) {
+                $languagePath = $basePath . '/' . $tag;
+
+                if (!is_dir($languagePath)) {
+                    continue;
+                }
+
+                foreach ($patterns as $pattern) {
+                    $matches = glob($languagePath . '/' . $pattern) ?: [];
+
+                    foreach ($matches as $match) {
+                        try {
+                            if (!is_file($match)) {
+                                continue;
+                            }
+
+                            if (File::delete($match)) {
+                                $this->log("[OK] Removed obsolete language file {$match}.");
+                            } else {
+                                $this->log("[WARNING] Failed to remove obsolete language file {$match}.", Log::WARNING);
+                            }
+                        } catch (\Throwable $e) {
+                            $this->log("[WARNING] Failed removing obsolete language file {$match}: " . $e->getMessage(), Log::WARNING);
+                        }
+                    }
+                }
             }
         }
     }

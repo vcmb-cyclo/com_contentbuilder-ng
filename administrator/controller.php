@@ -12,7 +12,8 @@ namespace CB\Component\Contentbuilderng\Administrator;
 // No direct access
 \defined('_JEXEC') or die('Direct Access to this location is not allowed.');
 
-Use Joomla\CMS\Factory;
+use Joomla\CMS\Application\CMSApplication;
+use Joomla\CMS\Factory;
 use Joomla\CMS\MVC\Controller\BaseController;
 
 class ContentbuilderController extends BaseController
@@ -22,13 +23,13 @@ class ContentbuilderController extends BaseController
      *
      * @access    public
      */
-    function display($cachable = false, $urlparams = array())
+    public function display($cachable = false, $urlparams = array()): void
     {
         parent::display();
 
-	    if(Factory::getApplication()->input->get('market', '', 'string') == 'true'){
-            Factory::getApplication()->redirect('https://breezingforms-ng.vcmb.fr');
+        $app = Factory::getApplication();
+        if ($app->input->get('market', '', 'string') === 'true') {
+            $app->redirect('https://breezingforms-ng.vcmb.fr');
         }
     }
-
 }

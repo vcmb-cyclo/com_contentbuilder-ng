@@ -62,7 +62,7 @@ final class FrontendPermissionAuditHelper
             }
         }
 
-        $guestGroups = Access::getGroupsByUser(0, false);
+        $guestGroups = Access::getGroupsByUser(0);
         $actions = ['listaccess', 'view', 'new', 'edit', 'delete', 'state', 'publish', 'language', 'rating', 'api'];
 
         foreach ($forms as $form) {

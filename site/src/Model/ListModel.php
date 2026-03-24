@@ -26,6 +26,7 @@ use CB\Component\Contentbuilderng\Site\Helper\MenuParamHelper;
 use CB\Component\Contentbuilderng\Administrator\Service\FormSupportService;
 use CB\Component\Contentbuilderng\Administrator\Service\RuntimeUtilityService;
 use CB\Component\Contentbuilderng\Administrator\Service\ListSupportService;
+use CB\Component\Contentbuilderng\Administrator\Service\PermissionService;
 use CB\Component\Contentbuilderng\Administrator\Service\TemplateRenderService;
 use CB\Component\Contentbuilderng\Administrator\Helper\FormSourceFactory;
 
@@ -34,6 +35,7 @@ class ListModel extends BaseListModel
     private readonly ListSupportService $listSupportService;
     private readonly RuntimeUtilityService $runtimeUtilityService;
     private readonly TemplateRenderService $templateRenderService;
+    private readonly PermissionService $permissionService;
 
     protected int $_id = 0;
 
@@ -78,6 +80,7 @@ class ListModel extends BaseListModel
         $this->listSupportService = new ListSupportService();
         $this->runtimeUtilityService = new RuntimeUtilityService();
         $this->templateRenderService = new TemplateRenderService();
+        $this->permissionService = new PermissionService();
 
         $this->frontend = $app->isClient('site');
         $option = 'com_contentbuilderng';
@@ -643,6 +646,19 @@ class ListModel extends BaseListModel
         return $query;
     }
 
+    private function shouldRestrictToPublishedOnly(object $data, bool $isAdminPreview): bool
+    {
+        if ($isAdminPreview || !$this->frontend) {
+            return (bool) ($data->published_only ?? false);
+        }
+
+        if (!$this->permissionService->authorizeFe('publish')) {
+            return true;
+        }
+
+        return (bool) ($data->published_only ?? false);
+    }
+
     /**
      * Gets the currencies
      * @return array List of products
@@ -1021,7 +1037,7 @@ class ListModel extends BaseListModel
                     }
 
                     $isAdminPreview = $app->input->getBool('cb_preview_ok', false);
-                    $publishedOnly = $isAdminPreview ? false : (bool) $data->published_only;
+                    $publishedOnly = $this->shouldRestrictToPublishedOnly($data, $isAdminPreview);
                     $ownerFilterUserId = $isAdminPreview
                         ? -1
                         : ($this->frontend

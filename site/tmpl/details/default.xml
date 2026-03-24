@@ -28,7 +28,7 @@
                         <option value="0">No</option>
                         <option value="1">Yes</option>
                     </field>
-                    <field name="cb_prefix_in_title" type="radio" class="btn-group btn-group-yesno" default="-1" label="COM_CONTENTBUILDERNG_PREFIX_IN_TITLE" description="">
+                    <field name="cb_prefix_in_title" type="radio" class="btn-group btn-group-yesno" default="-1" label="COM_CONTENTBUILDERNG_PREFIX_IN_TITLE" description="COM_CONTENTBUILDERNG_PREFIX_IN_TITLE_DESC">
                         <option value="-1">JOPTION_USE_DEFAULT</option>
                         <option value="0">COM_CONTENTBUILDERNG_NO</option>
                         <option value="1">COM_CONTENTBUILDERNG_YES</option>

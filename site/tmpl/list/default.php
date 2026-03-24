@@ -77,6 +77,37 @@ if ($currentSessionLabel === '') {
 if ($currentSessionLabel === '') {
     $currentSessionLabel = Text::_('COM_CONTENTBUILDERNG_GUEST');
 }
+$currentUserId = (int) ($currentUser->id ?? 0);
+$formInstance = $this->form ?? null;
+$ownerPermissionMatrix = (array) $app->getSession()->get('com_contentbuilderng.permissions_fe', []);
+$ownerRuleSet = (array) ($ownerPermissionMatrix['own_fe'] ?? []);
+$hasOwnerViewRule = !empty($ownerRuleSet['view']);
+$hasOwnerEditRule = !empty($ownerRuleSet['edit']);
+$ownerPermissionCache = [];
+$canAccessOwnedRecord = static function (string $action, $recordId) use (&$ownerPermissionCache, $currentUserId, $formInstance, $ownerRuleSet): bool {
+    $recordId = (string) $recordId;
+
+    if (
+        $recordId === ''
+        || $recordId === '0'
+        || $currentUserId <= 0
+        || empty($ownerRuleSet[$action])
+        || !is_object($formInstance)
+        || !method_exists($formInstance, 'isOwner')
+    ) {
+        return false;
+    }
+
+    $cacheKey = $action . ':' . $recordId;
+
+    if (array_key_exists($cacheKey, $ownerPermissionCache)) {
+        return $ownerPermissionCache[$cacheKey];
+    }
+
+    $ownerPermissionCache[$cacheKey] = (bool) $formInstance->isOwner($currentUserId, $recordId);
+
+    return $ownerPermissionCache[$cacheKey];
+};
 $previewActorLabel = trim($previewActorName);
 if ($previewActorLabel === '' && $previewActorId > 0) {
     $previewActorLabel = '#' . $previewActorId;
@@ -98,6 +129,11 @@ if ($previewFormName === '') {
 }
 $previewFormName = htmlspecialchars($previewFormName, ENT_QUOTES, 'UTF-8');
 $previewConfigTabLabel = Text::sprintf('COM_CONTENTBUILDERNG_PREVIEW_CONFIG_TAB', Text::_('COM_CONTENTBUILDERNG_PREVIEW_TAB_VIEW'));
+$previewFrontendPermissionHint = Text::sprintf(
+    'COM_CONTENTBUILDERNG_PREVIEW_FRONTEND_PERMISSION_HINT',
+    Text::_('COM_CONTENTBUILDERNG_PERM_LIST_ACCESS'),
+    Text::_('COM_CONTENTBUILDERNG_PERMISSIONS_FRONTEND')
+);
 $currentListLayout = trim((string) $input->getCmd('layout', 'default'));
 if ($currentListLayout === '') {
     $currentListLayout = 'default';
@@ -132,6 +168,22 @@ $listState = [
     'start' => (int) ($this->lists['liststart'] ?? $this->pagination?->limitstart ?? $input->getInt('list[start]', 0)),
     'ordering' => (string) ($this->lists['order'] ?? $input->getCmd('list[ordering]', '')),
     'direction' => (string) ($this->lists['order_Dir'] ?? $input->getCmd('list[direction]', '')),
+];
+$state = $this->state ?? null;
+$exportQueryParams = [
+    'option' => 'com_contentbuilderng',
+    'view' => 'export',
+    'id' => (int) $input->getInt('id', 0),
+    'type' => 'xls',
+    'format' => 'raw',
+    'tmpl' => 'component',
+    'Itemid' => (int) $input->getInt('Itemid', 0),
+    'filter_order' => $listState['ordering'],
+    'filter_order_Dir' => $listState['direction'],
+    'filter' => (string) ($state?->get('formsd_filter') ?? $input->getString('filter', '')),
+    'list_state_filter' => (int) ($state?->get('formsd_filter_state') ?? $input->getInt('list_state_filter', 0)),
+    'list_publish_filter' => (int) ($state?->get('formsd_filter_publish') ?? $input->getInt('list_publish_filter', -1)),
+    'list_language_filter' => (string) ($state?->get('formsd_filter_language') ?? $input->getCmd('list_language_filter', '')),
 ];
 $listQuery = http_build_query(['list' => $listState]);
 if ($isAdminPreview && !$directStorageMode) {
@@ -1088,6 +1140,10 @@ CSS
 						<span class="fa-solid fa-circle-question" aria-hidden="true"></span>
 					</span>
 				<?php endif; ?>
+                <br />
+                <small class="d-inline-block mt-1">
+                    <?php echo htmlspecialchars($previewFrontendPermissionHint, ENT_QUOTES, 'UTF-8'); ?>
+                </small>
 			</span>
 			<a class="btn btn-sm btn-outline-secondary" href="<?php echo $adminReturnUrl; ?>">
 				<span class="fa-solid fa-arrow-left me-1" aria-hidden="true"></span>
@@ -1243,7 +1299,7 @@ by this block. -->
 								</select>
 							<?php endif; ?>
 
-							<?php if ($this->list_publish && $publish_allowed) : ?>
+							<?php if ($this->list_publish) : ?>
 								<select class="form-select form-select-sm" style="max-width: 190px;"
 									name="list_publish_filter" id="list_publish_filter"
 									title="<?php echo Text::_('COM_CONTENTBUILDERNG_FILTER'); ?>: <?php echo Text::_('COM_CONTENTBUILDERNG_PUBLISH'); ?>"
@@ -1322,7 +1378,7 @@ by this block. -->
 
 										<?php if ($this->export_xls && empty($this->invalid_list_setup)) : ?>
 											<a class="btn btn-sm btn-outline-success align-self-center d-inline-flex align-items-center gap-1 rounded-pill"
-												href="<?php echo Route::_('index.php?option=com_contentbuilderng&view=export&id=' . (int) Factory::getApplication()->input->getInt('id', 0) . '&type=xls&format=raw&tmpl=component&Itemid=' . (int) Factory::getApplication()->input->getInt('Itemid', 0)); ?>"
+												href="<?php echo Route::_('index.php?' . http_build_query($exportQueryParams) . $previewQuery, false); ?>"
 												title="<?php echo Text::_('COM_CONTENTBUILDERNG_EXPORT_XLSX_TOOLTIP'); ?>">
 												<span class="fa-solid fa-download" aria-hidden="true"></span>
 												<span>XLSX</span>
@@ -1361,6 +1417,8 @@ by this block. -->
 						. ($listQuery !== '' ? '&' . $listQuery : '')
 						. $previewQuery
 					);
+					$rowCanView = $view_allowed || $canAccessOwnedRecord('view', $row->colRecord);
+					$rowCanEdit = $edit_allowed || $canAccessOwnedRecord('edit', $row->colRecord);
 						$visibleFields = [];
 						foreach ($row as $key => $value) {
 							if (strpos((string) $key, 'col') !== 0) {
@@ -1374,7 +1432,7 @@ by this block. -->
 							'reference_id' => $referenceId,
 							'label' => (string) ($this->labels[$referenceId] ?? $referenceId),
 							'value' => $value,
-								'linkable' => in_array($referenceId, $this->linkable_elements) && ($view_allowed || $this->own_only),
+								'linkable' => in_array($referenceId, $this->linkable_elements) && $rowCanView,
 							];
 						}
 						$nonEmptyVisibleFields = array_values(array_filter($visibleFields, static function (array $field): bool {
@@ -1458,7 +1516,7 @@ by this block. -->
 							<header class="cb-list-card-header">
 								<div class="cb-list-card-header-main">
 									<h2 class="cb-list-card-title">
-										<?php if (($primaryField['linkable'] ?? false) && ($view_allowed || $this->own_only)) : ?>
+										<?php if (($primaryField['linkable'] ?? false) && $rowCanView) : ?>
 											<a href="<?php echo $link; ?>"><?php echo $cardTitle; ?></a>
 									<?php else : ?>
 										<?php echo $cardTitle; ?>
@@ -1467,15 +1525,27 @@ by this block. -->
 								<p class="cb-list-card-subtitle"><?php echo htmlspecialchars($cardSubtitle, ENT_QUOTES, 'UTF-8'); ?></p>
 							</div>
 							<div class="cb-list-card-actions">
-								<?php if ($showPreviewLink && ($view_allowed || $this->own_only)) : ?>
+								<?php if ($showPreviewLink && ($view_allowed || $hasOwnerViewRule)) : ?>
+									<?php if ($rowCanView) : ?>
 									<a class="btn btn-sm btn-outline-primary" href="<?php echo $link; ?>" title="<?php echo $directStorageMode ? Text::_('COM_CONTENTBUILDERNG_PREVIEW') : Text::_('COM_CONTENTBUILDERNG_DETAILS'); ?>">
 										<span class="fa-solid fa-eye" aria-hidden="true"></span>
 									</a>
+									<?php else : ?>
+										<span class="btn btn-sm btn-outline-primary invisible" aria-hidden="true">
+											<span class="fa-solid fa-eye" aria-hidden="true"></span>
+										</span>
+									<?php endif; ?>
 								<?php endif; ?>
-								<?php if ($this->edit_button && $edit_allowed) : ?>
+								<?php if ($this->edit_button && ($edit_allowed || $hasOwnerEditRule)) : ?>
+									<?php if ($rowCanEdit) : ?>
 									<a class="btn btn-sm btn-outline-secondary" href="<?php echo $edit_link; ?>" title="<?php echo Text::_('COM_CONTENTBUILDERNG_EDIT'); ?>">
 										<span class="fa-solid fa-pen" aria-hidden="true"></span>
 									</a>
+									<?php else : ?>
+										<span class="btn btn-sm btn-outline-secondary invisible" aria-hidden="true">
+											<span class="fa-solid fa-pen" aria-hidden="true"></span>
+										</span>
+									<?php endif; ?>
 								<?php endif; ?>
 								<?php if (($this->list_publish || $directStorageMode) && $publish_allowed) : ?>
 									<a class="btn btn-sm btn-outline-secondary" href="<?php echo $toggle_link; ?>" title="<?php echo $isPublished ? Text::_('JPUBLISHED') : Text::_('JUNPUBLISHED'); ?>">
@@ -1492,7 +1562,13 @@ by this block. -->
 								<?php endif; ?>
 								<?php if ($this->list_language) : ?>
 									<span class="cb-list-card-badge"><?php echo htmlspecialchars((string) (isset($this->lang_codes[$row->colRecord]) && $this->lang_codes[$row->colRecord] ? $this->lang_codes[$row->colRecord] : '*'), ENT_QUOTES, 'UTF-8'); ?></span>
-							<?php endif; ?>
+								<?php endif; ?>
+								<?php if ($this->list_publish || $directStorageMode) : ?>
+									<span class="cb-list-card-badge">
+										<span class="<?php echo $isPublished ? 'fa-solid fa-check text-success' : 'fa-solid fa-circle-xmark text-danger'; ?>" aria-hidden="true"></span>
+										<span class="visually-hidden"><?php echo $isPublished ? Text::_('JPUBLISHED') : Text::_('JUNPUBLISHED'); ?></span>
+									</span>
+								<?php endif; ?>
 						</div>
 
 							<div class="cb-list-card-body">
@@ -1656,7 +1732,7 @@ by this block. -->
 						<?php
 						}
 
-						if (($this->list_publish || $directStorageMode) && $publish_allowed) {
+						if ($this->list_publish || $directStorageMode) {
 						?>
 							<th class="table-light" width="20">
 								<?php echo HTMLHelper::_('grid.sort', Text::_('COM_CONTENTBUILDERNG_PUBLISHED'), 'colPublished', $this->lists['order_Dir'], $this->lists['order']); ?>
@@ -1737,18 +1813,24 @@ by this block. -->
 						. $previewQuery
 					);
 					$select = '<input class="form-check-input" type="checkbox" name="cid[]" value="' . $row->colRecord . '"/>';
+                    $rowCanView = $view_allowed || $canAccessOwnedRecord('view', $row->colRecord);
+                    $rowCanEdit = $edit_allowed || $canAccessOwnedRecord('edit', $row->colRecord);
 				?>
 				<tr class="<?php echo "row$k"; ?>">
 					<?php
-					if ($showPreviewLink && ($view_allowed || $this->own_only)) {
+					if ($showPreviewLink && ($view_allowed || $hasOwnerViewRule)) {
 					?>
 						<td>
-							<?php if ($view_allowed || $this->own_only) : ?>
+							<?php if ($rowCanView) : ?>
 								<a class="<?php echo $directStorageMode ? 'btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1' : 'text-primary'; ?>" href="<?php echo $link; ?>"
 									title="<?php echo $directStorageMode ? Text::_('COM_CONTENTBUILDERNG_PREVIEW') : Text::_('COM_CONTENTBUILDERNG_DETAILS'); ?>">
 									<span class="fa-solid fa-eye" aria-hidden="true"></span>
 									<span class="visually-hidden"><?php echo $directStorageMode ? Text::_('COM_CONTENTBUILDERNG_PREVIEW') : Text::_('COM_CONTENTBUILDERNG_DETAILS'); ?></span>
 								</a>
+							<?php else : ?>
+								<span class="<?php echo $directStorageMode ? 'btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1 invisible' : 'text-primary invisible'; ?>" aria-hidden="true">
+									<span class="fa-solid fa-eye" aria-hidden="true"></span>
+								</span>
 							<?php endif; ?>
 						</td>
 					<?php
@@ -1758,7 +1840,7 @@ by this block. -->
 					?>
 						<td class="hidden-phone">
 							<?php
-							if (($view_allowed || $this->own_only)) {
+							if ($rowCanView) {
 							?>
 								<a href="<?php echo $link; ?>">
 									<?php echo $row->colRecord; ?>
@@ -1784,13 +1866,19 @@ by this block. -->
 					}
 					?>
 					<?php
-					if ($this->edit_button && $edit_allowed) {
+					if ($this->edit_button && ($edit_allowed || $hasOwnerEditRule)) {
 					?>
 						<td>
-							<a class="text-primary" href="<?php echo $edit_link; ?>"
-								title="<?php echo Text::_('COM_CONTENTBUILDERNG_EDIT'); ?>">
-								<span class="fa-solid fa-pen" aria-hidden="true"></span>
-							</a>
+							<?php if ($rowCanEdit) : ?>
+								<a class="text-primary" href="<?php echo $edit_link; ?>"
+									title="<?php echo Text::_('COM_CONTENTBUILDERNG_EDIT'); ?>">
+									<span class="fa-solid fa-pen" aria-hidden="true"></span>
+								</a>
+							<?php else : ?>
+								<span class="text-primary invisible" aria-hidden="true">
+									<span class="fa-solid fa-pen" aria-hidden="true"></span>
+								</span>
+							<?php endif; ?>
 						</td>
 					<?php
 					}
@@ -1822,17 +1910,22 @@ by this block. -->
 					}
 					?>
 						<?php
-						if (($this->list_publish || $directStorageMode) && $publish_allowed) {
+						if ($this->list_publish || $directStorageMode) {
 						?>
 							<td align="center" valign="middle">
 								<?php
 								$iconClass = $isPublished ? 'fa-solid fa-check text-success' : 'fa-solid fa-circle-xmark text-danger';
 								$iconTitle = $isPublished ? Text::_('JPUBLISHED') : Text::_('JUNPUBLISHED');
 								?>
-								<a class="btn btn-sm btn-link p-0" href="<?php echo $toggle_link; ?>" title="<?php echo $iconTitle; ?>">
-									<span class="<?php echo $iconClass; ?>" aria-hidden="true"></span>
+								<?php if ($publish_allowed) : ?>
+									<a class="btn btn-sm btn-link p-0" href="<?php echo $toggle_link; ?>" title="<?php echo $iconTitle; ?>">
+										<span class="<?php echo $iconClass; ?>" aria-hidden="true"></span>
+										<span class="visually-hidden"><?php echo $iconTitle; ?></span>
+									</a>
+								<?php else : ?>
+									<span class="<?php echo $iconClass; ?>" aria-hidden="true" title="<?php echo $iconTitle; ?>"></span>
 									<span class="visually-hidden"><?php echo $iconTitle; ?></span>
-								</a>
+								<?php endif; ?>
 							</td>
 						<?php
 						}
@@ -1851,7 +1944,7 @@ by this block. -->
 					?>
 						<td class="hidden-phone">
 							<?php
-							if (($view_allowed || $this->own_only)) {
+							if ($rowCanView) {
 							?>
 								<a href="<?php echo $link; ?>">
 									<?php echo $row->colArticleId; ?>
@@ -1872,7 +1965,7 @@ by this block. -->
 					?>
 						<td class="hidden-phone">
 							<?php
-							if (($view_allowed || $this->own_only)) {
+							if ($rowCanView) {
 							?>
 								<a href="<?php echo $link; ?>">
 									<?php echo htmlentities($row->colAuthor, ENT_QUOTES, 'UTF-8'); ?>
@@ -1913,7 +2006,7 @@ by this block. -->
 					?>
 							<td<?php echo $hidden; ?>>
 								<?php
-								if (in_array(str_replace('col', '', $key), $this->linkable_elements) && ($view_allowed || $this->own_only)) {
+								if (in_array(str_replace('col', '', $key), $this->linkable_elements) && $rowCanView) {
 								?>
 									<a href="<?php echo $link; ?>">
 										<?php echo $value; ?>

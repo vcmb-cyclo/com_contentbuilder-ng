@@ -101,6 +101,14 @@ if ($previewFormName === '') {
 $previewFormName = htmlspecialchars($previewFormName, ENT_QUOTES, 'UTF-8');
 $previewConfigTabLabel = Text::sprintf('COM_CONTENTBUILDERNG_PREVIEW_CONFIG_TAB', Text::_('COM_CONTENTBUILDERNG_PREVIEW_TAB_EDITABLE_TEMPLATE'));
 $editableTemplateMissing = $isAdminPreview && trim((string) ($this->tpl ?? '')) === '';
+$previewFrontendPermissionKey = in_array((string) $recordId, ['', '0'], true)
+    ? 'COM_CONTENTBUILDERNG_PERM_NEW'
+    : 'COM_CONTENTBUILDERNG_PERM_EDIT';
+$previewFrontendPermissionHint = Text::sprintf(
+    'COM_CONTENTBUILDERNG_PREVIEW_FRONTEND_PERMISSION_HINT',
+    Text::_($previewFrontendPermissionKey),
+    Text::_('COM_CONTENTBUILDERNG_PERMISSIONS_FRONTEND')
+);
 $editScreenAdminUrl = Uri::root() . 'administrator/index.php?option=com_contentbuilderng&view=form&layout=edit&id=' . (int) $id . '&tab=tab5&force_view_tab=tab5';
 if ($previewEnabled && $previewUntil > 0 && $previewSig !== '') {
     $previewQuery = '&cb_preview=1'
@@ -519,6 +527,10 @@ CSS
                 <span class="cb-preview-config-help" title="<?php echo htmlspecialchars($previewConfigTabLabel, ENT_QUOTES, 'UTF-8'); ?>" aria-label="<?php echo htmlspecialchars($previewConfigTabLabel, ENT_QUOTES, 'UTF-8'); ?>" tabindex="0">
                     <span class="fa-solid fa-circle-question" aria-hidden="true"></span>
                 </span>
+                <br />
+                <small class="d-inline-block mt-1">
+                    <?php echo htmlspecialchars($previewFrontendPermissionHint, ENT_QUOTES, 'UTF-8'); ?>
+                </small>
                 <?php if ($editableTemplateMissing): ?>
                     <br />
                     <strong><?php echo Text::_('COM_CONTENTBUILDERNG_PREVIEW_EDITABLE_TEMPLATE_MISSING'); ?></strong>

@@ -93,6 +93,11 @@ if ($previewFormName === '') {
 $previewFormName = htmlspecialchars($previewFormName, ENT_QUOTES, 'UTF-8');
 $previewConfigTabLabel = Text::sprintf('COM_CONTENTBUILDERNG_PREVIEW_CONFIG_TAB', Text::_('COM_CONTENTBUILDERNG_PREVIEW_TAB_CONTENT_TEMPLATE'));
 $detailsTemplateMissing = $isAdminPreview && trim((string) ($this->tpl ?? '')) === '';
+$previewFrontendPermissionHint = Text::sprintf(
+    'COM_CONTENTBUILDERNG_PREVIEW_FRONTEND_PERMISSION_HINT',
+    Text::_('COM_CONTENTBUILDERNG_PERM_VIEW'),
+    Text::_('COM_CONTENTBUILDERNG_PERMISSIONS_FRONTEND')
+);
 $detailsScreenAdminUrl = Uri::root() . 'administrator/index.php?option=com_contentbuilderng&view=form&layout=edit&id=' . (int) $input->getInt('id', 0) . '&tab=tab3&force_view_tab=tab3';
 
 if ($previewEnabled && $previewUntil > 0 && $previewSig !== '') {
@@ -259,6 +264,10 @@ CSS
                         <span class="fa-solid fa-circle-question" aria-hidden="true"></span>
                     </span>
                 <?php endif; ?>
+                <br />
+                <small class="d-inline-block mt-1">
+                    <?php echo htmlspecialchars($previewFrontendPermissionHint, ENT_QUOTES, 'UTF-8'); ?>
+                </small>
                 <?php if ($isAdminPreview && $detailsTemplateMissing): ?>
                     <br />
                     <strong><?php echo Text::_('COM_CONTENTBUILDERNG_PREVIEW_DETAILS_TEMPLATE_MISSING'); ?></strong>

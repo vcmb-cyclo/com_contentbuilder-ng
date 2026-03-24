@@ -77,7 +77,7 @@ $wa->addInlineStyle(
         . '.cb-perm-inherited{background:#eef1f4}'
         . '.cb-perm-inherited .form-check-input{background-color:#dce2e8;border-color:#b8c2cc}'
         . '.cb-perm-inherited .form-check-input:not(:checked){box-shadow:none}'
-        . '.cb-perm-inherited .form-check-input:indeterminate{background-color:#e7ecf1!important;border-color:#cdd6df!important;background-image:linear-gradient(#9aa5b1,#9aa5b1)!important}'
+        . '.cb-perm-inherited .form-check-input:indeterminate{background-color:#c8d1db!important;border-color:#9eacba!important;background-image:url("data:image/svg+xml,%3csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 20 20%27%3e%3cpath fill=%27none%27 stroke=%27%23ffffff%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27 stroke-width=%273%27 d=%27M5 10.5l3 3 7-7%27/%3e%3c/svg%3e")!important;background-size:1rem 1rem!important}'
         . '@media (max-width:991.98px){joomla-tab#view-pane > div[role="tablist"],joomla-tab#perm-pane > div[role="tablist"]{flex-wrap:nowrap;overflow:auto;-webkit-overflow-scrolling:touch}joomla-tab#view-pane > div[role="tablist"] > button[role="tab"],joomla-tab#perm-pane > div[role="tablist"] > button[role="tab"]{white-space:nowrap}}'
 );
 
@@ -1227,6 +1227,8 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
         if (hint) {
             hint.classList.remove('d-none');
         }
+
+        cbHandleDirtyInteraction();
     }
 
     function cbGetJoomlaEditorInstance(fieldName) {
@@ -1486,6 +1488,8 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
         if (hint) {
             hint.classList.remove('d-none');
         }
+
+        cbHandleDirtyInteraction();
     }
 
     function cbGetPrepareExamplesModalElement() {
@@ -1542,6 +1546,8 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
         if (hint) {
             hint.classList.remove('d-none');
         }
+
+        cbHandleDirtyInteraction();
     }
 
     function cbQueueEmailUserSampleGeneration(button) {
@@ -1569,6 +1575,8 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
         if (hint) {
             hint.classList.remove('d-none');
         }
+
+        cbHandleDirtyInteraction();
     }
 
     function cbAppendLineToEditorField(fieldName, line) {
@@ -2026,6 +2034,13 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
         }
 
         var type = String(field.type || '').toLowerCase();
+
+        if (
+            type === 'hidden'
+            && /^(cb_create_sample_flag|cb_create_editable_sample_flag|cb_email_admin_create_sample_flag|cb_email_create_sample_flag)$/.test(String(field.id || ''))
+        ) {
+            return true;
+        }
 
         if (type === 'hidden' || type === 'submit' || type === 'button' || type === 'reset' || type === 'file') {
             return false;

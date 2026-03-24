@@ -51,6 +51,7 @@ class DetailsModel extends ListModel
     private $_page_heading = '';
     private SiteApplication $app;
     private int $directStorageId = 0;
+    private readonly PermissionService $permissionService;
 
     public function __construct(
         $config,
@@ -63,6 +64,7 @@ class DetailsModel extends ListModel
         $this->app = $app;
         $this->templateRenderService = new TemplateRenderService();
         $this->runtimeUtilityService = new RuntimeUtilityService();
+        $this->permissionService = new PermissionService();
         $option = 'com_contentbuilderng';
         $this->frontend = $app->isClient('site');
         $this->directStorageId = max(0, $app->input->getInt('storage_id', 0));
@@ -242,6 +244,19 @@ class DetailsModel extends ListModel
         return $query;
     }
 
+    private function shouldRestrictToPublishedOnly(object $data, bool $isAdminPreview): bool
+    {
+        if ($isAdminPreview || !$this->frontend) {
+            return (bool) ($data->published_only ?? false);
+        }
+
+        if (!$this->permissionService->authorizeFe('publish')) {
+            return true;
+        }
+
+        return (bool) ($data->published_only ?? false);
+    }
+
     /**
      * Gets the currencies
      * @return array List of currencies
@@ -418,7 +433,7 @@ class DetailsModel extends ListModel
                         $data->items = $rec2;
                     } else {
                         $isAdminPreview = $app->input->getBool('cb_preview_ok', false);
-                        $publishedOnly = $isAdminPreview ? false : (bool) $data->published_only;
+                        $publishedOnly = $this->shouldRestrictToPublishedOnly($data, $isAdminPreview);
                         $ownerFilterUserId = $isAdminPreview
                             ? -1
                             : ($this->frontend
@@ -679,7 +694,7 @@ class DetailsModel extends ListModel
         }
 
         $isAdminPreview = $this->app->input->getBool('cb_preview_ok', false);
-        $publishedOnly = $isAdminPreview ? false : (bool) ($data->published_only ?? false);
+        $publishedOnly = $this->shouldRestrictToPublishedOnly($data, $isAdminPreview);
         $ownerFilterUserId = $isAdminPreview
             ? -1
             : ($this->frontend

@@ -9,24 +9,115 @@ namespace {
 }
 
 namespace CB\Component\Contentbuilderng\Tests\Stubs {
+    final class Input
+    {
+        /** @var array<string,mixed> */
+        private array $values = [];
+
+        public function getInt(string $key, int $default = 0): int
+        {
+            return isset($this->values[$key]) ? (int) $this->values[$key] : $default;
+        }
+
+        public function getBool(string $key, bool $default = false): bool
+        {
+            return isset($this->values[$key]) ? (bool) $this->values[$key] : $default;
+        }
+
+        public function getString(string $key, string $default = ''): string
+        {
+            return isset($this->values[$key]) ? (string) $this->values[$key] : $default;
+        }
+
+        public function set(string $key, mixed $value): void
+        {
+            $this->values[$key] = $value;
+        }
+    }
+
+    final class Session
+    {
+        /** @var array<string,mixed> */
+        private array $values = [];
+
+        public function getId(): string
+        {
+            return 'unit-session';
+        }
+
+        public function get(string $key, mixed $default = null)
+        {
+            return $this->values[$key] ?? $default;
+        }
+
+        public function set(string $key, mixed $value): void
+        {
+            $this->values[$key] = $value;
+        }
+
+        public function remove(string $key): void
+        {
+            unset($this->values[$key]);
+        }
+    }
+
     final class Identity
     {
+        public int $id = 42;
+        public string $username = 'unit_user';
+        public string $name = 'Unit User';
+
         public function get(string $key, $default = null)
         {
             return match ($key) {
-                'id' => 42,
-                'username' => 'unit_user',
-                'name' => 'Unit User',
+                'id' => $this->id,
+                'username' => $this->username,
+                'name' => $this->name,
                 default => $default,
             };
         }
     }
 
-    final class Application
+    class Application extends \Joomla\CMS\Application\CMSApplication
     {
+        public Input $input;
+        private Session $session;
+        private Identity $identity;
+        /** @var array<int,array{0:string,1:string}> */
+        public array $messages = [];
+
+        public function __construct()
+        {
+            $this->input = new Input();
+            $this->session = new Session();
+            $this->identity = new Identity();
+        }
+
         public function getIdentity(): Identity
         {
-            return new Identity();
+            return $this->identity;
+        }
+
+        public function setIdentity(int $id, string $username = 'unit_user', string $name = 'Unit User'): void
+        {
+            $this->identity->id = $id;
+            $this->identity->username = $username;
+            $this->identity->name = $name;
+        }
+
+        public function getSession(): Session
+        {
+            return $this->session;
+        }
+
+        public function enqueueMessage($msg, $type = 'message'): void
+        {
+            $this->messages[] = [(string) $msg, (string) $type];
+        }
+
+        public function get($key, $default = null)
+        {
+            return $default;
         }
     }
 
@@ -63,13 +154,67 @@ namespace Joomla\CMS\Log {
     }
 }
 
+namespace Joomla\CMS\Access {
+    if (!\class_exists(Access::class, false)) {
+        class Access
+        {
+            /** @var array<int,array<int,int>> */
+            public static array $groupsByUser = [];
+
+            public static function getGroupsByUser(int $userId, bool $recursive = true): array
+            {
+                return self::$groupsByUser[$userId] ?? [];
+            }
+        }
+    }
+}
+
+namespace Joomla\CMS\Application {
+    if (!\class_exists(CMSApplication::class, false)) {
+        abstract class CMSApplication
+        {
+        }
+    }
+}
+
+namespace Joomla\CMS\Access\Exception {
+    if (!\class_exists(NotAllowed::class, false)) {
+        class NotAllowed extends \RuntimeException
+        {
+        }
+    }
+}
+
+namespace Joomla\CMS\Language {
+    if (!\class_exists(Text::class, false)) {
+        class Text
+        {
+            public static function _(string $key): string
+            {
+                return $key;
+            }
+        }
+    }
+}
+
 namespace Joomla\CMS {
     if (!\class_exists(Factory::class, false)) {
         class Factory
         {
+            private static ?\CB\Component\Contentbuilderng\Tests\Stubs\Application $application = null;
+
             public static function getApplication(): \CB\Component\Contentbuilderng\Tests\Stubs\Application
             {
-                return new \CB\Component\Contentbuilderng\Tests\Stubs\Application();
+                if (self::$application === null) {
+                    self::$application = new \CB\Component\Contentbuilderng\Tests\Stubs\Application();
+                }
+
+                return self::$application;
+            }
+
+            public static function setApplication(\CB\Component\Contentbuilderng\Tests\Stubs\Application $application): void
+            {
+                self::$application = $application;
             }
 
             public static function getDate(): \CB\Component\Contentbuilderng\Tests\Stubs\Date
@@ -130,4 +275,5 @@ namespace Joomla\CMS\MVC\Model {
 namespace {
     require_once \dirname(__DIR__) . '/src/Model/StorageModel.php';
     require_once \dirname(__DIR__) . '/src/Model/VerifyModel.php';
+    require_once \dirname(__DIR__) . '/src/Service/PermissionService.php';
 }

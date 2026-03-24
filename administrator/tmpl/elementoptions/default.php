@@ -56,6 +56,37 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
         . '" value="' . htmlspecialchars($value, ENT_QUOTES, 'UTF-8') . '"'
         . ($checked ? ' checked="checked"' : '') . ' /></span>';
 };
+
+$renderTooltipLabel = static function (string $for, string $labelKey, ?string $tipKey = null): string {
+    $label = Text::_($labelKey);
+
+    if ($tipKey === null) {
+        return '<label for="' . htmlspecialchars($for, ENT_QUOTES, 'UTF-8') . '">' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . ':</label>';
+    }
+
+    $tip = Text::_($tipKey);
+
+    return '<label for="' . htmlspecialchars($for, ENT_QUOTES, 'UTF-8') . '" class="cb-tooltip-label editlinktip hasTip"'
+        . ' tabindex="0"'
+        . ' aria-label="' . htmlspecialchars($label . ': ' . $tip, ENT_QUOTES, 'UTF-8') . '"'
+        . ' data-bs-toggle="tooltip" data-bs-placement="top"'
+        . ' title="' . htmlspecialchars($tip, ENT_QUOTES, 'UTF-8') . '"'
+        . ' data-bs-title="' . htmlspecialchars($tip, ENT_QUOTES, 'UTF-8') . '">'
+        . htmlspecialchars($label, ENT_QUOTES, 'UTF-8')
+        . ':</label>';
+};
+
+$typeIconMap = [
+    'text' => 'fa-solid fa-font',
+    'textarea' => 'fa-solid fa-align-left',
+    'checkboxgroup' => 'fa-regular fa-square-check',
+    'radiogroup' => 'fa-regular fa-circle-dot',
+    'select' => 'fa-solid fa-list',
+    'upload' => 'fa-solid fa-upload',
+    'calendar' => 'fa-regular fa-calendar',
+    'hidden' => 'fa-solid fa-eye-slash',
+    'captcha' => 'fa-solid fa-shield-halved',
+];
 ?>
 <style type="text/css">
     label { display: inline; }
@@ -74,11 +105,26 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
     .cb-elementoptions-shell .cb-inline-grid label{font-weight:600;color:var(--bs-emphasis-color)}
     .cb-elementoptions-shell .cb-inline-flags{display:flex;align-items:center;gap:1.2rem;flex-wrap:wrap}
     .cb-validation-help{margin-top:.45rem;color:var(--bs-secondary-color);font-size:.82rem}
+    .cb-type-picker{position:relative;min-width:220px;max-width:360px}
+    .cb-type-picker-button{display:flex;align-items:center;justify-content:space-between;gap:.7rem;width:100%;padding:.375rem .75rem}
+    .cb-type-picker-current{display:inline-flex;align-items:center;gap:.55rem;min-width:0}
+    .cb-type-picker-current-label{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .cb-type-picker-menu{position:absolute;top:calc(100% + .35rem);left:0;right:0;z-index:1080;display:none;min-width:100%;max-height:18rem;overflow:auto;padding:.35rem;background:var(--bs-body-bg);border:1px solid var(--bs-border-color);border-radius:.75rem;box-shadow:0 .65rem 1.6rem rgba(16,24,40,.18)}
+    .cb-type-picker.is-open .cb-type-picker-menu{display:block}
+    .cb-type-picker-option{display:flex;align-items:center;gap:.55rem;width:100%;padding:.45rem .65rem;border:0;border-radius:.55rem;background:transparent;color:var(--bs-body-color);text-align:left}
+    .cb-type-picker-option:hover,
+    .cb-type-picker-option:focus{background:var(--bs-tertiary-bg);outline:0}
+    .cb-type-picker-option.is-active{background:var(--bs-secondary-bg);font-weight:600}
+    .cb-type-picker-icon{display:inline-flex;align-items:center;justify-content:center;width:1.25rem;color:var(--bs-emphasis-color);flex:0 0 1.25rem}
+    .cb-type-picker-caret{margin-left:auto}
+    .cb-tooltip-label{display:inline-flex;align-items:center;cursor:help}
+    .cb-tooltip-label:focus{outline:0;box-shadow:0 0 0 .15rem rgba(var(--bs-primary-rgb),.25);border-radius:.25rem}
     @media (max-width:767.98px){
         .cb-elementoptions-shell{padding:.8rem}
         .cb-elementoptions-toolbar{align-items:stretch}
         .cb-elementoptions-toolbar .form-select,
-        .cb-elementoptions-toolbar .btn{width:100%;max-width:none}
+        .cb-elementoptions-toolbar .btn,
+        .cb-type-picker{width:100%;max-width:none}
         .cb-elementoptions-type-label{margin-left:0}
         .cb-elementoptions-shell .admintable td,
         .cb-elementoptions-shell .admintable td.key{display:block;width:100%!important;padding:.3rem 0}
@@ -94,43 +140,102 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
             <select class="form-select form-select-sm" name="type_selection"
                 id="type_selection"
                 onchange="document.getElementById('type_change').value='1';">
-                <option value="text" <?php echo $this->element->type == 'text' || $this->element->type == '' ? ' selected="selected"' : ''; ?>>
+                <option value="text" data-icon="<?php echo $typeIconMap['text']; ?>" data-type-label="<?php echo htmlspecialchars(Text::_('COM_CONTENTBUILDERNG_ELEMENT_TYPE_TEXT'), ENT_QUOTES, 'UTF-8'); ?>" <?php echo $this->element->type == 'text' || $this->element->type == '' ? ' selected="selected"' : ''; ?>>
                     <?php echo Text::_('COM_CONTENTBUILDERNG_ELEMENT_TYPE_TEXT'); ?>
                 </option>
-                <option value="textarea" <?php echo $this->element->type == 'textarea' ? ' selected="selected"' : ''; ?>>
+                <option value="textarea" data-icon="<?php echo $typeIconMap['textarea']; ?>" data-type-label="<?php echo htmlspecialchars(Text::_('COM_CONTENTBUILDERNG_ELEMENT_TYPE_TEXTAREA'), ENT_QUOTES, 'UTF-8'); ?>" <?php echo $this->element->type == 'textarea' ? ' selected="selected"' : ''; ?>>
                     <?php echo Text::_('COM_CONTENTBUILDERNG_ELEMENT_TYPE_TEXTAREA'); ?>
                 </option>
-                <option value="checkboxgroup" <?php echo $this->element->type == 'checkboxgroup' ? ' selected="selected"' : ''; ?>>
+                <option value="checkboxgroup" data-icon="<?php echo $typeIconMap['checkboxgroup']; ?>" data-type-label="<?php echo htmlspecialchars(Text::_('COM_CONTENTBUILDERNG_ELEMENT_TYPE_CHECKBOXGROUP'), ENT_QUOTES, 'UTF-8'); ?>" <?php echo $this->element->type == 'checkboxgroup' ? ' selected="selected"' : ''; ?>>
                     <?php echo Text::_('COM_CONTENTBUILDERNG_ELEMENT_TYPE_CHECKBOXGROUP'); ?>
                 </option>
-                <option value="radiogroup" <?php echo $this->element->type == 'radiogroup' ? ' selected="selected"' : ''; ?>>
+                <option value="radiogroup" data-icon="<?php echo $typeIconMap['radiogroup']; ?>" data-type-label="<?php echo htmlspecialchars(Text::_('COM_CONTENTBUILDERNG_ELEMENT_TYPE_RADIO'), ENT_QUOTES, 'UTF-8'); ?>" <?php echo $this->element->type == 'radiogroup' ? ' selected="selected"' : ''; ?>>
                     <?php echo Text::_('COM_CONTENTBUILDERNG_ELEMENT_TYPE_RADIO'); ?>
                 </option>
-                <option value="select" <?php echo $this->element->type == 'select' ? ' selected="selected"' : ''; ?>>
+                <option value="select" data-icon="<?php echo $typeIconMap['select']; ?>" data-type-label="<?php echo htmlspecialchars(Text::_('COM_CONTENTBUILDERNG_ELEMENT_TYPE_SELECT'), ENT_QUOTES, 'UTF-8'); ?>" <?php echo $this->element->type == 'select' ? ' selected="selected"' : ''; ?>>
                     <?php echo Text::_('COM_CONTENTBUILDERNG_ELEMENT_TYPE_SELECT'); ?>
                 </option>
-                <option value="upload" <?php echo $this->element->type == 'upload' ? ' selected="selected"' : ''; ?>>
+                <option value="upload" data-icon="<?php echo $typeIconMap['upload']; ?>" data-type-label="<?php echo htmlspecialchars(Text::_('COM_CONTENTBUILDERNG_ELEMENT_TYPE_UPLOAD'), ENT_QUOTES, 'UTF-8'); ?>" <?php echo $this->element->type == 'upload' ? ' selected="selected"' : ''; ?>>
                     <?php echo Text::_('COM_CONTENTBUILDERNG_ELEMENT_TYPE_UPLOAD'); ?>
                 </option>
-                <option value="calendar" <?php echo $this->element->type == 'calendar' ? ' selected="selected"' : ''; ?>>
+                <option value="calendar" data-icon="<?php echo $typeIconMap['calendar']; ?>" data-type-label="<?php echo htmlspecialchars(Text::_('COM_CONTENTBUILDERNG_ELEMENT_TYPE_CALENDAR'), ENT_QUOTES, 'UTF-8'); ?>" <?php echo $this->element->type == 'calendar' ? ' selected="selected"' : ''; ?>>
                     <?php echo Text::_('COM_CONTENTBUILDERNG_ELEMENT_TYPE_CALENDAR'); ?>
                 </option>
-                <option value="hidden" <?php echo $this->element->type == 'hidden' ? ' selected="selected"' : ''; ?>>
+                <option value="hidden" data-icon="<?php echo $typeIconMap['hidden']; ?>" data-type-label="<?php echo htmlspecialchars(Text::_('COM_CONTENTBUILDERNG_ELEMENT_TYPE_HIDDEN'), ENT_QUOTES, 'UTF-8'); ?>" <?php echo $this->element->type == 'hidden' ? ' selected="selected"' : ''; ?>>
                     <?php echo Text::_('COM_CONTENTBUILDERNG_ELEMENT_TYPE_HIDDEN'); ?>
                 </option>
-                <option value="captcha" <?php echo $this->element->type == 'captcha' ? ' selected="selected"' : ''; ?>>
+                <option value="captcha" data-icon="<?php echo $typeIconMap['captcha']; ?>" data-type-label="<?php echo htmlspecialchars(Text::_('COM_CONTENTBUILDERNG_ELEMENT_TYPE_CAPTCHA'), ENT_QUOTES, 'UTF-8'); ?>" <?php echo $this->element->type == 'captcha' ? ' selected="selected"' : ''; ?>>
                     <?php echo Text::_('COM_CONTENTBUILDERNG_ELEMENT_TYPE_CAPTCHA'); ?>
                 </option>
                 <?php
                 foreach ($plugins as $plugin) {
                 ?>
-                    <option value="<?php echo $plugin; ?>" <?php echo $this->element->type == $plugin ? ' selected="selected"' : ''; ?>>
+                    <option value="<?php echo $plugin; ?>" data-icon="fa-solid fa-puzzle-piece" data-type-label="<?php echo htmlspecialchars($plugin, ENT_QUOTES, 'UTF-8'); ?>" <?php echo $this->element->type == $plugin ? ' selected="selected"' : ''; ?>>
                         <?php echo $plugin; ?>
                     </option>
                 <?php
                 }
                 ?>
             </select>
+            <div class="cb-type-picker d-none" id="type_selection_picker">
+                <button class="btn btn-sm btn-outline-secondary cb-type-picker-button" type="button" id="type_selection_picker_button" aria-expanded="false" aria-haspopup="listbox">
+                    <span class="cb-type-picker-current">
+                        <span class="cb-type-picker-icon" id="type_selection_picker_icon" aria-hidden="true">
+                            <span class="fa-solid fa-font" aria-hidden="true"></span>
+                        </span>
+                        <span class="cb-type-picker-current-label" id="type_selection_picker_label"></span>
+                    </span>
+                    <span class="cb-type-picker-caret fa-solid fa-chevron-down" aria-hidden="true"></span>
+                </button>
+                <div class="cb-type-picker-menu" id="type_selection_picker_menu" role="listbox" aria-labelledby="type_selection_picker_button">
+                    <button class="cb-type-picker-option" type="button" data-value="text" data-icon="<?php echo htmlspecialchars($typeIconMap['text'], ENT_QUOTES, 'UTF-8'); ?>" data-label="<?php echo htmlspecialchars(Text::_('COM_CONTENTBUILDERNG_ELEMENT_TYPE_TEXT'), ENT_QUOTES, 'UTF-8'); ?>">
+                        <span class="cb-type-picker-icon" aria-hidden="true"><span class="<?php echo htmlspecialchars($typeIconMap['text'], ENT_QUOTES, 'UTF-8'); ?>" aria-hidden="true"></span></span>
+                        <span><?php echo Text::_('COM_CONTENTBUILDERNG_ELEMENT_TYPE_TEXT'); ?></span>
+                    </button>
+                    <button class="cb-type-picker-option" type="button" data-value="textarea" data-icon="<?php echo htmlspecialchars($typeIconMap['textarea'], ENT_QUOTES, 'UTF-8'); ?>" data-label="<?php echo htmlspecialchars(Text::_('COM_CONTENTBUILDERNG_ELEMENT_TYPE_TEXTAREA'), ENT_QUOTES, 'UTF-8'); ?>">
+                        <span class="cb-type-picker-icon" aria-hidden="true"><span class="<?php echo htmlspecialchars($typeIconMap['textarea'], ENT_QUOTES, 'UTF-8'); ?>" aria-hidden="true"></span></span>
+                        <span><?php echo Text::_('COM_CONTENTBUILDERNG_ELEMENT_TYPE_TEXTAREA'); ?></span>
+                    </button>
+                    <button class="cb-type-picker-option" type="button" data-value="checkboxgroup" data-icon="<?php echo htmlspecialchars($typeIconMap['checkboxgroup'], ENT_QUOTES, 'UTF-8'); ?>" data-label="<?php echo htmlspecialchars(Text::_('COM_CONTENTBUILDERNG_ELEMENT_TYPE_CHECKBOXGROUP'), ENT_QUOTES, 'UTF-8'); ?>">
+                        <span class="cb-type-picker-icon" aria-hidden="true"><span class="<?php echo htmlspecialchars($typeIconMap['checkboxgroup'], ENT_QUOTES, 'UTF-8'); ?>" aria-hidden="true"></span></span>
+                        <span><?php echo Text::_('COM_CONTENTBUILDERNG_ELEMENT_TYPE_CHECKBOXGROUP'); ?></span>
+                    </button>
+                    <button class="cb-type-picker-option" type="button" data-value="radiogroup" data-icon="<?php echo htmlspecialchars($typeIconMap['radiogroup'], ENT_QUOTES, 'UTF-8'); ?>" data-label="<?php echo htmlspecialchars(Text::_('COM_CONTENTBUILDERNG_ELEMENT_TYPE_RADIO'), ENT_QUOTES, 'UTF-8'); ?>">
+                        <span class="cb-type-picker-icon" aria-hidden="true"><span class="<?php echo htmlspecialchars($typeIconMap['radiogroup'], ENT_QUOTES, 'UTF-8'); ?>" aria-hidden="true"></span></span>
+                        <span><?php echo Text::_('COM_CONTENTBUILDERNG_ELEMENT_TYPE_RADIO'); ?></span>
+                    </button>
+                    <button class="cb-type-picker-option" type="button" data-value="select" data-icon="<?php echo htmlspecialchars($typeIconMap['select'], ENT_QUOTES, 'UTF-8'); ?>" data-label="<?php echo htmlspecialchars(Text::_('COM_CONTENTBUILDERNG_ELEMENT_TYPE_SELECT'), ENT_QUOTES, 'UTF-8'); ?>">
+                        <span class="cb-type-picker-icon" aria-hidden="true"><span class="<?php echo htmlspecialchars($typeIconMap['select'], ENT_QUOTES, 'UTF-8'); ?>" aria-hidden="true"></span></span>
+                        <span><?php echo Text::_('COM_CONTENTBUILDERNG_ELEMENT_TYPE_SELECT'); ?></span>
+                    </button>
+                    <button class="cb-type-picker-option" type="button" data-value="upload" data-icon="<?php echo htmlspecialchars($typeIconMap['upload'], ENT_QUOTES, 'UTF-8'); ?>" data-label="<?php echo htmlspecialchars(Text::_('COM_CONTENTBUILDERNG_ELEMENT_TYPE_UPLOAD'), ENT_QUOTES, 'UTF-8'); ?>">
+                        <span class="cb-type-picker-icon" aria-hidden="true"><span class="<?php echo htmlspecialchars($typeIconMap['upload'], ENT_QUOTES, 'UTF-8'); ?>" aria-hidden="true"></span></span>
+                        <span><?php echo Text::_('COM_CONTENTBUILDERNG_ELEMENT_TYPE_UPLOAD'); ?></span>
+                    </button>
+                    <button class="cb-type-picker-option" type="button" data-value="calendar" data-icon="<?php echo htmlspecialchars($typeIconMap['calendar'], ENT_QUOTES, 'UTF-8'); ?>" data-label="<?php echo htmlspecialchars(Text::_('COM_CONTENTBUILDERNG_ELEMENT_TYPE_CALENDAR'), ENT_QUOTES, 'UTF-8'); ?>">
+                        <span class="cb-type-picker-icon" aria-hidden="true"><span class="<?php echo htmlspecialchars($typeIconMap['calendar'], ENT_QUOTES, 'UTF-8'); ?>" aria-hidden="true"></span></span>
+                        <span><?php echo Text::_('COM_CONTENTBUILDERNG_ELEMENT_TYPE_CALENDAR'); ?></span>
+                    </button>
+                    <button class="cb-type-picker-option" type="button" data-value="hidden" data-icon="<?php echo htmlspecialchars($typeIconMap['hidden'], ENT_QUOTES, 'UTF-8'); ?>" data-label="<?php echo htmlspecialchars(Text::_('COM_CONTENTBUILDERNG_ELEMENT_TYPE_HIDDEN'), ENT_QUOTES, 'UTF-8'); ?>">
+                        <span class="cb-type-picker-icon" aria-hidden="true"><span class="<?php echo htmlspecialchars($typeIconMap['hidden'], ENT_QUOTES, 'UTF-8'); ?>" aria-hidden="true"></span></span>
+                        <span><?php echo Text::_('COM_CONTENTBUILDERNG_ELEMENT_TYPE_HIDDEN'); ?></span>
+                    </button>
+                    <button class="cb-type-picker-option" type="button" data-value="captcha" data-icon="<?php echo htmlspecialchars($typeIconMap['captcha'], ENT_QUOTES, 'UTF-8'); ?>" data-label="<?php echo htmlspecialchars(Text::_('COM_CONTENTBUILDERNG_ELEMENT_TYPE_CAPTCHA'), ENT_QUOTES, 'UTF-8'); ?>">
+                        <span class="cb-type-picker-icon" aria-hidden="true"><span class="<?php echo htmlspecialchars($typeIconMap['captcha'], ENT_QUOTES, 'UTF-8'); ?>" aria-hidden="true"></span></span>
+                        <span><?php echo Text::_('COM_CONTENTBUILDERNG_ELEMENT_TYPE_CAPTCHA'); ?></span>
+                    </button>
+                    <?php
+                    foreach ($plugins as $plugin) {
+                    ?>
+                        <button class="cb-type-picker-option" type="button" data-value="<?php echo htmlspecialchars($plugin, ENT_QUOTES, 'UTF-8'); ?>" data-icon="fa-solid fa-puzzle-piece" data-label="<?php echo htmlspecialchars($plugin, ENT_QUOTES, 'UTF-8'); ?>">
+                            <span class="cb-type-picker-icon" aria-hidden="true"><span class="fa-solid fa-puzzle-piece" aria-hidden="true"></span></span>
+                            <span><?php echo htmlspecialchars($plugin, ENT_QUOTES, 'UTF-8'); ?></span>
+                        </button>
+                    <?php
+                    }
+                    ?>
+                </div>
+            </div>
             <button type="submit" class="btn btn-sm btn-primary" onclick="document.getElementById('task').value='elementoptions.save';">
                 <span class="fa-solid fa-floppy-disk me-1" aria-hidden="true"></span>
                 <?php echo Text::_('COM_CONTENTBUILDERNG_SAVE'); ?>
@@ -387,9 +492,7 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
                         ?>
                         <tr>
                             <td width="100" align="left" class="key">
-                                <label for="class">
-                                    <?php echo Text::_('COM_CONTENTBUILDERNG_ELEMENT_OPTIONS_CLASS'); ?>:
-                                </label>
+                                <?php echo $renderTooltipLabel('class', 'COM_CONTENTBUILDERNG_ELEMENT_OPTIONS_CLASS', 'COM_CONTENTBUILDERNG_ELEMENT_OPTIONS_CLASS_TIP'); ?>
                             </td>
                             <td align="left">
                                 <input class="form-control form-control-sm" style="width:95%;" type="text" name="class"
@@ -411,9 +514,7 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
                         </tr>
                         <tr>
                             <td width="100" align="left" class="key">
-                                <label for="allow_encoding">
-                                    <?php echo Text::_('COM_CONTENTBUILDERNG_ELEMENT_OPTIONS_ALLOW_ENCODING'); ?>:
-                                </label>
+                                <?php echo $renderTooltipLabel('allow_encoding', 'COM_CONTENTBUILDERNG_ELEMENT_OPTIONS_ALLOW_ENCODING', 'COM_CONTENTBUILDERNG_ELEMENT_OPTIONS_ALLOW_ENCODING_TIP'); ?>
                             </td>
                             <td align="left">
                                 <input class="form-check-input" type="radio" name="allow_encoding" id="allow_encoding" value="0"
@@ -447,9 +548,7 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
                     <table class="admintable" width="95%">
                         <tr>
                             <td width="100" align="left" class="key">
-                                <label for="default_value">
-                                    <?php echo Text::_('COM_CONTENTBUILDERNG_ELEMENT_DEFAULT_VALUE'); ?>:
-                                </label>
+                                <?php echo $renderTooltipLabel('default_value', 'COM_CONTENTBUILDERNG_ELEMENT_DEFAULT_VALUE', 'COM_CONTENTBUILDERNG_ELEMENT_DEFAULT_VALUE_TIP'); ?>
                             </td>
                             <td align="left">
                                 <textarea class="form-control" style="width: 95%; height: 100px;" name="default_value"
@@ -458,9 +557,7 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
                         </tr>
                         <tr>
                             <td width="100" align="left" class="key">
-                                <label for="hint">
-                                    <?php echo Text::_('COM_CONTENTBUILDERNG_ELEMENT_HINT'); ?>:
-                                </label>
+                                <?php echo $renderTooltipLabel('hint', 'COM_CONTENTBUILDERNG_ELEMENT_HINT', 'COM_CONTENTBUILDERNG_ELEMENT_HINT_TIP'); ?>
                             </td>
                             <td align="left">
                                 <textarea class="form-control" style="width:95%;height:100px;" name="hint"
@@ -494,20 +591,17 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
                         <tr>
                             <td width="100" align="left" class="key">
                                 <label for="maxlength">
-                                    <?php echo Text::_('COM_CONTENTBUILDERNG_ELEMENT_OPTIONS_MAXLENGTH'); ?>:
-                                </label>
-                            </td>
-                            <td align="left">
-                                <input class="form-control form-control-sm" style="width:95%;" type="text" name="maxlength"
+                                    <?php echo $renderTooltipLabel('maxlength', 'COM_CONTENTBUILDERNG_ELEMENT_OPTIONS_MAXLENGTH', 'COM_CONTENTBUILDERNG_ELEMENT_OPTIONS_MAXLENGTH_TIP'); ?>
+                                </td>
+                                <td align="left">
+                                    <input class="form-control form-control-sm" style="width:95%;" type="text" name="maxlength"
                                     id="maxlength"
                                     value="<?php echo isset($this->element->options->maxlength) ? $this->element->options->maxlength : ''; ?>" />
                             </td>
                         </tr>
                         <tr>
                             <td width="100" align="left" class="key">
-                                <label for="class">
-                                    <?php echo Text::_('COM_CONTENTBUILDERNG_ELEMENT_OPTIONS_CLASS'); ?>:
-                                </label>
+                                <?php echo $renderTooltipLabel('class', 'COM_CONTENTBUILDERNG_ELEMENT_OPTIONS_CLASS', 'COM_CONTENTBUILDERNG_ELEMENT_OPTIONS_CLASS_TIP'); ?>
                             </td>
                             <td align="left">
                                 <input class="form-control form-control-sm" style="width:95%;" type="text" name="class"
@@ -517,9 +611,7 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
                         </tr>
                         <tr>
                             <td width="100" align="left" class="key">
-                                <label for="readonly">
-                                    <?php echo Text::_('COM_CONTENTBUILDERNG_ELEMENT_OPTIONS_READONLY'); ?>:
-                                </label>
+                                <?php echo $renderTooltipLabel('readonly', 'COM_CONTENTBUILDERNG_ELEMENT_OPTIONS_READONLY', 'COM_CONTENTBUILDERNG_ELEMENT_OPTIONS_READONLY_TIP'); ?>
                                 </td>
                                 <td align="left">
                                     <?php echo $renderCheckbox('readonly', 'readonly', isset($this->element->options->readonly) && intval($this->element->options->readonly)); ?>
@@ -527,9 +619,7 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
                             </tr>
                         <tr>
                             <td width="100" align="left" class="key">
-                                <label for="allow_encoding">
-                                    <?php echo Text::_('COM_CONTENTBUILDERNG_ELEMENT_OPTIONS_ALLOW_ENCODING'); ?>:
-                                </label>
+                                <?php echo $renderTooltipLabel('allow_encoding', 'COM_CONTENTBUILDERNG_ELEMENT_OPTIONS_ALLOW_ENCODING', 'COM_CONTENTBUILDERNG_ELEMENT_OPTIONS_ALLOW_ENCODING_TIP'); ?>
                             </td>
                             <td align="left">
                                 <input class="form-check-input" type="radio" name="allow_encoding" id="allow_encoding" value="0"
@@ -564,9 +654,7 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
                     <table class="admintable" width="95%">
                         <tr>
                             <td width="100" align="left" class="key">
-                                <label for="default_value">
-                                    <?php echo Text::_('COM_CONTENTBUILDERNG_ELEMENT_DEFAULT_VALUE'); ?>:
-                                </label>
+                                <?php echo $renderTooltipLabel('default_value', 'COM_CONTENTBUILDERNG_ELEMENT_DEFAULT_VALUE', 'COM_CONTENTBUILDERNG_ELEMENT_DEFAULT_VALUE_TIP'); ?>
                             </td>
                             <td align="left">
                                 <input class="form-control form-control-sm" style="width:95%;" type="text" name="default_value"
@@ -576,9 +664,7 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
                         </tr>
                         <tr>
                             <td width="100" align="left" class="key">
-                                <label for="hint">
-                                    <?php echo Text::_('COM_CONTENTBUILDERNG_ELEMENT_HINT'); ?>:
-                                </label>
+                                <?php echo $renderTooltipLabel('hint', 'COM_CONTENTBUILDERNG_ELEMENT_HINT', 'COM_CONTENTBUILDERNG_ELEMENT_HINT_TIP'); ?>
                             </td>
                             <td align="left">
                                 <textarea class="form-control" style="width:95%;height:100px;" name="hint"
@@ -587,9 +673,7 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
                         </tr>
                         <tr>
                             <td width="100" align="left" class="key">
-                                <label for="length">
-                                    <?php echo Text::_('COM_CONTENTBUILDERNG_ELEMENT_OPTIONS_LENGTH'); ?>:
-                                </label>
+                                <?php echo $renderTooltipLabel('length', 'COM_CONTENTBUILDERNG_ELEMENT_OPTIONS_LENGTH', 'COM_CONTENTBUILDERNG_ELEMENT_OPTIONS_LENGTH_TIP'); ?>
                             </td>
                             <td align="left">
                                 <input class="form-control form-control-sm" style="width:95%;" type="text" name="length"
@@ -599,9 +683,7 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
                         </tr>
                         <tr>
                             <td width="100" align="left" class="key">
-                                <label for="maxlength">
-                                    <?php echo Text::_('COM_CONTENTBUILDERNG_ELEMENT_OPTIONS_MAXLENGTH'); ?>:
-                                </label>
+                                <?php echo $renderTooltipLabel('maxlength', 'COM_CONTENTBUILDERNG_ELEMENT_OPTIONS_MAXLENGTH', 'COM_CONTENTBUILDERNG_ELEMENT_OPTIONS_MAXLENGTH_TIP'); ?>
                             </td>
                             <td align="left">
                                 <input class="form-control form-control-sm" style="width:95%;" type="text" name="maxlength"
@@ -623,9 +705,7 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
                         </tr>
                         <tr>
                             <td width="100" align="left" class="key">
-                                <label for="transfer_format">
-                                    <?php echo Text::_('COM_CONTENTBUILDERNG_ELEMENT_OPTIONS_TRANSFER_FORMAT'); ?>:
-                                </label>
+                                <?php echo $renderTooltipLabel('transfer_format', 'COM_CONTENTBUILDERNG_ELEMENT_OPTIONS_TRANSFER_FORMAT', 'COM_CONTENTBUILDERNG_ELEMENT_OPTIONS_TRANSFER_FORMAT_TIP'); ?>
                             </td>
                             <td align="left">
                                 <input class="form-control form-control-sm" style="width:95%;" type="text"
@@ -635,9 +715,7 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
                         </tr>
                         <tr>
                             <td width="100" align="left" class="key">
-                                <label for="readonly">
-                                    <?php echo Text::_('COM_CONTENTBUILDERNG_ELEMENT_OPTIONS_READONLY'); ?>:
-                                </label>
+                                <?php echo $renderTooltipLabel('readonly', 'COM_CONTENTBUILDERNG_ELEMENT_OPTIONS_READONLY', 'COM_CONTENTBUILDERNG_ELEMENT_OPTIONS_READONLY_TIP'); ?>
                                 </td>
                                 <td align="left">
                                     <?php echo $renderCheckbox('readonly', 'readonly', isset($this->element->options->readonly) && intval($this->element->options->readonly)); ?>
@@ -659,9 +737,7 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
                     <table class="admintable" width="95%">
                         <tr>
                             <td width="100" align="left" class="key">
-                                <label for="default_value">
-                                    <?php echo Text::_('COM_CONTENTBUILDERNG_ELEMENT_DEFAULT_VALUE'); ?>:
-                                </label>
+                                <?php echo $renderTooltipLabel('default_value', 'COM_CONTENTBUILDERNG_ELEMENT_DEFAULT_VALUE', 'COM_CONTENTBUILDERNG_ELEMENT_DEFAULT_VALUE_TIP'); ?>
                             </td>
                             <td align="left">
                                 <input class="form-control form-control-sm" style="width:95%;" type="text" name="default_value"
@@ -671,9 +747,7 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
                         </tr>
                         <tr>
                             <td width="100" align="left" class="key">
-                                <label for="hint">
-                                    <?php echo Text::_('COM_CONTENTBUILDERNG_ELEMENT_HINT'); ?>:
-                                </label>
+                                <?php echo $renderTooltipLabel('hint', 'COM_CONTENTBUILDERNG_ELEMENT_HINT', 'COM_CONTENTBUILDERNG_ELEMENT_HINT_TIP'); ?>
                             </td>
                             <td align="left">
                                 <textarea class="form-control" style="width:95%;height:100px;" name="hint"
@@ -683,11 +757,11 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
                         <tr>
                             <td colspan="2" align="left">
                                 <div class="cb-inline-grid">
-                                    <label for="length"><?php echo Text::_('COM_CONTENTBUILDERNG_ELEMENT_OPTIONS_LENGTH'); ?>:</label>
+                                    <?php echo $renderTooltipLabel('length', 'COM_CONTENTBUILDERNG_ELEMENT_OPTIONS_LENGTH', 'COM_CONTENTBUILDERNG_ELEMENT_OPTIONS_LENGTH_TIP'); ?>
                                     <input class="form-control form-control-sm" type="text" name="length"
                                         id="length"
                                         value="<?php echo isset($this->element->options->length) ? $this->element->options->length : ''; ?>" />
-                                    <label for="maxlength"><?php echo Text::_('COM_CONTENTBUILDERNG_ELEMENT_OPTIONS_MAXLENGTH'); ?>:</label>
+                                    <?php echo $renderTooltipLabel('maxlength', 'COM_CONTENTBUILDERNG_ELEMENT_OPTIONS_MAXLENGTH', 'COM_CONTENTBUILDERNG_ELEMENT_OPTIONS_MAXLENGTH_TIP'); ?>
                                     <input class="form-control form-control-sm" type="text" name="maxlength"
                                         id="maxlength"
                                         value="<?php echo isset($this->element->options->maxlength) ? $this->element->options->maxlength : ''; ?>" />
@@ -696,9 +770,7 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
                         </tr>
                         <tr>
                             <td width="100" align="left" class="key">
-                                <label for="class">
-                                    <?php echo Text::_('COM_CONTENTBUILDERNG_ELEMENT_OPTIONS_CLASS'); ?>:
-                                </label>
+                                <?php echo $renderTooltipLabel('class', 'COM_CONTENTBUILDERNG_ELEMENT_OPTIONS_CLASS', 'COM_CONTENTBUILDERNG_ELEMENT_OPTIONS_CLASS_TIP'); ?>
                             </td>
                             <td align="left">
                                 <input class="form-control form-control-sm" style="width:95%;" type="text" name="class"
@@ -710,11 +782,11 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
                             <td colspan="2" align="left">
                                 <div class="cb-inline-flags">
                                     <span>
-                                        <label for="password"><?php echo Text::_('COM_CONTENTBUILDERNG_ELEMENT_OPTIONS_PASSWORD'); ?>:</label>
+                                        <?php echo $renderTooltipLabel('password', 'COM_CONTENTBUILDERNG_ELEMENT_OPTIONS_PASSWORD', 'COM_CONTENTBUILDERNG_ELEMENT_OPTIONS_PASSWORD_TIP'); ?>
                                         <?php echo $renderCheckbox('password', 'password', isset($this->element->options->password) && intval($this->element->options->password)); ?>
                                     </span>
                                     <span>
-                                        <label for="readonly"><?php echo Text::_('COM_CONTENTBUILDERNG_ELEMENT_OPTIONS_READONLY'); ?>:</label>
+                                        <?php echo $renderTooltipLabel('readonly', 'COM_CONTENTBUILDERNG_ELEMENT_OPTIONS_READONLY', 'COM_CONTENTBUILDERNG_ELEMENT_OPTIONS_READONLY_TIP'); ?>
                                         <?php echo $renderCheckbox('readonly', 'readonly', isset($this->element->options->readonly) && intval($this->element->options->readonly)); ?>
                                     </span>
                                 </div>
@@ -722,9 +794,7 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
                         </tr>
                         <tr>
                             <td width="100" align="left" class="key">
-                                <label for="allow_encoding">
-                                    <?php echo Text::_('COM_CONTENTBUILDERNG_ELEMENT_OPTIONS_ALLOW_ENCODING'); ?>:
-                                </label>
+                                <?php echo $renderTooltipLabel('allow_encoding', 'COM_CONTENTBUILDERNG_ELEMENT_OPTIONS_ALLOW_ENCODING', 'COM_CONTENTBUILDERNG_ELEMENT_OPTIONS_ALLOW_ENCODING_TIP'); ?>
                             </td>
                             <td align="left">
                                 <input class="form-check-input" type="radio" name="allow_encoding" id="allow_encoding" value="0"
@@ -862,7 +932,7 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
                                 <?php
                                 $params = array('syntax' => 'php');
                                 $editor = Editor::getInstance('codemirror');
-                                echo $editor->display("custom_validation_script", $this->element->custom_validation_script, '100%', '550', '75', '20', false, null, null, null, $params);
+                                echo $editor->display('custom_validation_script', (string) ($this->element->custom_validation_script ?? ''), '100%', '550', '75', '20', false, 'custom_validation_script', null, null, $params);
                                 ?>
                             </td>
                         </tr>
@@ -888,7 +958,7 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
                                 <?php
                                 $params = array('syntax' => 'javascript');
                                 $editor = Editor::getInstance('codemirror');
-                                echo $editor->display("custom_init_script", $this->element->custom_init_script, '100%', '550', '75', '20', false, null, null, null, $params);
+                                echo $editor->display('custom_init_script', (string) ($this->element->custom_init_script ?? ''), '100%', '550', '75', '20', false, 'custom_init_script', null, null, $params);
                                 ?>
                             </td>
                         </tr>
@@ -913,7 +983,7 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
                                 <?php
                                 $params = array('syntax' => 'php');
                                 $editor = Editor::getInstance('codemirror');
-                                echo $editor->display("custom_action_script", $this->element->custom_action_script, '100%', '550', '75', '20', false, null, null, null, $params);
+                                echo $editor->display('custom_action_script', (string) ($this->element->custom_action_script ?? ''), '100%', '550', '75', '20', false, 'custom_action_script', null, null, $params);
                                 ?>
                             </td>
                         </tr>
@@ -943,3 +1013,115 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
     <input type="hidden" name="published" value="<?php echo $this->element->published; ?>" />
     <?php echo HTMLHelper::_('form.token'); ?>
 </form>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var adminForm = document.getElementById('adminForm');
+    var typeSelect = document.getElementById('type_selection');
+    var typePicker = document.getElementById('type_selection_picker');
+    var typePickerButton = document.getElementById('type_selection_picker_button');
+    var typePickerLabel = document.getElementById('type_selection_picker_label');
+    var typePickerIcon = document.getElementById('type_selection_picker_icon');
+    var typePickerMenu = document.getElementById('type_selection_picker_menu');
+    var typeChange = document.getElementById('type_change');
+    var taskField = document.getElementById('task');
+    var typePickerOptions = typePicker ? typePicker.querySelectorAll('[data-value]') : [];
+
+    if (window.bootstrap && typeof window.bootstrap.Tooltip === 'function') {
+        document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function(el) {
+            window.bootstrap.Tooltip.getOrCreateInstance(el);
+        });
+    }
+
+    if (!adminForm || !typeSelect || !typePicker || !typePickerButton || !typePickerLabel || !typePickerIcon || !typePickerMenu) {
+        return;
+    }
+
+    typePicker.classList.remove('d-none');
+    typeSelect.classList.add('d-none');
+
+    var closeTypePicker = function() {
+        typePicker.classList.remove('is-open');
+        typePickerButton.setAttribute('aria-expanded', 'false');
+    };
+
+    var openTypePicker = function() {
+        typePicker.classList.add('is-open');
+        typePickerButton.setAttribute('aria-expanded', 'true');
+    };
+
+    var updateTypePicker = function() {
+        var option = typeSelect.options[typeSelect.selectedIndex];
+        if (!option) {
+            return;
+        }
+
+        var iconClass = String(option.dataset.icon || 'fa-solid fa-puzzle-piece');
+        var label = String(option.dataset.typeLabel || option.text || '');
+        typePickerIcon.innerHTML = '<span class="' + iconClass + '" aria-hidden="true"></span>';
+        typePickerLabel.textContent = label;
+
+        typePickerOptions.forEach(function(pickerOption) {
+            pickerOption.classList.toggle('is-active', pickerOption.dataset.value === option.value);
+        });
+    };
+
+    typePickerOptions.forEach(function(pickerOption) {
+        pickerOption.addEventListener('click', function() {
+            if (typeSelect.value === pickerOption.dataset.value) {
+                closeTypePicker();
+                return;
+            }
+
+            typeSelect.value = pickerOption.dataset.value;
+            updateTypePicker();
+            closeTypePicker();
+
+            if (typeChange) {
+                typeChange.value = '1';
+            }
+
+            if (taskField) {
+                taskField.value = 'elementoptions.save';
+            }
+
+            if (typeof adminForm.requestSubmit === 'function') {
+                adminForm.requestSubmit();
+                return;
+            }
+
+            adminForm.submit();
+        });
+    });
+
+    typePickerButton.addEventListener('click', function(event) {
+        event.preventDefault();
+        event.stopPropagation();
+
+        if (typePicker.classList.contains('is-open')) {
+            closeTypePicker();
+            return;
+        }
+
+        openTypePicker();
+    });
+
+    typePickerMenu.addEventListener('click', function(event) {
+        event.stopPropagation();
+    });
+
+    document.addEventListener('click', function(event) {
+        if (!typePicker.contains(event.target)) {
+            closeTypePicker();
+        }
+    });
+
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape') {
+            closeTypePicker();
+        }
+    });
+
+    typeSelect.addEventListener('change', updateTypePicker);
+    updateTypePicker();
+});
+</script>

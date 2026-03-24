@@ -173,7 +173,7 @@ class PermissionService
             }
         }
 
-        $groups = Access::getGroupsByUser($this->getCurrentUserId(), false);
+        $groups = Access::getGroupsByUser($this->getCurrentUserId());
 
         foreach ($groups as $group) {
             foreach (['view', 'new', 'edit', 'delete', 'state', 'publish', 'fullarticle', 'language', 'rating', 'api', 'listaccess'] as $action) {
@@ -229,16 +229,16 @@ class PermissionService
             }
         }
 
-        if (!isset($permissions['own' . $suffix])) {
-            $gids = Access::getGroupsByUser($this->getCurrentUserId());
+        $gids = Access::getGroupsByUser($this->getCurrentUserId());
 
-            foreach ($permissions as $groupId => $groupAction) {
-                if (isset($groupAction[$action]) && $groupAction[$action] && in_array($groupId, $gids, true)) {
-                    $allowed = true;
-                    break;
-                }
+        foreach ($permissions as $groupId => $groupAction) {
+            if (isset($groupAction[$action]) && $groupAction[$action] && in_array($groupId, $gids, true)) {
+                $allowed = true;
+                break;
             }
-        } elseif (isset($permissions['own' . $suffix][$action])) {
+        }
+
+        if (!$allowed && isset($permissions['own' . $suffix][$action])) {
             $userReturn = $permissions['own' . $suffix][$action];
 
             if (is_array($userReturn) && !empty($userReturn['own'])) {
@@ -257,7 +257,7 @@ class PermissionService
                     $form = $this->formResolverService->getForm($typerefid['type'], $typerefid['reference_id']);
 
                     if ($form && !isset($userReturn['record_id'])) {
-                        $allowed = true;
+                        $allowed = in_array($action, ['new', 'listaccess'], true);
                     } elseif (is_array($userReturn['record_id'])) {
                         foreach ($userReturn['record_id'] as $recid) {
                             $db->setQuery(
@@ -282,7 +282,14 @@ class PermissionService
                         );
                         $sessionId = $db->loadResult();
 
-                        if ($form && ($userReturn['record_id'] == false || $sessionId == $currentSessionId || $form->isOwner($this->getCurrentUserId(), $userReturn['record_id']))) {
+                        if (
+                            $form
+                            && (
+                                ((string) $userReturn['record_id'] === '0' || $userReturn['record_id'] == false)
+                                    ? in_array($action, ['new', 'listaccess'], true)
+                                    : ($sessionId == $currentSessionId || $form->isOwner($this->getCurrentUserId(), $userReturn['record_id']))
+                            )
+                        ) {
                             $allowed = true;
                         }
                     }

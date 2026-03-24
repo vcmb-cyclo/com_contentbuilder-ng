@@ -62,13 +62,13 @@ class HtmlView extends BaseHtmlView
         $total = $this->get('Total');
 
         $state = $this->get('state');
-        $lists['order_Dir'] = $state->get('formsd_filter_order_Dir');
-        $lists['order'] = $state->get('formsd_filter_order');
-        $lists['filter'] = $state->get('formsd_filter');
-        $lists['filter_state'] = $state->get('formsd_filter_state');
-        $lists['filter_publish'] = $state->get('formsd_filter_publish');
-        $lists['filter_language'] = $state->get('formsd_filter_language');
-        $lists['liststart'] = (int) $state->get('list.start');
+        $lists['order_Dir'] = $state?->get('formsd_filter_order_Dir');
+        $lists['order'] = $state?->get('formsd_filter_order');
+        $lists['filter'] = $state?->get('formsd_filter');
+        $lists['filter_state'] = $state?->get('formsd_filter_state');
+        $lists['filter_publish'] = $state?->get('formsd_filter_publish');
+        $lists['filter_language'] = $state?->get('formsd_filter_language');
+        $lists['liststart'] = (int) ($state?->get('list.start') ?? 0);
 
         $dispatcher = Factory::getApplication()->getDispatcher();
         $eventResult = $dispatcher->dispatch('onListViewCss', new \Joomla\CMS\Event\GenericEvent('onListViewCss', ['theme' => $themePlugin]));
@@ -117,12 +117,14 @@ class HtmlView extends BaseHtmlView
         $this->list_author = (int) ($subject->list_author ?? 0);
         $this->list_rating = (int) ($subject->list_rating ?? 0);
         $this->rating_slots = (int) ($subject->rating_slots ?? 0);
+        $this->state = $state;
         $this->state_colors = is_array($subject->state_colors ?? null) ? $subject->state_colors : [];
         $this->state_titles = is_array($subject->state_titles ?? null) ? $subject->state_titles : [];
         $this->published_items = is_array($subject->published_items ?? null) ? $subject->published_items : [];
         $this->languages = is_array($subject->languages ?? null) ? $subject->languages : [];
         $this->lang_codes = is_array($subject->lang_codes ?? null) ? $subject->lang_codes : [];
         $this->title_field = (string) ($subject->title_field ?? '');
+        $this->form = $subject->form ?? null;
         $this->lists = $lists;
         $this->items = is_array($subject->items ?? null) ? $subject->items : [];
         $this->pagination = $pagination;

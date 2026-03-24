@@ -114,6 +114,47 @@ class TemplateRenderService
         return preg_replace(array_keys($replacements), array_values($replacements), $template);
     }
 
+    /**
+     * Convert simple HTML emphasis produced by editable_prepare snippets into
+     * plain text plus field styling for non-HTML form controls.
+     *
+     * @return array{value:string,style:string,class:string}
+     */
+    private function normalizeEditableFieldPresentation(string $rawValue): array
+    {
+        $rawValue = (string) $rawValue;
+        $styleParts = [];
+        $classNames = [];
+
+        if (preg_match('/color\s*:\s*([^;"\']+)/i', $rawValue, $matches)) {
+            $color = trim((string) ($matches[1] ?? ''));
+            if ($color !== '') {
+                $styleParts[] = 'color:' . $color;
+            }
+        }
+
+        if (preg_match('/<(b|strong)\b/i', $rawValue)) {
+            $styleParts[] = 'font-weight:700';
+        }
+
+        if (preg_match('/<(i|em)\b/i', $rawValue)) {
+            $styleParts[] = 'font-style:italic';
+        }
+
+        if (stripos($rawValue, 'cb-prepare-blink') !== false) {
+            $classNames[] = 'cb-prepare-blink';
+        }
+
+        $normalizedValue = str_ireplace(['<br>', '<br/>', '<br />'], "\n", $rawValue);
+        $normalizedValue = html_entity_decode(strip_tags($normalizedValue), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+
+        return [
+            'value' => $normalizedValue,
+            'style' => $styleParts !== [] ? implode(';', $styleParts) . ';' : '',
+            'class' => implode(' ', array_unique($classNames)),
+        ];
+    }
+
     public function applyItemWrappers($contentbuilderngFormId, array $items, $form)
     {
         $db = Factory::getContainer()->get(DatabaseInterface::class);
@@ -735,7 +776,10 @@ class TemplateRenderService
                     $options->password = $options->password ?? '';
                     $options->readonly = $options->readonly ?? '';
                     $textValue = $normalizeScalarValue($failedValues !== null && isset($failedValues[$element['reference_id']]) ? $failedValues[$element['reference_id']] : ($hasRecords ? $item['value'] : $element['default_value']));
-                    $theItem = '<div class="cbFormField cbTextField"><input class="form-control form-control-sm" ' . $autocomplete . '' . ($options->readonly ? 'readonly="readonly" ' : '') . 'style="' . ($options->length ? 'width:' . $options->length . ';' : '') . '" ' . ($options->maxlength ? 'maxlength="' . (int) $options->maxlength . '" ' : '') . 'type="' . (isset($element['force_password']) || $options->password ? 'password' : 'text') . '" id="cb_' . $item['id'] . '" name="cb_' . $item['id'] . '" value="' . htmlentities($textValue, ENT_QUOTES, 'UTF-8') . '"/></div>';
+                    $textPresentation = $this->normalizeEditableFieldPresentation($textValue);
+                    $textStyle = ($options->length ? 'width:' . $options->length . ';' : '') . $textPresentation['style'];
+                    $textClass = 'form-control form-control-sm' . ($textPresentation['class'] !== '' ? ' ' . $textPresentation['class'] : '');
+                    $theItem = '<div class="cbFormField cbTextField"><input class="' . $textClass . '" ' . $autocomplete . '' . ($options->readonly ? 'readonly="readonly" ' : '') . 'style="' . $textStyle . '" ' . ($options->maxlength ? 'maxlength="' . (int) $options->maxlength . '" ' : '') . 'type="' . (isset($element['force_password']) || $options->password ? 'password' : 'text') . '" id="cb_' . $item['id'] . '" name="cb_' . $item['id'] . '" value="' . htmlentities($textPresentation['value'], ENT_QUOTES, 'UTF-8') . '"/></div>';
                     break;
                 case 'textarea':
                     $options->width = $options->width ?? '';
@@ -749,7 +793,10 @@ class TemplateRenderService
                         $editor = Editor::getInstance($app->get('editor'));
                         $theItem = '<div class="cbFormField cbTextArea">' . $editor->display('cb_' . $item['id'], htmlentities($textareaValue, ENT_QUOTES, 'UTF-8'), $options->width ? $options->width : '100%', $options->height ? $options->height : '550', '75', '20') . '</div>';
                     } else {
-                        $theItem = '<div class="cbFormField cbTextArea form-control form-control-sm"><textarea class="form-control form-control-sm" ' . ($options->readonly ? 'readonly="readonly" ' : '') . 'style="' . ($options->width || $options->height ? ($options->width ? 'width:' . $options->width . ';' : '') . ($options->height ? 'height:' . $options->height . ';' : '') : '') . '" id="cb_' . $item['id'] . '" name="cb_' . $item['id'] . '">' . htmlentities($textareaValue, ENT_QUOTES, 'UTF-8') . '</textarea></div>';
+                        $textareaPresentation = $this->normalizeEditableFieldPresentation($textareaValue);
+                        $textareaStyle = ($options->width || $options->height ? ($options->width ? 'width:' . $options->width . ';' : '') . ($options->height ? 'height:' . $options->height . ';' : '') : '') . $textareaPresentation['style'];
+                        $textareaClass = 'form-control form-control-sm' . ($textareaPresentation['class'] !== '' ? ' ' . $textareaPresentation['class'] : '');
+                        $theItem = '<div class="cbFormField cbTextArea form-control form-control-sm"><textarea class="' . $textareaClass . '" ' . ($options->readonly ? 'readonly="readonly" ' : '') . 'style="' . $textareaStyle . '" id="cb_' . $item['id'] . '" name="cb_' . $item['id'] . '">' . htmlentities($textareaPresentation['value'], ENT_QUOTES, 'UTF-8') . '</textarea></div>';
                     }
                     break;
                 case 'checkboxgroup':

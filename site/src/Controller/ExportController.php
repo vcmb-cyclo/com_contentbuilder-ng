@@ -11,17 +11,67 @@ namespace CB\Component\Contentbuilderng\Site\Controller;
 // No direct access
 defined( '_JEXEC' ) or die( 'Restricted access' );
 
+use Joomla\CMS\Factory;
 use Joomla\CMS\MVC\Controller\BaseController;
 
 class ExportController extends BaseController
 {
-    function display($cachable = false, $urlparams = [])
+    public function display($cachable = false, $urlparams = []): void
     {
+        $formId = (int) $this->input->getInt('id', 0);
+        $isAdminPreview = $this->isValidAdminPreviewRequest($formId);
+        $this->input->set('cb_preview_ok', $isAdminPreview ? 1 : 0);
+        Factory::getApplication()->input->set('cb_preview_ok', $isAdminPreview ? 1 : 0);
+
         $this->input->set('tmpl', $this->input->getWord('tmpl', null));
         $this->input->set('layout', $this->input->getWord('layout', null));
         $this->input->set('view', 'export');
         $this->input->set('format', 'raw');
 
         parent::display();
+    }
+
+    private function isValidAdminPreviewRequest(int $formId): bool
+    {
+        if ($formId < 1 || !$this->input->getBool('cb_preview', false)) {
+            return false;
+        }
+
+        $until = (int) $this->input->getInt('cb_preview_until', 0);
+        $sig = trim((string) $this->input->getString('cb_preview_sig', ''));
+        $actorId = (int) $this->input->getInt('cb_preview_actor_id', 0);
+        $actorName = trim((string) $this->input->getString('cb_preview_actor_name', ''));
+
+        if ($until < time() || $sig === '') {
+            return false;
+        }
+
+        $secret = (string) Factory::getApplication()->get('secret');
+        if ($secret === '') {
+            return false;
+        }
+
+        $payload = $formId . '|' . $until;
+        $expected = hash_hmac('sha256', $payload, $secret);
+        $actorPayload = $payload . '|' . $actorId . '|' . $actorName;
+        $actorExpected = hash_hmac('sha256', $actorPayload, $secret);
+
+        if (($actorId > 0 || $actorName !== '') && hash_equals($actorExpected, $sig)) {
+            $this->input->set('cb_preview_actor_id', $actorId);
+            $this->input->set('cb_preview_actor_name', $actorName);
+            Factory::getApplication()->input->set('cb_preview_actor_id', $actorId);
+            Factory::getApplication()->input->set('cb_preview_actor_name', $actorName);
+            return true;
+        }
+
+        if (hash_equals($expected, $sig)) {
+            $this->input->set('cb_preview_actor_id', 0);
+            $this->input->set('cb_preview_actor_name', '');
+            Factory::getApplication()->input->set('cb_preview_actor_id', 0);
+            Factory::getApplication()->input->set('cb_preview_actor_name', '');
+            return true;
+        }
+
+        return false;
     }
 }

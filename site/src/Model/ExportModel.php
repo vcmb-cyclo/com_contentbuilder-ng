@@ -21,12 +21,14 @@ use Joomla\CMS\MVC\Model\BaseDatabaseModel;
 use CB\Component\Contentbuilderng\Administrator\Helper\ContentbuilderngHelper;
 use CB\Component\Contentbuilderng\Administrator\Service\RuntimeUtilityService;
 use CB\Component\Contentbuilderng\Administrator\Service\ListSupportService;
+use CB\Component\Contentbuilderng\Administrator\Service\PermissionService;
 use CB\Component\Contentbuilderng\Site\Helper\MenuParamHelper;
 
 class ExportModel extends BaseDatabaseModel
 {
     private readonly RuntimeUtilityService $runtimeUtilityService;
     private readonly ListSupportService $listSupportService;
+    private readonly PermissionService $permissionService;
 
     private $frontend = false;
 
@@ -48,6 +50,7 @@ class ExportModel extends BaseDatabaseModel
         $this->app = $app;
         $this->runtimeUtilityService = new RuntimeUtilityService();
         $this->listSupportService = new ListSupportService();
+        $this->permissionService = new PermissionService();
         $this->frontend = $app->isClient('site');
         $option = 'com_contentbuilderng';
 
@@ -152,6 +155,19 @@ class ExportModel extends BaseDatabaseModel
         // Set id and wipe data
         $this->_id      = $id;
         $this->_data    = null;
+    }
+
+    private function shouldRestrictToPublishedOnly(object $data, bool $isAdminPreview): bool
+    {
+        if ($isAdminPreview || !$this->frontend) {
+            return (bool) ($data->published_only ?? false);
+        }
+
+        if (!$this->permissionService->authorizeFe('publish')) {
+            return true;
+        }
+
+        return (bool) ($data->published_only ?? false);
     }
 
     /*
@@ -368,7 +384,12 @@ class ExportModel extends BaseDatabaseModel
                         $act_as_registration[$data->registration_name_field] = 'registration_name_field';
                         $act_as_registration[$data->registration_email_field] = 'registration_email_field';
                     }
-                    $ownerFilterUserId = $this->frontend && $data->own_only_fe ? (int) ($app->getIdentity()->id ?? 0) : -1;
+                    $isAdminPreview = $app->input->getBool('cb_preview_ok', false);
+                    $publishedOnly = $this->shouldRestrictToPublishedOnly($data, $isAdminPreview);
+                    $ownerFilterUserId = $isAdminPreview
+                        ? -1
+                        : ($this->frontend && $data->own_only_fe ? (int) ($app->getIdentity()->id ?? 0) : -1);
+                    $showAllLanguages = $isAdminPreview ? true : ($this->frontend ? $data->show_all_languages_fe : true);
                     $data->items = $data->form->getListRecords(
                         $ids,
                         $this->getState('formsd_filter'),
@@ -379,7 +400,7 @@ class ExportModel extends BaseDatabaseModel
                         $order_types,
                         $this->getState('formsd_filter_order_Dir'),
                         0,
-                        $data->published_only,
+                        $publishedOnly,
                         $ownerFilterUserId,
                         $this->getState('formsd_filter_state'),
                         $this->getState('formsd_filter_publish'),
@@ -387,7 +408,7 @@ class ExportModel extends BaseDatabaseModel
                         $data->initial_sort_order2 == -1 ? -1 : 'col' . $data->initial_sort_order2,
                         $data->initial_sort_order3 == -1 ? -1 : 'col' . $data->initial_sort_order3,
                         $this->_menu_filter,
-                        $this->frontend ? $data->show_all_languages_fe : true,
+                        $showAllLanguages,
                         $this->getState('formsd_filter_language'),
                         $act_as_registration,
                         $data,
