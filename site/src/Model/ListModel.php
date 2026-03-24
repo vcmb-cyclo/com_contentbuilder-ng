@@ -23,10 +23,10 @@ use Joomla\CMS\Event\Content\ContentPrepareEvent;
 use Joomla\CMS\MVC\Model\ListModel as BaseListModel;
 use CB\Component\Contentbuilderng\Administrator\Helper\ContentbuilderngHelper;
 use CB\Component\Contentbuilderng\Site\Helper\MenuParamHelper;
+use CB\Component\Contentbuilderng\Site\Helper\PublishedRecordVisibilityHelper;
 use CB\Component\Contentbuilderng\Administrator\Service\FormSupportService;
 use CB\Component\Contentbuilderng\Administrator\Service\RuntimeUtilityService;
 use CB\Component\Contentbuilderng\Administrator\Service\ListSupportService;
-use CB\Component\Contentbuilderng\Administrator\Service\PermissionService;
 use CB\Component\Contentbuilderng\Administrator\Service\TemplateRenderService;
 use CB\Component\Contentbuilderng\Administrator\Helper\FormSourceFactory;
 
@@ -35,7 +35,6 @@ class ListModel extends BaseListModel
     private readonly ListSupportService $listSupportService;
     private readonly RuntimeUtilityService $runtimeUtilityService;
     private readonly TemplateRenderService $templateRenderService;
-    private readonly PermissionService $permissionService;
 
     protected int $_id = 0;
 
@@ -80,7 +79,6 @@ class ListModel extends BaseListModel
         $this->listSupportService = new ListSupportService();
         $this->runtimeUtilityService = new RuntimeUtilityService();
         $this->templateRenderService = new TemplateRenderService();
-        $this->permissionService = new PermissionService();
 
         $this->frontend = $app->isClient('site');
         $option = 'com_contentbuilderng';
@@ -598,7 +596,8 @@ class ListModel extends BaseListModel
                 -1
             );
             $this->_total = $storage->form->getListRecordsTotal($ids, $this->getState('formsd_filter'), $searchableElements);
-            $data->published_items = $this->listSupportService->getRecordsPublishInfo($data->items, $data->type, $data->reference_id);
+            $recordMeta = $this->listSupportService->getListRecordMeta($data->items, (int) $storage->id, (string) $data->type, $data->reference_id);
+            $data->published_items = $recordMeta['published_items'];
         } else {
             $data->items = [];
             $this->_total = 0;
@@ -648,15 +647,7 @@ class ListModel extends BaseListModel
 
     private function shouldRestrictToPublishedOnly(object $data, bool $isAdminPreview): bool
     {
-        if ($isAdminPreview || !$this->frontend) {
-            return (bool) ($data->published_only ?? false);
-        }
-
-        if (!$this->permissionService->authorizeFe('publish')) {
-            return true;
-        }
-
-        return (bool) ($data->published_only ?? false);
+        return PublishedRecordVisibilityHelper::shouldRestrictToPublishedOnly($data, $isAdminPreview);
     }
 
     /**
@@ -700,9 +691,7 @@ class ListModel extends BaseListModel
                 $isAdminPreview = $app->input->getBool('cb_preview_ok', false);
 
                 if (!$isAdminPreview) {
-                    if (!$this->frontend && $data->display_in == 0) {
-                        throw new \Exception(Text::_('COM_CONTENTBUILDERNG_FORM_NOT_FOUND'), 404);
-                    } else if ($this->frontend && $data->display_in == 1) {
+                    if (!$this->frontend) {
                         throw new \Exception(Text::_('COM_CONTENTBUILDERNG_FORM_NOT_FOUND'), 404);
                     }
                 }
@@ -1045,6 +1034,16 @@ class ListModel extends BaseListModel
                             : ($data->own_only ? (int) ($app->getIdentity()->id ?? 0) : -1));
                     $showAllLanguages = $isAdminPreview ? true : ($this->frontend ? $data->show_all_languages_fe : true);
 
+                    $initialSortOrder = (isset($data->initial_sort_order) && (string) $data->initial_sort_order !== '' && (string) $data->initial_sort_order !== '-1' && ctype_digit((string) $data->initial_sort_order))
+                        ? 'col' . $data->initial_sort_order
+                        : -1;
+                    $initialSortOrder2 = (isset($data->initial_sort_order2) && (string) $data->initial_sort_order2 !== '' && (string) $data->initial_sort_order2 !== '-1' && ctype_digit((string) $data->initial_sort_order2))
+                        ? 'col' . $data->initial_sort_order2
+                        : -1;
+                    $initialSortOrder3 = (isset($data->initial_sort_order3) && (string) $data->initial_sort_order3 !== '' && (string) $data->initial_sort_order3 !== '-1' && ctype_digit((string) $data->initial_sort_order3))
+                        ? 'col' . $data->initial_sort_order3
+                        : -1;
+
                     $data->items = $data->form->getListRecords(
                         $ids,
                         $this->getState('formsd_filter'),
@@ -1059,9 +1058,9 @@ class ListModel extends BaseListModel
                         $ownerFilterUserId,
                         $this->getState('formsd_filter_state'),
                         $this->getState('formsd_filter_publish'),
-                        $data->initial_sort_order == -1 ? -1 : 'col' . $data->initial_sort_order,
-                        $data->initial_sort_order2 == -1 ? -1 : 'col' . $data->initial_sort_order2,
-                        $data->initial_sort_order3 == -1 ? -1 : 'col' . $data->initial_sort_order3,
+                        $initialSortOrder,
+                        $initialSortOrder2,
+                        $initialSortOrder3,
                         $this->_menu_filter,
                         $showAllLanguages,
                         $this->getState('formsd_filter_language'),
@@ -1083,16 +1082,17 @@ class ListModel extends BaseListModel
                     $data->state_titles = array();
                     $data->published_items = array();
                     $data->states = $this->listSupportService->getListStates($this->_id);
+                    $recordMeta = $this->listSupportService->getListRecordMeta($data->items, $this->_id, (string) $data->type, $data->reference_id);
                     if ($data->list_state) {
-                        $data->state_colors = $this->listSupportService->getStateColors($data->items, $this->_id);
-                        $data->state_titles = $this->listSupportService->getStateTitles($data->items, $this->_id);
+                        $data->state_colors = $recordMeta['state_colors'];
+                        $data->state_titles = $recordMeta['state_titles'];
                     }
                     if ($data->list_publish) {
-                        $data->published_items = $this->listSupportService->getRecordsPublishInfo($data->items, $data->type, $data->reference_id);
+                        $data->published_items = $recordMeta['published_items'];
                     }
                     $data->lang_codes = array();
                     if ($data->list_language) {
-                        $data->lang_codes = $this->listSupportService->getRecordsLanguage($data->items, $data->type, $data->reference_id);
+                        $data->lang_codes = $recordMeta['lang_codes'];
                     }
                     $data->languages = (new FormSupportService())->getLanguageCodes();
 

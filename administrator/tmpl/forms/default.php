@@ -258,11 +258,6 @@ updateClearButtonState();
                     <th width="90" class="text-center">
                         <?php echo HTMLHelper::_('searchtools.sort', 'COM_CONTENTBUILDERNG_TYPE', 'a.type', $orderDir, $order); ?>
                     </th>
-                    <th>
-                        <?php echo HTMLHelper::_('searchtools.sort', 'COM_CONTENTBUILDERNG_DISPLAY', 'a.display_in', $orderDir, $order); ?>
-                    </th>
-
-
                     <th class="w-10 text-nowrap">
                         <?php echo HTMLHelper::_('searchtools.sort', 'COM_CONTENTBUILDERNG_ORDERBY', 'a.ordering', $orderDir, $order); ?>
                     </th>
@@ -336,11 +331,6 @@ updateClearButtonState();
                                 $typeShort = $typeShortMap[$typeCode] ?? $typeCode;
                                 echo htmlspecialchars($typeShort, ENT_QUOTES, 'UTF-8');
                                 ?>
-                            </a>
-                        </td>
-                        <td>
-                            <a href="<?php echo $link; ?>">
-                                <?php echo $row->display_in == 0 ? Text::_('COM_CONTENTBUILDERNG_DISPLAY_FRONTEND') : ($row->display_in == 1 ? Text::_('COM_CONTENTBUILDERNG_DISPLAY_BACKEND') : Text::_('COM_CONTENTBUILDERNG_DISPLAY_BOTH')); ?>
                             </a>
                         </td>
                         <td class="order,text-nowrap">

@@ -45,15 +45,6 @@
            label="COM_CONTENTBUILDERNG_FIELD_THEME_PLUGIN"
            filter="string" maxlength="255" />
 
-    <field name="display_in" type="list"
-           label="COM_CONTENTBUILDERNG_FIELD_DISPLAY_IN"
-           default="0" filter="intval">
-      <option value="0">COM_CONTENTBUILDERNG_DISPLAY_IN_NONE</option>
-      <option value="1">COM_CONTENTBUILDERNG_DISPLAY_IN_BACKEND</option>
-      <option value="2">COM_CONTENTBUILDERNG_DISPLAY_IN_FRONTEND</option>
-      <option value="3">COM_CONTENTBUILDERNG_DISPLAY_IN_BOTH</option>
-    </field>
-
     <field name="created" type="calendar"
            label="JGLOBAL_FIELD_CREATED_LABEL"
            format="%Y-%m-%d %H:%M:%S" filter="user_utc" />

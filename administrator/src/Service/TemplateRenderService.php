@@ -21,6 +21,7 @@ class TemplateRenderService
 {
     private readonly FormResolverService $formResolverService;
     private readonly RuntimeUtilityService $runtimeUtilityService;
+    private array $contentPluginImportCache = [];
 
     public function __construct()
     {
@@ -45,16 +46,40 @@ class TemplateRenderService
 
     private function getCurrentUserId(): int
     {
+        if ($this->getInput()->getBool('cb_preview_ok', false)) {
+            $previewActorId = (int) $this->getInput()->getInt('cb_preview_actor_id', 0);
+
+            if ($previewActorId > 0) {
+                return $previewActorId;
+            }
+        }
+
         return (int) ($this->getApp()->getIdentity()->id ?? 0);
     }
 
     private function getCurrentUsername(): string
     {
+        if ($this->getInput()->getBool('cb_preview_ok', false)) {
+            $previewActorName = trim((string) $this->getInput()->getString('cb_preview_actor_name', ''));
+
+            if ($previewActorName !== '') {
+                return $previewActorName;
+            }
+        }
+
         return (string) ($this->getApp()->getIdentity()->username ?? '');
     }
 
     private function getCurrentUserFullName(): string
     {
+        if ($this->getInput()->getBool('cb_preview_ok', false)) {
+            $previewActorName = trim((string) $this->getInput()->getString('cb_preview_actor_name', ''));
+
+            if ($previewActorName !== '') {
+                return $previewActorName;
+            }
+        }
+
         return (string) ($this->getApp()->getIdentity()->name ?? '');
     }
 
@@ -165,156 +190,172 @@ class TemplateRenderService
 
         $db->setQuery("Select reference_id, item_wrapper, wordwrap, `label`, `options` From #__contentbuilderng_elements Where published = 1 And form_id = " . (int) $contentbuilderngFormId);
         $wrappers = $db->loadAssocList();
+        $wrapperMap = [];
 
         foreach ($wrappers as $wrapper) {
-            foreach ($items as $item) {
-                foreach ($item as $key => $value) {
-                    if ($key !== 'col' . $wrapper['reference_id']) {
+            $wrapperMap['col' . $wrapper['reference_id']] = $wrapper;
+        }
+
+        $dispatcher = $this->getDispatcher();
+        $textUtilityService = $this->getTextUtilityService();
+
+        foreach ($items as $item) {
+            foreach ($item as $key => $value) {
+                if (!isset($wrapperMap[$key])) {
+                    continue;
+                }
+
+                $wrapper = $wrapperMap[$key];
+                $newValue = '';
+
+                if (strpos(trim($wrapper['item_wrapper'] ?? ''), '$') === 0) {
+                    $article->id = 0;
+                    $w = explode('$', (string) $wrapper['item_wrapper']);
+
+                    if (count($w) < 2) {
                         continue;
                     }
 
-                    $newValue = '';
+                    $this->importContentPluginsForWrapper($w);
+                    $templateBody = (string) end($w);
 
-                    if (strpos(trim($wrapper['item_wrapper'] ?? ''), '$') === 0) {
-                        $article->id = 0;
+                    $article->text = trim($templateBody) ? trim($templateBody) : $value;
+                    $article->text = str_replace('{value_inline}', $value, $article->text);
+                    $recc = new \stdClass();
+                    $recc->recName = $wrapper['label'];
+                    $recc->recValue = $value;
+                    $recc->recElementId = $wrapper['reference_id'];
+                    $recc->colRecord = $item->colRecord;
 
-                        $w = explode('$', $wrapper['item_wrapper'], 2);
-                        if (count($w) !== 2) {
-                            break;
-                        }
+                    $dispatcher->dispatch(
+                        $onContentPrepare,
+                        new ContentPrepareEvent($onContentPrepare, array('com_content.article', &$article, &$registry, 0, true, $form, $recc))
+                    );
+                    $dispatcher->clearListeners($onContentPrepare);
 
-                        $w = explode('$', implode('$', $w));
+                    $item->$key = $article->text != $templateBody ? $article->text : '';
 
-                        if (count($w) === 2) {
-                            PluginHelper::importPlugin('content');
-                        } else {
-                            $size = count($w) - 1;
-                            for ($j = 0; $j < $size; $j++) {
-                                PluginHelper::importPlugin('content', $w[$j]);
+                    continue;
+                }
+
+                $allowHtml = false;
+                $options = $this->decodePackedData($wrapper['options'], null, false);
+
+                if ($options instanceof \stdClass && isset($options->allow_html) && $options->allow_html) {
+                    $allowHtml = true;
+                }
+
+                if ($wrapper['wordwrap'] && !$allowHtml) {
+                    $newValue = $textUtilityService->allhtmlentities(
+                        $this->callContentbuilderngHelper(
+                            'contentbuilderng_wordwrap',
+                            $this->callContentbuilderngHelper('cbinternal', $value),
+                            $wrapper['wordwrap'],
+                            "\n",
+                            true
+                        )
+                    );
+                } else {
+                    $newValue = $allowHtml
+                        ? $textUtilityService->cleanString($this->callContentbuilderngHelper('cbinternal', $value))
+                        : $textUtilityService->allhtmlentities($this->callContentbuilderngHelper('cbinternal', $value));
+                }
+
+                $wrapperTemplate = trim((string) ($wrapper['item_wrapper'] ?? ''));
+
+                if (strpos($wrapperTemplate, '<?php') === 0) {
+                    $value = $newValue;
+                    $code = $wrapperTemplate;
+
+                    if (function_exists('mb_strlen')) {
+                        $p1 = 0;
+                        $l = mb_strlen($code);
+                        $c = '';
+                        while ($p1 < $l) {
+                            $p2 = mb_strpos($code, '<?php', $p1);
+                            if ($p2 === false) {
+                                $p2 = $l;
                             }
-                        }
-
-                        $article->text = trim($w[count($w) - 1]) ? trim($w[count($w) - 1]) : $value;
-                        $article->text = str_replace('{value_inline}', $value, $article->text);
-                        $recc = new \stdClass();
-                        $recc->recName = $wrapper['label'];
-                        $recc->recValue = $value;
-                        $recc->recElementId = $wrapper['reference_id'];
-                        $recc->colRecord = $item->colRecord;
-
-                        $dispatcher = $this->getDispatcher();
-                        $dispatcher->dispatch(
-                            $onContentPrepare,
-                            new ContentPrepareEvent($onContentPrepare, array('com_content.article', &$article, &$registry, 0, true, $form, $recc))
-                        );
-                        $dispatcher->clearListeners($onContentPrepare);
-
-                        if ($article->text != $w[count($w) - 1]) {
-                            $item->$key = $article->text;
-                            break;
-                        }
-
-                        $item->$key = '';
-                        break;
-                    }
-
-                    $allowHtml = false;
-                    $options = $this->decodePackedData($wrapper['options'], null, false);
-
-                    if ($options instanceof \stdClass && isset($options->allow_html) && $options->allow_html) {
-                        $allowHtml = true;
-                    }
-
-                    $textUtilityService = $this->getTextUtilityService();
-
-                    if ($wrapper['wordwrap'] && !$allowHtml) {
-                        $newValue = $textUtilityService->allhtmlentities(
-                            $this->callContentbuilderngHelper(
-                                'contentbuilderng_wordwrap',
-                                $this->callContentbuilderngHelper('cbinternal', $value),
-                                $wrapper['wordwrap'],
-                                "\n",
-                                true
-                            )
-                        );
-                    } else {
-                        $newValue = $allowHtml
-                            ? $textUtilityService->cleanString($this->callContentbuilderngHelper('cbinternal', $value))
-                            : $textUtilityService->allhtmlentities($this->callContentbuilderngHelper('cbinternal', $value));
-                    }
-
-                    $wrapperTemplate = trim((string) ($wrapper['item_wrapper'] ?? ''));
-
-                    if (strpos($wrapperTemplate, '<?php') === 0) {
-                        $value = $newValue;
-                        $code = $wrapperTemplate;
-
-                        if (function_exists('mb_strlen')) {
-                            $p1 = 0;
-                            $l = mb_strlen($code);
-                            $c = '';
-                            while ($p1 < $l) {
-                                $p2 = mb_strpos($code, '<?php', $p1);
+                            $c .= mb_substr($code, $p1, $p2 - $p1);
+                            $p1 = $p2;
+                            if ($p1 < $l) {
+                                $p1 += 5;
+                                $p2 = mb_strpos($code, '?>', $p1);
                                 if ($p2 === false) {
                                     $p2 = $l;
                                 }
-                                $c .= mb_substr($code, $p1, $p2 - $p1);
-                                $p1 = $p2;
-                                if ($p1 < $l) {
-                                    $p1 += 5;
-                                    $p2 = mb_strpos($code, '?>', $p1);
-                                    if ($p2 === false) {
-                                        $p2 = $l;
-                                    }
-                                    $c .= eval(mb_substr($code, $p1, $p2 - $p1));
-                                    $p1 = $p2 + 2;
-                                }
+                                $c .= eval(mb_substr($code, $p1, $p2 - $p1));
+                                $p1 = $p2 + 2;
                             }
-                        } else {
-                            $p1 = 0;
-                            $l = strlen($code);
-                            $c = '';
-                            while ($p1 < $l) {
-                                $p2 = strpos($code, '<?php', $p1);
+                        }
+                    } else {
+                        $p1 = 0;
+                        $l = strlen($code);
+                        $c = '';
+                        while ($p1 < $l) {
+                            $p2 = strpos($code, '<?php', $p1);
+                            if ($p2 === false) {
+                                $p2 = $l;
+                            }
+                            $c .= substr($code, $p1, $p2 - $p1);
+                            $p1 = $p2;
+                            if ($p1 < $l) {
+                                $p1 += 5;
+                                $p2 = strpos($code, '?>', $p1);
                                 if ($p2 === false) {
                                     $p2 = $l;
                                 }
-                                $c .= substr($code, $p1, $p2 - $p1);
-                                $p1 = $p2;
-                                if ($p1 < $l) {
-                                    $p1 += 5;
-                                    $p2 = strpos($code, '?>', $p1);
-                                    if ($p2 === false) {
-                                        $p2 = $l;
-                                    }
-                                    $c .= eval(substr($code, $p1, $p2 - $p1));
-                                    $p1 = $p2 + 2;
-                                }
+                                $c .= eval(substr($code, $p1, $p2 - $p1));
+                                $p1 = $p2 + 2;
                             }
                         }
-
-                        $item->$key = $c;
-                    } elseif ($wrapperTemplate !== '') {
-                        $item->$key = str_replace('{value}', $newValue, $wrapperTemplate);
-                        $item->$key = str_replace(
-                            '{webpath}',
-                            str_replace(
-                                array('{CBSite}', '{cbsite}', JPATH_SITE),
-                                Uri::getInstance()->getScheme() . '://' . Uri::getInstance()->getHost() . (Uri::getInstance()->getPort() == 80 ? '' : ':' . Uri::getInstance()->getPort()) . Uri::root(true),
-                                $value ?? ''
-                            ),
-                            $item->$key
-                        );
-                    } else {
-                        $item->$key = $newValue;
                     }
 
-                    break;
+                    $item->$key = $c;
+                } elseif ($wrapperTemplate !== '') {
+                    $item->$key = str_replace('{value}', $newValue, $wrapperTemplate);
+                    $item->$key = str_replace(
+                        '{webpath}',
+                        str_replace(
+                            array('{CBSite}', '{cbsite}', JPATH_SITE),
+                            Uri::getInstance()->getScheme() . '://' . Uri::getInstance()->getHost() . (Uri::getInstance()->getPort() == 80 ? '' : ':' . Uri::getInstance()->getPort()) . Uri::root(true),
+                            $value ?? ''
+                        ),
+                        $item->$key
+                    );
+                } else {
+                    $item->$key = $newValue;
                 }
             }
         }
 
         return $items;
+    }
+
+    private function importContentPluginsForWrapper(array $wrapperParts): void
+    {
+        $pluginParts = $wrapperParts;
+        array_pop($pluginParts);
+
+        $cacheKey = implode('$', $pluginParts);
+
+        if (isset($this->contentPluginImportCache[$cacheKey])) {
+            return;
+        }
+
+        if (in_array('', $pluginParts, true)) {
+            PluginHelper::importPlugin('content');
+        }
+
+        foreach ($pluginParts as $pluginName) {
+            if ($pluginName === '') {
+                continue;
+            }
+
+            PluginHelper::importPlugin('content', $pluginName);
+        }
+
+        $this->contentPluginImportCache[$cacheKey] = true;
     }
 
     public function getTemplate($contentbuilderngFormId, $recordId, array $record, array $elementsAllowed, $quietSkip = false)

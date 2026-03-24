@@ -376,14 +376,19 @@ class ListController extends BaseController
             $start = (int) $app->getUserState($startKey, 0);
         }
 
-        $ordering = isset($list['ordering']) ? $this->input->getCmd('list[ordering]', '') : '';
+        $ordering = isset($list['ordering']) ? preg_replace('/[^A-Za-z0-9_\\.]/', '', (string) $list['ordering']) : '';
         if ($ordering === '') {
             $ordering = (string) $app->getUserState($option . '.formsd_filter_order', '');
         }
 
-        $direction = isset($list['direction']) ? $this->input->getCmd('list[direction]', '') : '';
+        $direction = isset($list['direction']) ? strtolower((string) $list['direction']) : '';
         if ($direction === '') {
             $direction = (string) $app->getUserState($option . '.formsd_filter_order_Dir', '');
+        }
+        if ($ordering === '' && isset($list['fullordering'])) {
+            $parts = preg_split('/\s+/', trim((string) $list['fullordering']));
+            $ordering = isset($parts[0]) ? preg_replace('/[^A-Za-z0-9_\\.]/', '', (string) $parts[0]) : '';
+            $direction = isset($parts[1]) ? strtolower((string) $parts[1]) : $direction;
         }
 
         return [

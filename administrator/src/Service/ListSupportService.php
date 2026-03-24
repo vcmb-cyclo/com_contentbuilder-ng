@@ -9,6 +9,61 @@ use Joomla\Database\DatabaseInterface;
 
 class ListSupportService
 {
+    public function getListRecordMeta(array $items, int $formId, string $type, $referenceId): array
+    {
+        $recordIds = $this->collectRecordIds($items);
+
+        if ($recordIds === []) {
+            return [
+                'state_colors' => [],
+                'state_titles' => [],
+                'published_items' => [],
+                'lang_codes' => [],
+            ];
+        }
+
+        $db = Factory::getContainer()->get(DatabaseInterface::class);
+        $quotedIds = array_map([$db, 'quote'], $recordIds);
+        $meta = [
+            'state_colors' => [],
+            'state_titles' => [],
+            'published_items' => [],
+            'lang_codes' => [],
+        ];
+
+        $db->setQuery(
+            'Select states.color, states.title, records.record_id'
+            . ' From #__contentbuilderng_list_records As records'
+            . ' Inner Join #__contentbuilderng_list_states As states On states.id = records.state_id'
+            . ' Where states.published = 1'
+            . ' And records.record_id In (' . implode(',', $quotedIds) . ')'
+            . ' And records.form_id = ' . (int) $formId
+            . ' And states.form_id = ' . (int) $formId
+        );
+
+        foreach ((array) $db->loadAssocList() as $row) {
+            $meta['state_colors'][$row['record_id']] = $row['color'];
+            $meta['state_titles'][$row['record_id']] = $row['title'];
+        }
+
+        if ($referenceId) {
+            $db->setQuery(
+                'Select records.published, records.lang_code, records.record_id'
+                . ' From #__contentbuilderng_records As records'
+                . ' Where `type` = ' . $db->quote($type)
+                . ' And reference_id = ' . $db->quote($referenceId)
+                . ' And records.record_id In (' . implode(',', $quotedIds) . ')'
+            );
+
+            foreach ((array) $db->loadAssocList() as $row) {
+                $meta['published_items'][$row['record_id']] = $row['published'];
+                $meta['lang_codes'][$row['record_id']] = $row['lang_code'];
+            }
+        }
+
+        return $meta;
+    }
+
     public function getListSearchableElements(int $formId): array
     {
         $db = Factory::getContainer()->get(DatabaseInterface::class);

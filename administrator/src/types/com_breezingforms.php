@@ -26,6 +26,55 @@ class contentbuilderng_com_breezingforms
     private $total = 0;
     public $exists = false;
 
+    private function getEffectiveActor(): array
+    {
+        $app = Factory::getApplication();
+        $input = $app->input;
+        $identity = $app->getIdentity();
+        $actorId = (int) ($identity->id ?? 0);
+        $actorName = trim((string) ($identity->name ?? ''));
+        $actorUsername = trim((string) ($identity->username ?? ''));
+
+        if ($input->getBool('cb_preview_ok', false)) {
+            $previewActorId = (int) $input->getInt('cb_preview_actor_id', 0);
+            $previewActorName = trim((string) $input->getString('cb_preview_actor_name', ''));
+
+            if ($previewActorId > 0) {
+                $actorId = $previewActorId;
+            }
+
+            if ($previewActorName !== '') {
+                $actorName = $previewActorName;
+
+                if ($actorUsername === '') {
+                    $actorUsername = $previewActorName;
+                }
+            }
+        }
+
+        if ($actorName === '') {
+            $actorName = $actorUsername;
+        }
+
+        if ($actorUsername === '') {
+            $actorUsername = $actorName;
+        }
+
+        if ($actorName === '') {
+            $actorName = $actorId > 0 ? 'user#' . $actorId : 'guest';
+        }
+
+        if ($actorUsername === '') {
+            $actorUsername = $actorName;
+        }
+
+        return [
+            'id' => $actorId,
+            'name' => $actorName,
+            'username' => $actorUsername,
+        ];
+    }
+
     function __construct($id, $published = true)
     {
         $db = Factory::getContainer()->get(DatabaseInterface::class);
@@ -650,8 +699,27 @@ class contentbuilderng_com_breezingforms
         }
         //////////////////
 
+        $validOrderKeys = ['colRecord', 'colState', 'colPublished', 'colLanguage', 'colRating', 'colArticleId', 'colAuthor'];
+        $isValidInitialOrder = static function ($value) use ($validOrderKeys): bool {
+            return $value === -1
+                || $value === '-1'
+                || (is_string($value) && preg_match('/^col\d+$/', $value))
+                || in_array($value, $validOrderKeys, true);
+        };
+        if (!$isValidInitialOrder($init_order_by)) {
+            $init_order_by = -1;
+        }
+        if (!$isValidInitialOrder($init_order_by2)) {
+            $init_order_by2 = -1;
+        }
+        if (!$isValidInitialOrder($init_order_by3)) {
+            $init_order_by3 = -1;
+        }
         $orderExpr = '';
         $orderKey = '';
+        if ($order && !isset($order_types[$order]) && !in_array($order, $validOrderKeys, true)) {
+            $order = '';
+        }
         if ($order) {
             $orderKey = ($order === 'colRating' && $form !== null && $form->rating_slots == 1)
                 ? 'colRatingCount'
@@ -994,6 +1062,8 @@ class contentbuilderng_com_breezingforms
                 $user_full_name = (string) (Factory::getApplication()->getIdentity()->name ?? '');
             }
             $now = Factory::getDate()->toSql();
+            $actor = $this->getEffectiveActor();
+
             $db->setQuery("Insert Into #__facileforms_records (
                 `submitted`,
                 `form`,
@@ -1013,37 +1083,17 @@ class contentbuilderng_com_breezingforms
                 " . $db->quote($_SERVER['REMOTE_ADDR']) . ",
                 " . $db->quote(Browser::getInstance()->getAgentString()) . ",
                 " . $db->quote(Browser::getInstance()->getPlatform()) . ",
-                " . $db->quote((int) (Factory::getApplication()->getIdentity()->id ?? 0)) . ",
-                " . $db->quote($username) . ",
-                " . $db->quote($user_full_name) . "
+                " . $db->quote((int) $actor['id']) . ",
+                " . $db->quote((string) $actor['username']) . ",
+                " . $db->quote((string) $actor['name']) . "
             )");
             $db->execute();
             $insert_id = $db->insertid();
         } else {
             // Keep BF audit columns in sync when an existing record is edited via CB.
-            $identity = Factory::getApplication()->getIdentity();
-            $modifierId = (int) ($identity->id ?? 0);
-            $modifierName = trim((string) ($identity->name ?? ''));
-            if ($modifierName === '') {
-                $modifierName = trim((string) ($identity->username ?? ''));
-            }
-            if ($modifierName === '' && $modifierId > 0) {
-                try {
-                    $db->setQuery("SELECT `name`, `username` FROM #__users WHERE id = " . (int) $modifierId);
-                    $userRow = $db->loadAssoc();
-                    if (is_array($userRow)) {
-                        $modifierName = trim((string) ($userRow['name'] ?? ''));
-                        if ($modifierName === '') {
-                            $modifierName = trim((string) ($userRow['username'] ?? ''));
-                        }
-                    }
-                } catch (\Throwable $e) {
-                    // Ignore lookup errors and continue with deterministic fallback.
-                }
-            }
-            if ($modifierName === '') {
-                $modifierName = $modifierId > 0 ? 'user#' . $modifierId : 'guest';
-            }
+            $actor = $this->getEffectiveActor();
+            $modifierId = (int) $actor['id'];
+            $modifierName = (string) $actor['name'];
 
             try {
                 $db->setQuery(

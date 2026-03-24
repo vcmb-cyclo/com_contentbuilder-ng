@@ -1,0 +1,21 @@
+<?php
+
+/**
+ * @package     ContentBuilder NG
+ * @author      XDA+GIL
+ * @link        https://breezingforms-ng.vcmb.fr
+ * @copyright   (C) 2026 by XDA+GIL
+ * @license     GNU General Public License version 2 or later; see LICENSE.txt
+ */
+
+namespace CB\Component\Contentbuilderng\Site\Helper;
+
+\defined('_JEXEC') or die;
+
+final class PublishedRecordVisibilityHelper
+{
+    public static function shouldRestrictToPublishedOnly(object $data, bool $isAdminPreview): bool
+    {
+        return !$isAdminPreview && (bool) ($data->published_only ?? false);
+    }
+}

@@ -1964,19 +1964,7 @@ by this block. -->
 					if ($this->list_author) {
 					?>
 						<td class="hidden-phone">
-							<?php
-							if ($rowCanView) {
-							?>
-								<a href="<?php echo $link; ?>">
-									<?php echo htmlentities($row->colAuthor, ENT_QUOTES, 'UTF-8'); ?>
-								</a>
-							<?php
-							} else {
-							?>
-								<?php echo htmlentities($row->colAuthor, ENT_QUOTES, 'UTF-8'); ?>
-							<?php
-							}
-							?>
+							<?php echo htmlentities($row->colAuthor, ENT_QUOTES, 'UTF-8'); ?>
 						</td>
 					<?php
 					}

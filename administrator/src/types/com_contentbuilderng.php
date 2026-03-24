@@ -553,27 +553,27 @@ class contentbuilderng_com_contentbuilderng
 
         // SORT CASTING END
 
-        $db->setQuery("
-            Select
-                SQL_CALC_FOUND_ROWS
-                joined_records.published As colPublished,
-                joined_records.lang_code As colLanguage,
-                joined_records.rating_sum / joined_records.rating_count As colRating,
-                joined_records.rating_count As colRatingCount,
-                joined_records.rating_sum As colRatingSum,
-                joined_records.rand_date As colRand,
-                r.id As colRecord,
-                " . ($selectors ? $selectors . ',' : '') . "
-                joined_articles.article_id As colArticleId,
-                list_states.title As colState,
-                r.created_by As colAuthor,
-                r.modified_by As colModifiedBy
+        $selectClause = "
+            joined_records.published As colPublished,
+            joined_records.lang_code As colLanguage,
+            joined_records.rating_sum / joined_records.rating_count As colRating,
+            joined_records.rating_count As colRatingCount,
+            joined_records.rating_sum As colRatingSum,
+            joined_records.rand_date As colRand,
+            r.id As colRecord,
+            " . ($selectors ? $selectors . ',' : '') . "
+            joined_articles.article_id As colArticleId,
+            list_states.title As colState,
+            r.created_by As colAuthor,
+            r.modified_by As colModifiedBy
+        ";
+
+        $fromClause = "
             From
                 (
                     " . $this->bytable . $this->properties->name . " As r,
                     #__contentbuilderng_records As joined_records
                 )
-                
                 Left Join (
                     #__contentbuilderng_articles As joined_articles,
                     #__contentbuilderng_forms As forms,
@@ -601,7 +601,7 @@ class contentbuilderng_com_contentbuilderng
                 Left Join #__contentbuilderng_list_states As list_states On (
                     list_states.id = list.state_id
                 )
-                Where
+            Where
                 " . (intval($published) == 0 ? "(joined_records.published Is Null Or joined_records.published = 0) And" : "") . "
                 " . (intval($published) == 1 ? "joined_records.published = 1 And" : "") . "
                 " . ($record_id ? ' r.id = ' . $db->quote($record_id) . ' And ' : '') . "
@@ -615,15 +615,46 @@ class contentbuilderng_com_contentbuilderng
                 " . (intval($own_only) > -1 ? ' And r.user_id=' . intval($own_only) . ' ' : '') . "
                 " . (intval($state) > 0 ? " And list.state_id = " . intval($state) : "") . "
                 " . ($published_only ? " And joined_records.published = 1 " : '') . "
-            
-        Group By r.id $search  " . ($order ? " Order By " . ($order == 'colRating' && $form !== null && $form->rating_slots == 1 ? 'colRatingCount' : $order) . " " : ' Order By ' . ($init_order_by == -1 ? 'colRecord' : $init_order_by) . ' ' . ($init_order_by2 == -1 ? '' : ',' . $init_order_by2) . ' ' . ($init_order_by3 == -1 ? '' : ',' . $init_order_by3) . ' ' . ($order_Dir ? (strtolower($order_Dir) == 'asc' ? 'asc' : 'desc') : 'asc') . ' ') . " " . ($order ? (strtolower($order_Dir) == 'asc' ? 'asc' : 'desc') : '') . "
+            Group By r.id $search
+        ";
+
+        $validOrderKeys = ['colRecord', 'colState', 'colPublished', 'colLanguage', 'colRating', 'colArticleId', 'colAuthor'];
+        $isValidInitialOrder = static function ($value) use ($validOrderKeys): bool {
+            return $value === -1
+                || $value === '-1'
+                || (is_string($value) && preg_match('/^col\d+$/', $value))
+                || in_array($value, $validOrderKeys, true);
+        };
+        if (!$isValidInitialOrder($init_order_by)) {
+            $init_order_by = -1;
+        }
+        if (!$isValidInitialOrder($init_order_by2)) {
+            $init_order_by2 = -1;
+        }
+        if (!$isValidInitialOrder($init_order_by3)) {
+            $init_order_by3 = -1;
+        }
+        if ($order && !isset($order_types[$order]) && !in_array($order, $validOrderKeys, true)) {
+            $order = '';
+        }
+        $orderClause = ($order ? " Order By " . ($order == 'colRating' && $form !== null && $form->rating_slots == 1 ? 'colRatingCount' : $order) . " " : ' Order By ' . ($init_order_by == -1 ? 'colRecord' : $init_order_by) . ' ' . ($init_order_by2 == -1 ? '' : ',' . $init_order_by2) . ' ' . ($init_order_by3 == -1 ? '' : ',' . $init_order_by3) . ' ' . ($order_Dir ? (strtolower($order_Dir) == 'asc' ? 'asc' : 'desc') : 'asc') . ' ') . " " . ($order ? (strtolower($order_Dir) == 'asc' ? 'asc' : 'desc') : '');
+
+        $db->setQuery("
+            Select
+                $selectClause
+            $fromClause
+            $orderClause
         ", $limitstart, $limit);
 
         $return = $db->loadObjectList();
-        //echo $db->getErrorMessage();
-        //exit;
-        $db->setQuery('SELECT FOUND_ROWS();');
-        $this->total = $db->loadResult();
+        $db->setQuery("
+            Select Count(*) From (
+                Select
+                    $selectClause
+                $fromClause
+            ) As counted_records
+        ");
+        $this->total = (int) $db->loadResult();
         return $return;
     }
 

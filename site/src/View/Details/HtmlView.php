@@ -109,10 +109,8 @@ class HtmlView extends BaseHtmlView
     {
         $app = Factory::getApplication();
         $currentRecordId = (int) $app->input->getInt('record_id', 0);
-        $fallback = $this->resolveSiblingRecordIdsByRecordId($subject, $currentRecordId);
-
         if ($currentRecordId < 1) {
-            return $fallback;
+            return ['previous' => 0, 'next' => 0];
         }
 
         $originalList = (array) $app->input->get('list', [], 'array');
@@ -132,7 +130,7 @@ class HtmlView extends BaseHtmlView
             $listModel = $factory->createModel('List', 'Site', ['ignore_request' => false]);
 
             if (!$listModel || !method_exists($listModel, 'getData')) {
-                return $fallback;
+                return $this->resolveSiblingRecordIdsByRecordId($subject, $currentRecordId);
             }
 
             $listData = $listModel->getData();
@@ -141,7 +139,7 @@ class HtmlView extends BaseHtmlView
                 : [];
 
             if (!$items) {
-                return $fallback;
+                return ['previous' => 0, 'next' => 0];
             }
 
             $recordIds = [];
@@ -153,7 +151,7 @@ class HtmlView extends BaseHtmlView
 
             $position = array_search($currentRecordId, $recordIds, true);
             if ($position === false) {
-                return $fallback;
+                return ['previous' => 0, 'next' => 0];
             }
 
             return [
@@ -161,7 +159,7 @@ class HtmlView extends BaseHtmlView
                 'next' => ($position + 1) < count($recordIds) ? (int) $recordIds[$position + 1] : 0,
             ];
         } catch (\Throwable $e) {
-            return $fallback;
+            return $this->resolveSiblingRecordIdsByRecordId($subject, $currentRecordId);
         } finally {
             $app->input->set('list', $originalList);
             $app->setUserState($paginationKeys['limit'], $limitStateBackup);

@@ -46,6 +46,7 @@ use CB\Component\Contentbuilderng\Administrator\Service\PathService;
 use CB\Component\Contentbuilderng\Administrator\Service\PermissionService;
 use CB\Component\Contentbuilderng\Administrator\Service\TemplateRenderService;
 use CB\Component\Contentbuilderng\Site\Helper\MenuParamHelper;
+use CB\Component\Contentbuilderng\Site\Helper\PublishedRecordVisibilityHelper;
 
 class EditModel extends BaseDatabaseModel
 {
@@ -375,9 +376,7 @@ class EditModel extends BaseDatabaseModel
                 $isAdminPreview = $this->app->input->getBool('cb_preview_ok', false);
 
                 if (!$isAdminPreview) {
-                    if (!$this->frontend && $data->display_in == 0) {
-                        throw new \Exception(Text::_('COM_CONTENTBUILDERNG_RECORD_NOT_FOUND'), 404);
-                    } else if ($this->frontend && $data->display_in == 1) {
+                    if (!$this->frontend) {
                         throw new \Exception(Text::_('COM_CONTENTBUILDERNG_RECORD_NOT_FOUND'), 404);
                     }
                 }
@@ -507,9 +506,12 @@ class EditModel extends BaseDatabaseModel
                         throw new \Exception(Text::_('COM_CONTENTBUILDERNG_RECORD_NOT_FOUND'), 404);
                     }
 
+                    $isAdminPreview = $this->app->input->getBool('cb_preview_ok', false);
+                    $publishedOnly = $this->shouldRestrictToPublishedOnly($data, $isAdminPreview);
+
                     $data->items = $data->form->getRecord(
                         $this->_record_id,
-                        $data->published_only,
+                        $publishedOnly,
                         $this->frontend ? $this->getEffectiveOwnershipUserId((bool) $data->own_only_fe) : $this->getEffectiveOwnershipUserId((bool) $data->own_only),
                         $this->frontend ? $data->show_all_languages_fe : true
                     );
@@ -751,6 +753,11 @@ var contentbuilderng = new function(){
         return is_array($matches) && count($matches) > 0;
     }
 
+    private function shouldRestrictToPublishedOnly(object $data, bool $isAdminPreview): bool
+    {
+        return PublishedRecordVisibilityHelper::shouldRestrictToPublishedOnly($data, $isAdminPreview);
+    }
+
     function store()
     {
 
@@ -774,9 +781,7 @@ var contentbuilderng = new function(){
 
         foreach ($this->_data as $data) {
             if (!$isAdminPreview) {
-                if (!$this->frontend && $data->display_in == 0) {
-                    throw new \Exception(Text::_('COM_CONTENTBUILDERNG_RECORD_NOT_FOUND'), 404);
-                } else if ($this->frontend && $data->display_in == 1) {
+                if (!$this->frontend) {
                     throw new \Exception(Text::_('COM_CONTENTBUILDERNG_RECORD_NOT_FOUND'), 404);
                 }
             }
@@ -1038,9 +1043,12 @@ var contentbuilderng = new function(){
 
                     $form_elements_objects = array();
 
+                    $isAdminPreview = $this->app->input->getBool('cb_preview_ok', false);
+                    $publishedOnly = $this->shouldRestrictToPublishedOnly($data, $isAdminPreview);
+
                     $_items = $data->form->getRecord(
                         $this->_record_id,
-                        $data->published_only,
+                        $publishedOnly,
                         $this->frontend ? $this->getEffectiveOwnershipUserId((bool) $data->own_only_fe) : $this->getEffectiveOwnershipUserId((bool) $data->own_only),
                         $this->frontend ? $data->show_all_languages_fe : true
                     );
@@ -1600,9 +1608,12 @@ var contentbuilderng = new function(){
                     $record_return = $this->app->input->getCmd('record_id', 0);
                 }
 
+                $isAdminPreview = $this->app->input->getBool('cb_preview_ok', false);
+                $publishedOnly = $this->shouldRestrictToPublishedOnly($data, $isAdminPreview);
+
                 $data->items = $data->form->getRecord(
                     $record_return,
-                    $data->published_only,
+                    $publishedOnly,
                     $this->frontend ? $this->getEffectiveOwnershipUserId((bool) $data->own_only_fe) : $this->getEffectiveOwnershipUserId((bool) $data->own_only),
                     true
                 );
@@ -2250,9 +2261,7 @@ var contentbuilderng = new function(){
             }
 
             foreach ($this->_data as $data) {
-                if (!$this->frontend && $data->display_in == 0) {
-                    throw new \Exception(Text::_('COM_CONTENTBUILDERNG_RECORD_NOT_FOUND'), 404);
-                } else if ($this->frontend && $data->display_in == 1) {
+                if (!$this->frontend) {
                     throw new \Exception(Text::_('COM_CONTENTBUILDERNG_RECORD_NOT_FOUND'), 404);
                 }
                 $data->form_id = $this->_id;

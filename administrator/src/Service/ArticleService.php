@@ -32,6 +32,16 @@ class ArticleService
 
     private function getCurrentUserId(): int
     {
+        $input = $this->getApp()->input;
+
+        if ($input->getBool('cb_preview_ok', false)) {
+            $previewActorId = (int) $input->getInt('cb_preview_actor_id', 0);
+
+            if ($previewActorId > 0) {
+                return $previewActorId;
+            }
+        }
+
         return (int) ($this->getApp()->getIdentity()->id ?? 0);
     }
 

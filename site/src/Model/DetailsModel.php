@@ -21,10 +21,10 @@ use Joomla\CMS\MVC\Model\ListModel;
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
 use CB\Component\Contentbuilderng\Administrator\Helper\ContentbuilderngHelper;
 use CB\Component\Contentbuilderng\Administrator\Service\RuntimeUtilityService;
-use CB\Component\Contentbuilderng\Administrator\Service\PermissionService;
 use CB\Component\Contentbuilderng\Administrator\Service\TemplateRenderService;
 use CB\Component\Contentbuilderng\Administrator\Helper\FormSourceFactory;
 use CB\Component\Contentbuilderng\Site\Helper\MenuParamHelper;
+use CB\Component\Contentbuilderng\Site\Helper\PublishedRecordVisibilityHelper;
 
 class DetailsModel extends ListModel
 {
@@ -51,7 +51,6 @@ class DetailsModel extends ListModel
     private $_page_heading = '';
     private SiteApplication $app;
     private int $directStorageId = 0;
-    private readonly PermissionService $permissionService;
 
     public function __construct(
         $config,
@@ -64,7 +63,6 @@ class DetailsModel extends ListModel
         $this->app = $app;
         $this->templateRenderService = new TemplateRenderService();
         $this->runtimeUtilityService = new RuntimeUtilityService();
-        $this->permissionService = new PermissionService();
         $option = 'com_contentbuilderng';
         $this->frontend = $app->isClient('site');
         $this->directStorageId = max(0, $app->input->getInt('storage_id', 0));
@@ -246,15 +244,7 @@ class DetailsModel extends ListModel
 
     private function shouldRestrictToPublishedOnly(object $data, bool $isAdminPreview): bool
     {
-        if ($isAdminPreview || !$this->frontend) {
-            return (bool) ($data->published_only ?? false);
-        }
-
-        if (!$this->permissionService->authorizeFe('publish')) {
-            return true;
-        }
-
-        return (bool) ($data->published_only ?? false);
+        return PublishedRecordVisibilityHelper::shouldRestrictToPublishedOnly($data, $isAdminPreview);
     }
 
     /**
@@ -325,9 +315,7 @@ class DetailsModel extends ListModel
                 $isAdminPreview = $app->input->getBool('cb_preview_ok', false);
 
                 if (!$isAdminPreview) {
-                    if (!$this->frontend && $data->display_in == 0) {
-                        throw new \Exception(Text::_('COM_CONTENTBUILDERNG_RECORD_NOT_FOUND'), 404);
-                    } else if ($this->frontend && $data->display_in == 1) {
+                    if (!$this->frontend) {
                         throw new \Exception(Text::_('COM_CONTENTBUILDERNG_RECORD_NOT_FOUND'), 404);
                     }
                 }
@@ -644,8 +632,13 @@ class DetailsModel extends ListModel
             $start = (int) $app->getUserState($startKey, 0);
         }
 
-        $ordering = isset($list['ordering']) ? $app->input->getCmd('list[ordering]', '') : (string) $app->getUserState($option . 'formsd_filter_order', '');
-        $direction = isset($list['direction']) ? $app->input->getCmd('list[direction]', '') : (string) $app->getUserState($option . 'formsd_filter_order_Dir', '');
+        $ordering = isset($list['ordering']) ? preg_replace('/[^A-Za-z0-9_\\.]/', '', (string) $list['ordering']) : (string) $app->getUserState($option . 'formsd_filter_order', '');
+        $direction = isset($list['direction']) ? strtolower((string) $list['direction']) : (string) $app->getUserState($option . 'formsd_filter_order_Dir', '');
+        if ($ordering === '' && isset($list['fullordering'])) {
+            $parts = preg_split('/\s+/', trim((string) $list['fullordering']));
+            $ordering = isset($parts[0]) ? preg_replace('/[^A-Za-z0-9_\\.]/', '', (string) $parts[0]) : '';
+            $direction = isset($parts[1]) ? strtolower((string) $parts[1]) : $direction;
+        }
 
         return [
             'limit' => (int) $limit,

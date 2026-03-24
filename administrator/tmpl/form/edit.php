@@ -13,18 +13,15 @@
 
 use Joomla\CMS\Factory;
 use Joomla\CMS\Application\AdministratorApplication;
-use Joomla\CMS\Editor\Editor;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Layout\LayoutHelper;
 use Joomla\CMS\Language\Text;
-use Joomla\CMS\Router\Route;
 use Joomla\CMS\Uri\Uri;
 use CB\Component\Contentbuilderng\Administrator\Helper\FormSourceFactory;
-use CB\Component\Contentbuilderng\Administrator\Helper\ContentbuilderngHelper;
 use CB\Component\Contentbuilderng\Administrator\Helper\PackedDataHelper;
 use CB\Component\Contentbuilderng\Administrator\Service\TextUtilityService;
-?>
-<?php
+
+
 /** @var AdministratorApplication $app */
 $app = Factory::getApplication();
 $session = $app->getSession();
@@ -111,54 +108,55 @@ $formId    = (int) ($this->item->id ?? 0);
 $fullOrdering = trim($listOrder . ' ' . strtoupper($listDirn));
 ?>
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-var form = document.getElementById('adminForm');
+    document.addEventListener('DOMContentLoaded', function() {
+        var form = document.getElementById('adminForm');
 
-if (!form) {
-    return;
-}
+        if (!form) {
+            return;
+        }
 
-var setValue = function(name, value) {
-    var element = form.elements[name];
-    if (element) {
-        element.value = value;
-    }
-};
+        var setValue = function(name, value) {
+            var element = form.elements[name];
+            if (element) {
+                element.value = value;
+            }
+        };
 
-document.querySelectorAll('#adminForm .js-stools-column-order').forEach(function(link) {
-    link.addEventListener('click', function(event) {
-        event.preventDefault();
+        document.querySelectorAll('#adminForm .js-stools-column-order').forEach(function(link) {
+            link.addEventListener('click', function(event) {
+                event.preventDefault();
 
-        var order = String(link.getAttribute('data-order') || '');
-        var dir = String(link.getAttribute('data-direction') || 'ASC').toUpperCase();
+                var order = String(link.getAttribute('data-order') || '');
+                var dir = String(link.getAttribute('data-direction') || 'ASC').toUpperCase();
 
-        setValue('filter_order', order);
-        setValue('filter_order_Dir', dir.toLowerCase());
-        setValue('list[ordering]', order);
-        setValue('list[direction]', dir.toLowerCase());
-        setValue('list[fullordering]', order !== '' ? (order + ' ' + dir) : '');
-        setValue('limitstart', 0);
-        setValue('task', 'form.display');
+                setValue('filter_order', order);
+                setValue('filter_order_Dir', dir.toLowerCase());
+                setValue('list[ordering]', order);
+                setValue('list[direction]', dir.toLowerCase());
+                setValue('list[fullordering]', order !== '' ? (order + ' ' + dir) : '');
+                setValue('limitstart', 0);
+                setValue('task', 'form.display');
 
-        form.submit();
+                form.submit();
+            });
+        });
+
+        form.querySelectorAll('input[name^="jform[order]["]').forEach(function(input) {
+            var sanitize = function() {
+                input.value = String(input.value || '').replace(/[^0-9]/g, '');
+            };
+
+            input.setAttribute('inputmode', 'numeric');
+            input.setAttribute('pattern', '[0-9]*');
+
+            input.addEventListener('input', sanitize);
+            input.addEventListener('paste', function() {
+                window.setTimeout(sanitize, 0);
+            });
+        });
     });
-});
-
-form.querySelectorAll('input[name^="jform[order]["]').forEach(function(input) {
-    var sanitize = function() {
-        input.value = String(input.value || '').replace(/[^0-9]/g, '');
-    };
-
-    input.setAttribute('inputmode', 'numeric');
-    input.setAttribute('pattern', '[0-9]*');
-
-    input.addEventListener('input', sanitize);
-    input.addEventListener('paste', function() {
-        window.setTimeout(sanitize, 0);
-    });
-});
-});
 </script>
+
 <?php
 $apiEndpointBase = Uri::root() . 'index.php?option=com_contentbuilderng&task=api.display&id=' . $formId;
 $apiPreviewQuery = '';
@@ -373,15 +371,17 @@ $isModifiedElementSettings = static function ($row): bool {
         return true;
     }
 
-    foreach ([
-        'hint',
-        'default_value',
-        'validations',
-        'custom_init_script',
-        'custom_action_script',
-        'custom_validation_script',
-        'validation_message',
-    ] as $field) {
+    foreach (
+        [
+            'hint',
+            'default_value',
+            'validations',
+            'custom_init_script',
+            'custom_action_script',
+            'custom_validation_script',
+            'validation_message',
+        ] as $field
+    ) {
         if (trim((string) ($row->{$field} ?? '')) !== '') {
             return true;
         }
@@ -1285,8 +1285,8 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
 
     function cbGetCodeMirrorEditorView(fieldName) {
         var editorId = 'jform_' + fieldName;
-        var textarea = document.getElementById(editorId)
-            || document.querySelector('textarea[name="jform[' + fieldName + ']"]');
+        var textarea = document.getElementById(editorId) ||
+            document.querySelector('textarea[name="jform[' + fieldName + ']"]');
 
         if (!textarea || typeof textarea.closest !== 'function') {
             return null;
@@ -2059,8 +2059,8 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
         var type = String(field.type || '').toLowerCase();
 
         if (
-            type === 'hidden'
-            && /^(cb_create_sample_flag|cb_create_editable_sample_flag|cb_email_admin_create_sample_flag|cb_email_create_sample_flag)$/.test(String(field.id || ''))
+            type === 'hidden' &&
+            /^(cb_create_sample_flag|cb_create_editable_sample_flag|cb_email_admin_create_sample_flag|cb_email_create_sample_flag)$/.test(String(field.id || ''))
         ) {
             return true;
         }
@@ -2117,10 +2117,10 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
                 var textarea = document.getElementById('jform_' + editorFieldName);
 
                 if (
-                    textarea
-                    && textarea.tagName
-                    && String(textarea.tagName).toLowerCase() === 'textarea'
-                    && editorValue !== String(field.value || '')
+                    textarea &&
+                    textarea.tagName &&
+                    String(textarea.tagName).toLowerCase() === 'textarea' &&
+                    editorValue !== String(field.value || '')
                 ) {
                     parts.push(key + '=' + editorValue);
                     editorKeys[key] = true;
@@ -2153,15 +2153,15 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
 
             var textarea = document.getElementById('jform_' + fieldName);
             var hasEditorInstance = !!cbGetJoomlaEditorInstance(fieldName);
-            var looksLikeEditorField = hasEditorInstance
-                || (
-                    textarea
-                    && textarea.tagName
-                    && String(textarea.tagName).toLowerCase() === 'textarea'
-                    && (
-                        textarea.closest('.tox-tinymce')
-                        || textarea.closest('.editor')
-                        || textarea.dataset.editor === '1'
+            var looksLikeEditorField = hasEditorInstance ||
+                (
+                    textarea &&
+                    textarea.tagName &&
+                    String(textarea.tagName).toLowerCase() === 'textarea' &&
+                    (
+                        textarea.closest('.tox-tinymce') ||
+                        textarea.closest('.editor') ||
+                        textarea.dataset.editor === '1'
                     )
                 );
 
@@ -2198,8 +2198,7 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
                 ['change', 'input', 'keyup', 'undo', 'redo'].forEach(function(eventName) {
                     try {
                         instance.on(eventName, cbHandleDirtyInteraction);
-                    } catch (e) {
-                    }
+                    } catch (e) {}
                 });
                 boundCount++;
                 return;
@@ -2256,8 +2255,7 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
                 ['input', 'change', 'keyup', 'Undo', 'Redo'].forEach(function(eventName) {
                     try {
                         editor.on(eventName, cbHandleDirtyInteraction);
-                    } catch (e) {
-                    }
+                    } catch (e) {}
                 });
 
                 try {
@@ -2268,8 +2266,7 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
                             doc.addEventListener(eventName, cbHandleDirtyInteraction, true);
                         });
                     }
-                } catch (e) {
-                }
+                } catch (e) {}
 
                 try {
                     var body = editor.getBody && editor.getBody();
@@ -2279,8 +2276,7 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
                             body.addEventListener(eventName, cbHandleDirtyInteraction, true);
                         });
                     }
-                } catch (e) {
-                }
+                } catch (e) {}
 
                 var iframe = document.getElementById(editorId + '_ifr');
                 if (iframe && !iframe.__cbDirtyTrackingBound) {
@@ -2528,7 +2524,10 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
             cbEditorObserver = new MutationObserver(function() {
                 cbEnsureEditorDirtyTracking(form);
             });
-            cbEditorObserver.observe(form, { childList: true, subtree: true });
+            cbEditorObserver.observe(form, {
+                childList: true,
+                subtree: true
+            });
         }
 
         if (!cbEditorPollHandle) {
@@ -2784,46 +2783,46 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
                                     <b>
                                         <?php echo Text::_('COM_CONTENTBUILDERNG_FORM_SOURCE'); ?>:
                                     </b>
-                                </label>
-                                <?php
+                                    </label>
+                                    <?php
 
-                                if (!$this->item->reference_id) {
-                                ?>
-                                    <select class="form-select-sm" name="jform[reference_id]" id="cb_form_reference_select" style="max-width: 200px;">
-                                        <?php
-                                        foreach ($this->item->forms as $reference_id => $title) {
-                                        ?>
-                                            <option value="<?php echo $reference_id ?>">
-                                                <?php echo htmlentities($title ?? '', ENT_QUOTES, 'UTF-8'); ?>
-                                            </option>
-                                        <?php
-                                        }
-                                        ?>
-                                    </select>
-                                <?php
-                                } else {
-                                ?>
-                                    <?php echo htmlentities($this->item->form->getTitle() ?? '', ENT_QUOTES, 'UTF-8'); ?>
-                                    <input type="hidden" name="jform[reference_id]"
-                                        value="<?php echo $this->item->form->getReferenceId(); ?>" />
-                                <?php
-                                }
-                                ?>
+                                    if (!$this->item->reference_id) {
+                                    ?>
+                                        <select class="form-select-sm" name="jform[reference_id]" id="cb_form_reference_select" style="max-width: 200px;">
+                                            <?php
+                                            foreach ($this->item->forms as $reference_id => $title) {
+                                            ?>
+                                                <option value="<?php echo $reference_id ?>">
+                                                    <?php echo htmlentities($title ?? '', ENT_QUOTES, 'UTF-8'); ?>
+                                                </option>
+                                            <?php
+                                            }
+                                            ?>
+                                        </select>
+                                    <?php
+                                    } else {
+                                    ?>
+                                        <?php echo htmlentities($this->item->form->getTitle() ?? '', ENT_QUOTES, 'UTF-8'); ?>
+                                        <input type="hidden" name="jform[reference_id]"
+                                            value="<?php echo $this->item->form->getReferenceId(); ?>" />
+                                    <?php
+                                    }
+                                    ?>
 
-                                <label>
+                                    <label>
+                                        <span class="editlinktip hasTip"
+                                            title="<?php echo Text::_('COM_CONTENTBUILDERNG_TYPE_TIP'); ?>"><b>
+                                                <?php echo Text::_('COM_CONTENTBUILDERNG_TYPE'); ?>:
+                                            </b></span>
+                                    </label>
+                                    <?php $typeDisplay = $formatTypeDisplay((string) ($this->item->type ?? '')); ?>
                                     <span class="editlinktip hasTip"
-                                        title="<?php echo Text::_('COM_CONTENTBUILDERNG_TYPE_TIP'); ?>"><b>
-                                            <?php echo Text::_('COM_CONTENTBUILDERNG_TYPE'); ?>:
-                                        </b></span>
-                                </label>
-                                <?php $typeDisplay = $formatTypeDisplay((string) ($this->item->type ?? '')); ?>
-                                <span class="editlinktip hasTip"
-                                    title="<?php echo htmlspecialchars((string) ($typeDisplay['full'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>">
-                                    <?php echo htmlspecialchars((string) ($typeDisplay['short'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>
-                                </span>
-                                <input type="hidden" name="jform[type]" value="<?php echo $this->item->type ?>" />
-                                <input type="hidden" name="jform[type_name]"
-                                    value="<?php echo isset($this->item->type_name) ? $this->item->type_name : ''; ?>" />
+                                        title="<?php echo htmlspecialchars((string) ($typeDisplay['full'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>">
+                                        <?php echo htmlspecialchars((string) ($typeDisplay['short'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>
+                                    </span>
+                                    <input type="hidden" name="jform[type]" value="<?php echo $this->item->type ?>" />
+                                    <input type="hidden" name="jform[type_name]"
+                                        value="<?php echo isset($this->item->type_name) ? $this->item->type_name : ''; ?>" />
                             </div>
 
                             <div></div>
@@ -2832,434 +2831,17 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
                         }
                         ?>
 
-                        <?php ob_start(); ?>
-                        <div class="bg-body-tertiary p-3" id="advancedOptions">
-
-                            <fieldset>
-                                <legend>
-                                    <h3 class="editlinktip hasTip"
-                                        title="<?php echo Text::_('COM_CONTENTBUILDERNG_DISPLAY_TIP'); ?>">
-                                        <?php echo Text::_('COM_CONTENTBUILDERNG_DISPLAY'); ?>
-                                    </h3>
-                                </legend>
-
-
-                                <div class="cb-display-in-row">
-                                    <select class="form-select-sm" name="jform[display_in]">
-                                        <option value="0" <?php echo $this->item->display_in == 0 ? ' selected="selected"' : '' ?>>
-                                            <?php echo Text::_('COM_CONTENTBUILDERNG_DISPLAY_FRONTEND') ?>
-                                        </option>
-                                        <option value="1" <?php echo $this->item->display_in == 1 ? ' selected="selected"' : '' ?>>
-                                            <?php echo Text::_('COM_CONTENTBUILDERNG_DISPLAY_BACKEND') ?>
-                                        </option>
-                                        <option value="2" <?php echo $this->item->display_in == 2 ? ' selected="selected"' : '' ?>>
-                                            <?php echo Text::_('COM_CONTENTBUILDERNG_DISPLAY_BOTH') ?>
-                                        </option>
-                                    </select>
-                                </div>
-
-                            </fieldset>
-
-                            <hr />
-
-                            <fieldset>
-                                <legend>
-                                    <h3 class="editlinktip hasTip"
-                                        title="<?php echo Text::_('COM_CONTENTBUILDERNG_SHOW_COLUMNS_TIP'); ?>">
-                                        <?php echo Text::_('COM_CONTENTBUILDERNG_SHOW'); ?>
-                                    </h3>
-                                </legend>
-
-
-                                <div class="row gx-3 gy-1 mt-0">
-                                    <div class="col-12 col-xl-4">
-                                        <div class="border rounded bg-body p-3 h-100">
-                                            <h4 class="h6 text-body-secondary mb-2">
-                                                <?php echo Text::_('COM_CONTENTBUILDERNG_SHOW_DATA_OPTIONS'); ?>
-                                            </h4>
-                                            <div class="d-flex flex-wrap align-items-center gap-3">
-                                                <div>
-                                                    <input type="hidden" name="jform[show_id_column]" value="0" />
-                                                    <?php echo $renderCheckbox('jform[show_id_column]', 'show_id_column', (bool) $this->item->show_id_column); ?>
-                                                    <label class="form-check-label" for="show_id_column">
-                                                        <span class="editlinktip hasTip" title="<?php echo Text::_('COM_CONTENTBUILDERNG_SHOW_ID_COLUMN_TIP'); ?>">
-                                                            <?php echo Text::_('COM_CONTENTBUILDERNG_ID_COLUMN'); ?>
-                                                        </span>
-                                                    </label>
-                                                </div>
-                                                <div>
-                                                    <input type="hidden" name="jform[select_column]" value="0" />
-                                                    <?php echo $renderCheckbox('jform[select_column]', 'select_column', (bool) $this->item->select_column); ?>
-                                                    <label class="form-check-label" for="select_column">
-                                                        <span class="editlinktip hasTip" title="<?php echo Text::_('COM_CONTENTBUILDERNG_SHOW_SELECT_COLUMN_TIP'); ?>">
-                                                            <?php echo Text::_('COM_CONTENTBUILDERNG_SELECT_COLUMN'); ?>
-                                                        </span>
-                                                    </label>
-                                                </div>
-                                                <div>
-                                                    <input type="hidden" name="jform[list_state]" value="0" />
-                                                    <?php echo $renderCheckbox('jform[list_state]', 'list_state', (bool) $this->item->list_state); ?>
-                                                    <label class="form-check-label" for="list_state">
-                                                        <span class="editlinktip hasTip" title="<?php echo Text::_('COM_CONTENTBUILDERNG_SHOW_STATE_COLUMN_TIP'); ?>">
-                                                            <?php echo Text::_('COM_CONTENTBUILDERNG_EDIT_STATE'); ?>
-                                                        </span>
-                                                    </label>
-                                                </div>
-                                                <div>
-                                                    <input type="hidden" name="jform[list_publish]" value="0" />
-                                                    <?php echo $renderCheckbox('jform[list_publish]', 'list_publish', (bool) $this->item->list_publish); ?>
-                                                    <label class="form-check-label" for="list_publish">
-                                                        <span class="editlinktip hasTip" title="<?php echo Text::_('COM_CONTENTBUILDERNG_SHOW_PUBLISH_COLUMN_TIP'); ?>">
-                                                            <?php echo Text::_('COM_CONTENTBUILDERNG_PUBLISH'); ?>
-                                                        </span>
-                                                    </label>
-                                                </div>
-                                                <div>
-                                                    <input type="hidden" name="jform[list_language]" value="0" />
-                                                    <?php echo $renderCheckbox('jform[list_language]', 'list_language', (bool) $this->item->list_language); ?>
-                                                    <label class="form-check-label" for="list_language">
-                                                        <span class="editlinktip hasTip" title="<?php echo Text::_('COM_CONTENTBUILDERNG_SHOW_LANGUAGE_COLUMN_TIP'); ?>">
-                                                            <?php echo Text::_('COM_CONTENTBUILDERNG_LANGUAGE'); ?>
-                                                        </span>
-                                                    </label>
-                                                </div>
-                                                <div>
-                                                    <input type="hidden" name="jform[list_article]" value="0" />
-                                                    <?php echo $renderCheckbox('jform[list_article]', 'list_article', (bool) $this->item->list_article); ?>
-                                                    <label class="form-check-label" for="list_article">
-                                                        <span class="editlinktip hasTip" title="<?php echo Text::_('COM_CONTENTBUILDERNG_SHOW_ARTICLE_COLUMN_TIP'); ?>">
-                                                            <?php echo Text::_('COM_CONTENTBUILDERNG_ARTICLE'); ?>
-                                                        </span>
-                                                    </label>
-                                                </div>
-                                                <div>
-                                                    <input type="hidden" name="jform[list_author]" value="0" />
-                                                    <?php echo $renderCheckbox('jform[list_author]', 'list_author', (bool) $this->item->list_author); ?>
-                                                    <label class="form-check-label" for="list_author">
-                                                        <span class="editlinktip hasTip" title="<?php echo Text::_('COM_CONTENTBUILDERNG_SHOW_AUTHOR_COLUMN_TIP'); ?>">
-                                                            <?php echo Text::_('COM_CONTENTBUILDERNG_AUTHOR'); ?>
-                                                        </span>
-                                                    </label>
-                                                </div>
-                                                <div>
-                                                    <input type="hidden" name="jform[metadata]" value="0" />
-                                                    <?php echo $renderCheckbox('jform[metadata]', 'metadata', (bool) $this->item->metadata); ?>
-                                                    <label class="form-check-label" for="metadata">
-                                                        <span class="editlinktip hasTip" title="<?php echo Text::_('COM_CONTENTBUILDERNG_SHOW_METADATA_TIP'); ?>">
-                                                            <?php echo Text::_('COM_CONTENTBUILDERNG_SHOW_METADATA'); ?>
-                                                        </span>
-                                                    </label>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="col-12 col-xl-4">
-                                        <div class="border rounded bg-body p-3 h-100">
-                                            <h4 class="h6 text-body-secondary mb-2">
-                                                <?php echo Text::_('COM_CONTENTBUILDERNG_SHOW_BUTTON_OPTIONS'); ?>
-                                            </h4>
-                                            <div class="d-flex flex-wrap align-items-center gap-3">
-                                                <div>
-                                                    <input type="hidden" name="jform[edit_button]" value="0" />
-                                                    <?php echo $renderCheckbox('jform[edit_button]', 'edit_button', (bool) $this->item->edit_button); ?>
-                                                    <label class="form-check-label" for="edit_button">
-                                                        <span class="editlinktip hasTip" title="<?php echo Text::_('COM_CONTENTBUILDERNG_SHOW_EDIT_BUTTON_TIP'); ?>">
-                                                            <?php echo Text::_('COM_CONTENTBUILDERNG_EDIT_BUTTON'); ?>
-                                                        </span>
-                                                    </label>
-                                                </div>
-                                                <div>
-                                                    <input type="hidden" name="jform[new_button]" value="0" />
-                                                    <?php echo $renderCheckbox('jform[new_button]', 'new_button', (bool) ($this->item->new_button ?? 0)); ?>
-                                                    <label class="form-check-label" for="new_button">
-                                                        <span class="editlinktip hasTip" title="<?php echo Text::_('COM_CONTENTBUILDERNG_SHOW_NEW_BUTTON_TIP'); ?>">
-                                                            <?php echo Text::_('COM_CONTENTBUILDERNG_NEW'); ?>
-                                                        </span>
-                                                    </label>
-                                                </div>
-                                                <div>
-                                                    <input type="hidden" name="jform[export_xls]" value="0" />
-                                                    <?php echo $renderCheckbox('jform[export_xls]', 'export_xls', (bool) $this->item->export_xls); ?>
-                                                    <label class="form-check-label" for="export_xls">
-                                                        <span class="editlinktip hasTip" title="<?php echo Text::_('COM_CONTENTBUILDERNG_SHOW_XLSEXPORT_TIP'); ?>">
-                                                            <?php echo Text::_('COM_CONTENTBUILDERNG_SHOW_XLSEXPORT'); ?>
-                                                        </span>
-                                                    </label>
-                                                </div>
-                                                <div>
-                                                    <input type="hidden" name="jform[print_button]" value="0" />
-                                                    <?php echo $renderCheckbox('jform[print_button]', 'print_button', (bool) $this->item->print_button); ?>
-                                                    <label class="form-check-label" for="print_button">
-                                                        <span class="editlinktip hasTip" title="<?php echo Text::_('COM_CONTENTBUILDERNG_SHOW_PRINTBUTTON_TIP'); ?>">
-                                                            <?php echo Text::_('COM_CONTENTBUILDERNG_SHOW_PRINTBUTTON'); ?>
-                                                        </span>
-                                                    </label>
-                                                </div>
-                                                <div class="w-100"></div>
-                                                <div>
-                                                    <input type="hidden" name="jform[button_bar_sticky]" value="0" />
-                                                    <?php echo $renderCheckbox('jform[button_bar_sticky]', 'button_bar_sticky', (bool) ($this->item->button_bar_sticky ?? 0)); ?>
-                                                    <label class="form-check-label" for="button_bar_sticky">
-                                                        <span class="editlinktip hasTip" title="<?php echo Text::_('COM_CONTENTBUILDERNG_BUTTON_BAR_STICKY_TIP'); ?>">
-                                                            <?php echo Text::_('COM_CONTENTBUILDERNG_BUTTON_BAR_STICKY'); ?>
-                                                        </span>
-                                                    </label>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="col-12 col-xl-4">
-                                        <div class="border rounded bg-body p-3 h-100">
-                                            <h4 class="h6 text-body-secondary mb-2">
-                                                <?php echo Text::_('COM_CONTENTBUILDERNG_DISPLAY_OPTIONS'); ?>
-                                            </h4>
-                                            <div class="d-flex flex-wrap align-items-center gap-3">
-                                                <div>
-                                                    <input type="hidden" name="jform[show_filter]" value="0" />
-                                                    <?php echo $renderCheckbox('jform[show_filter]', 'show_filter', (bool) $this->item->show_filter); ?>
-                                                    <label class="form-check-label" for="show_filter">
-                                                        <span class="editlinktip hasTip" title="<?php echo Text::_('COM_CONTENTBUILDERNG_SHOW_FILTER_TIP'); ?>">
-                                                            <?php echo Text::_('COM_CONTENTBUILDERNG_FILTER'); ?>
-                                                        </span>
-                                                    </label>
-                                                </div>
-                                                <div>
-                                                    <input type="hidden" name="jform[show_records_per_page]" value="0" />
-                                                    <?php echo $renderCheckbox('jform[show_records_per_page]', 'show_records_per_page', (bool) $this->item->show_records_per_page); ?>
-                                                    <label class="form-check-label" for="show_records_per_page">
-                                                        <span class="editlinktip hasTip" title="<?php echo Text::_('COM_CONTENTBUILDERNG_SHOW_RECORDS_PER_PAGE_TIP'); ?>">
-                                                            <?php echo Text::_('COM_CONTENTBUILDERNG_LIST_LIMIT_LABEL'); ?>
-                                                        </span>
-                                                    </label>
-                                                </div>
-                                                <div class="w-100"></div>
-                                                <div>
-                                                    <input type="hidden" name="jform[list_header_sticky]" value="0" />
-                                                    <?php echo $renderCheckbox('jform[list_header_sticky]', 'list_header_sticky', (bool) ($this->item->list_header_sticky ?? 0)); ?>
-                                                    <label class="form-check-label" for="list_header_sticky">
-                                                        <span class="editlinktip hasTip" title="<?php echo Text::_('COM_CONTENTBUILDERNG_LIST_HEADER_STICKY_TIP'); ?>">
-                                                            <?php echo Text::_('COM_CONTENTBUILDERNG_LIST_HEADER_STICKY'); ?>
-                                                        </span>
-                                                    </label>
-                                                </div>
-                                                <div>
-                                                    <input type="hidden" name="jform[show_preview_link]" value="0" />
-                                                    <?php echo $renderCheckbox('jform[show_preview_link]', 'show_preview_link', (bool) ($this->item->show_preview_link ?? 0)); ?>
-                                                    <label class="form-check-label" for="show_preview_link">
-                                                        <span class="editlinktip hasTip" title="<?php echo Text::_('COM_CONTENTBUILDERNG_SHOW_PREVIEW_LINK_TIP'); ?>">
-                                                            <span class="fa-solid fa-eye" aria-hidden="true"></span>
-                                                        </span>
-                                                    </label>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                            </fieldset>
-
-                            <hr />
-
-                            <fieldset>
-                                <legend>
-                                    <h3>
-                                        <?php echo Text::_('COM_CONTENTBUILDERNG_RATING'); ?>
-                                    </h3>
-                                </legend>
-                                <div class="alert">
-                                    <input type="hidden" name="jform[list_rating]" value="0" />
-                                    <?php echo $renderCheckbox('jform[list_rating]', 'list_rating', (bool) $this->item->list_rating); ?>
-                                    <label class="form-check-label" for="list_rating">
-                                        <?php echo Text::_('COM_CONTENTBUILDERNG_RATING'); ?>
-                                    </label>
-
-                                    <select class="form-select-sm" name="jform[rating_slots]" id="rating_slots">
-                                        <option value="1" <?php echo $this->item->rating_slots == 1 ? ' selected="selected"' : ''; ?>>1</option>
-                                        <option value="2" <?php echo $this->item->rating_slots == 2 ? ' selected="selected"' : ''; ?>>2</option>
-                                        <option value="3" <?php echo $this->item->rating_slots == 3 ? ' selected="selected"' : ''; ?>>3</option>
-                                        <option value="4" <?php echo $this->item->rating_slots == 4 ? ' selected="selected"' : ''; ?>>4</option>
-                                        <option value="5" <?php echo $this->item->rating_slots == 5 ? ' selected="selected"' : ''; ?>>5</option>
-                                    </select>
-                                    <label for="rating_slots">
-                                        <?php echo Text::_('COM_CONTENTBUILDERNG_RATING_SLOTS'); ?>
-                                    </label>
-                                </div>
-                            </fieldset>
-
-                            <hr />
-
-                            <fieldset>
-                                <legend>
-                                    <h3>
-                                        <?php echo Text::_('COM_CONTENTBUILDERNG_SORTING'); ?>
-                                    </h3>
-                                </legend>
-                                <div class="alert">
-                                    <label for="initial_sort_order">
-                                        <span class="editlinktip hasTip"
-                                            title="<?php echo Text::_('COM_CONTENTBUILDERNG_INITIAL_SORT_ORDER_TIP'); ?>"><b>
-                                                <?php echo Text::_('COM_CONTENTBUILDERNG_INITIAL_SORT_ORDER'); ?>:
-                                            </b></span>
-                                    </label>
-                                    <select class="form-select-sm"
-                                        onchange="if(this.selectedIndex == 3) { document.getElementById('randUpdate').style.display='block'; } else { document.getElementById('randUpdate').style.display='none'; } "
-                                        name="jform[initial_sort_order]" id="initial_sort_order" style="max-width: 200px;">
-                                        <option value="-1">
-                                            <?php echo Text::_('COM_CONTENTBUILDERNG_INITIAL_SORT_ORDER_BY_ID'); ?>
-                                        </option>
-                                        <option value="Rating" <?php echo $this->item->initial_sort_order == 'Rating' ? ' selected="selected"' : ''; ?>>
-                                            <?php echo Text::_('COM_CONTENTBUILDERNG_RATING'); ?>
-                                        </option>
-                                        <option value="RatingCount" <?php echo $this->item->initial_sort_order == 'RatingCount' ? ' selected="selected"' : ''; ?>>
-                                            <?php echo Text::_('COM_CONTENTBUILDERNG_RATING_COUNT'); ?>
-                                        </option>
-                                        <option value="Rand" <?php echo $this->item->initial_sort_order == 'Rand' ? ' selected="selected"' : ''; ?>>
-                                            <?php echo Text::_('COM_CONTENTBUILDERNG_INITIAL_SORT_ORDER_RAND'); ?>
-                                        </option>
-                                        <?php
-                                        foreach ($this->elements as $sortable) {
-                                        ?>
-                                            <option value="<?php echo $sortable->reference_id; ?>" <?php echo $this->item->initial_sort_order == $sortable->reference_id ? ' selected="selected"' : ''; ?>>
-                                                <?php echo htmlentities($sortable->label ?? '', ENT_QUOTES, 'UTF-8'); ?>
-                                                </value>
-                                            <?php
-                                        }
-                                            ?>
-                                    </select>
-                                    <span id="randUpdate"
-                                        style="display: <?php echo $this->item->initial_sort_order == 'Rand' ? 'block' : 'none' ?>;">
-                                        <b>
-                                            <?php echo Text::_('COM_CONTENTBUILDERNG_RAND_UPDATE'); ?>:
-                                        </b>
-                                        <input class="form-control form-control-sm" type="text" name="jform[rand_update]"
-                                            value="<?php echo $this->item->rand_update; ?>" />
-                                    </span>
-                                    <select class="form-select-sm" name="jform[initial_sort_order2]" id="initial_sort_order2"
-                                        style="max-width: 200px;">
-                                        <option value="-1">
-                                            <?php echo Text::_('COM_CONTENTBUILDERNG_NONE'); ?>
-                                        </option>
-                                        <?php
-                                        foreach ($this->elements as $sortable) {
-                                        ?>
-                                            <option value="<?php echo $sortable->reference_id; ?>" <?php echo $this->item->initial_sort_order2 == $sortable->reference_id ? ' selected="selected"' : ''; ?>>
-                                                <?php echo htmlentities($sortable->label ?? '', ENT_QUOTES, 'UTF-8'); ?>
-                                                </value>
-                                            <?php
-                                        }
-                                            ?>
-                                    </select>
-                                    <select class="form-select-sm" name="jform[initial_sort_order3]" id="initial_sort_order3"
-                                        style="max-width: 200px;">
-                                        <option value="-1">
-                                            <?php echo Text::_('COM_CONTENTBUILDERNG_NONE'); ?>
-                                        </option>
-                                        <?php
-                                        foreach ($this->elements as $sortable) {
-                                        ?>
-                                            <option value="<?php echo $sortable->reference_id; ?>" <?php echo $this->item->initial_sort_order3 == $sortable->reference_id ? ' selected="selected"' : ''; ?>>
-                                                <?php echo htmlentities($sortable->label ?? '', ENT_QUOTES, 'UTF-8'); ?>
-                                                </value>
-                                            <?php
-                                        }
-                                            ?>
-                                    </select>
-                                    <div></div>
-                                    <input class="form-check-input" type="radio" name="jform[initial_order_dir]"
-                                        id="initial_order_dir" value="asc" <?php echo $this->item->initial_order_dir == 'asc' ? ' checked="checked"' : ''; ?> /> <label
-                                        for="initial_order_dir">
-                                        <?php echo Text::_('COM_CONTENTBUILDERNG_INITIAL_SORT_ORDER_ASC'); ?>
-                                    </label>
-                                    <input class="form-check-input" type="radio" name="jform[initial_order_dir]"
-                                        id="initial_order_dir_desc" value="desc" <?php echo $this->item->initial_order_dir == 'desc' ? ' checked="checked"' : ''; ?> /> <label
-                                        for="initial_order_dir_desc">
-                                        <?php echo Text::_('COM_CONTENTBUILDERNG_INITIAL_SORT_ORDER_DESC'); ?>
-                                    </label>
-                                </div>
-                            </fieldset>
-
-                            <hr />
-
-                            <fieldset>
-                                <legend>
-                                    <h3>
-                                        <?php echo Text::_('COM_CONTENTBUILDERNG_BUTTONS'); ?>
-                                    </h3>
-                                </legend>
-                                <div class="alert">
-                                    <label for="save_button_title">
-                                        <span class="editlinktip hasTip"
-                                            title="<?php echo Text::_('COM_CONTENTBUILDERNG_SAVE_BUTTON_TITLE_TIP'); ?>"><b>
-                                                <?php echo Text::_('COM_CONTENTBUILDERNG_SAVE_BUTTON_TITLE'); ?>:
-                                            </b></span>
-                                    </label>
-                                    <input class="form-control form-control-sm" type="text" id="save_button_title"
-                                        name="jform[save_button_title]"
-                                        value="<?php echo htmlentities($this->item->save_button_title ?? '', ENT_QUOTES, 'UTF-8'); ?>" />
-
-                                    <label for="apply_button_title">
-                                        <span class="editlinktip hasTip"
-                                            title="<?php echo Text::_('COM_CONTENTBUILDERNG_APPLY_BUTTON_TITLE_TIP'); ?>"><b>
-                                                <?php echo Text::_('COM_CONTENTBUILDERNG_APPLY_BUTTON_TITLE'); ?>:
-                                            </b></span>
-                                    </label>
-                                    <input class="form-control form-control-sm" type="text" id="apply_button_title"
-                                        name="jform[apply_button_title]"
-                                        value="<?php echo htmlentities($this->item->apply_button_title ?? '', ENT_QUOTES, 'UTF-8'); ?>" />
-                                </div>
-                            </fieldset>
-
-                            <hr />
-
-                            <fieldset>
-                                <legend>
-                                    <h3>
-                                        <?php echo Text::_('COM_CONTENTBUILDERNG_MISC'); ?>
-                                    </h3>
-                                </legend>
-                                <div class="alert">
-                                    <input type="hidden" name="jform[filter_exact_match]" value="0" />
-                                    <?php echo $renderCheckbox('jform[filter_exact_match]', 'filter_exact_match', (bool) $this->item->filter_exact_match); ?>
-                                    <label class="form-check-label" for="filter_exact_match">
-                                        <span class="editlinktip hasTip"
-                                            title="<?php echo Text::_('COM_CONTENTBUILDERNG_FILTER_EXACT_MATCH_TIP'); ?>">
-                                            <?php echo Text::_('COM_CONTENTBUILDERNG_FILTER_EXACT_MATCH'); ?>
-                                        </span>
-                                    </label>
-
-                                    <input type="hidden" name="jform[use_view_name_as_title]" value="0" />
-                                    <?php echo $renderCheckbox('jform[use_view_name_as_title]', 'use_view_name_as_title', (bool) $this->item->use_view_name_as_title); ?>
-                                    <label class="form-check-label" for="use_view_name_as_title">
-                                        <span class="editlinktip hasTip"
-                                            title="<?php echo Text::_('COM_CONTENTBUILDERNG_USE_VIEW_NAME_AS_TITLE_TIP'); ?>">
-                                            <?php echo Text::_('COM_CONTENTBUILDERNG_USE_VIEW_NAME_AS_TITLE'); ?>
-                                        </span>
-                                    </label>
-
-                                    <input type="hidden" name="jform[published_only]" value="0" />
-                                    <?php echo $renderCheckbox('jform[published_only]', 'published_only', (bool) $this->item->published_only); ?>
-                                    <label class="form-check-label" for="published_only">
-                                        <span class="editlinktip hasTip"
-                                            title="<?php echo Text::_('COM_CONTENTBUILDERNG_PUBLISHED_ONLY_TIP'); ?>">
-                                            <?php echo Text::_('COM_CONTENTBUILDERNG_PUBLISHED_ONLY'); ?>
-                                        </span>
-                                    </label>
-
-                                    <input type="hidden" name="jform[allow_external_filter]" value="0" />
-                                    <?php echo $renderCheckbox('jform[allow_external_filter]', 'allow_external_filter', (bool) $this->item->allow_external_filter); ?>
-                                    <label class="form-check-label" for="allow_external_filter">
-                                        <span class="editlinktip hasTip"
-                                            title="<?php echo Text::_('COM_CONTENTBUILDERNG_ALLOW_EXTERNAL_FILTER_TIP'); ?>">
-                                            <?php echo Text::_('COM_CONTENTBUILDERNG_ALLOW_EXTERNAL_FILTER'); ?>
-                                        </span>
-                                    </label>
-                                </div>
-                            </fieldset>
-
-                        </div>
-                        <?php $advancedOptionsContent = ob_get_clean(); ?>
+                        <?php
+                        $advancedOptionsContent = LayoutHelper::render(
+                            'form.advanced_options',
+                            [
+                                'item' => $this->item,
+                                'elements' => $this->elements,
+                                'renderCheckbox' => $renderCheckbox,
+                            ],
+                            $componentLayoutBase
+                        );
+                        ?>
 
                     </fieldset>
 
@@ -3512,7 +3094,7 @@ $jsonFlags = JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QU
         body.css('display', '');
     });
 
-        (() => {
+    (() => {
         const adminUi = window.ContentBuilderNgAdmin || null;
         const KEY_PERM = 'cb_active_perm_tab';
         const viewTabTooltips = <?php echo json_encode($viewTabTooltips, $jsonFlags); ?>;
