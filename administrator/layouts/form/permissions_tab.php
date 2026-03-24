@@ -23,6 +23,35 @@ $defaultCheckedForNewPermissions = is_array($displayData['defaultCheckedForNewPe
 $renderCheckbox = $displayData['renderCheckbox'] ?? null;
 $permHeaderLabel = $displayData['permHeaderLabel'] ?? null;
 $permGroupLabel = $displayData['permGroupLabel'] ?? null;
+$permOptionLabel = static function (string $for, string $labelKey, ?string $tipKey = null): string {
+    $label = Text::_($labelKey);
+
+    if ($tipKey === null) {
+        return '<label class="cb-perm-users-label" for="' . htmlspecialchars($for, ENT_QUOTES, 'UTF-8') . '">' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '</label>';
+    }
+
+    $tip = Text::_($tipKey);
+
+    return '<label class="cb-perm-users-label" for="' . htmlspecialchars($for, ENT_QUOTES, 'UTF-8') . '"><span class="cb-perm-header-tip" tabindex="0" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="'
+        . htmlspecialchars($tip, ENT_QUOTES, 'UTF-8') . '" title="' . htmlspecialchars($tip, ENT_QUOTES, 'UTF-8') . '">'
+        . htmlspecialchars($label, ENT_QUOTES, 'UTF-8')
+        . '</span></label>';
+};
+$permSectionTitle = static function (string $labelKey, string $iconClass, ?string $tipKey = null): string {
+    $label = Text::_($labelKey);
+    $labelHtml = htmlspecialchars($label, ENT_QUOTES, 'UTF-8');
+
+    if ($tipKey !== null) {
+        $tip = Text::_($tipKey);
+        $labelHtml = '<span class="cb-perm-header-tip" tabindex="0" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="'
+            . htmlspecialchars($tip, ENT_QUOTES, 'UTF-8') . '" title="' . htmlspecialchars($tip, ENT_QUOTES, 'UTF-8') . '">'
+            . $labelHtml
+            . '</span>';
+    }
+
+    return '<h3 class="cb-perm-users-title"><span class="' . htmlspecialchars($iconClass, ENT_QUOTES, 'UTF-8')
+        . '" aria-hidden="true"></span><span>' . $labelHtml . '</span></h3>';
+};
 
 $activePermTab = $session ? $session->get('slideStartOffset', 'permtab1', 'com_contentbuilderng') : 'permtab1';
 echo HTMLHelper::_('uitab.startTabSet', 'perm-pane', ['active' => $activePermTab]);
@@ -231,125 +260,74 @@ echo HTMLHelper::_('uitab.addTab', 'perm-pane', 'permtab1', Text::_('COM_CONTENT
 echo HTMLHelper::_('uitab.endTab');
 echo HTMLHelper::_('uitab.addTab', 'perm-pane', 'permtab2', Text::_('COM_CONTENTBUILDERNG_PERMISSIONS_USERS'));
 ?>
-<table class="table table-striped">
-    <tr class="row0">
-        <td width="20%" align="right" class="key">
-            <label for="limit_add">
-                <?php echo Text::_('COM_CONTENTBUILDERNG_PERM_LIMIT_ADD'); ?>:
-            </label>
-        </td>
-        <td>
-            <input class="form-control form-control-sm w-100" id="limit_add" name="jform[limit_add]" type="text"
-                value="<?php echo $item->limit_add; ?>" />
-        </td>
-    </tr>
-    <tr class="row0">
-        <td width="20%" align="right" class="key">
-            <label for="limit_edit">
-                <?php echo Text::_('COM_CONTENTBUILDERNG_PERM_LIMIT_EDIT'); ?>:
-            </label>
-        </td>
-        <td>
-            <input class="form-control form-control-sm w-100" id="limit_edit" name="jform[limit_edit]" type="text"
-                value="<?php echo $item->limit_edit; ?>" />
-        </td>
-    </tr>
-    <tr class="row0">
-        <td width="20%" align="right" class="key">
-            <label for="verification_required_view">
-                <?php echo Text::_('COM_CONTENTBUILDERNG_PERM_VIEW'); ?>:
-            </label>
-        </td>
-        <td>
-            <input type="hidden" name="jform[verification_required_view]" value="0" />
-            <?php echo is_callable($renderCheckbox) ? $renderCheckbox('jform[verification_required_view]', 'verification_required_view', (bool) ($item->verification_required_view ?? false)) : ''; ?><label class="form-check-label" for="verification_required_view">
-                <?php echo Text::_('COM_CONTENTBUILDERNG_PERM_VERIFICATION_REQUIRED'); ?>
-            </label>
-            <input class="form-control form-control-sm" style="width: 50px;" id="verification_days_view"
-                name="jform[verification_days_view]" type="text"
-                value="<?php echo $item->verification_days_view; ?>" /> <label
-                for="verification_days_view">
-                <?php echo Text::_('COM_CONTENTBUILDERNG_PERM_VERIFICATION_DAYS'); ?>
-            </label>
-            <input class="form-control form-control-sm" style="width: 300px;" id="verification_url_view"
-                name="jform[verification_url_view]" type="text"
-                value="<?php echo htmlentities($item->verification_url_view ?? '', ENT_QUOTES, 'UTF-8'); ?>" />
-            <label for="verification_url_view">
-                <?php echo Text::_('COM_CONTENTBUILDERNG_PERM_VERIFICATION_URL'); ?>
-            </label>
-        </td>
-    </tr>
-    <tr class="row0">
-        <td width="20%" align="right" class="key">
-            <label for="verification_required_new">
-                <?php echo Text::_('COM_CONTENTBUILDERNG_PERM_NEW'); ?>:
-            </label>
-        </td>
-        <td>
-            <input type="hidden" name="jform[verification_required_new]" value="0" />
-            <?php echo is_callable($renderCheckbox) ? $renderCheckbox('jform[verification_required_new]', 'verification_required_new', (bool) ($item->verification_required_new ?? false)) : ''; ?><label class="form-check-label" for="verification_required_new">
-                <?php echo Text::_('COM_CONTENTBUILDERNG_PERM_VERIFICATION_REQUIRED'); ?>
-            </label>
-            <input class="form-control form-control-sm" style="width: 50px;" id="verification_days_new"
-                name="jform[verification_days_new]" type="text"
-                value="<?php echo $item->verification_days_new; ?>" /> <label for="verification_days_new">
-                <?php echo Text::_('COM_CONTENTBUILDERNG_PERM_VERIFICATION_DAYS'); ?>
-            </label>
-            <input class="form-control form-control-sm" style="width: 300px;" id="verification_url_new"
-                name="jform[verification_url_new]" type="text"
-                value="<?php echo htmlentities($item->verification_url_new ?? '', ENT_QUOTES, 'UTF-8'); ?>" />
-            <label for="verification_url_new">
-                <?php echo Text::_('COM_CONTENTBUILDERNG_PERM_VERIFICATION_URL'); ?>
-            </label>
-        </td>
-    </tr>
-    <tr class="row0">
-        <td width="20%" align="right" class="key">
-            <label for="verification_required_edit">
-                <?php echo Text::_('COM_CONTENTBUILDERNG_PERM_EDIT'); ?>:
-            </label>
-        </td>
-        <td>
-            <input type="hidden" name="jform[verification_required_edit]" value="0" />
-            <?php echo is_callable($renderCheckbox) ? $renderCheckbox('jform[verification_required_edit]', 'verification_required_edit', (bool) ($item->verification_required_edit ?? false)) : ''; ?><label class="form-check-label" for="verification_required_edit">
-                <?php echo Text::_('COM_CONTENTBUILDERNG_PERM_VERIFICATION_REQUIRED'); ?>
-            </label>
-            <input class="form-control form-control-sm" style="width: 50px;" id="verification_days_edit"
-                name="jform[verification_days_edit]" type="text"
-                value="<?php echo $item->verification_days_edit; ?>" /> <label
-                for="verification_days_edit">
-                <?php echo Text::_('COM_CONTENTBUILDERNG_PERM_VERIFICATION_DAYS'); ?>
-            </label>
-            <input class="form-control form-control-sm" style="width: 300px;" id="verification_url_edit"
-                name="jform[verification_url_edit]" type="text"
-                value="<?php echo htmlentities($item->verification_url_edit ?? '', ENT_QUOTES, 'UTF-8'); ?>" />
-            <label for="verification_url_edit">
-                <?php echo Text::_('COM_CONTENTBUILDERNG_PERM_VERIFICATION_URL'); ?>
-            </label>
-        </td>
-    </tr>
-    <tr class="row0">
-        <td width="20%" align="right" class="key">
-            <label>
-                <?php echo Text::_('COM_CONTENTBUILDERNG_PERM_USERS'); ?>:
-            </label>
-        </td>
-        <td>
-            <?php echo '[<a href="index.php?option=com_contentbuilderng&amp;view=users&amp;tmpl=component&amp;form_id=' . $item->id . '" title="" data-bs-toggle="modal" data-bs-target="#edit-modal">' . Text::_('COM_CONTENTBUILDERNG_EDIT') . '</a>]'; ?>
-        </td>
-    </tr>
+<div class="cb-perm-users-grid">
+    <section class="cb-perm-users-card">
+        <?php echo $permSectionTitle('COM_CONTENTBUILDERNG_PERMISSIONS_USERS', 'fa-solid fa-user-shield', 'COM_CONTENTBUILDERNG_PERM_USERS_TIP'); ?>
+        <div class="cb-perm-users-fields">
+            <div class="cb-perm-users-field">
+                <?php echo $permOptionLabel('limit_add', 'COM_CONTENTBUILDERNG_PERM_LIMIT_ADD', 'COM_CONTENTBUILDERNG_PERM_LIMIT_ADD_TIP'); ?>
+                <input class="form-control form-control-sm" id="limit_add" name="jform[limit_add]" type="text"
+                    value="<?php echo $item->limit_add; ?>" />
+            </div>
+            <div class="cb-perm-users-field">
+                <?php echo $permOptionLabel('limit_edit', 'COM_CONTENTBUILDERNG_PERM_LIMIT_EDIT', 'COM_CONTENTBUILDERNG_PERM_LIMIT_EDIT_TIP'); ?>
+                <input class="form-control form-control-sm" id="limit_edit" name="jform[limit_edit]" type="text"
+                    value="<?php echo $item->limit_edit; ?>" />
+            </div>
+            <div class="cb-perm-users-field cb-perm-users-field-wide">
+                <?php echo $permOptionLabel('cb_perm_users_manage', 'COM_CONTENTBUILDERNG_PERM_USERS', 'COM_CONTENTBUILDERNG_PERM_USERS_TIP'); ?>
+                <div>
+                    <a class="btn btn-primary" id="cb_perm_users_manage" href="index.php?option=com_contentbuilderng&amp;view=users&amp;tmpl=component&amp;form_id=<?php echo (int) $item->id; ?>" data-bs-toggle="modal" data-bs-target="#edit-modal">
+                        <span class="fa-solid fa-user-gear me-1" aria-hidden="true"></span><?php echo Text::_('COM_CONTENTBUILDERNG_EDIT'); ?>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="cb-perm-users-card">
+        <?php echo $permSectionTitle('COM_CONTENTBUILDERNG_PERM_VERIFICATION_REQUIRED', 'fa-solid fa-user-check', 'COM_CONTENTBUILDERNG_PERM_VERIFICATION_REQUIRED_TIP'); ?>
+        <div class="cb-perm-verify-stack">
+            <?php foreach (['view' => 'COM_CONTENTBUILDERNG_PERM_VIEW', 'new' => 'COM_CONTENTBUILDERNG_PERM_NEW', 'edit' => 'COM_CONTENTBUILDERNG_PERM_EDIT'] as $permSuffix => $permLabelKey) : ?>
+                <div class="cb-perm-verify-row">
+                    <div class="cb-perm-verify-head">
+                        <span class="cb-perm-verify-badge"><?php echo Text::_($permLabelKey); ?></span>
+                    </div>
+                    <div class="cb-perm-verify-controls">
+                        <div class="cb-perm-verify-toggle">
+                            <input type="hidden" name="jform[verification_required_<?php echo $permSuffix; ?>]" value="0" />
+                            <?php echo is_callable($renderCheckbox) ? $renderCheckbox('jform[verification_required_' . $permSuffix . ']', 'verification_required_' . $permSuffix, (bool) ($item->{'verification_required_' . $permSuffix} ?? false)) : ''; ?>
+                            <?php echo $permOptionLabel('verification_required_' . $permSuffix, 'COM_CONTENTBUILDERNG_PERM_VERIFICATION_REQUIRED', 'COM_CONTENTBUILDERNG_PERM_VERIFICATION_REQUIRED_TIP'); ?>
+                        </div>
+                        <div class="cb-perm-users-field">
+                            <?php echo $permOptionLabel('verification_days_' . $permSuffix, 'COM_CONTENTBUILDERNG_PERM_VERIFICATION_DAYS', 'COM_CONTENTBUILDERNG_PERM_VERIFICATION_DAYS_TIP'); ?>
+                            <input class="form-control form-control-sm" id="verification_days_<?php echo $permSuffix; ?>"
+                                name="jform[verification_days_<?php echo $permSuffix; ?>]" type="text"
+                                value="<?php echo $item->{'verification_days_' . $permSuffix}; ?>" />
+                        </div>
+                        <div class="cb-perm-users-field cb-perm-users-field-grow">
+                            <?php echo $permOptionLabel('verification_url_' . $permSuffix, 'COM_CONTENTBUILDERNG_PERM_VERIFICATION_URL', 'COM_CONTENTBUILDERNG_PERM_VERIFICATION_URL_TIP'); ?>
+                            <input class="form-control form-control-sm" id="verification_url_<?php echo $permSuffix; ?>"
+                                name="jform[verification_url_<?php echo $permSuffix; ?>]" type="text"
+                                value="<?php echo htmlentities($item->{'verification_url_' . $permSuffix} ?? '', ENT_QUOTES, 'UTF-8'); ?>" />
+                        </div>
+                    </div>
+                </div>
+            <?php endforeach; ?>
+        </div>
+    </section>
+
     <?php if (empty($item->edit_by_type)) : ?>
-        <tr class="row0">
-            <td width="20%" align="right" class="key" valign="top">
-                <label for="act_as_registration">
-                    <?php echo Text::_('COM_CONTENTBUILDERNG_PERM_ACT_AS_REGISTRATION'); ?>:
-                </label>
-            </td>
-            <td>
-                <input type="hidden" name="jform[act_as_registration]" value="0" />
-                <?php echo is_callable($renderCheckbox) ? $renderCheckbox('jform[act_as_registration]', 'act_as_registration', (bool) ($item->act_as_registration ?? false)) : ''; ?>
-                <br />
-                <br />
+        <section class="cb-perm-users-card cb-perm-users-card-wide">
+            <?php echo $permSectionTitle('COM_CONTENTBUILDERNG_PERM_ACT_AS_REGISTRATION', 'fa-solid fa-id-card', 'COM_CONTENTBUILDERNG_PERM_ACT_AS_REGISTRATION_TIP'); ?>
+            <div class="cb-perm-users-fields">
+                <div class="cb-perm-users-field cb-perm-users-field-wide">
+                    <div class="cb-perm-verify-toggle">
+                        <input type="hidden" name="jform[act_as_registration]" value="0" />
+                        <?php echo is_callable($renderCheckbox) ? $renderCheckbox('jform[act_as_registration]', 'act_as_registration', (bool) ($item->act_as_registration ?? false)) : ''; ?>
+                        <?php echo $permOptionLabel('act_as_registration', 'COM_CONTENTBUILDERNG_PERM_ACT_AS_REGISTRATION', 'COM_CONTENTBUILDERNG_PERM_ACT_AS_REGISTRATION_TIP'); ?>
+                    </div>
+                </div>
                 <?php
                 $registrationFields = [
                     'registration_name_field' => 'COM_CONTENTBUILDERNG_PERM_ACT_AS_REGISTRATION_NAME_FIELD',
@@ -361,78 +339,61 @@ echo HTMLHelper::_('uitab.addTab', 'perm-pane', 'permtab2', Text::_('COM_CONTENT
                 ];
                 foreach ($registrationFields as $fieldName => $labelKey) :
                 ?>
-                    <select class="form-select-sm" name="jform[<?php echo $fieldName; ?>]" id="<?php echo $fieldName; ?>" style="max-width: 200px;">
-                        <option value=""> -
-                            <?php echo Text::_($labelKey); ?> -
-                        </option>
-                        <?php foreach ($elements as $theElement) : ?>
-                            <option value="<?php echo $theElement->reference_id; ?>" <?php echo ($item->{$fieldName} ?? null) == $theElement->reference_id ? ' selected="selected"' : ''; ?>>
-                                <?php echo htmlentities($theElement->label ?? '', ENT_QUOTES, 'UTF-8'); ?>
+                    <div class="cb-perm-users-field">
+                        <?php echo $permOptionLabel($fieldName, $labelKey, 'COM_CONTENTBUILDERNG_PERM_ACT_AS_REGISTRATION_FIELDS_TIP'); ?>
+                        <select class="form-select form-select-sm" name="jform[<?php echo $fieldName; ?>]" id="<?php echo $fieldName; ?>">
+                            <option value="">- <?php echo Text::_($labelKey); ?> -</option>
+                            <?php foreach ($elements as $theElement) : ?>
+                                <option value="<?php echo $theElement->reference_id; ?>" <?php echo ($item->{$fieldName} ?? null) == $theElement->reference_id ? ' selected="selected"' : ''; ?>>
+                                    <?php echo htmlentities($theElement->label ?? '', ENT_QUOTES, 'UTF-8'); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                <?php endforeach; ?>
+                <div class="cb-perm-users-field">
+                    <div class="cb-perm-verify-toggle">
+                        <input type="hidden" name="jform[force_login]" value="0" />
+                        <?php echo is_callable($renderCheckbox) ? $renderCheckbox('jform[force_login]', 'force_login', (bool) ($item->force_login ?? false)) : ''; ?>
+                        <?php echo $permOptionLabel('force_login', 'COM_CONTENTBUILDERNG_PERM_FORCE_LOGIN', 'COM_CONTENTBUILDERNG_PERM_FORCE_LOGIN_TIP'); ?>
+                    </div>
+                </div>
+                <div class="cb-perm-users-field cb-perm-users-field-grow">
+                    <?php echo $permOptionLabel('force_url', 'COM_CONTENTBUILDERNG_PERM_FORCE_URL', 'COM_CONTENTBUILDERNG_PERM_FORCE_URL_TIP'); ?>
+                    <input class="form-control form-control-sm" id="force_url" name="jform[force_url]" type="text"
+                        value="<?php echo htmlentities($item->force_url ?? '', ENT_QUOTES, 'UTF-8'); ?>" />
+                </div>
+                <div class="cb-perm-users-field">
+                    <?php echo $permOptionLabel('registration_bypass_plugin', 'COM_CONTENTBUILDERNG_PERM_REGISTRATION_BYPASS_PLUGIN', 'COM_CONTENTBUILDERNG_PERM_REGISTRATION_BYPASS_PLUGIN_TIP'); ?>
+                    <select class="form-select form-select-sm" name="jform[registration_bypass_plugin]" id="registration_bypass_plugin">
+                        <option value="">- <?php echo Text::_('COM_CONTENTBUILDERNG_NONE'); ?> -</option>
+                        <?php foreach ($verificationPlugins as $registrationBypassPlugin) : ?>
+                            <option value="<?php echo $registrationBypassPlugin; ?>" <?php echo $registrationBypassPlugin == ($item->registration_bypass_plugin ?? null) ? ' selected="selected"' : ''; ?>>
+                                <?php echo $registrationBypassPlugin; ?>
                             </option>
                         <?php endforeach; ?>
                     </select>
-                    <br />
-                    <br />
-                <?php endforeach; ?>
-                <label for="force_login">
-                    <?php echo Text::_('COM_CONTENTBUILDERNG_PERM_FORCE_LOGIN'); ?>
-                </label>
-                <br />
-                <input type="hidden" name="jform[force_login]" value="0" />
-                <?php echo is_callable($renderCheckbox) ? $renderCheckbox('jform[force_login]', 'force_login', (bool) ($item->force_login ?? false)) : ''; ?>
-                <br />
-                <br />
-                <label for="force_url">
-                    <?php echo Text::_('COM_CONTENTBUILDERNG_PERM_FORCE_URL'); ?>
-                </label>
-                <br />
-                <input class="form-control form-control-sm" id="force_url" name="jform[force_url]" type="text"
-                    value="<?php echo htmlentities($item->force_url ?? '', ENT_QUOTES, 'UTF-8'); ?>" />
-                <br />
-                <br />
-                <label for="registration_bypass_plugin">
-                    <?php echo Text::_('COM_CONTENTBUILDERNG_PERM_REGISTRATION_BYPASS_PLUGIN'); ?>
-                </label>
-                <br />
-                <select class="form-select-sm" name="jform[registration_bypass_plugin]" id="registration_bypass_plugin">
-                    <option value=""> -
-                        <?php echo Text::_('COM_CONTENTBUILDERNG_NONE'); ?> -
-                    </option>
-                    <?php foreach ($verificationPlugins as $registrationBypassPlugin) : ?>
-                        <option value="<?php echo $registrationBypassPlugin; ?>" <?php echo $registrationBypassPlugin == ($item->registration_bypass_plugin ?? null) ? ' selected="selected"' : ''; ?>>
-                            <?php echo $registrationBypassPlugin; ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
-                <br />
-                <br />
-                <label for="registration_bypass_verification_name">
-                    <?php echo Text::_('COM_CONTENTBUILDERNG_PERM_REGISTRATION_BYPASS_VERIFICATION_NAME'); ?>
-                </label>
-                <br />
-                <input class="form-control form-control-sm" type="text" name="jform[registration_bypass_verification_name]"
-                    id="registration_bypass_verification_name"
-                    value="<?php echo htmlentities($item->registration_bypass_verification_name ?? '', ENT_QUOTES, 'UTF-8'); ?>" />
-                <br />
-                <br />
-                <label for="registration_bypass_verify_view">
-                    <?php echo Text::_('COM_CONTENTBUILDERNG_PERM_REGISTRATION_BYPASS_VERIFICATION_VIEW'); ?>
-                </label>
-                <br />
-                <input class="form-control form-control-sm" type="text" name="jform[registration_bypass_verify_view]"
-                    id="registration_bypass_verify_view"
-                    value="<?php echo htmlentities($item->registration_bypass_verify_view ?? '', ENT_QUOTES, 'UTF-8'); ?>" />
-                <br />
-                <br />
-                <label for="registration_bypass_plugin_params">
-                    <?php echo Text::_('COM_CONTENTBUILDERNG_PERM_REGISTRATION_BYPASS_PLUGIN_PARAMS'); ?>
-                </label>
-                <br />
-                <textarea class="form-control form-control-sm" style="width: 100%;height: 80px;"
-                    name="jform[registration_bypass_plugin_params]"
-                    id="registration_bypass_plugin_params"><?php echo htmlentities($item->registration_bypass_plugin_params ?? '', ENT_QUOTES, 'UTF-8'); ?></textarea>
-            </td>
-        </tr>
+                </div>
+                <div class="cb-perm-users-field">
+                    <?php echo $permOptionLabel('registration_bypass_verification_name', 'COM_CONTENTBUILDERNG_PERM_REGISTRATION_BYPASS_VERIFICATION_NAME', 'COM_CONTENTBUILDERNG_PERM_REGISTRATION_BYPASS_VERIFICATION_NAME_TIP'); ?>
+                    <input class="form-control form-control-sm" type="text" name="jform[registration_bypass_verification_name]"
+                        id="registration_bypass_verification_name"
+                        value="<?php echo htmlentities($item->registration_bypass_verification_name ?? '', ENT_QUOTES, 'UTF-8'); ?>" />
+                </div>
+                <div class="cb-perm-users-field">
+                    <?php echo $permOptionLabel('registration_bypass_verify_view', 'COM_CONTENTBUILDERNG_PERM_REGISTRATION_BYPASS_VERIFICATION_VIEW', 'COM_CONTENTBUILDERNG_PERM_REGISTRATION_BYPASS_VERIFICATION_VIEW_TIP'); ?>
+                    <input class="form-control form-control-sm" type="text" name="jform[registration_bypass_verify_view]"
+                        id="registration_bypass_verify_view"
+                        value="<?php echo htmlentities($item->registration_bypass_verify_view ?? '', ENT_QUOTES, 'UTF-8'); ?>" />
+                </div>
+                <div class="cb-perm-users-field cb-perm-users-field-wide">
+                    <?php echo $permOptionLabel('registration_bypass_plugin_params', 'COM_CONTENTBUILDERNG_PERM_REGISTRATION_BYPASS_PLUGIN_PARAMS', 'COM_CONTENTBUILDERNG_PERM_REGISTRATION_BYPASS_PLUGIN_PARAMS_TIP'); ?>
+                    <textarea class="form-control form-control-sm" style="min-height: 96px;"
+                        name="jform[registration_bypass_plugin_params]"
+                        id="registration_bypass_plugin_params"><?php echo htmlentities($item->registration_bypass_plugin_params ?? '', ENT_QUOTES, 'UTF-8'); ?></textarea>
+                </div>
+            </div>
+        </section>
     <?php else : ?>
         <input type="hidden" name="jform[act_as_registration]" value="<?php echo htmlentities($item->act_as_registration ?? '', ENT_QUOTES, 'UTF-8'); ?>" />
         <input type="hidden" name="jform[registration_name_field]" value="<?php echo htmlentities($item->registration_name_field ?? '', ENT_QUOTES, 'UTF-8'); ?>" />
@@ -446,7 +407,7 @@ echo HTMLHelper::_('uitab.addTab', 'perm-pane', 'permtab2', Text::_('COM_CONTENT
         <input type="hidden" name="jform[registration_bypass_verify_view]" value="<?php echo htmlentities($item->registration_bypass_verify_view ?? '', ENT_QUOTES, 'UTF-8'); ?>" />
         <input type="hidden" name="jform[registration_bypass_plugin_params]" value="<?php echo htmlentities($item->registration_bypass_plugin_params ?? '', ENT_QUOTES, 'UTF-8'); ?>" />
     <?php endif; ?>
-</table>
+</div>
 <?php
 echo HTMLHelper::_('uitab.endTab');
 echo HTMLHelper::_('uitab.endTabSet');
