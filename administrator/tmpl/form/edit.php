@@ -2035,6 +2035,7 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
     var cbEditorPollHandle = null;
     var cbDirtyTrackingInitialized = false;
     var cbDirtyUserInteracted = false;
+    var cbDirtyBypassBeforeUnload = false;
 
     function cbShouldIgnoreDirtyField(field) {
         if (!field) {
@@ -2443,6 +2444,11 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
         cbSetSaveButtonsEnabled(cbDirtyState);
     }
 
+    function cbBypassDirtyBeforeUnload() {
+        cbDirtyBypassBeforeUnload = true;
+        cbSetDirtyState(false);
+    }
+
     function cbHandleDirtyInteraction() {
         var target = arguments.length > 0 ? arguments[0] : null;
 
@@ -2544,6 +2550,10 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
         }
 
         window.addEventListener('beforeunload', function(event) {
+            if (cbDirtyBypassBeforeUnload) {
+                return;
+            }
+
             if (!cbDirtyState) {
                 return;
             }
@@ -2554,6 +2564,33 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
     }
 
     document.addEventListener('DOMContentLoaded', cbInitDirtyTracking);
+
+    document.addEventListener('DOMContentLoaded', function() {
+        var paginationRoots = document.querySelectorAll('.cb-form-elements-pagination');
+        if (!paginationRoots.length) {
+            return;
+        }
+
+        paginationRoots.forEach(function(root) {
+            root.addEventListener('click', function(event) {
+                var target = event.target ? event.target.closest('a') : null;
+                if (!target) {
+                    return;
+                }
+
+                cbBypassDirtyBeforeUnload();
+            }, true);
+
+            root.addEventListener('change', function(event) {
+                var target = event.target || null;
+                if (!target || target.tagName !== 'SELECT') {
+                    return;
+                }
+
+                cbBypassDirtyBeforeUnload();
+            }, true);
+        });
+    });
 
     function cbRefreshInheritedPermissionMatrix() {
         const matrixInputs = Array.from(document.querySelectorAll('input[data-cb-perm-matrix="1"]'));

@@ -271,13 +271,6 @@ class HtmlView extends BaseHtmlView
 
 				$table = new \Joomla\CMS\Table\Content($db);
 
-			// Required for content plugins that expect com_content/article context.
-			$input = Factory::getApplication()->input;
-			$previousOption = $input->getCmd('option', '');
-			$previousView = $input->getCmd('view', '');
-			$input->set('option', 'com_content');
-			$input->set('view', 'article');
-
 			$isNew = true;
 			if ($article > 0) {
 				$table->load($article);
@@ -306,17 +299,12 @@ class HtmlView extends BaseHtmlView
 			$hasBfShortcode = $this->hasBreezingFormsPlaceholder((string) ($table->text ?? ''));
 
 			$dispatcher = Factory::getApplication()->getDispatcher();
-			try {
-				PluginHelper::importPlugin('content');
+			PluginHelper::importPlugin('content');
 
-				$this->dispatchContentPrepare($dispatcher, $table, $registry, $page);
+			$this->dispatchContentPrepare($dispatcher, $table, $registry, $page);
 
-				if ($hasBfShortcode && $this->hasBreezingFormsPlaceholder((string) ($table->text ?? ''))) {
-					$table->text = $this->renderBreezingFormsShortcodes((string) ($table->text ?? ''));
-				}
-			} finally {
-				$input->set('option', $previousOption);
-				$input->set('view', $previousView);
+			if ($hasBfShortcode && $this->hasBreezingFormsPlaceholder((string) ($table->text ?? ''))) {
+				$table->text = $this->renderBreezingFormsShortcodes((string) ($table->text ?? ''));
 			}
 			$subject->template = $table->text;
 

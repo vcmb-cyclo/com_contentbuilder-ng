@@ -458,13 +458,6 @@ class HtmlView extends BaseHtmlView
             $table->load($articleId);
         }
 
-        // Required for content plugins that expect com_content/article context.
-        $input = Factory::getApplication()->input;
-        $previousOption = $input->getCmd('option', '');
-        $previousView = $input->getCmd('view', '');
-        $input->set('option', 'com_content');
-        $input->set('view', 'article');
-
         $table->cbrecord = $this->item;
         $table->text = $template;
 
@@ -485,17 +478,12 @@ class HtmlView extends BaseHtmlView
         $dispatcher = Factory::getApplication()->getDispatcher();
         $hasBfShortcode = $this->hasBreezingFormsPlaceholder($template);
 
-        try {
-            PluginHelper::importPlugin('content');
+        PluginHelper::importPlugin('content');
 
-            $this->dispatchContentPrepare($dispatcher, $table, $registry, $page);
+        $this->dispatchContentPrepare($dispatcher, $table, $registry, $page);
 
-            if ($hasBfShortcode && $this->hasBreezingFormsPlaceholder((string) ($table->text ?? ''))) {
-                $table->text = $this->renderBreezingFormsShortcodes((string) ($table->text ?? ''));
-            }
-        } finally {
-            $input->set('option', $previousOption);
-            $input->set('view', $previousView);
+        if ($hasBfShortcode && $this->hasBreezingFormsPlaceholder((string) ($table->text ?? ''))) {
+            $table->text = $this->renderBreezingFormsShortcodes((string) ($table->text ?? ''));
         }
 
         $eventResult = $dispatcher->dispatch(

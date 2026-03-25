@@ -907,6 +907,13 @@ CSS
 );
 ?>
 <script>
+	// The list view has no unsaved-edit workflow; prevent external dirty handlers
+	// from blocking pagination or other list navigation.
+	window.onbeforeunload = null;
+	window.addEventListener('beforeunload', function(event) {
+		event.stopImmediatePropagation();
+	}, true);
+
 	Joomla.tableOrdering = function(order, dir, task) {
 		var form = document.getElementById('adminForm');
 		if (!form) return;

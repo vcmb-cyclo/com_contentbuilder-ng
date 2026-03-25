@@ -218,12 +218,12 @@ $isModifiedElementSettings = $displayData['isModifiedElementSettings'] ?? null;
                     <div class="d-flex flex-wrap align-items-center gap-2">
                         <?php echo $pagination ? $pagination->getPagesCounter() : ''; ?>
                         <span><?php echo Text::_('COM_CONTENTBUILDERNG_DISPLAY_NUM'); ?>&nbsp;</span>
-                        <span class="d-inline-block">
+                        <span class="d-inline-block cb-form-elements-pagination">
                             <?php echo $pagination ? $pagination->getLimitBox() : ''; ?>
                         </span>
                     </div>
 
-                    <div>
+                    <div class="cb-form-elements-pagination">
                         <?php echo $pagination ? $pagination->getPagesLinks() : ''; ?>
                     </div>
                 </div>
