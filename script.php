@@ -751,9 +751,9 @@ class com_contentbuilderngInstallerScript
         }
 
         if ($this->updateHighlights !== []) {
-            $this->log('[WARNING] Visible update summary: shipped plugins/scripts modified during this update.', Log::WARNING);
+            $this->log('[INFO] Visible update summary: shipped plugins/scripts modified during this update.', Log::INFO);
             foreach ($this->updateHighlights as $highlight) {
-                $this->log('[UPDATED] ' . $highlight, Log::WARNING);
+                $this->log('[UPDATED] ' . $highlight, Log::INFO);
             }
         }
 
@@ -771,7 +771,7 @@ class com_contentbuilderngInstallerScript
                         static fn(string $highlight): string => '- ' . htmlspecialchars($highlight, ENT_QUOTES, 'UTF-8'),
                         $this->updateHighlights
                     )),
-                    'warning'
+                    'message'
                 );
             } catch (\Throwable) {
                 // Best-effort only; installer log already contains the details.
