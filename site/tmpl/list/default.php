@@ -999,37 +999,144 @@ CSS
 		Joomla.submitform('list.state', form);
 	}
 
-	function contentbuilderng_state_single(stateId, recordId) {
+	function contentbuilderngGetStateBadgeStyle(color) {
+		var hex = String(color || '').replace(/^#/, '').toUpperCase();
+		if (/^[0-9A-F]{3}$/.test(hex)) {
+			hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
+		}
+
+		if (!/^[0-9A-F]{6}$/.test(hex)) {
+			return '';
+		}
+
+		var red = parseInt(hex.substring(0, 2), 16);
+		var green = parseInt(hex.substring(2, 4), 16);
+		var blue = parseInt(hex.substring(4, 6), 16);
+		var brightness = ((red * 299) + (green * 587) + (blue * 114)) / 1000;
+		var textColor = brightness > 160 ? '#111827' : '#F9FAFB';
+
+		return 'background-color:#' + hex + ';color:' + textColor + ';';
+	}
+
+	function contentbuilderngUpdateStateUi(recordId, stateId, title, color) {
+		var selector = '[data-record-id="' + contentbuilderngEscapeSelector(recordId) + '"]';
+		var stateCells = document.querySelectorAll('[data-cb-state-cell]' + selector);
+		var stateBadges = document.querySelectorAll('[data-cb-state-badge]' + selector);
+		var stateSelects = document.querySelectorAll('[data-cb-state-select]' + selector);
+		var normalizedColor = String(color || '').replace(/^#/, '');
+		var badgeStyle = contentbuilderngGetStateBadgeStyle(normalizedColor);
+
+		stateSelects.forEach(function(select) {
+			select.value = stateId === '0' ? '' : stateId;
+		});
+
+		stateCells.forEach(function(stateCell) {
+			stateCell.style.backgroundColor = normalizedColor !== '' ? ('#' + normalizedColor) : '#FFFFFF';
+		});
+
+		stateBadges.forEach(function(stateBadge) {
+			if (title === '') {
+				stateBadge.hidden = true;
+				stateBadge.textContent = '';
+				stateBadge.removeAttribute('style');
+			} else {
+				stateBadge.hidden = false;
+				stateBadge.textContent = title;
+				if (badgeStyle !== '') {
+					stateBadge.setAttribute('style', badgeStyle);
+				} else {
+					stateBadge.removeAttribute('style');
+				}
+			}
+		});
+	}
+
+	function contentbuilderng_state_single(selectOrStateId, stateIdOrRecordId, recordId) {
 		var form = document.getElementById('adminForm');
 		if (!form) return;
-		if (stateId === undefined || stateId === null) return;
-		var normalizedStateId = String(stateId) === '' ? '0' : String(stateId);
+		var select = selectOrStateId && typeof selectOrStateId.tagName === 'string' ? selectOrStateId : null;
+		var targetRecordId = select ? recordId : stateIdOrRecordId;
+		var rawStateId = select ? stateIdOrRecordId : selectOrStateId;
+		if (rawStateId === undefined || rawStateId === null) return;
+		var normalizedStateId = String(rawStateId) === '' ? '0' : String(rawStateId);
+		var selectedOption = select && select.selectedIndex >= 0 ? select.options[select.selectedIndex] : null;
+		var stateTitle = selectedOption ? String(selectedOption.getAttribute('data-state-title') || '') : '';
+		var stateColor = selectedOption ? String(selectedOption.getAttribute('data-state-color') || '') : '';
+		var originalValue = select ? String(select.getAttribute('data-original-value') || '') : '';
 
 		// Ensure only the clicked record is selected.
 		var boxes = form.querySelectorAll('input[name="cid[]"]');
 		boxes.forEach(function (box) {
-			box.checked = String(box.value) === String(recordId);
+			box.checked = String(box.value) === String(targetRecordId);
 		});
 		contentbuilderng_updateBoxchecked(form);
 
-		// Prefer the bulk state select if present, otherwise create a hidden input.
-		var stateSelect = form.querySelector('select[name="list_state"]');
-		if (stateSelect) {
-			stateSelect.value = normalizedStateId;
-		} else {
-			var hiddenState = document.getElementById('cb_list_state_value');
-			if (!hiddenState) {
-				hiddenState = document.createElement('input');
-				hiddenState.type = 'hidden';
-				hiddenState.name = 'list_state';
-				hiddenState.id = 'cb_list_state_value';
-				form.appendChild(hiddenState);
-			}
-			hiddenState.value = normalizedStateId;
+		var formData = new FormData(form);
+		formData.set('task', 'edit.state');
+		formData.set('cb_ajax', '1');
+		formData.set('list_state', normalizedStateId);
+		formData.delete('cid[]');
+		formData.append('cid[]', String(targetRecordId));
+		formData.set('boxchecked', '1');
+
+		if (select) {
+			select.disabled = true;
 		}
 
-		document.getElementById('task').value = 'list.state';
-		Joomla.submitform('list.state', form);
+		fetch(form.getAttribute('action') || window.location.href, {
+			method: 'POST',
+			body: formData,
+			credentials: 'same-origin',
+			headers: {
+				'X-Requested-With': 'XMLHttpRequest'
+			}
+		})
+			.then(function (response) {
+				return response.text().then(function (text) {
+					var payload = null;
+
+					try {
+						payload = JSON.parse(text);
+					} catch (e) {
+						payload = null;
+					}
+
+					if (!response.ok || !payload || payload.success === false) {
+						throw new Error((payload && payload.message) ? payload.message : 'Save failed');
+					}
+
+					return payload;
+				});
+			})
+			.then(function () {
+				if (select) {
+					select.setAttribute('data-original-value', normalizedStateId === '0' ? '' : normalizedStateId);
+				}
+
+				contentbuilderngUpdateStateUi(String(targetRecordId), normalizedStateId, stateTitle, stateColor);
+			})
+			.catch(function (error) {
+				if (select) {
+					select.value = originalValue;
+				}
+
+				var message = error && error.message ? error.message : 'Save failed';
+				if (window.Joomla && typeof Joomla.renderMessages === 'function') {
+					Joomla.renderMessages({ error: [message] });
+				} else {
+					alert(message);
+				}
+			})
+			.finally(function () {
+				if (select) {
+					select.disabled = false;
+				}
+
+				boxes.forEach(function (box) {
+					box.checked = false;
+				});
+				contentbuilderng_updateBoxchecked(form);
+			});
 	}
 
 	function contentbuilderng_publish() {
@@ -1051,6 +1158,102 @@ CSS
 		var form = document.getElementById('adminForm');
 		document.getElementById('task').value = 'list.language';
 		Joomla.submitform('list.language', form);
+	}
+
+	function contentbuilderngEscapeSelector(value) {
+		if (window.CSS && typeof window.CSS.escape === 'function') {
+			return window.CSS.escape(String(value));
+		}
+
+		return String(value).replace(/([ !"#$%&'()*+,./:;<=>?@[\\\]^`{|}~])/g, '\\$1');
+	}
+
+	function contentbuilderngUpdatePublishUi(recordId, published) {
+		var selector = '[data-record-id="' + contentbuilderngEscapeSelector(recordId) + '"]';
+		var nodes = document.querySelectorAll('[data-cb-publish-toggle]' + selector + ', [data-cb-publish-badge]' + selector);
+		var iconClass = published ? 'fa-solid fa-check text-success' : 'fa-solid fa-circle-xmark text-danger';
+		var title = published
+			? <?php echo json_encode(Text::_('JPUBLISHED'), JSON_UNESCAPED_UNICODE); ?>
+			: <?php echo json_encode(Text::_('JUNPUBLISHED'), JSON_UNESCAPED_UNICODE); ?>;
+
+		nodes.forEach(function (node) {
+			if (node.hasAttribute('data-cb-publish-toggle')) {
+				node.setAttribute('data-published', published ? '1' : '0');
+				node.setAttribute('title', title);
+
+				var href = String(node.getAttribute('href') || '');
+				if (href !== '') {
+					node.setAttribute(
+						'href',
+						href.replace(/([?&]list_publish=)(0|1)\b/, '$1' + (published ? '0' : '1'))
+					);
+				}
+			}
+
+			var icon = node.querySelector('[data-cb-publish-icon]');
+			if (icon) {
+				icon.className = iconClass;
+				icon.setAttribute('title', title);
+			}
+
+			var sr = node.querySelector('.visually-hidden');
+			if (sr) {
+				sr.textContent = title;
+			}
+		});
+	}
+
+	function contentbuilderngHandlePublishToggleClick(toggle) {
+		if (!toggle) {
+			return;
+		}
+
+		var href = String(toggle.getAttribute('href') || '');
+		var recordId = String(toggle.getAttribute('data-record-id') || '');
+		if (href === '' || recordId === '' || toggle.getAttribute('data-cb-publish-busy') === '1') {
+			return;
+		}
+
+		toggle.setAttribute('data-cb-publish-busy', '1');
+
+		fetch(href + (href.indexOf('?') === -1 ? '?' : '&') + 'cb_ajax=1', {
+			method: 'GET',
+			credentials: 'same-origin',
+			headers: {
+				'X-Requested-With': 'XMLHttpRequest'
+			}
+		})
+			.then(function (response) {
+				return response.text().then(function (text) {
+					var payload = null;
+
+					try {
+						payload = JSON.parse(text);
+					} catch (e) {
+						payload = null;
+					}
+
+					if (!response.ok || !payload || payload.success === false) {
+						throw new Error((payload && payload.message) ? payload.message : 'Save failed');
+					}
+
+					return payload;
+				});
+			})
+			.then(function () {
+				contentbuilderngUpdatePublishUi(recordId, toggle.getAttribute('data-published') !== '1');
+			})
+			.catch(function (error) {
+				var message = error && error.message ? error.message : 'Save failed';
+				if (window.Joomla && typeof Joomla.renderMessages === 'function') {
+					Joomla.renderMessages({ error: [message] });
+				} else {
+					alert(message);
+				}
+			})
+			.finally(function () {
+				toggle.removeAttribute('data-cb-publish-busy');
+			});
 	}
 
 	document.addEventListener('DOMContentLoaded', function() {
@@ -1093,6 +1296,16 @@ CSS
 			box.addEventListener('change', function() {
 				contentbuilderng_updateBoxchecked(form);
 			});
+		});
+
+		document.addEventListener('click', function(event) {
+			var toggle = event.target ? event.target.closest('[data-cb-publish-toggle]') : null;
+			if (!toggle) {
+				return;
+			}
+
+			event.preventDefault();
+			contentbuilderngHandlePublishToggleClick(toggle);
 		});
 
 		contentbuilderng_updateBoxchecked(form);
@@ -1548,8 +1761,15 @@ by this block. -->
 									<?php endif; ?>
 								<?php endif; ?>
 								<?php if (($this->list_publish || $directStorageMode) && $publish_allowed) : ?>
-									<a class="btn btn-sm btn-outline-secondary" href="<?php echo $toggle_link; ?>" title="<?php echo $isPublished ? Text::_('JPUBLISHED') : Text::_('JUNPUBLISHED'); ?>">
-										<span class="<?php echo $isPublished ? 'fa-solid fa-check text-success' : 'fa-solid fa-circle-xmark text-danger'; ?>" aria-hidden="true"></span>
+									<a
+										class="btn btn-sm btn-outline-secondary"
+										href="<?php echo $toggle_link; ?>"
+										title="<?php echo $isPublished ? Text::_('JPUBLISHED') : Text::_('JUNPUBLISHED'); ?>"
+										data-cb-publish-toggle
+										data-record-id="<?php echo (int) $row->colRecord; ?>"
+										data-published="<?php echo $isPublished ? '1' : '0'; ?>"
+									>
+										<span class="<?php echo $isPublished ? 'fa-solid fa-check text-success' : 'fa-solid fa-circle-xmark text-danger'; ?>" aria-hidden="true" data-cb-publish-icon></span>
 									</a>
 								<?php endif; ?>
 							</div>
@@ -1557,15 +1777,21 @@ by this block. -->
 
 							<div class="cb-list-card-meta">
 								<span class="cb-list-card-badge">#<?php echo (int) $row->colRecord; ?></span>
-								<?php if ($this->list_state && isset($this->state_titles[$row->colRecord]) && $this->state_titles[$row->colRecord] !== '') : ?>
-									<span class="cb-list-card-badge"<?php echo $stateBadgeStyle !== '' ? ' style="' . htmlspecialchars($stateBadgeStyle, ENT_QUOTES, 'UTF-8') . '"' : ''; ?>><?php echo htmlspecialchars($this->state_titles[$row->colRecord], ENT_QUOTES, 'UTF-8'); ?></span>
+								<?php if ($this->list_state && ($hasStateControl || $hasStaticStateBadge)) : ?>
+									<span
+										class="cb-list-card-badge"
+										data-cb-state-badge
+										data-record-id="<?php echo (int) $row->colRecord; ?>"
+										<?php echo $stateBadgeStyle !== '' ? ' style="' . htmlspecialchars($stateBadgeStyle, ENT_QUOTES, 'UTF-8') . '"' : ''; ?>
+										<?php echo (isset($this->state_titles[$row->colRecord]) && $this->state_titles[$row->colRecord] !== '') ? '' : ' hidden'; ?>
+									><?php echo isset($this->state_titles[$row->colRecord]) ? htmlspecialchars($this->state_titles[$row->colRecord], ENT_QUOTES, 'UTF-8') : ''; ?></span>
 								<?php endif; ?>
 								<?php if ($this->list_language) : ?>
 									<span class="cb-list-card-badge"><?php echo htmlspecialchars((string) (isset($this->lang_codes[$row->colRecord]) && $this->lang_codes[$row->colRecord] ? $this->lang_codes[$row->colRecord] : '*'), ENT_QUOTES, 'UTF-8'); ?></span>
 								<?php endif; ?>
 								<?php if ($this->list_publish || $directStorageMode) : ?>
-									<span class="cb-list-card-badge">
-										<span class="<?php echo $isPublished ? 'fa-solid fa-check text-success' : 'fa-solid fa-circle-xmark text-danger'; ?>" aria-hidden="true"></span>
+									<span class="cb-list-card-badge" data-cb-publish-badge data-record-id="<?php echo (int) $row->colRecord; ?>">
+										<span class="<?php echo $isPublished ? 'fa-solid fa-check text-success' : 'fa-solid fa-circle-xmark text-danger'; ?>" aria-hidden="true" data-cb-publish-icon></span>
 										<span class="visually-hidden"><?php echo $isPublished ? Text::_('JPUBLISHED') : Text::_('JUNPUBLISHED'); ?></span>
 									</span>
 								<?php endif; ?>
@@ -1620,16 +1846,28 @@ by this block. -->
 									<div class="cb-list-card-state">
 										<?php if ($hasStateControl) : ?>
 											<?php $currentStateTitle = $this->state_titles[$row->colRecord] ?? ''; ?>
-											<select class="form-select form-select-sm" onchange="contentbuilderng_state_single(this.value, <?php echo (int) $row->colRecord; ?>);" title="<?php echo Text::_('COM_CONTENTBUILDERNG_EDIT_STATE'); ?>">
-											<option value="" <?php echo $currentStateTitle === '' ? 'selected' : ''; ?>>-</option>
+											<select
+												class="form-select form-select-sm"
+												onchange="contentbuilderng_state_single(this, this.value, <?php echo (int) $row->colRecord; ?>);"
+												title="<?php echo Text::_('COM_CONTENTBUILDERNG_EDIT_STATE'); ?>"
+												data-cb-state-select
+												data-record-id="<?php echo (int) $row->colRecord; ?>"
+												data-original-value="<?php echo htmlspecialchars($currentStateTitle === '' ? '' : (string) array_search($currentStateTitle, array_column($this->states, 'title', 'id'), true), ENT_QUOTES, 'UTF-8'); ?>"
+											>
+											<option value="" data-state-title="" data-state-color="" <?php echo $currentStateTitle === '' ? 'selected' : ''; ?>>-</option>
 											<?php foreach ($this->states as $state) : ?>
-												<option value="<?php echo (int) $state['id']; ?>" <?php echo $currentStateTitle === $state['title'] ? 'selected' : ''; ?>>
+												<option
+													value="<?php echo (int) $state['id']; ?>"
+													data-state-title="<?php echo htmlspecialchars((string) $state['title'], ENT_QUOTES, 'UTF-8'); ?>"
+													data-state-color="<?php echo htmlspecialchars((string) ($state['color'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>"
+													<?php echo $currentStateTitle === $state['title'] ? 'selected' : ''; ?>
+												>
 													<?php echo htmlentities($state['title'], ENT_QUOTES, 'UTF-8'); ?>
 												</option>
 											<?php endforeach; ?>
 										</select>
 										<?php elseif ($hasStaticStateBadge) : ?>
-											<span class="cb-list-card-badge"<?php echo $stateBadgeStyle !== '' ? ' style="' . htmlspecialchars($stateBadgeStyle, ENT_QUOTES, 'UTF-8') . '"' : ''; ?>><?php echo htmlspecialchars((string) $this->state_titles[$row->colRecord], ENT_QUOTES, 'UTF-8'); ?></span>
+											<span class="cb-list-card-badge" data-cb-state-badge data-record-id="<?php echo (int) $row->colRecord; ?>"<?php echo $stateBadgeStyle !== '' ? ' style="' . htmlspecialchars($stateBadgeStyle, ENT_QUOTES, 'UTF-8') . '"' : ''; ?>><?php echo htmlspecialchars((string) $this->state_titles[$row->colRecord], ENT_QUOTES, 'UTF-8'); ?></span>
 										<?php endif; ?>
 									</div>
 							<?php endif; ?>
@@ -1887,17 +2125,31 @@ by this block. -->
 					if ($this->list_state) {
 					?>
 						<td class="hidden-phone"
+							data-cb-state-cell
+							data-record-id="<?php echo (int) $row->colRecord; ?>"
 							style="background-color: #<?php echo isset($this->state_colors[$row->colRecord]) ? $this->state_colors[$row->colRecord] : 'FFFFFF'; ?>;">
 							<?php if ($state_allowed && count($this->states)) : ?>
 								<?php $currentStateTitle = $this->state_titles[$row->colRecord] ?? ''; ?>
+								<?php $currentStateId = ''; ?>
+								<?php foreach ($this->states as $state) : ?>
+									<?php if ($currentStateTitle === (string) $state['title']) { $currentStateId = (string) (int) $state['id']; break; } ?>
+								<?php endforeach; ?>
 									<select
 										class="form-select form-select-sm"
 										style="display:inline-block;width:auto;min-width:0;max-width:100%;"
-										onchange="contentbuilderng_state_single(this.value, <?php echo (int) $row->colRecord; ?>);"
-										title="<?php echo Text::_('COM_CONTENTBUILDERNG_EDIT_STATE'); ?>">
-									<option value="" <?php echo $currentStateTitle === '' ? 'selected' : ''; ?>>-</option>
+										onchange="contentbuilderng_state_single(this, this.value, <?php echo (int) $row->colRecord; ?>);"
+										title="<?php echo Text::_('COM_CONTENTBUILDERNG_EDIT_STATE'); ?>"
+										data-cb-state-select
+										data-record-id="<?php echo (int) $row->colRecord; ?>"
+										data-original-value="<?php echo htmlspecialchars($currentStateId, ENT_QUOTES, 'UTF-8'); ?>">
+									<option value="" data-state-title="" data-state-color="" <?php echo $currentStateTitle === '' ? 'selected' : ''; ?>>-</option>
 									<?php foreach ($this->states as $state) : ?>
-										<option value="<?php echo (int) $state['id']; ?>" <?php echo $currentStateTitle === $state['title'] ? 'selected' : ''; ?>>
+										<option
+											value="<?php echo (int) $state['id']; ?>"
+											data-state-title="<?php echo htmlspecialchars((string) $state['title'], ENT_QUOTES, 'UTF-8'); ?>"
+											data-state-color="<?php echo htmlspecialchars((string) ($state['color'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>"
+											<?php echo $currentStateTitle === $state['title'] ? 'selected' : ''; ?>
+										>
 											<?php echo htmlentities($state['title'], ENT_QUOTES, 'UTF-8'); ?>
 										</option>
 									<?php endforeach; ?>
@@ -1918,8 +2170,15 @@ by this block. -->
 								$iconTitle = $isPublished ? Text::_('JPUBLISHED') : Text::_('JUNPUBLISHED');
 								?>
 								<?php if ($publish_allowed) : ?>
-									<a class="btn btn-sm btn-link p-0" href="<?php echo $toggle_link; ?>" title="<?php echo $iconTitle; ?>">
-										<span class="<?php echo $iconClass; ?>" aria-hidden="true"></span>
+									<a
+										class="btn btn-sm btn-link p-0"
+										href="<?php echo $toggle_link; ?>"
+										title="<?php echo $iconTitle; ?>"
+										data-cb-publish-toggle
+										data-record-id="<?php echo (int) $row->colRecord; ?>"
+										data-published="<?php echo $isPublished ? '1' : '0'; ?>"
+									>
+										<span class="<?php echo $iconClass; ?>" aria-hidden="true" data-cb-publish-icon></span>
 										<span class="visually-hidden"><?php echo $iconTitle; ?></span>
 									</a>
 								<?php else : ?>

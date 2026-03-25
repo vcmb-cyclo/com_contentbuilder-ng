@@ -14,6 +14,7 @@ namespace CB\Component\Contentbuilderng\Site\Controller;
 
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Factory;
+use Joomla\CMS\Response\JsonResponse;
 use Joomla\CMS\Uri\Uri;
 use Joomla\CMS\Router\Route;
 use Joomla\CMS\MVC\Controller\BaseController;
@@ -270,6 +271,12 @@ class EditController extends BaseController
         $model = $this->getEditModel(['ignore_request' => true]);
         $model->change_list_states();
         $msg = Text::_('COM_CONTENTBUILDERNG_STATES_CHANGED');
+
+        if ($this->isAjaxCall()) {
+            $this->respondAjax(true, $msg);
+            return;
+        }
+
         $listQuery = $this->buildListQuery();
         $link = Route::_('index.php?option=com_contentbuilderng&task=list.display&id=' . $this->siteApp->input->getInt('id', 0) . ($this->siteApp->input->get('tmpl', '', 'string') != '' ? '&tmpl=' . $this->siteApp->input->get('tmpl', '', 'string') : '') . ($this->siteApp->input->get('layout', '', 'string') != '' ? '&layout=' . $this->siteApp->input->get('layout', '', 'string') : '') . ($listQuery !== '' ? '&' . $listQuery : '') . '&Itemid=' . $this->siteApp->input->getInt('Itemid', 0), false);
         $this->setRedirect($link, $msg, 'message');
@@ -297,6 +304,12 @@ class EditController extends BaseController
         } else {
             $msg = Text::_('COM_CONTENTBUILDERNG_UNPUBLISHED');
         }
+
+        if ($this->isAjaxCall()) {
+            $this->respondAjax(true, $msg);
+            return;
+        }
+
         $listQuery = $this->buildListQuery();
         $previewQuery = $this->buildPreviewQuery();
         $link = Route::_(
@@ -429,6 +442,17 @@ class EditController extends BaseController
             . '&cb_preview_actor_name=' . rawurlencode($actorName)
             . '&cb_preview_sig=' . rawurlencode($sig)
             . ($adminReturn !== '' ? '&cb_admin_return=' . rawurlencode($adminReturn) : '');
+    }
+
+    private function isAjaxCall(): bool
+    {
+        return (bool) $this->input->getInt('cb_ajax', 0);
+    }
+
+    private function respondAjax(bool $success, string $message = ''): void
+    {
+        echo new JsonResponse(['ok' => $success], $message, !$success);
+        $this->siteApp->close();
     }
 
     public function display($cachable = false, $urlparams = array())
