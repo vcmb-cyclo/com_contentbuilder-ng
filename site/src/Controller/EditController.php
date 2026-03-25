@@ -360,7 +360,7 @@ class EditController extends BaseController
         $limitKey = $stateKeyPrefix . '.limit';
         $startKey = $stateKeyPrefix . '.start';
 
-        $limit = isset($list['limit']) ? $this->siteApp->input->getInt('list[limit]', 0) : 0;
+        $limit = isset($list['limit']) ? (int) $list['limit'] : 0;
         if ($limit === 0) {
             $limit = (int) $this->siteApp->getUserState($limitKey, 0);
         }
@@ -369,7 +369,7 @@ class EditController extends BaseController
         }
 
         if (array_key_exists('start', $list)) {
-            $start = max(0, $this->siteApp->input->getInt('list[start]', 0));
+            $start = max(0, (int) $list['start']);
         } else {
             $start = (int) $this->siteApp->getUserState($startKey, 0);
         }

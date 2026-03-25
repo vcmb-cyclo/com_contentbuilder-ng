@@ -354,7 +354,7 @@ class ListController extends BaseController
         $startKey = $stateKeyPrefix . '.start';
         $configuredLimit = $this->getConfiguredListLimit();
 
-        $limit = isset($list['limit']) ? $this->input->getInt('list[limit]', 0) : 0;
+        $limit = isset($list['limit']) ? (int) $list['limit'] : 0;
         if ($limit === 0) {
             $limit = $configuredLimit;
         }
@@ -369,7 +369,7 @@ class ListController extends BaseController
         }
 
         if (array_key_exists('start', $list)) {
-            $start = max(0, $this->input->getInt('list[start]', 0));
+            $start = max(0, (int) $list['start']);
         } elseif ($configuredLimit > 0) {
             $start = 0;
         } else {

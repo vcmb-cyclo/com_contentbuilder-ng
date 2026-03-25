@@ -618,7 +618,7 @@ class DetailsModel extends ListModel
         $limitKey = $stateKeyPrefix . '.limit';
         $startKey = $stateKeyPrefix . '.start';
 
-        $limit = isset($list['limit']) ? $app->input->getInt('list[limit]', 0) : 0;
+        $limit = isset($list['limit']) ? (int) $list['limit'] : 0;
         if ($limit === 0) {
             $limit = (int) $app->getUserState($limitKey, 0);
         }
@@ -627,7 +627,7 @@ class DetailsModel extends ListModel
         }
 
         if (array_key_exists('start', $list)) {
-            $start = max(0, $app->input->getInt('list[start]', 0));
+            $start = max(0, (int) $list['start']);
         } else {
             $start = (int) $app->getUserState($startKey, 0);
         }

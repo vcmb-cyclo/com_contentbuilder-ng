@@ -14,6 +14,7 @@
 use Joomla\CMS\Factory;
 use Joomla\CMS\Application\SiteApplication;
 use Joomla\CMS\Language\Text;
+use Joomla\CMS\Layout\LayoutHelper;
 use Joomla\CMS\Router\Route;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Uri\Uri;
@@ -53,19 +54,24 @@ $id = $input->getInt('id', 0);
 $recordId = $input->getCmd('record_id', 0);
 $itemId = $input->getInt('Itemid', 0);
 $list = (array) $input->get('list', [], 'array');
-$listStart = isset($list['start']) ? $input->getInt('list[start]', 0) : 0;
-$listLimit = isset($list['limit']) ? $input->getInt('list[limit]', 0) : 0;
+$listStart = array_key_exists('start', $list) ? max(0, (int) $list['start']) : 0;
+$listLimit = array_key_exists('limit', $list) ? (int) $list['limit'] : 0;
 if ($listLimit === 0) {
     $listLimit = (int) $app->get('list_limit');
 }
-$listOrdering = isset($list['ordering']) ? $input->getCmd('list[ordering]', '') : '';
-$listDirection = isset($list['direction']) ? $input->getCmd('list[direction]', '') : '';
+$listOrdering = isset($list['ordering']) ? preg_replace('/[^A-Za-z0-9_\\.]/', '', (string) $list['ordering']) : '';
+$listDirection = isset($list['direction']) ? strtolower((string) $list['direction']) : '';
 $listQuery = http_build_query(['list' => [
     'start' => $listStart,
     'limit' => $listLimit,
     'ordering' => $listOrdering,
     'direction' => $listDirection,
 ]]);
+$listHiddenFields = ''
+    . '<input type="hidden" name="list[start]" value="' . (int) $listStart . '" />' . "\n"
+    . '<input type="hidden" name="list[limit]" value="' . (int) $listLimit . '" />' . "\n"
+    . '<input type="hidden" name="list[ordering]" value="' . htmlentities($listOrdering, ENT_QUOTES, 'UTF-8') . '" />' . "\n"
+    . '<input type="hidden" name="list[direction]" value="' . htmlentities($listDirection, ENT_QUOTES, 'UTF-8') . '" />';
 $previewHiddenFields = '';
 $previewEnabled = $input->getBool('cb_preview', false);
 $previewUntil = $input->getInt('cb_preview_until', 0);
@@ -562,85 +568,47 @@ CSS
     <?php echo  $this->event->afterDisplayTitle; ?>
     <?php
     ob_start();
+    if ($this->record_id && $edit_allowed && $this->create_articles && $fullarticle_allowed) {
     ?>
-    <div class="cbToolBar mb-5 d-flex flex-wrap justify-content-end gap-2">
-        <?php
-        if ($prevRecordId > 0 || $nextRecordId > 0) {
-        ?>
-            <span class="cbRecordNavGroup d-inline-flex flex-wrap gap-2 me-auto">
-                <?php if ($showCurrentRecordLabel) { ?>
-                    <span class="small text-muted align-self-center px-1 cbCurrentRecordId">#<?php echo htmlspecialchars($currentRecordLabel, ENT_QUOTES, 'UTF-8'); ?></span>
-                <?php } ?>
-                <?php if ($prevRecordId > 0) { ?>
-                    <a class="btn btn-sm btn-outline-secondary cbButton cbBackButton cbPrevButton"
-                        href="<?php echo Route::_($editNavBaseLink . '&record_id=' . $prevRecordId); ?>"
-                        title="<?php echo Text::_('JPREVIOUS'); ?>">
-                        <span class="fa-solid fa-arrow-left me-1" aria-hidden="true"></span>
-                        <?php echo Text::_('JPREVIOUS'); ?>
-                    </a>
-                <?php } ?>
-                <?php if ($nextRecordId > 0) { ?>
-                    <a class="btn btn-sm btn-outline-secondary cbButton cbBackButton cbNextButton"
-                        href="<?php echo Route::_($editNavBaseLink . '&record_id=' . $nextRecordId); ?>"
-                        title="<?php echo Text::_('JNEXT'); ?>">
-                        <?php echo Text::_('JNEXT'); ?>
-                        <span class="fa-solid fa-arrow-right ms-1" aria-hidden="true"></span>
-                    </a>
-                <?php } ?>
-            </span>
-        <?php
-        }
-        if ($this->record_id && $edit_allowed && $this->create_articles && $fullarticle_allowed) {
-        ?>
-            <button class="btn btn-sm btn-primary cbButton cbArticleSettingsButton" onclick="if(document.getElementById('cbArticleOptions').style.display == 'none'){document.getElementById('cbArticleOptions').style.display='block'}else{document.getElementById('cbArticleOptions').style.display='none'};"><?php echo Text::_('COM_CONTENTBUILDERNG_SHOW_ARTICLE_SETTINGS') ?></button>
-        <?php
-        }
-        if (($edit_allowed || $new_allowed) && !$this->edit_by_type) {
-        ?>
-            <button class="btn btn-sm btn-primary cbButton cbSaveButton" title="<?php echo Text::_('COM_CONTENTBUILDERNG_SAVE'); ?>" onclick="document.getElementById('contentbuilderng_task').value='edit.apply';contentbuilderng.onSubmit();">
-                <span class="fa-solid fa-floppy-disk me-1" aria-hidden="true"></span>
-                <?php echo trim($this->save_button_title) != '' ? htmlentities($this->save_button_title, ENT_QUOTES, 'UTF-8') : Text::_('COM_CONTENTBUILDERNG_SAVE') ?>
-            </button>
-        <?php
-        }
-        if ($this->record_id && $edit_allowed && $this->create_articles && $this->edit_by_type && $fullarticle_allowed) {
-        ?>
-            <button class="btn btn-sm btn-primary cbButton cbArticleSettingsButton" onclick="document.getElementById('contentbuilderng_task').value='edit.apply';contentbuilderng.onSubmit();">
-                <span class="fa-solid fa-check me-1" aria-hidden="true"></span>
-                <?php echo Text::_('COM_CONTENTBUILDERNG_APPLY_ARTICLE_SETTINGS') ?>
-            </button>
-        <?php }
-        if ($this->record_id && $delete_allowed) { ?>
-            <button class="btn btn-sm btn-outline-danger cbButton cbDeleteButton d-inline-flex align-items-center gap-1 rounded-pill"
-                onclick="contentbuilderng_delete();"
-                title="<?php echo Text::_('COM_CONTENTBUILDERNG_DELETE'); ?>">
-                <span class="fa-solid fa-trash" aria-hidden="true"></span>
-                <span><?php echo Text::_('COM_CONTENTBUILDERNG_DELETE') ?></span>
-            </button>
-            <?php
-        }
-        if ($showBack) {
-            if ($jsBack) {
-            ?>
-                <button class="btn btn-sm btn-outline-secondary cbButton cbBackButton cbCloseButton" title="<?php echo Text::_('COM_CONTENTBUILDERNG_CLOSE'); ?>" onclick="history.back(-1);void(0);">
-                    <span class="fa-solid fa-xmark me-1" aria-hidden="true"></span>
-                    <?php echo Text::_('COM_CONTENTBUILDERNG_CLOSE') ?>
-                </button>
-            <?php
-            } else {
-            ?>
-                <a class="btn btn-sm btn-outline-secondary cbButton cbBackButton cbCloseButton" title="<?php echo Text::_('COM_CONTENTBUILDERNG_CLOSE'); ?>" href="<?php echo $backHref; ?>">
-                    <span class="fa-solid fa-xmark me-1" aria-hidden="true"></span>
-                    <?php echo Text::_('COM_CONTENTBUILDERNG_CLOSE') ?>
-                </a>
-        <?php
-            }
-        }
-        ?>
-    </div>
+        <button class="btn btn-sm btn-primary cbButton cbArticleSettingsButton" onclick="if(document.getElementById('cbArticleOptions').style.display == 'none'){document.getElementById('cbArticleOptions').style.display='block'}else{document.getElementById('cbArticleOptions').style.display='none'};"><?php echo Text::_('COM_CONTENTBUILDERNG_SHOW_ARTICLE_SETTINGS'); ?></button>
     <?php
-    $buttons = ob_get_contents();
-    ob_end_clean();
+    }
+    if (($edit_allowed || $new_allowed) && !$this->edit_by_type) {
+    ?>
+        <button class="btn btn-sm btn-primary cbButton cbSaveButton" title="<?php echo Text::_('COM_CONTENTBUILDERNG_SAVE'); ?>" onclick="document.getElementById('contentbuilderng_task').value='edit.apply';contentbuilderng.onSubmit();">
+            <span class="fa-solid fa-floppy-disk me-1" aria-hidden="true"></span>
+            <?php echo trim($this->save_button_title) != '' ? htmlentities($this->save_button_title, ENT_QUOTES, 'UTF-8') : Text::_('COM_CONTENTBUILDERNG_SAVE'); ?>
+        </button>
+    <?php
+    }
+    if ($this->record_id && $edit_allowed && $this->create_articles && $this->edit_by_type && $fullarticle_allowed) {
+    ?>
+        <button class="btn btn-sm btn-primary cbButton cbArticleSettingsButton" onclick="document.getElementById('contentbuilderng_task').value='edit.apply';contentbuilderng.onSubmit();">
+            <span class="fa-solid fa-check me-1" aria-hidden="true"></span>
+            <?php echo Text::_('COM_CONTENTBUILDERNG_APPLY_ARTICLE_SETTINGS'); ?>
+        </button>
+    <?php
+    }
+    $editToolbarExtraHtml = ob_get_clean();
+    $buttons = LayoutHelper::render(
+        'contentbuilderng.action_toolbar',
+        [
+            'toolbarClass' => 'mb-5',
+            'currentRecordLabel' => $currentRecordLabel,
+            'showCurrentRecordLabel' => $showCurrentRecordLabel,
+            'prevRecordId' => $prevRecordId,
+            'nextRecordId' => $nextRecordId,
+            'navBaseLink' => $editNavBaseLink,
+            'extraHtml' => $editToolbarExtraHtml,
+            'showDelete' => $this->record_id && $delete_allowed,
+            'deleteTitle' => Text::_('COM_CONTENTBUILDERNG_DELETE'),
+            'showClose' => $showBack,
+            'closeTitle' => Text::_('COM_CONTENTBUILDERNG_CLOSE'),
+            'closeHref' => $jsBack ? '' : $backHref,
+            'closeOnclick' => $jsBack ? 'history.back(-1);void(0);' : '',
+        ],
+        JPATH_COMPONENT_SITE . '/layouts'
+    );
 
     if ($topBarToggle === 1) {
     ?>
@@ -811,6 +779,7 @@ CSS
                 <input type="hidden" name="task" id="contentbuilderng_task" value="edit.save" />
                 <input type="hidden" name="backtolist" value="<?php echo Factory::getApplication()->input->getInt('backtolist', 0); ?>" />
                 <input type="hidden" name="return" value="<?php echo Factory::getApplication()->input->get('return', '', 'string'); ?>" />
+                <?php echo $listHiddenFields; ?>
                 <?php echo $previewHiddenFields; ?>
                 <?php echo HTMLHelper::_('form.token'); ?>
                 <?php
@@ -860,6 +829,7 @@ CSS
                 <input type="hidden" name="task" id="contentbuilderng_task" value="edit.save" />
                 <input type="hidden" name="backtolist" value="<?php echo Factory::getApplication()->input->getInt('backtolist', 0); ?>" />
                 <input type="hidden" name="return" value="<?php echo Factory::getApplication()->input->get('return', '', 'string'); ?>" />
+                <?php echo $listHiddenFields; ?>
                 <?php echo $previewHiddenFields; ?>
                 <?php echo HTMLHelper::_('form.token'); ?>
             </form>
@@ -903,6 +873,7 @@ CSS
                 <input type="hidden" name="task" id="contentbuilderng_task" value="edit.save" />
                 <input type="hidden" name="backtolist" value="<?php echo Factory::getApplication()->input->getInt('backtolist', 0); ?>" />
                 <input type="hidden" name="return" value="<?php echo Factory::getApplication()->input->get('return', '', 'string'); ?>" />
+                <?php echo $listHiddenFields; ?>
                 <?php echo $previewHiddenFields; ?>
                 <?php echo HTMLHelper::_('form.token'); ?>
             </form>

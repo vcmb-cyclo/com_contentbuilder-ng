@@ -62,6 +62,7 @@ $getStateBadgeStyle = static function ($recordId, array $stateColors): string {
 };
 
 $input = $app->input;
+$requestList = (array) $input->get('list', [], 'array');
 $previewQuery = '';
 $previewEnabled = $input->getBool('cb_preview', false);
 $previewUntil = $input->getInt('cb_preview_until', 0);
@@ -164,10 +165,10 @@ $listTarget = $directStorageMode
     ? ('storage_id=' . $directStorageId)
     : ('id=' . (int) $input->getInt('id', 0));
 $listState = [
-    'limit' => (int) ($this->pagination?->limit ?? $input->getInt('list[limit]', 0)),
-    'start' => (int) ($this->lists['liststart'] ?? $this->pagination?->limitstart ?? $input->getInt('list[start]', 0)),
-    'ordering' => (string) ($this->lists['order'] ?? $input->getCmd('list[ordering]', '')),
-    'direction' => (string) ($this->lists['order_Dir'] ?? $input->getCmd('list[direction]', '')),
+    'limit' => (int) ($this->pagination?->limit ?? ($requestList['limit'] ?? 0)),
+    'start' => (int) ($this->lists['liststart'] ?? $this->pagination?->limitstart ?? ($requestList['start'] ?? 0)),
+    'ordering' => (string) ($this->lists['order'] ?? (isset($requestList['ordering']) ? preg_replace('/[^A-Za-z0-9_\\.]/', '', (string) $requestList['ordering']) : '')),
+    'direction' => (string) ($this->lists['order_Dir'] ?? (isset($requestList['direction']) ? strtolower((string) $requestList['direction']) : '')),
 ];
 $state = $this->state ?? null;
 $exportQueryParams = [
@@ -1631,8 +1632,8 @@ by this block. -->
 				$n = count((array) $this->items);
 				for ($i = 0; $i < $n; $i++) {
 					$row = $this->items[$i];
-					$link = Route::_('index.php?option=com_contentbuilderng&task=details.display&' . ($directStorageMode ? 'storage_id=' . $directStorageId : 'id=' . $this->form_id) . '&record_id=' . $row->colRecord . '&Itemid=' . $input->getInt('Itemid', 0) . ($input->get('tmpl', '', 'string') != '' ? '&tmpl=' . $input->get('tmpl', '', 'string') : '') . ($input->get('layout', '', 'string') != '' ? '&layout=' . $input->get('layout', '', 'string') : '') . $previewQuery);
-					$edit_link = Route::_('index.php?option=com_contentbuilderng&task=edit.display&backtolist=1&id=' . $this->form_id . '&record_id=' . $row->colRecord . '&Itemid=' . $input->getInt('Itemid', 0) . ($input->get('tmpl', '', 'string') != '' ? '&tmpl=' . $input->get('tmpl', '', 'string') : '') . ($input->get('layout', '', 'string') != '' ? '&layout=' . $input->get('layout', '', 'string') : '') . $previewQuery);
+					$link = Route::_('index.php?option=com_contentbuilderng&task=details.display&' . ($directStorageMode ? 'storage_id=' . $directStorageId : 'id=' . $this->form_id) . '&record_id=' . $row->colRecord . '&Itemid=' . $input->getInt('Itemid', 0) . ($input->get('tmpl', '', 'string') != '' ? '&tmpl=' . $input->get('tmpl', '', 'string') : '') . ($input->get('layout', '', 'string') != '' ? '&layout=' . $input->get('layout', '', 'string') : '') . ($listQuery !== '' ? '&' . $listQuery : '') . $previewQuery);
+					$edit_link = Route::_('index.php?option=com_contentbuilderng&task=edit.display&backtolist=1&id=' . $this->form_id . '&record_id=' . $row->colRecord . '&Itemid=' . $input->getInt('Itemid', 0) . ($input->get('tmpl', '', 'string') != '' ? '&tmpl=' . $input->get('tmpl', '', 'string') : '') . ($input->get('layout', '', 'string') != '' ? '&layout=' . $input->get('layout', '', 'string') : '') . ($listQuery !== '' ? '&' . $listQuery : '') . $previewQuery);
 					$isPublished = isset($this->published_items[$row->colRecord]) && $this->published_items[$row->colRecord];
 					$togglePublish = $isPublished ? 0 : 1;
 					$toggle_link = Route::_(
@@ -1903,7 +1904,7 @@ by this block. -->
 			<?php
 			$pagTotal = (int) ($this->pagination->total ?? 0);
 			$pagLimit = max(1, (int) ($this->pagination->limit ?? 0));
-			$pagStart = (int) ($this->lists['liststart'] ?? $input->getInt('list[start]', 0));
+			$pagStart = (int) ($this->lists['liststart'] ?? ($requestList['start'] ?? 0));
 			$pagPages = (int) ceil($pagTotal / $pagLimit);
 			$pagCurrent = $pagPages > 0 ? (int) floor($pagStart / $pagLimit) + 1 : 1;
 			$pagLastStart = $pagPages > 0 ? max(0, ($pagPages - 1) * $pagLimit) : 0;
@@ -2067,8 +2068,8 @@ by this block. -->
 			$n = count((array) $this->items);
 			for ($i = 0; $i < $n; $i++) {
 				$row = $this->items[$i];
-				$link = Route::_('index.php?option=com_contentbuilderng&task=details.display&' . ($directStorageMode ? 'storage_id=' . $directStorageId : 'id=' . $this->form_id) . '&record_id=' . $row->colRecord . '&Itemid=' . Factory::getApplication()->input->getInt('Itemid', 0) . (Factory::getApplication()->input->get('tmpl', '', 'string') != '' ? '&tmpl=' . Factory::getApplication()->input->get('tmpl', '', 'string') : '') . (Factory::getApplication()->input->get('layout', '', 'string') != '' ? '&layout=' . Factory::getApplication()->input->get('layout', '', 'string') : '') . $previewQuery);
-				$edit_link = Route::_('index.php?option=com_contentbuilderng&task=edit.display&backtolist=1&id=' . $this->form_id . '&record_id=' . $row->colRecord . '&Itemid=' . Factory::getApplication()->input->getInt('Itemid', 0) . (Factory::getApplication()->input->get('tmpl', '', 'string') != '' ? '&tmpl=' . Factory::getApplication()->input->get('tmpl', '', 'string') : '') . (Factory::getApplication()->input->get('layout', '', 'string') != '' ? '&layout=' . Factory::getApplication()->input->get('layout', '', 'string') : '') . $previewQuery);
+				$link = Route::_('index.php?option=com_contentbuilderng&task=details.display&' . ($directStorageMode ? 'storage_id=' . $directStorageId : 'id=' . $this->form_id) . '&record_id=' . $row->colRecord . '&Itemid=' . Factory::getApplication()->input->getInt('Itemid', 0) . (Factory::getApplication()->input->get('tmpl', '', 'string') != '' ? '&tmpl=' . Factory::getApplication()->input->get('tmpl', '', 'string') : '') . (Factory::getApplication()->input->get('layout', '', 'string') != '' ? '&layout=' . Factory::getApplication()->input->get('layout', '', 'string') : '') . ($listQuery !== '' ? '&' . $listQuery : '') . $previewQuery);
+				$edit_link = Route::_('index.php?option=com_contentbuilderng&task=edit.display&backtolist=1&id=' . $this->form_id . '&record_id=' . $row->colRecord . '&Itemid=' . Factory::getApplication()->input->getInt('Itemid', 0) . (Factory::getApplication()->input->get('tmpl', '', 'string') != '' ? '&tmpl=' . Factory::getApplication()->input->get('tmpl', '', 'string') : '') . (Factory::getApplication()->input->get('layout', '', 'string') != '' ? '&layout=' . Factory::getApplication()->input->get('layout', '', 'string') : '') . ($listQuery !== '' ? '&' . $listQuery : '') . $previewQuery);
 					$isPublished = isset($this->published_items[$row->colRecord]) && $this->published_items[$row->colRecord];
 					$togglePublish = $isPublished ? 0 : 1;
 					$toggle_link = Route::_(
@@ -2320,7 +2321,7 @@ by this block. -->
 				<?php
 				$pagTotal = (int) ($this->pagination->total ?? 0);
 				$pagLimit = max(1, (int) ($this->pagination->limit ?? 0));
-				$pagStart = (int) ($this->lists['liststart'] ?? Factory::getApplication()->input->getInt('list[start]', 0));
+				$pagStart = (int) ($this->lists['liststart'] ?? ($requestList['start'] ?? 0));
 				$pagPages = (int) ceil($pagTotal / $pagLimit);
 				$pagCurrent = $pagPages > 0 ? (int) floor($pagStart / $pagLimit) + 1 : 1;
 				$pagLastStart = $pagPages > 0 ? max(0, ($pagPages - 1) * $pagLimit) : 0;

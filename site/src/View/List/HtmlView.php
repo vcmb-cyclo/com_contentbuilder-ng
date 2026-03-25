@@ -68,7 +68,7 @@ class HtmlView extends BaseHtmlView
         $lists['filter_state'] = $state?->get('formsd_filter_state');
         $lists['filter_publish'] = $state?->get('formsd_filter_publish');
         $lists['filter_language'] = $state?->get('formsd_filter_language');
-        $lists['liststart'] = (int) ($state?->get('list.start') ?? 0);
+        $lists['liststart'] = (int) ($pagination?->limitstart ?? $state?->get('list.start') ?? 0);
 
         $dispatcher = Factory::getApplication()->getDispatcher();
         $eventResult = $dispatcher->dispatch('onListViewCss', new \Joomla\CMS\Event\GenericEvent('onListViewCss', ['theme' => $themePlugin]));

@@ -14,6 +14,7 @@
 use Joomla\CMS\Application\CMSApplication;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
+use Joomla\CMS\Layout\LayoutHelper;
 use Joomla\CMS\Router\Route;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Uri\Uri;
@@ -33,14 +34,13 @@ $detailsBackButtonToggle = MenuParamHelper::resolveInputOrMenuToggle($runtimeApp
 $showAuthorToggle = MenuParamHelper::resolveInputOrMenuToggle($runtimeApp, 'cb_show_author', 1);
 
 $list = (array) $input->get('list', [], 'array');
-$listStart = isset($list['start']) ? $input->getInt('list[start]', 0) : 0;
-$listLimit = isset($list['limit']) ? $input->getInt('list[limit]', 0) : 0;
+$listStart = array_key_exists('start', $list) ? max(0, (int) $list['start']) : 0;
+$listLimit = array_key_exists('limit', $list) ? (int) $list['limit'] : 0;
 if ($listLimit === 0) {
     $listLimit = (int) Factory::getApplication()->get('list_limit');
 }
-
-$listOrdering = isset($list['ordering']) ? $input->getCmd('list[ordering]', '') : '';
-$listDirection = isset($list['direction']) ? $input->getCmd('list[direction]', '') : '';
+$listOrdering = isset($list['ordering']) ? preg_replace('/[^A-Za-z0-9_\\.]/', '', (string) $list['ordering']) : '';
+$listDirection = isset($list['direction']) ? strtolower((string) $list['direction']) : '';
 $listQuery = http_build_query(['list' => [
     'start' => $listStart,
     'limit' => $listLimit,
@@ -364,94 +364,46 @@ CSS
     <?php
     ob_start();
     ?>
+    <?php if ($showTopBar && $this->print_button): ?>
+        <a
+            class="hidden-phone btn btn-sm btn-outline-secondary cbButton cbPrintButton"
+            href="javascript:window.open('<?php echo $printLink; ?>','win2','status=no,toolbar=no,scrollbars=yes,titlebar=no,menubar=no,resizable=yes,width=640,height=480,directories=no,location=no');void(0);"
+            title="<?php echo Text::_('JGLOBAL_PRINT'); ?>">
+            <i class="fa fa-print" aria-hidden="true"></i>
+            <?php echo Text::_('JGLOBAL_PRINT'); ?>
+        </a>
+    <?php endif; ?>
 
+    <?php if ($edit_allowed) : ?>
+        <a class="btn btn-sm btn-primary cbButton cbEditButton"
+            href="<?php echo Route::_('index.php?option=com_contentbuilderng&task=edit.display&id=' . Factory::getApplication()->input->getInt('id', 0) . '&record_id=' . Factory::getApplication()->input->getCmd('record_id', 0) . (Factory::getApplication()->input->get('tmpl', '', 'string') != '' ? '&tmpl=' . Factory::getApplication()->input->get('tmpl', '', 'string') : '') . '&Itemid=' . Factory::getApplication()->input->getInt('Itemid', 0) . (Factory::getApplication()->input->get('layout', '', 'string') != '' ? '&layout=' . Factory::getApplication()->input->get('layout', '', 'string') : '') . ($listQuery !== '' ? '&' . $listQuery : '') . $previewQuery); ?>"
+            title="<?php echo Text::_('COM_CONTENTBUILDERNG_EDIT'); ?>">
+            <span class="fa-solid fa-pen me-1" aria-hidden="true"></span>
+            <?php echo Text::_('COM_CONTENTBUILDERNG_EDIT'); ?>
+        </a>
+    <?php endif; ?>
     <?php
-    if ($showActionToolbar) {
-    ?>
-
-        <div class="cbToolBar d-flex justify-content-end gap-2 flex-wrap mb-3">
-        <?php
-    }
-        ?>
-
-        <?php if ($showTopBar && ($prevRecordId > 0 || $nextRecordId > 0)): ?>
-            <span class="cbRecordNavGroup d-inline-flex flex-wrap gap-2 me-auto">
-                <?php if ($showCurrentRecordLabel): ?>
-                    <span class="small text-muted align-self-center px-1 cbCurrentRecordId">#<?php echo htmlspecialchars($currentRecordLabel, ENT_QUOTES, 'UTF-8'); ?></span>
-                <?php endif; ?>
-                <?php if ($prevRecordId > 0): ?>
-                    <a
-                        class="btn btn-sm btn-outline-secondary cbButton cbBackButton cbPrevButton"
-                        href="<?php echo Route::_($detailsNavBaseLink . '&record_id=' . $prevRecordId); ?>"
-                        title="<?php echo Text::_('JPREVIOUS'); ?>">
-                        <span class="fa-solid fa-arrow-left me-1" aria-hidden="true"></span>
-                        <?php echo Text::_('JPREVIOUS'); ?>
-                    </a>
-                <?php endif; ?>
-
-                <?php if ($nextRecordId > 0): ?>
-                    <a
-                        class="btn btn-sm btn-outline-secondary cbButton cbBackButton cbNextButton"
-                        href="<?php echo Route::_($detailsNavBaseLink . '&record_id=' . $nextRecordId); ?>"
-                        title="<?php echo Text::_('JNEXT'); ?>">
-                        <?php echo Text::_('JNEXT'); ?>
-                        <span class="fa-solid fa-arrow-right ms-1" aria-hidden="true"></span>
-                    </a>
-                <?php endif; ?>
-            </span>
-        <?php endif; ?>
-
-        <?php if ($showTopBar && $this->print_button): ?>
-            <a
-                class="hidden-phone btn btn-sm btn-outline-secondary cbButton cbPrintButton"
-                href="javascript:window.open('<?php echo $printLink; ?>','win2','status=no,toolbar=no,scrollbars=yes,titlebar=no,menubar=no,resizable=yes,width=640,height=480,directories=no,location=no');void(0);"
-                title="<?php echo Text::_('JGLOBAL_PRINT'); ?>">
-                <i class="fa fa-print" aria-hidden="true"></i>
-                <?php echo Text::_('JGLOBAL_PRINT'); ?>
-            </a>
-        <?php endif; ?>
-
-        <?php if ($edit_allowed) { ?>
-            <a class="btn btn-sm btn-primary cbButton cbEditButton"
-                href="<?php echo Route::_('index.php?option=com_contentbuilderng&task=edit.display&id=' . Factory::getApplication()->input->getInt('id', 0) . '&record_id=' . Factory::getApplication()->input->getCmd('record_id', 0) . (Factory::getApplication()->input->get('tmpl', '', 'string') != '' ? '&tmpl=' . Factory::getApplication()->input->get('tmpl', '', 'string') : '') . '&Itemid=' . Factory::getApplication()->input->getInt('Itemid', 0) . (Factory::getApplication()->input->get('layout', '', 'string') != '' ? '&layout=' . Factory::getApplication()->input->get('layout', '', 'string') : '') . ($listQuery !== '' ? '&' . $listQuery : '') . $previewQuery); ?>"
-                title="<?php echo Text::_('COM_CONTENTBUILDERNG_EDIT'); ?>">
-                <span class="fa-solid fa-pen me-1" aria-hidden="true"></span>
-                <?php echo Text::_('COM_CONTENTBUILDERNG_EDIT') ?>
-            </a>
-        <?php
-        }
-        ?>
-        <?php if ($delete_allowed) { ?>
-            <button class="btn btn-sm btn-outline-danger cbButton cbDeleteButton d-inline-flex align-items-center gap-1 rounded-pill" onclick="contentbuilderng_delete();"
-                title="<?php echo Text::_('COM_CONTENTBUILDERNG_DELETE'); ?>">
-                <span class="fa-solid fa-trash" aria-hidden="true"></span>
-                <span><?php echo Text::_('COM_CONTENTBUILDERNG_DELETE') ?></span>
-            </button>
-        <?php
-        }
-        ?>
-        <?php if ($showCloseButton && ($showTopBar || (!$showTopBar && (!$this->show_page_heading || !$this->page_title)))): ?>
-            <a class="btn btn-sm btn-outline-secondary cbButton cbBackButton cbCloseButton"
-                href="<?php echo $closeListLink; ?>"
-                title="<?php echo Text::_('COM_CONTENTBUILDERNG_CLOSE'); ?>">
-                <span class="fa-solid fa-xmark me-1" aria-hidden="true"></span>
-                <?php echo Text::_('COM_CONTENTBUILDERNG_CLOSE') ?>
-            </a>
-        <?php endif; ?>
-
-        <?php
-        if ($showActionToolbar) {
-        ?>
-
-        </div>
-
-    <?php
-        }
-    ?>
-
-    <?php
-    $buttons = ob_get_contents();
-    ob_end_clean();
+    $detailsToolbarExtraHtml = ob_get_clean();
+    $buttons = $showActionToolbar
+        ? LayoutHelper::render(
+            'contentbuilderng.action_toolbar',
+            [
+                'toolbarClass' => 'mb-3',
+                'currentRecordLabel' => $currentRecordLabel,
+                'showCurrentRecordLabel' => $showTopBar && $showCurrentRecordLabel,
+                'prevRecordId' => $showTopBar ? $prevRecordId : 0,
+                'nextRecordId' => $showTopBar ? $nextRecordId : 0,
+                'navBaseLink' => $showTopBar ? $detailsNavBaseLink : '',
+                'extraHtml' => $detailsToolbarExtraHtml,
+                'showDelete' => $delete_allowed,
+                'deleteTitle' => Text::_('COM_CONTENTBUILDERNG_DELETE'),
+                'showClose' => $showCloseButton && ($showTopBar || (!$showTopBar && (!$this->show_page_heading || !$this->page_title))),
+                'closeTitle' => Text::_('COM_CONTENTBUILDERNG_CLOSE'),
+                'closeHref' => $closeListLink,
+            ],
+            JPATH_COMPONENT_SITE . '/layouts'
+        )
+        : '';
 
     if ($showTopBar) {
     ?>
