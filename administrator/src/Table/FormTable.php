@@ -116,6 +116,7 @@ class FormTable extends Table
     public $default_featured = 0;
     public $list_article = 0;
     public $list_author = 0;
+    public $list_last_modification = 0;
 
     public $act_as_registration = 0;
     public $registration_username_field = '';

@@ -525,6 +525,7 @@ class ListModel extends BaseListModel
             'list_language' => 0,
             'list_article' => 0,
             'list_author' => 0,
+            'list_last_modification' => 0,
             'list_rating' => 0,
             'rating_slots' => 0,
             'state_colors' => [],

@@ -102,6 +102,15 @@ if (!is_callable($renderCheckbox)) {
                             </label>
                         </div>
                         <div>
+                            <input type="hidden" name="jform[list_last_modification]" value="0" />
+                            <?php echo $renderCheckbox('jform[list_last_modification]', 'list_last_modification', (bool) ($item->list_last_modification ?? false)); ?>
+                            <label class="form-check-label" for="list_last_modification">
+                                <span class="editlinktip hasTip" title="<?php echo Text::_('COM_CONTENTBUILDERNG_SHOW_LAST_MODIFICATION_COLUMN_TIP'); ?>">
+                                    <?php echo Text::_('COM_CONTENTBUILDERNG_LAST_MODIFICATION'); ?>
+                                </span>
+                            </label>
+                        </div>
+                        <div>
                             <input type="hidden" name="jform[metadata]" value="0" />
                             <?php echo $renderCheckbox('jform[metadata]', 'metadata', (bool) ($item->metadata ?? false)); ?>
                             <label class="form-check-label" for="metadata">

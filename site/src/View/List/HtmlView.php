@@ -115,6 +115,7 @@ class HtmlView extends BaseHtmlView
         $this->list_language = (int) ($subject->list_language ?? 0);
         $this->list_article = (int) ($subject->list_article ?? 0);
         $this->list_author = (int) ($subject->list_author ?? 0);
+        $this->list_last_modification = (int) ($subject->list_last_modification ?? 0);
         $this->list_rating = (int) ($subject->list_rating ?? 0);
         $this->rating_slots = (int) ($subject->rating_slots ?? 0);
         $this->state = $state;

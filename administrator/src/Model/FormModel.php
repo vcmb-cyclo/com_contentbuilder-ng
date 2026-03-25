@@ -128,6 +128,7 @@ class FormModel extends AdminModel
             'button_bar_sticky' => 'TINYINT(1) NOT NULL DEFAULT 0',
             'list_header_sticky' => 'TINYINT(1) NOT NULL DEFAULT 0',
             'show_preview_link' => 'TINYINT(1) NOT NULL DEFAULT 0',
+            'list_last_modification' => 'TINYINT(1) NOT NULL DEFAULT 0',
         ];
 
         foreach ($requiredColumns as $columnName => $definition) {
@@ -646,6 +647,7 @@ class FormModel extends AdminModel
             $data->default_featured = 0;
             $data->list_article = 0;
             $data->list_author = 0;
+            $data->list_last_modification = 0;
             $data->list_rating = 0;
             $data->email_template = '';
             $data->email_subject = '';
@@ -966,6 +968,7 @@ class FormModel extends AdminModel
             'list_language',
             'list_article',
             'list_author',
+            'list_last_modification',
         ];
 
         foreach ($boolFields as $bf) {

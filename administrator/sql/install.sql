@@ -218,6 +218,10 @@ CREATE TABLE IF NOT EXISTS `#__contentbuilderng_forms`
 (
     1
 ) NOT NULL DEFAULT '0',
+    `list_last_modification` tinyint
+(
+    1
+) NOT NULL DEFAULT '0',
     `select_column` tinyint
 (
     1

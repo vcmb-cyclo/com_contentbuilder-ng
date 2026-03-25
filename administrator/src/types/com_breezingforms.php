@@ -699,7 +699,7 @@ class contentbuilderng_com_breezingforms
         }
         //////////////////
 
-        $validOrderKeys = ['colRecord', 'colState', 'colPublished', 'colLanguage', 'colRating', 'colArticleId', 'colAuthor'];
+        $validOrderKeys = ['colRecord', 'colState', 'colPublished', 'colLanguage', 'colRating', 'colArticleId', 'colAuthor', 'colLastModification'];
         $isValidInitialOrder = static function ($value) use ($validOrderKeys): bool {
             return $value === -1
                 || $value === '-1'
@@ -763,7 +763,13 @@ class contentbuilderng_com_breezingforms
                 joined_records.rand_date As colRand,
                 " . ($selectors ? $selectors . ',' : '') . "
                 joined_articles.article_id As colArticleId,
-                r.user_full_name As colAuthor
+                r.user_full_name As colAuthor,
+                COALESCE(
+                    NULLIF(r.modified, '0000-00-00 00:00:00'),
+                    NULLIF(joined_records.last_update, '0000-00-00 00:00:00'),
+                    NULLIF(r.created, '0000-00-00 00:00:00'),
+                    NULLIF(r.submitted, '0000-00-00 00:00:00')
+                ) As colLastModification
             From
                 (
                     #__facileforms_subrecords As s,

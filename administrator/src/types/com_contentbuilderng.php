@@ -565,7 +565,12 @@ class contentbuilderng_com_contentbuilderng
             joined_articles.article_id As colArticleId,
             list_states.title As colState,
             r.created_by As colAuthor,
-            r.modified_by As colModifiedBy
+            r.modified_by As colModifiedBy,
+            COALESCE(
+                NULLIF(r.modified, '0000-00-00 00:00:00'),
+                NULLIF(joined_records.last_update, '0000-00-00 00:00:00'),
+                NULLIF(r.created, '0000-00-00 00:00:00')
+            ) As colLastModification
         ";
 
         $fromClause = "
@@ -618,7 +623,7 @@ class contentbuilderng_com_contentbuilderng
             Group By r.id $search
         ";
 
-        $validOrderKeys = ['colRecord', 'colState', 'colPublished', 'colLanguage', 'colRating', 'colArticleId', 'colAuthor'];
+        $validOrderKeys = ['colRecord', 'colState', 'colPublished', 'colLanguage', 'colRating', 'colArticleId', 'colAuthor', 'colLastModification'];
         $isValidInitialOrder = static function ($value) use ($validOrderKeys): bool {
             return $value === -1
                 || $value === '-1'

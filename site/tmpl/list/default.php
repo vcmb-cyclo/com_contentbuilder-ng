@@ -186,6 +186,15 @@ $exportQueryParams = [
     'list_language_filter' => (string) ($state?->get('formsd_filter_language') ?? $input->getCmd('list_language_filter', '')),
 ];
 $listQuery = http_build_query(['list' => $listState]);
+$formatListLastModification = static function ($value): string {
+    $raw = trim((string) $value);
+
+    if ($raw === '' || $raw === '0000-00-00 00:00:00') {
+        return '';
+    }
+
+    return HTMLHelper::_('date', $raw, Text::_('DATE_FORMAT_LC5'));
+};
 if ($isAdminPreview && !$directStorageMode) {
     $previewLayoutBaseParams = Uri::getInstance()->getQuery(true);
     $previewLayoutBaseParams['list'] = $listState;
@@ -1822,6 +1831,15 @@ by this block. -->
 									<div class="cb-list-card-value"><?php echo htmlspecialchars((string) ($row->colAuthor ?? ''), ENT_QUOTES, 'UTF-8'); ?></div>
 								</div>
 							<?php endif; ?>
+							<?php if ($this->list_last_modification) : ?>
+								<?php $lastModificationText = $formatListLastModification($row->colLastModification ?? ''); ?>
+								<?php if ($lastModificationText !== '') : ?>
+								<div class="cb-list-card-field">
+									<div class="cb-list-card-label"><?php echo Text::_('COM_CONTENTBUILDERNG_LAST_MODIFICATION'); ?></div>
+									<div class="cb-list-card-value"><?php echo htmlspecialchars($lastModificationText, ENT_QUOTES, 'UTF-8'); ?></div>
+								</div>
+								<?php endif; ?>
+							<?php endif; ?>
 							<?php if ($this->list_rating) : ?>
 								<div class="cb-list-card-field">
 									<div class="cb-list-card-label"><?php echo Text::_('COM_CONTENTBUILDERNG_RATING'); ?></div>
@@ -1998,6 +2016,13 @@ by this block. -->
 					?>
 						<th class="table-light hidden-phone">
 							<?php echo HTMLHelper::_('grid.sort', htmlentities('COM_CONTENTBUILDERNG_AUTHOR', ENT_QUOTES, 'UTF-8'), 'colAuthor', $this->lists['order_Dir'], $this->lists['order']); ?>
+						</th>
+					<?php
+					}
+					if ($this->list_last_modification) {
+					?>
+						<th class="table-light hidden-phone">
+							<?php echo HTMLHelper::_('grid.sort', Text::_('COM_CONTENTBUILDERNG_LAST_MODIFICATION'), 'colLastModification', $this->lists['order_Dir'], $this->lists['order']); ?>
 						</th>
 					<?php
 					}
@@ -2224,6 +2249,16 @@ by this block. -->
 					?>
 						<td class="hidden-phone">
 							<?php echo htmlentities($row->colAuthor, ENT_QUOTES, 'UTF-8'); ?>
+						</td>
+					<?php
+					}
+					?>
+					<?php
+					if ($this->list_last_modification) {
+						$lastModificationText = $formatListLastModification($row->colLastModification ?? '');
+					?>
+						<td class="hidden-phone">
+							<?php echo htmlspecialchars($lastModificationText, ENT_QUOTES, 'UTF-8'); ?>
 						</td>
 					<?php
 					}
