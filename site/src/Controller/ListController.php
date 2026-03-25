@@ -101,7 +101,7 @@ class ListController extends BaseController
                     $msg = Text::_('COM_CONTENTBUILDERNG_ENTRIES_DELETED') . ' (' . $deletedCount . ')';
                 }
             } else {
-                $msg = Text::_('COM_CONTENTBUILDERNG_ENTRIES_DELETED');
+                $msg = Text::_('COM_CONTENTBUILDERNG_ENTRY_DELETED');
             }
         } else {
             $msg = Text::_('COM_CONTENTBUILDERNG_ERROR');
