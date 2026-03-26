@@ -23,6 +23,7 @@ use Joomla\Input\Input;
 use CB\Component\Contentbuilderng\Administrator\Service\PermissionService;
 use CB\Component\Contentbuilderng\Administrator\Helper\FormSourceFactory;
 use CB\Component\Contentbuilderng\Site\Helper\MenuParamHelper;
+use CB\Component\Contentbuilderng\Site\Helper\PreviewLinkHelper;
 
 class DetailsController extends BaseController
 {
@@ -271,7 +272,7 @@ class DetailsController extends BaseController
         $actorId = (int) $this->input->getInt('cb_preview_actor_id', 0);
         $actorName = trim((string) $this->input->getString('cb_preview_actor_name', ''));
         $userId = (int) $this->input->getInt('cb_preview_user_id', 0);
-        if ($userId < 1 || $userId !== (int) ($this->siteApp->getIdentity()->id ?? 0)) {
+        if ($userId < 1) {
             return false;
         }
 
@@ -293,24 +294,12 @@ class DetailsController extends BaseController
         }
 
         foreach ($targets as $target) {
-            $payload  = $target . '|' . $until . '|' . $userId;
-            $expected = hash_hmac('sha256', $payload, $secret);
-            $actorPayload = $payload . '|' . $actorId . '|' . $actorName;
-            $actorExpected = hash_hmac('sha256', $actorPayload, $secret);
-
-            if (($actorId > 0 || $actorName !== '') && hash_equals($actorExpected, $sig)) {
+            $payload = PreviewLinkHelper::buildPayload($target, $until, $actorId, $actorName, $userId);
+            if (hash_equals(hash_hmac('sha256', $payload, $secret), $sig)) {
                 $this->input->set('cb_preview_actor_id', $actorId);
                 $this->input->set('cb_preview_actor_name', $actorName);
                 $this->siteApp->input->set('cb_preview_actor_id', $actorId);
                 $this->siteApp->input->set('cb_preview_actor_name', $actorName);
-                return true;
-            }
-
-            if (hash_equals($expected, $sig)) {
-                $this->input->set('cb_preview_actor_id', 0);
-                $this->input->set('cb_preview_actor_name', '');
-                $this->siteApp->input->set('cb_preview_actor_id', 0);
-                $this->siteApp->input->set('cb_preview_actor_name', '');
                 return true;
             }
         }

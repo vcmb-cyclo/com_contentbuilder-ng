@@ -20,6 +20,7 @@ use Joomla\CMS\Uri\Uri;
 use Joomla\Database\DatabaseInterface;
 use Joomla\CMS\Application\CMSApplication;
 use CB\Component\Contentbuilderng\Administrator\Helper\PackedDataHelper;
+use CB\Component\Contentbuilderng\Site\Helper\PreviewLinkHelper;
 use CB\Component\Contentbuilderng\Administrator\Model\FormModel;
 use CB\Component\Contentbuilderng\Administrator\Model\ElementsModel;
 use CB\Component\Contentbuilderng\Administrator\Extension\ContentbuilderngComponent;
@@ -192,17 +193,17 @@ class HtmlView extends BaseHtmlView
         ToolbarHelper::cancel('form.cancel', $isNew ? 'JTOOLBAR_CLOSE' : 'JTOOLBAR_CLOSE');
 
         if ($formId > 0) {
-            $previewUntil = time() + 600;
-            $previewActorId = (int) ($identity->id ?? 0);
-            $previewActorName = trim((string) ($identity->name ?? ''));
+        $previewUntil = time() + 600;
+        $previewActorId = (int) ($identity->id ?? 0);
+        $previewActorName = trim((string) ($identity->name ?? ''));
             if ($previewActorName === '') {
                 $previewActorName = trim((string) ($identity->username ?? ''));
             }
-            if ($previewActorName === '') {
-                $previewActorName = 'administrator';
-            }
-            $previewUserId = (int) ($identity->id ?? 0);
-            $previewPayload = $formId . '|' . $previewUntil . '|' . $previewActorId . '|' . $previewActorName . '|' . $previewUserId;
+        if ($previewActorName === '') {
+            $previewActorName = 'administrator';
+        }
+        $previewUserId = (int) ($identity->id ?? 0);
+        $previewPayload = PreviewLinkHelper::buildPayload((string) $formId, $previewUntil, $previewActorId, $previewActorName, $previewUserId);
             $previewSig = hash_hmac('sha256', $previewPayload, (string) $app->get('secret'));
             $previewUrl = Uri::root()
                 . 'index.php?option=com_contentbuilderng&task=list.display&id='

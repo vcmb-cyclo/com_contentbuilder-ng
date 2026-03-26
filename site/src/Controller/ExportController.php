@@ -13,6 +13,7 @@ defined( '_JEXEC' ) or die( 'Restricted access' );
 
 use Joomla\CMS\Factory;
 use Joomla\CMS\MVC\Controller\BaseController;
+use CB\Component\Contentbuilderng\Site\Helper\PreviewLinkHelper;
 
 class ExportController extends BaseController
 {
@@ -42,7 +43,7 @@ class ExportController extends BaseController
         $actorId = (int) $this->input->getInt('cb_preview_actor_id', 0);
         $actorName = trim((string) $this->input->getString('cb_preview_actor_name', ''));
         $userId = (int) $this->input->getInt('cb_preview_user_id', 0);
-        if ($userId < 1 || $userId !== (int) (Factory::getApplication()->getIdentity()->id ?? 0)) {
+        if ($userId < 1) {
             return false;
         }
 
@@ -55,24 +56,13 @@ class ExportController extends BaseController
             return false;
         }
 
-        $payload = $formId . '|' . $until . '|' . $userId;
-        $expected = hash_hmac('sha256', $payload, $secret);
-        $actorPayload = $payload . '|' . $actorId . '|' . $actorName;
-        $actorExpected = hash_hmac('sha256', $actorPayload, $secret);
+        $payload = PreviewLinkHelper::buildPayload((string) $formId, $until, $actorId, $actorName, $userId);
 
-        if (($actorId > 0 || $actorName !== '') && hash_equals($actorExpected, $sig)) {
+        if (hash_equals(hash_hmac('sha256', $payload, $secret), $sig)) {
             $this->input->set('cb_preview_actor_id', $actorId);
             $this->input->set('cb_preview_actor_name', $actorName);
             Factory::getApplication()->input->set('cb_preview_actor_id', $actorId);
             Factory::getApplication()->input->set('cb_preview_actor_name', $actorName);
-            return true;
-        }
-
-        if (hash_equals($expected, $sig)) {
-            $this->input->set('cb_preview_actor_id', 0);
-            $this->input->set('cb_preview_actor_name', '');
-            Factory::getApplication()->input->set('cb_preview_actor_id', 0);
-            Factory::getApplication()->input->set('cb_preview_actor_name', '');
             return true;
         }
 

@@ -17,6 +17,7 @@ use Joomla\CMS\Language\Text;
 use Joomla\CMS\Toolbar\ToolbarHelper;
 use Joomla\CMS\Uri\Uri;
 use Joomla\Database\DatabaseInterface;
+use CB\Component\Contentbuilderng\Site\Helper\PreviewLinkHelper;
 use CB\Component\Contentbuilderng\Administrator\View\Contentbuilderng\HtmlView as BaseHtmlView;
 
 class HtmlView extends BaseHtmlView
@@ -160,7 +161,7 @@ class HtmlView extends BaseHtmlView
                 $previewActorName = 'administrator';
             }
             $previewUserId = (int) ($identity->id ?? 0);
-            $previewPayload = 'storage:' . $id . '|' . $previewUntil . '|' . $previewActorId . '|' . $previewActorName . '|' . $previewUserId;
+            $previewPayload = PreviewLinkHelper::buildPayload('storage:' . $id, $previewUntil, $previewActorId, $previewActorName, $previewUserId);
             $previewSig = hash_hmac('sha256', $previewPayload, (string) $app->get('secret'));
             $previewUrl = Uri::root()
                 . 'index.php?option=com_contentbuilderng&task=list.display&storage_id='

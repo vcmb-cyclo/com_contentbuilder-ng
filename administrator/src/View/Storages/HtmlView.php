@@ -17,6 +17,7 @@ use Joomla\CMS\Application\CMSApplication;
 use Joomla\CMS\Toolbar\ToolbarHelper;
 use Joomla\CMS\Document\HtmlDocument;
 use Joomla\CMS\Uri\Uri;
+use CB\Component\Contentbuilderng\Site\Helper\PreviewLinkHelper;
 use CB\Component\Contentbuilderng\Administrator\Model\StoragesModel;
 use CB\Component\Contentbuilderng\Administrator\View\Contentbuilderng\HtmlView as BaseHtmlView;
 
@@ -86,6 +87,7 @@ class HtmlView extends BaseHtmlView
     private function buildPreviewLinks(array $items): array
     {
         $app = Factory::getApplication();
+        $identity = $app->getIdentity();
         $secret = (string) $app->get('secret');
 
         if ($secret === '') {
@@ -115,7 +117,7 @@ class HtmlView extends BaseHtmlView
             }
 
             $previewUserId = (int) ($identity->id ?? 0);
-            $previewPayload = 'storage:' . $storageId . '|' . $previewUntil . '|' . $previewActorId . '|' . $previewActorName . '|' . $previewUserId;
+            $previewPayload = PreviewLinkHelper::buildPayload('storage:' . $storageId, $previewUntil, $previewActorId, $previewActorName, $previewUserId);
             $previewSig = hash_hmac('sha256', $previewPayload, $secret);
 
             $links[$storageId] = Uri::root()

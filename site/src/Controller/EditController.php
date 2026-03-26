@@ -24,6 +24,8 @@ use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
 use Joomla\Input\Input;
 use CB\Component\Contentbuilderng\Administrator\Service\PermissionService;
 use CB\Component\Contentbuilderng\Site\Helper\MenuParamHelper;
+use CB\Component\Contentbuilderng\Site\Helper\NavigationLinkHelper;
+use CB\Component\Contentbuilderng\Site\Helper\PreviewLinkHelper;
 use CB\Component\Contentbuilderng\Site\Model\EditModel;
 
 class EditController extends BaseController
@@ -148,13 +150,10 @@ class EditController extends BaseController
         if ($id && !$submission_failed) {
 
             $msg = Text::_('COM_CONTENTBUILDERNG_SAVED');
-            $return = $this->siteApp->input->get('return', '', 'string');
-            if ($return) {
-                $decodedReturn = base64_decode($return, true);
-                if ($decodedReturn !== false && Uri::isInternal($decodedReturn)) {
-                    $this->siteApp->enqueueMessage($msg, 'warning');
-                    $this->siteApp->redirect($decodedReturn);
-                }
+            $return = NavigationLinkHelper::decodeInternalReturn((string) $this->siteApp->input->get('return', '', 'string'));
+            if ($return !== '') {
+                $this->siteApp->enqueueMessage($msg, 'warning');
+                $this->siteApp->redirect($return);
             }
 
         } else {
@@ -171,9 +170,9 @@ class EditController extends BaseController
         $listQuery = $this->buildListQuery();
 
         if ($this->siteApp->input->getString('cb_controller', '') == 'edit') {
-            $link = Route::_('index.php?option=com_contentbuilderng&title=' . $this->siteApp->input->get('title', '', 'string') . ($this->siteApp->input->get('tmpl', '', 'string') != '' ? '&tmpl=' . $this->siteApp->input->get('tmpl', '', 'string') : '') . ($this->siteApp->input->get('layout', '', 'string') != '' ? '&layout=' . $this->siteApp->input->get('layout', '', 'string') : '') . '&task=edit.display&return=' . $this->siteApp->input->get('return', '', 'string') . '&Itemid=' . $this->siteApp->input->getInt('Itemid', 0) . $previewQuery, false);
+            $link = Route::_('index.php?option=com_contentbuilderng&title=' . $this->siteApp->input->get('title', '', 'string') . ($this->siteApp->input->get('tmpl', '', 'string') != '' ? '&tmpl=' . $this->siteApp->input->get('tmpl', '', 'string') : '') . ($this->siteApp->input->get('layout', '', 'string') != '' ? '&layout=' . $this->siteApp->input->get('layout', '', 'string') : '') . '&task=edit.display&return=' . NavigationLinkHelper::encodeInternalReturn((string) $this->siteApp->input->get('return', '', 'string')) . '&Itemid=' . $this->siteApp->input->getInt('Itemid', 0) . $previewQuery, false);
         } else if ($apply) {
-            $link = Route::_('index.php?option=com_contentbuilderng&title=' . $this->siteApp->input->get('title', '', 'string') . ($this->siteApp->input->get('tmpl', '', 'string') != '' ? '&tmpl=' . $this->siteApp->input->get('tmpl', '', 'string') : '') . ($this->siteApp->input->get('layout', '', 'string') != '' ? '&layout=' . $this->siteApp->input->get('layout', '', 'string') : '') . '&task=edit.display&return=' . $this->siteApp->input->get('return', '', 'string') . '&backtolist=' . $this->siteApp->input->getInt('backtolist', 0) . '&id=' . $this->siteApp->input->getInt('id', 0) . '&record_id=' . $id . '&Itemid=' . $this->siteApp->input->getInt('Itemid', 0) . ($listQuery !== '' ? '&' . $listQuery : '') . $previewQuery, false);
+            $link = Route::_('index.php?option=com_contentbuilderng&title=' . $this->siteApp->input->get('title', '', 'string') . ($this->siteApp->input->get('tmpl', '', 'string') != '' ? '&tmpl=' . $this->siteApp->input->get('tmpl', '', 'string') : '') . ($this->siteApp->input->get('layout', '', 'string') != '' ? '&layout=' . $this->siteApp->input->get('layout', '', 'string') : '') . '&task=edit.display&return=' . NavigationLinkHelper::encodeInternalReturn((string) $this->siteApp->input->get('return', '', 'string')) . '&backtolist=' . $this->siteApp->input->getInt('backtolist', 0) . '&id=' . $this->siteApp->input->getInt('id', 0) . '&record_id=' . $id . '&Itemid=' . $this->siteApp->input->getInt('Itemid', 0) . ($listQuery !== '' ? '&' . $listQuery : '') . $previewQuery, false);
         } else {
             $link = Route::_('index.php?option=com_contentbuilderng&title=' . $this->siteApp->input->get('title', '', 'string') . ($this->siteApp->input->get('tmpl', '', 'string') != '' ? '&tmpl=' . $this->siteApp->input->get('tmpl', '', 'string') : '') . ($this->siteApp->input->get('layout', '', 'string') != '' ? '&layout=' . $this->siteApp->input->get('layout', '', 'string') : '') . '&task=list.display&id=' . $this->siteApp->input->getInt('id', 0) . ($listQuery !== '' ? '&' . $listQuery : '') . '&Itemid=' . $this->siteApp->input->getInt('Itemid', 0), false);
         }
@@ -446,13 +445,7 @@ class EditController extends BaseController
             return '';
         }
 
-        return '&cb_preview=1'
-            . '&cb_preview_until=' . $until
-            . '&cb_preview_actor_id=' . $actorId
-            . '&cb_preview_actor_name=' . rawurlencode($actorName)
-            . '&cb_preview_sig=' . rawurlencode($sig)
-            . '&cb_preview_user_id=' . $userId
-            . ($adminReturn !== '' ? '&cb_admin_return=' . rawurlencode($adminReturn) : '');
+        return PreviewLinkHelper::buildQuery($until, $actorId, $actorName, $userId, $sig, $adminReturn);
     }
 
     private function isAjaxCall(): bool
@@ -540,7 +533,7 @@ class EditController extends BaseController
         $actorId = (int) $this->input->getInt('cb_preview_actor_id', 0);
         $actorName = trim((string) $this->input->getString('cb_preview_actor_name', ''));
         $userId = (int) $this->input->getInt('cb_preview_user_id', 0);
-        if ($userId < 1 || $userId !== (int) ($this->siteApp->getIdentity()->id ?? 0)) {
+        if ($userId < 1) {
             return false;
         }
 
@@ -562,19 +555,14 @@ class EditController extends BaseController
         }
 
         foreach ($targets as $target) {
-            $payload  = $target . '|' . $until . '|' . $userId;
-            $expected = hash_hmac('sha256', $payload, $secret);
-            $actorPayload = $payload . '|' . $actorId . '|' . $actorName;
-            $actorExpected = hash_hmac('sha256', $actorPayload, $secret);
-
-            if (($actorId > 0 || $actorName !== '') && hash_equals($actorExpected, $sig)) {
+            $payload = PreviewLinkHelper::buildPayload($target, $until, $actorId, $actorName, $userId);
+            if (hash_equals(hash_hmac('sha256', $payload, $secret), $sig)) {
                 $this->input->set('cb_preview_actor_id', $actorId);
                 $this->input->set('cb_preview_actor_name', $actorName);
                 $this->siteApp->input->set('cb_preview_actor_id', $actorId);
                 $this->siteApp->input->set('cb_preview_actor_name', $actorName);
                 return true;
             }
-
         }
 
         return false;

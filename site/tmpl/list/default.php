@@ -22,6 +22,7 @@ use CB\Component\Contentbuilderng\Administrator\Helper\RatingHelper;
 use CB\Component\Contentbuilderng\Administrator\Service\PermissionService;
 use CB\Component\Contentbuilderng\Site\Helper\NavigationLinkHelper;
 use CB\Component\Contentbuilderng\Site\Helper\MenuParamHelper;
+use CB\Component\Contentbuilderng\Site\Helper\PreviewLinkHelper;
 
 /** @var SiteApplication $app */
 $app = Factory::getApplication();
@@ -70,6 +71,7 @@ $previewUntil = $input->getInt('cb_preview_until', 0);
 $previewSig = (string) $input->getString('cb_preview_sig', '');
 $previewActorId = $input->getInt('cb_preview_actor_id', 0);
 $previewActorName = (string) $input->getString('cb_preview_actor_name', '');
+$previewUserId = $input->getInt('cb_preview_user_id', 0);
 $isAdminPreview = $input->getBool('cb_preview_ok', false);
 $currentUser = $app->getIdentity();
 $currentSessionLabel = trim((string) ($currentUser->name ?? ''));
@@ -227,12 +229,14 @@ if ($directStorageMode) {
     $publish_allowed = $directStoragePublishAllowed;
 }
 if ($previewEnabled && $previewUntil > 0 && $previewSig !== '') {
-    $previewQuery = '&cb_preview=1'
-        . '&cb_preview_until=' . $previewUntil
-        . '&cb_preview_actor_id=' . (int) $previewActorId
-        . '&cb_preview_actor_name=' . rawurlencode($previewActorName)
-        . '&cb_preview_sig=' . rawurlencode($previewSig)
-        . ($adminReturnContext !== '' ? '&cb_admin_return=' . rawurlencode($adminReturnContext) : '');
+    $previewQuery = PreviewLinkHelper::buildQuery(
+        (int) $previewUntil,
+        (int) $previewActorId,
+        (string) $previewActorName,
+        (int) $previewUserId,
+        (string) $previewSig,
+        (string) $adminReturnContext
+    );
 }
 
 if ($isAdminPreview) {
@@ -2529,11 +2533,7 @@ by this block. -->
 	}
 		if ($previewQuery !== '') {
 		?>
-			<input type="hidden" name="cb_preview" value="1" />
-			<input type="hidden" name="cb_preview_until" value="<?php echo (int) $previewUntil; ?>" />
-			<input type="hidden" name="cb_preview_actor_id" value="<?php echo (int) $previewActorId; ?>" />
-			<input type="hidden" name="cb_preview_actor_name" value="<?php echo htmlentities($previewActorName, ENT_QUOTES, 'UTF-8'); ?>" />
-			<input type="hidden" name="cb_preview_sig" value="<?php echo htmlentities($previewSig, ENT_QUOTES, 'UTF-8'); ?>" />
+			<?php echo PreviewLinkHelper::buildHiddenFields((int) $previewUntil, (int) $previewActorId, (string) $previewActorName, (int) $previewUserId, (string) $previewSig, (string) $adminReturnContext); ?>
 		<?php
 		}
 	?>

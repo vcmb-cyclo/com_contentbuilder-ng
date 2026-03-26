@@ -17,6 +17,7 @@ use Joomla\CMS\Language\Text;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Toolbar\ToolbarHelper;
 use Joomla\CMS\Uri\Uri;
+use CB\Component\Contentbuilderng\Site\Helper\PreviewLinkHelper;
 use CB\Component\Contentbuilderng\Administrator\View\Contentbuilderng\HtmlView as BaseHtmlView;
 
 class HtmlView extends BaseHtmlView
@@ -102,6 +103,7 @@ class HtmlView extends BaseHtmlView
     private function buildPreviewLinks(array $items): array
     {
         $app = Factory::getApplication();
+        $identity = $app->getIdentity();
         $secret = (string) $app->get('secret');
 
         if ($secret === '') {
@@ -129,9 +131,8 @@ class HtmlView extends BaseHtmlView
                 continue;
             }
 
-            $previewPayload = $formId . '|' . $previewUntil . '|' . $previewActorId . '|' . $previewActorName;
             $previewUserId = (int) ($identity->id ?? 0);
-            $previewPayload .= '|' . $previewUserId;
+            $previewPayload = PreviewLinkHelper::buildPayload((string) $formId, $previewUntil, $previewActorId, $previewActorName, $previewUserId);
             $previewSig = hash_hmac('sha256', $previewPayload, $secret);
 
             $links[$formId] = Uri::root()

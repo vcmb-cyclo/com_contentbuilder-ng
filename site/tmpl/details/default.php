@@ -21,6 +21,7 @@ use Joomla\CMS\Uri\Uri;
 use CB\Component\Contentbuilderng\Administrator\Service\PermissionService;
 use CB\Component\Contentbuilderng\Site\Helper\NavigationLinkHelper;
 use CB\Component\Contentbuilderng\Site\Helper\MenuParamHelper;
+use CB\Component\Contentbuilderng\Site\Helper\PreviewLinkHelper;
 
 $frontend = Factory::getApplication()->isClient('site');
 $permissionService = new PermissionService();
@@ -57,6 +58,7 @@ $previewUntil = $input->getInt('cb_preview_until', 0);
 $previewSig = (string) $input->getString('cb_preview_sig', '');
 $previewActorId = $input->getInt('cb_preview_actor_id', 0);
 $previewActorName = (string) $input->getString('cb_preview_actor_name', '');
+$previewUserId = $input->getInt('cb_preview_user_id', 0);
 $isAdminPreview = $input->getBool('cb_preview_ok', false);
 $currentUser = Factory::getApplication()->getIdentity();
 $currentSessionLabel = trim((string) ($currentUser->name ?? ''));
@@ -103,12 +105,14 @@ $previewFrontendPermissionHint = Text::sprintf(
 $detailsScreenAdminUrl = Uri::root() . 'administrator/index.php?option=com_contentbuilderng&view=form&layout=edit&id=' . (int) $input->getInt('id', 0) . '&tab=tab3&force_view_tab=tab3';
 
 if ($previewEnabled && $previewUntil > 0 && $previewSig !== '') {
-    $previewQuery = '&cb_preview=1'
-        . '&cb_preview_until=' . $previewUntil
-        . '&cb_preview_actor_id=' . (int) $previewActorId
-        . '&cb_preview_actor_name=' . rawurlencode($previewActorName)
-        . '&cb_preview_sig=' . rawurlencode($previewSig)
-        . ($adminReturnContext !== '' ? '&cb_admin_return=' . rawurlencode($adminReturnContext) : '');
+    $previewQuery = PreviewLinkHelper::buildQuery(
+        (int) $previewUntil,
+        (int) $previewActorId,
+        (string) $previewActorName,
+        (int) $previewUserId,
+        (string) $previewSig,
+        (string) $adminReturnContext
+    );
 }
 
 $printLink = Route::_('index.php?option=com_contentbuilderng&title=' . $input->get('title', '', 'string')

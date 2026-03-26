@@ -11,6 +11,7 @@ use Joomla\CMS\Application\CMSApplication;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\Database\DatabaseInterface;
+use CB\Component\Contentbuilderng\Site\Helper\PreviewLinkHelper;
 
 class PermissionService
 {
@@ -397,20 +398,13 @@ class PermissionService
         $actorId = (int) $input->getInt('cb_preview_actor_id', 0);
         $actorName = trim((string) $input->getString('cb_preview_actor_name', ''));
         $userId = (int) $input->getInt('cb_preview_user_id', 0);
-        if ($userId < 1 || $userId !== (int) ($app->getIdentity()->id ?? 0)) {
+        if ($userId < 1) {
             return false;
         }
 
-        $payload = $formId . '|' . $until . '|' . $userId;
-        $expected = hash_hmac('sha256', $payload, $secret);
-        $actorPayload = $payload . '|' . $actorId . '|' . $actorName;
-        $actorExpected = hash_hmac('sha256', $actorPayload, $secret);
+        $payload = PreviewLinkHelper::buildPayload((string) $formId, $until, $actorId, $actorName, $userId);
 
-        if (($actorId > 0 || $actorName !== '') && hash_equals($actorExpected, $sig)) {
-            return true;
-        }
-
-        return hash_equals($expected, $sig);
+        return hash_equals(hash_hmac('sha256', $payload, $secret), $sig);
     }
 
     private function resolveVerificationPermission(string $action, array $result, string $nowSql)

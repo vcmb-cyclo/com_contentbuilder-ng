@@ -19,6 +19,7 @@ use Joomla\CMS\Session\Session;
 use Joomla\CMS\MVC\Controller\BaseController;
 use Joomla\Database\DatabaseInterface;
 use CB\Component\Contentbuilderng\Site\Helper\MenuParamHelper;
+use CB\Component\Contentbuilderng\Site\Helper\PreviewLinkHelper;
 use CB\Component\Contentbuilderng\Site\Model\EditModel;
 use CB\Component\Contentbuilderng\Administrator\Service\PermissionService;
 
@@ -455,8 +456,7 @@ class ListController extends BaseController
         }
 
         $userId = (int) $this->input->getInt('cb_preview_user_id', 0);
-        $app = Factory::getApplication();
-        if ($userId < 1 || $userId !== (int) ($app->getIdentity()->id ?? 0)) {
+        if ($userId < 1) {
             return false;
         }
 
@@ -469,24 +469,12 @@ class ListController extends BaseController
         }
 
         foreach ($targets as $target) {
-            $payload  = $target . '|' . $until . '|' . $userId;
-            $expected = hash_hmac('sha256', $payload, $secret);
-            $actorPayload = $payload . '|' . $actorId . '|' . $actorName;
-            $actorExpected = hash_hmac('sha256', $actorPayload, $secret);
-
-            if (($actorId > 0 || $actorName !== '') && hash_equals($actorExpected, $sig)) {
+            $payload = PreviewLinkHelper::buildPayload($target, $until, $actorId, $actorName, $userId);
+            if (hash_equals(hash_hmac('sha256', $payload, $secret), $sig)) {
                 $this->input->set('cb_preview_actor_id', $actorId);
                 $this->input->set('cb_preview_actor_name', $actorName);
                 Factory::getApplication()->input->set('cb_preview_actor_id', $actorId);
                 Factory::getApplication()->input->set('cb_preview_actor_name', $actorName);
-                return true;
-            }
-
-            if (hash_equals($expected, $sig)) {
-                $this->input->set('cb_preview_actor_id', 0);
-                $this->input->set('cb_preview_actor_name', '');
-                Factory::getApplication()->input->set('cb_preview_actor_id', 0);
-                Factory::getApplication()->input->set('cb_preview_actor_name', '');
                 return true;
             }
         }
@@ -552,12 +540,6 @@ class ListController extends BaseController
         $userId = (int) $this->input->getInt('cb_preview_user_id', 0);
         $adminReturn = trim((string) $this->input->getCmd('cb_admin_return', ''));
 
-        return '&cb_preview=1'
-            . '&cb_preview_until=' . $until
-            . '&cb_preview_actor_id=' . $actorId
-            . '&cb_preview_actor_name=' . rawurlencode($actorName)
-            . '&cb_preview_user_id=' . $userId
-            . '&cb_preview_sig=' . rawurlencode($sig)
-            . ($adminReturn !== '' ? '&cb_admin_return=' . rawurlencode($adminReturn) : '');
+        return PreviewLinkHelper::buildQuery($until, $actorId, $actorName, $userId, $sig, $adminReturn);
     }
 }

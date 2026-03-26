@@ -13,6 +13,7 @@ namespace CB\Component\Contentbuilderng\Site\Helper;
 \defined('_JEXEC') or die;
 
 use Joomla\CMS\Application\CMSApplication;
+use Joomla\CMS\Uri\Uri;
 
 final class NavigationLinkHelper
 {
@@ -69,6 +70,44 @@ final class NavigationLinkHelper
         }
 
         return $href;
+    }
+
+    public static function encodeInternalReturn(string $return): string
+    {
+        $return = trim($return);
+        if ($return === '') {
+            return '';
+        }
+
+        $decoded = base64_decode($return, true);
+        if ($decoded !== false && Uri::isInternal($decoded)) {
+            return $return;
+        }
+
+        if (Uri::isInternal($return)) {
+            return base64_encode($return);
+        }
+
+        return '';
+    }
+
+    public static function decodeInternalReturn(string $return): string
+    {
+        $return = trim($return);
+        if ($return === '') {
+            return '';
+        }
+
+        $decoded = base64_decode($return, true);
+        if ($decoded !== false && Uri::isInternal($decoded)) {
+            return $decoded;
+        }
+
+        if (Uri::isInternal($return)) {
+            return $return;
+        }
+
+        return '';
     }
 
     public static function resolveListState(

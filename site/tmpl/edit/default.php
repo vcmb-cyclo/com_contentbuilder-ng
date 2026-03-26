@@ -21,6 +21,7 @@ use Joomla\CMS\Uri\Uri;
 use CB\Component\Contentbuilderng\Administrator\Service\PermissionService;
 use CB\Component\Contentbuilderng\Site\Helper\NavigationLinkHelper;
 use CB\Component\Contentbuilderng\Site\Helper\MenuParamHelper;
+use CB\Component\Contentbuilderng\Site\Helper\PreviewLinkHelper;
 
 /** @var SiteApplication $app */
 $app = Factory::getApplication();
@@ -34,7 +35,8 @@ $fullarticle_allowed = $frontend ? $permissionService->authorizeFe('fullarticle'
 $isAdminPreview = $app->input->getBool('cb_preview_ok', false);
 
 $input = $app->input;
-$hasReturn = $input->getString('return', '') !== '';
+$safeReturn = NavigationLinkHelper::encodeInternalReturn((string) $input->getString('return', ''));
+$hasReturn = $safeReturn !== '';
 $topBarToggle = MenuParamHelper::resolveInputOrMenuToggle($app, 'cb_show_top_bar', 1);
 $bottomBarToggle = MenuParamHelper::resolveInputOrMenuToggle($app, 'cb_show_bottom_bar', 1);
 $showAuthorToggle = MenuParamHelper::resolveInputOrMenuToggle($app, 'cb_show_author', 1);
@@ -78,6 +80,7 @@ $previewUntil = $input->getInt('cb_preview_until', 0);
 $previewSig = $input->getString('cb_preview_sig', '');
 $previewActorId = $input->getInt('cb_preview_actor_id', 0);
 $previewActorName = (string) $input->getString('cb_preview_actor_name', '');
+$previewUserId = $input->getInt('cb_preview_user_id', 0);
 $currentUser = $app->getIdentity();
 $currentSessionLabel = trim((string) ($currentUser->name ?? ''));
 if ($currentSessionLabel === '') {
@@ -117,19 +120,22 @@ $previewFrontendPermissionHint = Text::sprintf(
 );
 $editScreenAdminUrl = Uri::root() . 'administrator/index.php?option=com_contentbuilderng&view=form&layout=edit&id=' . (int) $id . '&tab=tab5&force_view_tab=tab5';
 if ($previewEnabled && $previewUntil > 0 && $previewSig !== '') {
-    $previewQuery = '&cb_preview=1'
-        . '&cb_preview_until=' . (int) $previewUntil
-        . '&cb_preview_actor_id=' . (int) $previewActorId
-        . '&cb_preview_actor_name=' . rawurlencode($previewActorName)
-        . '&cb_preview_sig=' . rawurlencode($previewSig)
-        . ($adminReturnContext !== '' ? '&cb_admin_return=' . rawurlencode($adminReturnContext) : '');
-    $previewHiddenFields =
-        '<input type="hidden" name="cb_preview" value="1" />' . "\n"
-        . '<input type="hidden" name="cb_preview_until" value="' . (int) $previewUntil . '" />' . "\n"
-        . '<input type="hidden" name="cb_preview_actor_id" value="' . (int) $previewActorId . '" />' . "\n"
-        . '<input type="hidden" name="cb_preview_actor_name" value="' . htmlentities($previewActorName, ENT_QUOTES, 'UTF-8') . '" />' . "\n"
-        . '<input type="hidden" name="cb_preview_sig" value="' . htmlentities($previewSig, ENT_QUOTES, 'UTF-8') . '" />'
-        . ($adminReturnContext !== '' ? "\n" . '<input type="hidden" name="cb_admin_return" value="' . htmlentities($adminReturnContext, ENT_QUOTES, 'UTF-8') . '" />' : '');
+    $previewQuery = PreviewLinkHelper::buildQuery(
+        (int) $previewUntil,
+        (int) $previewActorId,
+        (string) $previewActorName,
+        (int) $previewUserId,
+        (string) $previewSig,
+        (string) $adminReturnContext
+    );
+    $previewHiddenFields = PreviewLinkHelper::buildHiddenFields(
+        (int) $previewUntil,
+        (int) $previewActorId,
+        (string) $previewActorName,
+        (int) $previewUserId,
+        (string) $previewSig,
+        (string) $adminReturnContext
+    );
 }
 
 $detailsHref = Route::_(
@@ -182,7 +188,7 @@ if ($jsBack) {
     $editBaseParams['jsback'] = 1;
 }
 if ($hasReturn) {
-    $editBaseParams['return'] = $input->getString('return', '');
+    $editBaseParams['return'] = $safeReturn;
 }
 $editNavBaseLink = NavigationLinkHelper::buildRouteLink($editBaseParams + [
     'list' => [
@@ -828,7 +834,7 @@ CSS
                 <input type="hidden" name="Itemid" value="<?php echo Factory::getApplication()->input->getInt('Itemid', 0); ?>" />
                 <input type="hidden" name="task" id="contentbuilderng_task" value="edit.save" />
                 <input type="hidden" name="backtolist" value="<?php echo Factory::getApplication()->input->getInt('backtolist', 0); ?>" />
-                <input type="hidden" name="return" value="<?php echo Factory::getApplication()->input->get('return', '', 'string'); ?>" />
+                <input type="hidden" name="return" value="<?php echo htmlspecialchars($safeReturn, ENT_QUOTES, 'UTF-8'); ?>" />
                 <?php echo $listHiddenFields; ?>
                 <?php echo $previewHiddenFields; ?>
                 <?php echo HTMLHelper::_('form.token'); ?>
@@ -878,7 +884,7 @@ CSS
                 <input type="hidden" name="Itemid" value="<?php echo Factory::getApplication()->input->getInt('Itemid', 0); ?>" />
                 <input type="hidden" name="task" id="contentbuilderng_task" value="edit.save" />
                 <input type="hidden" name="backtolist" value="<?php echo Factory::getApplication()->input->getInt('backtolist', 0); ?>" />
-                <input type="hidden" name="return" value="<?php echo Factory::getApplication()->input->get('return', '', 'string'); ?>" />
+                <input type="hidden" name="return" value="<?php echo htmlspecialchars($safeReturn, ENT_QUOTES, 'UTF-8'); ?>" />
                 <?php echo $listHiddenFields; ?>
                 <?php echo $previewHiddenFields; ?>
                 <?php echo HTMLHelper::_('form.token'); ?>
@@ -922,7 +928,7 @@ CSS
                 <input type="hidden" name="Itemid" value="<?php echo Factory::getApplication()->input->getInt('Itemid', 0); ?>" />
                 <input type="hidden" name="task" id="contentbuilderng_task" value="edit.save" />
                 <input type="hidden" name="backtolist" value="<?php echo Factory::getApplication()->input->getInt('backtolist', 0); ?>" />
-                <input type="hidden" name="return" value="<?php echo Factory::getApplication()->input->get('return', '', 'string'); ?>" />
+                <input type="hidden" name="return" value="<?php echo htmlspecialchars($safeReturn, ENT_QUOTES, 'UTF-8'); ?>" />
                 <?php echo $listHiddenFields; ?>
                 <?php echo $previewHiddenFields; ?>
                 <?php echo HTMLHelper::_('form.token'); ?>
