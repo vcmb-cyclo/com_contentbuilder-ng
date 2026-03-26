@@ -33,15 +33,23 @@ $runtimeApp = Factory::getApplication();
 $detailsTopBarToggle = MenuParamHelper::resolveInputOrMenuToggle($runtimeApp, 'cb_show_details_top_bar', 1);
 $detailsBackButtonToggle = MenuParamHelper::resolveInputOrMenuToggle($runtimeApp, 'cb_show_details_back_button', 1, 'show_back_button');
 $showAuthorToggle = MenuParamHelper::resolveInputOrMenuToggle($runtimeApp, 'cb_show_author', 1);
+$directStorageMode = !empty($this->direct_storage_mode);
+$directStorageId = (int) ($this->direct_storage_id ?? 0);
 
 $list = (array) $input->get('list', [], 'array');
-$listStart = array_key_exists('start', $list) ? max(0, (int) $list['start']) : 0;
-$listLimit = array_key_exists('limit', $list) ? (int) $list['limit'] : 0;
-if ($listLimit === 0) {
-    $listLimit = (int) Factory::getApplication()->get('list_limit');
-}
-$listOrdering = isset($list['ordering']) ? preg_replace('/[^A-Za-z0-9_\\.]/', '', (string) $list['ordering']) : '';
-$listDirection = isset($list['direction']) ? strtolower((string) $list['direction']) : '';
+$listState = NavigationLinkHelper::resolveListState(
+    Factory::getApplication(),
+    $list,
+    (int) $input->getInt('id', 0),
+    (string) $input->getCmd('layout', 'default'),
+    (int) $input->getInt('Itemid', 0),
+    $directStorageMode,
+    $directStorageId
+);
+$listStart = (int) $listState['start'];
+$listLimit = (int) $listState['limit'];
+$listOrdering = (string) $listState['ordering'];
+$listDirection = (string) $listState['direction'];
 $listQuery = NavigationLinkHelper::buildListQuery($listStart, $listLimit, $listOrdering, $listDirection);
 $previewQuery = '';
 $previewEnabled = $input->getBool('cb_preview', false);
@@ -64,8 +72,6 @@ if ($previewActorLabel === '' && $previewActorId > 0) {
 }
 $showPreviewSessionBadge = $isAdminPreview && $currentSessionLabel !== '' && $currentSessionLabel !== $previewActorLabel;
 $showTopBar = $detailsTopBarToggle === 1;
-$directStorageMode = !empty($this->direct_storage_mode);
-$directStorageId = (int) ($this->direct_storage_id ?? 0);
 $directStorageUnpublished = !empty($this->direct_storage_unpublished);
 $adminReturnContext = trim((string) $input->getCmd('cb_admin_return', ''));
 $adminReturnUrl = Uri::root() . 'administrator/index.php?option=com_contentbuilderng&task=form.edit&id=' . (int) $input->getInt('id', 0);

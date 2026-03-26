@@ -20,6 +20,7 @@ use Joomla\CMS\Uri\Uri;
 use CB\Component\Contentbuilderng\Administrator\Helper\ContentbuilderngHelper;
 use CB\Component\Contentbuilderng\Administrator\Helper\RatingHelper;
 use CB\Component\Contentbuilderng\Administrator\Service\PermissionService;
+use CB\Component\Contentbuilderng\Site\Helper\NavigationLinkHelper;
 use CB\Component\Contentbuilderng\Site\Helper\MenuParamHelper;
 
 /** @var SiteApplication $app */
@@ -170,6 +171,10 @@ $listState = [
     'ordering' => (string) ($this->lists['order'] ?? (isset($requestList['ordering']) ? preg_replace('/[^A-Za-z0-9_\\.]/', '', (string) $requestList['ordering']) : '')),
     'direction' => (string) ($this->lists['order_Dir'] ?? (isset($requestList['direction']) ? strtolower((string) $requestList['direction']) : '')),
 ];
+$listStart = (int) $listState['start'];
+$limitValue = (int) $listState['limit'];
+$listOrder = (string) $listState['ordering'];
+$listDirn = (string) $listState['direction'];
 $state = $this->state ?? null;
 $exportQueryParams = [
     'option' => 'com_contentbuilderng',
@@ -1460,16 +1465,77 @@ by this block. -->
 	$showPreviewLink = !empty($this->show_preview_link);
 	$showTopBar = MenuParamHelper::resolveInputOrMenuToggle($app, 'cb_show_top_bar', 1) === 1;
 	$showBottomBar = MenuParamHelper::resolveInputOrMenuToggle($app, 'cb_show_bottom_bar', 1) === 1;
+	$listEditBaseParams = [
+		'option' => 'com_contentbuilderng',
+		'task' => 'edit.display',
+		'backtolist' => 1,
+		'id' => (int) Factory::getApplication()->input->getInt('id', 0),
+		'Itemid' => (int) Factory::getApplication()->input->getInt('Itemid', 0),
+	];
+	$listEditTmpl = (string) Factory::getApplication()->input->get('tmpl', '', 'string');
+	if ($listEditTmpl !== '') {
+		$listEditBaseParams['tmpl'] = $listEditTmpl;
+	}
+	$listEditLayout = (string) Factory::getApplication()->input->get('layout', '', 'string');
+	if ($listEditLayout !== '') {
+		$listEditBaseParams['layout'] = $listEditLayout;
+	}
+	if ($listQuery !== '') {
+		$listEditBaseParams['list'] = [
+			'start' => $listStart,
+			'limit' => $limitValue,
+			'ordering' => $listOrder,
+			'direction' => $listDirn,
+		];
+	}
+	$listPublishBaseParams = [
+		'option' => 'com_contentbuilderng',
+		'task' => 'edit.publish',
+		'backtolist' => 1,
+		'Itemid' => (int) Factory::getApplication()->input->getInt('Itemid', 0),
+	];
+	if ($listEditTmpl !== '') {
+		$listPublishBaseParams['tmpl'] = $listEditTmpl;
+	}
+	if ($listEditLayout !== '') {
+		$listPublishBaseParams['layout'] = $listEditLayout;
+	}
+	if ($listQuery !== '') {
+		$listPublishBaseParams['list'] = [
+			'start' => $listStart,
+			'limit' => $limitValue,
+			'ordering' => $listOrder,
+			'direction' => $listDirn,
+		];
+	}
+	$listDetailsBaseParams = [
+		'option' => 'com_contentbuilderng',
+		'task' => 'details.display',
+		($directStorageMode ? 'storage_id' : 'id') => $directStorageMode ? $directStorageId : (int) Factory::getApplication()->input->getInt('id', 0),
+		'Itemid' => (int) Factory::getApplication()->input->getInt('Itemid', 0),
+	];
+	$listTmpl = (string) Factory::getApplication()->input->get('tmpl', '', 'string');
+	if ($listTmpl !== '') {
+		$listDetailsBaseParams['tmpl'] = $listTmpl;
+	}
+	$listLayout = (string) Factory::getApplication()->input->get('layout', '', 'string');
+	if ($listLayout !== '') {
+		$listDetailsBaseParams['layout'] = $listLayout;
+	}
+	if ($listQuery !== '') {
+		$listDetailsBaseParams['list'] = [
+			'start' => $listStart,
+			'limit' => $limitValue,
+			'ordering' => $listOrder,
+			'direction' => $listDirn,
+		];
+	}
 	$newRecordLink = '';
 	if ($showNewButton) {
 		$newRecordLink = Route::_(
-			'index.php?option=com_contentbuilderng&task=edit.display&backtolist=1&id='
-			. Factory::getApplication()->input->getInt('id', 0)
-			. (Factory::getApplication()->input->get('tmpl', '', 'string') != '' ? '&tmpl=' . Factory::getApplication()->input->get('tmpl', '', 'string') : '')
-			. (Factory::getApplication()->input->get('layout', '', 'string') != '' ? '&layout=' . Factory::getApplication()->input->get('layout', '', 'string') : '')
-			. '&record_id=0'
-			. '&Itemid=' . Factory::getApplication()->input->getInt('Itemid', 0)
-			. $previewQuery
+			NavigationLinkHelper::buildRouteLink($listEditBaseParams + [
+				'record_id' => 0,
+			], $previewQuery)
 		);
 	}
 	?>
@@ -1683,20 +1749,23 @@ by this block. -->
 				$n = count((array) $this->items);
 				for ($i = 0; $i < $n; $i++) {
 					$row = $this->items[$i];
-					$link = Route::_('index.php?option=com_contentbuilderng&task=details.display&' . ($directStorageMode ? 'storage_id=' . $directStorageId : 'id=' . $this->form_id) . '&record_id=' . $row->colRecord . '&Itemid=' . $input->getInt('Itemid', 0) . ($input->get('tmpl', '', 'string') != '' ? '&tmpl=' . $input->get('tmpl', '', 'string') : '') . ($input->get('layout', '', 'string') != '' ? '&layout=' . $input->get('layout', '', 'string') : '') . ($listQuery !== '' ? '&' . $listQuery : '') . $previewQuery);
-					$edit_link = Route::_('index.php?option=com_contentbuilderng&task=edit.display&backtolist=1&id=' . $this->form_id . '&record_id=' . $row->colRecord . '&Itemid=' . $input->getInt('Itemid', 0) . ($input->get('tmpl', '', 'string') != '' ? '&tmpl=' . $input->get('tmpl', '', 'string') : '') . ($input->get('layout', '', 'string') != '' ? '&layout=' . $input->get('layout', '', 'string') : '') . ($listQuery !== '' ? '&' . $listQuery : '') . $previewQuery);
+					$link = Route::_(
+						NavigationLinkHelper::buildRouteLink($listDetailsBaseParams + [
+							'record_id' => (int) $row->colRecord,
+						], $previewQuery)
+					);
+					$edit_link = Route::_(
+						NavigationLinkHelper::buildRouteLink($listEditBaseParams + [
+							'record_id' => (int) $row->colRecord,
+						], $previewQuery)
+					);
 					$isPublished = isset($this->published_items[$row->colRecord]) && $this->published_items[$row->colRecord];
 					$togglePublish = $isPublished ? 0 : 1;
 					$toggle_link = Route::_(
-						'index.php?option=com_contentbuilderng&task=edit.publish&backtolist=1&'
-						. ($directStorageMode ? 'storage_id=' . $directStorageId : 'id=' . $this->form_id)
-						. '&list_publish=' . $togglePublish
-						. '&cid[]=' . $row->colRecord
-						. '&Itemid=' . $input->getInt('Itemid', 0)
-						. ($input->get('tmpl', '', 'string') != '' ? '&tmpl=' . $input->get('tmpl', '', 'string') : '')
-						. ($input->get('layout', '', 'string') != '' ? '&layout=' . $input->get('layout', '', 'string') : '')
-						. ($listQuery !== '' ? '&' . $listQuery : '')
-						. $previewQuery
+						NavigationLinkHelper::buildRouteLink($listPublishBaseParams + [
+							$directStorageMode ? 'storage_id' : 'id' => $directStorageMode ? $directStorageId : $this->form_id,
+							'list_publish' => $togglePublish,
+						], '&cid[]=' . (int) $row->colRecord . $previewQuery)
 					);
 					$rowCanView = $view_allowed || $canAccessOwnedRecord('view', $row->colRecord);
 					$rowCanEdit = $edit_allowed || $canAccessOwnedRecord('edit', $row->colRecord);
@@ -2119,20 +2188,23 @@ by this block. -->
 			$n = count((array) $this->items);
 			for ($i = 0; $i < $n; $i++) {
 				$row = $this->items[$i];
-				$link = Route::_('index.php?option=com_contentbuilderng&task=details.display&' . ($directStorageMode ? 'storage_id=' . $directStorageId : 'id=' . $this->form_id) . '&record_id=' . $row->colRecord . '&Itemid=' . Factory::getApplication()->input->getInt('Itemid', 0) . (Factory::getApplication()->input->get('tmpl', '', 'string') != '' ? '&tmpl=' . Factory::getApplication()->input->get('tmpl', '', 'string') : '') . (Factory::getApplication()->input->get('layout', '', 'string') != '' ? '&layout=' . Factory::getApplication()->input->get('layout', '', 'string') : '') . ($listQuery !== '' ? '&' . $listQuery : '') . $previewQuery);
-				$edit_link = Route::_('index.php?option=com_contentbuilderng&task=edit.display&backtolist=1&id=' . $this->form_id . '&record_id=' . $row->colRecord . '&Itemid=' . Factory::getApplication()->input->getInt('Itemid', 0) . (Factory::getApplication()->input->get('tmpl', '', 'string') != '' ? '&tmpl=' . Factory::getApplication()->input->get('tmpl', '', 'string') : '') . (Factory::getApplication()->input->get('layout', '', 'string') != '' ? '&layout=' . Factory::getApplication()->input->get('layout', '', 'string') : '') . ($listQuery !== '' ? '&' . $listQuery : '') . $previewQuery);
+				$link = Route::_(
+					NavigationLinkHelper::buildRouteLink($listDetailsBaseParams + [
+						'record_id' => (int) $row->colRecord,
+					], $previewQuery)
+				);
+				$edit_link = Route::_(
+					NavigationLinkHelper::buildRouteLink($listEditBaseParams + [
+						'record_id' => (int) $row->colRecord,
+					], $previewQuery)
+				);
 					$isPublished = isset($this->published_items[$row->colRecord]) && $this->published_items[$row->colRecord];
 					$togglePublish = $isPublished ? 0 : 1;
 					$toggle_link = Route::_(
-						'index.php?option=com_contentbuilderng&task=edit.publish&backtolist=1&'
-						. ($directStorageMode ? 'storage_id=' . $directStorageId : 'id=' . $this->form_id)
-						. '&list_publish=' . $togglePublish
-						. '&cid[]=' . $row->colRecord
-						. '&Itemid=' . Factory::getApplication()->input->getInt('Itemid', 0)
-						. (Factory::getApplication()->input->get('tmpl', '', 'string') != '' ? '&tmpl=' . Factory::getApplication()->input->get('tmpl', '', 'string') : '')
-						. (Factory::getApplication()->input->get('layout', '', 'string') != '' ? '&layout=' . Factory::getApplication()->input->get('layout', '', 'string') : '')
-						. ($listQuery !== '' ? '&' . $listQuery : '')
-						. $previewQuery
+						NavigationLinkHelper::buildRouteLink($listPublishBaseParams + [
+							$directStorageMode ? 'storage_id' : 'id' => $directStorageMode ? $directStorageId : $this->form_id,
+							'list_publish' => $togglePublish,
+						], '&cid[]=' . (int) $row->colRecord . $previewQuery)
 					);
 					$select = '<input class="form-check-input" type="checkbox" name="cid[]" value="' . $row->colRecord . '"/>';
                     $rowCanView = $view_allowed || $canAccessOwnedRecord('view', $row->colRecord);

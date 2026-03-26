@@ -12,6 +12,8 @@ namespace CB\Component\Contentbuilderng\Site\Helper;
 
 \defined('_JEXEC') or die;
 
+use Joomla\CMS\Application\CMSApplication;
+
 final class NavigationLinkHelper
 {
     public static function buildRouteLink(array $query, string $suffix = ''): string
@@ -67,5 +69,70 @@ final class NavigationLinkHelper
         }
 
         return $href;
+    }
+
+    public static function resolveListState(
+        CMSApplication $app,
+        array $list,
+        int $formId,
+        string $layout,
+        int $itemId,
+        bool $directStorageMode = false,
+        int $directStorageId = 0
+    ): array {
+        $scope = $directStorageMode ? ('storage.' . max(0, $directStorageId)) : (string) max(0, $formId);
+        if ($scope === '0') {
+            $scope = (string) max(0, (int) $app->input->getInt('id', 0));
+        }
+
+        if ($layout === '') {
+            $layout = 'default';
+        }
+
+        $prefix = 'com_contentbuilderng.liststate.' . $scope . '.' . $layout . '.' . max(0, $itemId);
+        $limitKey = $prefix . '.limit';
+        $startKey = $prefix . '.start';
+
+        $limit = isset($list['limit']) ? (int) $list['limit'] : 0;
+        if ($limit === 0) {
+            $limit = (int) $app->getUserState($limitKey, 0);
+        }
+        if ($limit === 0) {
+            $limit = (int) $app->get('list_limit');
+        }
+        if ($limit < 1) {
+            $limit = 20;
+        }
+
+        if (array_key_exists('start', $list)) {
+            $start = max(0, (int) $list['start']);
+        } else {
+            $start = (int) $app->getUserState($startKey, 0);
+        }
+
+        $ordering = isset($list['ordering']) ? preg_replace('/[^A-Za-z0-9_\\.]/', '', (string) $list['ordering']) : '';
+        if ($ordering === '') {
+            $ordering = (string) $app->getUserState('com_contentbuilderng.formsd_filter_order', '');
+        }
+        if ($ordering === '' && isset($list['fullordering'])) {
+            $parts = preg_split('/\s+/', trim((string) $list['fullordering']));
+            $ordering = isset($parts[0]) ? preg_replace('/[^A-Za-z0-9_\\.]/', '', (string) $parts[0]) : '';
+        }
+
+        $direction = isset($list['direction']) ? strtolower((string) $list['direction']) : '';
+        if ($direction === '') {
+            $direction = (string) $app->getUserState('com_contentbuilderng.formsd_filter_order_Dir', '');
+        }
+        if ($direction === '' && isset($list['fullordering'])) {
+            $parts = preg_split('/\s+/', trim((string) $list['fullordering']));
+            $direction = isset($parts[1]) ? strtolower((string) $parts[1]) : '';
+        }
+
+        return [
+            'start' => $start,
+            'limit' => $limit,
+            'ordering' => $ordering,
+            'direction' => $direction,
+        ];
     }
 }

@@ -25,6 +25,7 @@ use Joomla\CMS\Uri\Uri;
 use Joomla\Database\DatabaseInterface;
 use Joomla\Registry\Registry;
 use CB\Component\Contentbuilderng\Administrator\View\Contentbuilderng\HtmlView as BaseHtmlView;
+use CB\Component\Contentbuilderng\Site\Helper\NavigationLinkHelper;
 
 class HtmlView extends BaseHtmlView
 {
@@ -117,22 +118,25 @@ class HtmlView extends BaseHtmlView
             return ['previous' => 0, 'next' => 0];
         }
 
-        $originalList = (array) $app->input->get('list', [], 'array');
-        $listLimit = array_key_exists('limit', $originalList) ? (int) $originalList['limit'] : 0;
-        if ($listLimit <= 0) {
-            $listLimit = (int) $app->get('list_limit', 20);
-        }
-        if ($listLimit <= 0) {
-            $listLimit = 20;
-        }
         $formId = (int) $app->input->getInt('id', 0);
         $paginationKeys = $this->getListPaginationStateKeys($formId);
         $limitStateBackup = $app->getUserState($paginationKeys['limit'], null);
         $startStateBackup = $app->getUserState($paginationKeys['start'], null);
+        $originalList = (array) $app->input->get('list', [], 'array');
+        $resolvedList = NavigationLinkHelper::resolveListState(
+            $app,
+            $originalList,
+            $formId,
+            (string) $app->input->getCmd('layout', 'default'),
+            (int) $app->input->getInt('Itemid', 0),
+            (int) ($subject->direct_storage_mode ?? 0) === 1,
+            (int) ($subject->direct_storage_id ?? 0)
+        );
+        $listLimit = (int) $resolvedList['limit'];
 
         try {
             // Reuse the list model so Previous/Next follows the exact active list ordering and filters.
-            $listForNavigation = $originalList;
+            $listForNavigation = $resolvedList;
             $listForNavigation['start'] = 0;
             $listForNavigation['limit'] = 1000000;
             $app->input->set('list', $listForNavigation);

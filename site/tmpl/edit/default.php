@@ -55,13 +55,17 @@ $id = $input->getInt('id', 0);
 $recordId = $input->getCmd('record_id', 0);
 $itemId = $input->getInt('Itemid', 0);
 $list = (array) $input->get('list', [], 'array');
-$listStart = array_key_exists('start', $list) ? max(0, (int) $list['start']) : 0;
-$listLimit = array_key_exists('limit', $list) ? (int) $list['limit'] : 0;
-if ($listLimit === 0) {
-    $listLimit = (int) $app->get('list_limit');
-}
-$listOrdering = isset($list['ordering']) ? preg_replace('/[^A-Za-z0-9_\\.]/', '', (string) $list['ordering']) : '';
-$listDirection = isset($list['direction']) ? strtolower((string) $list['direction']) : '';
+$listState = NavigationLinkHelper::resolveListState(
+    $app,
+    $list,
+    $id,
+    $layout !== '' ? $layout : 'default',
+    $itemId
+);
+$listStart = (int) $listState['start'];
+$listLimit = (int) $listState['limit'];
+$listOrdering = (string) $listState['ordering'];
+$listDirection = (string) $listState['direction'];
 $listQuery = NavigationLinkHelper::buildListQuery($listStart, $listLimit, $listOrdering, $listDirection);
 $listHiddenFields = ''
     . '<input type="hidden" name="list[start]" value="' . (int) $listStart . '" />' . "\n"
