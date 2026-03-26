@@ -356,13 +356,12 @@ class ApiController extends BaseController
 
     private function getListPayload(int $formId): array
     {
-        $requestedPagination = $this->getRequestedListPagination();
         $this->input->set('id', $formId);
         $model = $this->getListModel();
         $dataSet = $model->getData();
         $subject = (is_array($dataSet) && isset($dataSet[0])) ? $dataSet[0] : null;
         if (!is_object($subject) || !isset($subject->items) || !is_array($subject->items)) {
-            return $this->getFallbackListPayload($formId);
+            throw new \RuntimeException(Text::_('COM_CONTENTBUILDERNG_RECORD_NOT_FOUND'), 404);
         }
 
         $elementNames = [];
@@ -397,24 +396,6 @@ class ApiController extends BaseController
         $start = (int) $model->getState('list.start', 0);
         $total = (int) $model->getTotal();
 
-        // If explicit pagination was requested but ListModel ignored it (state leakage),
-        // rebuild list through the API fallback path that enforces limit/start from query.
-        if (
-            $requestedPagination['explicit']
-            && (
-                $limit !== $requestedPagination['limit']
-                || $start !== $requestedPagination['start']
-            )
-        ) {
-            return $this->getFallbackListPayload($formId);
-        }
-
-        $missingListFields = !empty($subject->preview_no_list_fields)
-            || (isset($subject->visible_cols) && is_array($subject->visible_cols) && count($subject->visible_cols) === 0);
-        if ($total === 0 && $missingListFields) {
-            return $this->getFallbackListPayload($formId);
-        }
-
         return [
             'items' => $items,
             'pagination' => [
@@ -422,127 +403,6 @@ class ApiController extends BaseController
                 'limit' => $limit,
                 'start' => $start,
             ],
-        ];
-    }
-
-    private function getFallbackListPayload(int $formId): array
-    {
-        $db = Factory::getContainer()->get(DatabaseInterface::class);
-        $query = $db->getQuery(true)
-            ->select([$db->quoteName('type'), $db->quoteName('reference_id'), $db->quoteName('published_only')])
-            ->from($db->quoteName('#__contentbuilderng_forms'))
-            ->where($db->quoteName('id') . ' = ' . (int) $formId);
-        $db->setQuery($query, 0, 1);
-        $row = $db->loadAssoc();
-
-        if (!is_array($row) || empty($row['type']) || empty($row['reference_id'])) {
-            return ['items' => [], 'pagination' => ['total' => 0, 'limit' => 0, 'start' => 0]];
-        }
-
-        $form = FormSourceFactory::getForm((string) $row['type'], (string) $row['reference_id']);
-        if (!$form || !is_object($form) || !method_exists($form, 'getRecord')) {
-            return ['items' => [], 'pagination' => ['total' => 0, 'limit' => 0, 'start' => 0]];
-        }
-
-        $requestedPagination = $this->getRequestedListPagination();
-        $requestedLimit = (int) $requestedPagination['limit'];
-        $requestedStart = (int) $requestedPagination['start'];
-        $isAdminPreview = (bool) $this->input->getBool('cb_preview_ok', false);
-        $publishedOnly = !$isAdminPreview && !empty($row['published_only']);
-
-        $where = [
-            $db->quoteName('type') . ' = ' . $db->quote((string) $row['type']),
-            $db->quoteName('reference_id') . ' = ' . $db->quote((string) $row['reference_id']),
-        ];
-        if ($publishedOnly) {
-            $where[] = $db->quoteName('published') . ' = 1';
-        }
-
-        $query = $db->getQuery(true)
-            ->select('COUNT(DISTINCT ' . $db->quoteName('record_id') . ')')
-            ->from($db->quoteName('#__contentbuilderng_records'))
-            ->where($where);
-        $db->setQuery($query);
-        $total = (int) $db->loadResult();
-
-        $query = $db->getQuery(true)
-            ->select('DISTINCT ' . $db->quoteName('record_id'))
-            ->from($db->quoteName('#__contentbuilderng_records'))
-            ->where($where)
-            ->order($db->quoteName('record_id') . ' DESC');
-        $db->setQuery($query, $requestedStart, $requestedLimit);
-        $recordIds = array_map('intval', (array) $db->loadColumn());
-
-        $items = [];
-        foreach ($recordIds as $recordId) {
-            if ($recordId < 1) {
-                continue;
-            }
-
-            $recordItems = $form->getRecord($recordId, $publishedOnly, -1, true);
-            if (!is_array($recordItems) || empty($recordItems)) {
-                continue;
-            }
-
-            $values = [];
-            foreach ($recordItems as $recordItem) {
-                if (!is_object($recordItem)) {
-                    continue;
-                }
-
-                $name = trim((string) ($recordItem->recName ?? ''));
-                if ($name === '' || array_key_exists($name, $values)) {
-                    continue;
-                }
-
-                $values[$name] = $recordItem->recValue ?? null;
-            }
-
-            $items[] = [
-                'record_id' => $recordId,
-                'values' => $values,
-            ];
-        }
-
-        Logger::info('API fallback list payload used', [
-            'form_id' => $formId,
-            'type' => (string) $row['type'],
-            'reference_id' => (string) $row['reference_id'],
-            'total' => $total,
-            'limit' => $requestedLimit,
-            'start' => $requestedStart,
-        ]);
-
-        return [
-            'items' => $items,
-            'pagination' => [
-                'total' => $total,
-                'limit' => $requestedLimit,
-                'start' => $requestedStart,
-            ],
-        ];
-    }
-
-    private function getRequestedListPagination(): array
-    {
-        $list = (array) $this->input->get('list', [], 'array');
-        $hasExplicitLimit = array_key_exists('limit', $list);
-        $hasExplicitStart = array_key_exists('start', $list);
-
-        $limit = $hasExplicitLimit ? (int) $list['limit'] : 0;
-        if ($limit <= 0) {
-            $limit = (int) $this->siteApp->get('list_limit', 20);
-        }
-
-        $start = $hasExplicitStart ? (int) $list['start'] : 0;
-        if ($start < 0) {
-            $start = 0;
-        }
-
-        return [
-            'limit' => $limit,
-            'start' => $start,
-            'explicit' => $hasExplicitLimit || $hasExplicitStart,
         ];
     }
 
@@ -556,10 +416,6 @@ class ApiController extends BaseController
         $dataSet = $model->getData();
         $subject = (is_array($dataSet) && isset($dataSet[0])) ? $dataSet[0] : null;
         if (!is_object($subject) || !isset($subject->items) || !is_array($subject->items)) {
-            $fallbackPayload = $this->getFallbackDetailPayload($formId, $recordId);
-            if (is_array($fallbackPayload)) {
-                return $fallbackPayload;
-            }
             throw new \RuntimeException(Text::_('COM_CONTENTBUILDERNG_RECORD_NOT_FOUND'), 404);
         }
 
@@ -586,73 +442,6 @@ class ApiController extends BaseController
             'form_id' => $formId,
             'fields' => $this->normalizeDetailFields($fields, $verbose),
             'navigation' => $this->resolveSiblingRecordIds((string) ($subject->type ?? ''), (string) ($subject->reference_id ?? ''), $recordId, !empty($subject->published_only)),
-        ];
-    }
-
-    private function getFallbackDetailPayload(int $formId, int $recordId): ?array
-    {
-        $db = Factory::getContainer()->get(DatabaseInterface::class);
-        $query = $db->getQuery(true)
-            ->select([$db->quoteName('type'), $db->quoteName('reference_id'), $db->quoteName('published_only')])
-            ->from($db->quoteName('#__contentbuilderng_forms'))
-            ->where($db->quoteName('id') . ' = ' . (int) $formId);
-        $db->setQuery($query, 0, 1);
-        $row = $db->loadAssoc();
-
-        if (!is_array($row) || empty($row['type']) || empty($row['reference_id'])) {
-            return null;
-        }
-
-        $form = FormSourceFactory::getForm((string) $row['type'], (string) $row['reference_id']);
-        if (!$form || !is_object($form) || !method_exists($form, 'getRecord')) {
-            return null;
-        }
-
-        // Compatibility fallback: pull the record directly from the form bridge.
-        $recordItems = $form->getRecord($recordId, false, -1, true);
-        if (!is_array($recordItems) || empty($recordItems)) {
-            return null;
-        }
-
-        $fields = [];
-        foreach ($recordItems as $item) {
-            if (!is_object($item)) {
-                continue;
-            }
-
-            $name = (string) ($item->recName ?? '');
-            if ($name === '') {
-                continue;
-            }
-
-            $fields[$name] = [
-                'reference_id' => (string) ($item->recElementId ?? ''),
-                'label' => (string) ($item->recLabel ?? $name),
-                'value' => $item->recValue ?? null,
-            ];
-        }
-
-        if (empty($fields)) {
-            return null;
-        }
-
-        Logger::info('API fallback detail payload used', [
-            'form_id' => $formId,
-            'record_id' => $recordId,
-            'type' => (string) $row['type'],
-            'reference_id' => (string) $row['reference_id'],
-        ]);
-
-        return [
-            'record_id' => $recordId,
-            'form_id' => $formId,
-            'fields' => $this->normalizeDetailFields($fields, (bool) $this->input->getBool('verbose', false)),
-            'navigation' => $this->resolveSiblingRecordIds(
-                (string) $row['type'],
-                (string) $row['reference_id'],
-                $recordId,
-                !empty($row['published_only'])
-            ),
         ];
     }
 
