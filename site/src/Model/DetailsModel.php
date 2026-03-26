@@ -77,26 +77,20 @@ class DetailsModel extends ListModel
             $item = $menu->getActive();
             if (is_object($item)) {
                 $params = $item->getParams();
+                $this->_show_back_button = MenuParamHelper::getResolvedMenuToggle(
+                    $params,
+                    'cb_show_details_back_button',
+                    1,
+                    'show_back_button'
+                ) === 1;
                 $menuRecordId = MenuParamHelper::getMenuParam($params, 'record_id', null);
 
                 if ($menuRecordId !== null) {
                     $app->input->set('record_id', $menuRecordId);
-                    $this->_show_back_button = MenuParamHelper::getResolvedMenuToggle(
-                        $params,
-                        'cb_show_details_back_button',
-                        1,
-                        'show_back_button'
-                    ) === 1;
                 }
 
                 if (MenuParamHelper::getMenuParam($params, 'cb_latest', null) !== null) {
                     $this->_latest = MenuParamHelper::getMenuParam($params, 'cb_latest', null);
-                    $this->_show_back_button = MenuParamHelper::getResolvedMenuToggle(
-                        $params,
-                        'cb_show_details_back_button',
-                        1,
-                        'show_back_button'
-                    ) === 1;
                 }
                 if ($item->getParams()->get('show_page_heading', null) !== null) {
                     $this->_show_page_heading = $item->getParams()->get('show_page_heading', null);

@@ -59,6 +59,10 @@ class plgSystemContentbuilderng_system extends CMSPlugin implements SubscriberIn
         // BreezingForms submissions often do not send a Joomla "task".
         // Keep BF sync active for explicit ff_task requests and BF POST submissions.
         if ($option === 'com_breezingforms') {
+            if ($input->getBool('confirmStripe')) {
+                return true;
+            }
+
             if ($input->getCmd('ff_task', '') !== '') {
                 return true;
             }
