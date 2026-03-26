@@ -389,7 +389,7 @@ class contentbuilderng_com_contentbuilderng
             if ($strlen > 1) {
                 foreach ($searchable_elements as $searchable_element) {
                     // TODO: how to deal with terms in this?
-                    if (!$form->filter_exact_match) {
+                    if (empty($form->filter_exact_match)) {
                         $limited = explode('|', str_replace(' ', '|', $filter));
                         $limited_count = count($limited);
                         $limited_count = $limited_count > 10 ? 10 : $limited_count;

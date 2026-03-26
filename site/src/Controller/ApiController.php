@@ -684,6 +684,10 @@ class ApiController extends BaseController
         $sig = trim((string) $this->input->getString('cb_preview_sig', ''));
         $actorId = (int) $this->input->getInt('cb_preview_actor_id', 0);
         $actorName = trim((string) $this->input->getString('cb_preview_actor_name', ''));
+        $userId = (int) $this->input->getInt('cb_preview_user_id', 0);
+        if ($userId < 1 || $userId !== (int) ($this->siteApp->getIdentity()->id ?? 0)) {
+            return false;
+        }
 
         if ($until < time() || $sig === '') {
             return false;
@@ -694,7 +698,7 @@ class ApiController extends BaseController
             return false;
         }
 
-        $payload = $formId . '|' . $until;
+        $payload = $formId . '|' . $until . '|' . $userId;
         $expected = hash_hmac('sha256', $payload, $secret);
 
         $actorPayload = $payload . '|' . $actorId . '|' . $actorName;

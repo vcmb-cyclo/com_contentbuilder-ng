@@ -1469,7 +1469,7 @@ by this block. -->
 		'option' => 'com_contentbuilderng',
 		'task' => 'edit.display',
 		'backtolist' => 1,
-		'id' => (int) Factory::getApplication()->input->getInt('id', 0),
+		($directStorageMode ? 'storage_id' : 'id') => $directStorageMode ? $directStorageId : (int) Factory::getApplication()->input->getInt('id', 0),
 		'Itemid' => (int) Factory::getApplication()->input->getInt('Itemid', 0),
 	];
 	$listEditTmpl = (string) Factory::getApplication()->input->get('tmpl', '', 'string');
@@ -1492,6 +1492,7 @@ by this block. -->
 		'option' => 'com_contentbuilderng',
 		'task' => 'edit.publish',
 		'backtolist' => 1,
+		($directStorageMode ? 'storage_id' : 'id') => $directStorageMode ? $directStorageId : (int) Factory::getApplication()->input->getInt('id', 0),
 		'Itemid' => (int) Factory::getApplication()->input->getInt('Itemid', 0),
 	];
 	if ($listEditTmpl !== '') {

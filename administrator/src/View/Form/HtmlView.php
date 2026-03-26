@@ -201,7 +201,8 @@ class HtmlView extends BaseHtmlView
             if ($previewActorName === '') {
                 $previewActorName = 'administrator';
             }
-            $previewPayload = $formId . '|' . $previewUntil . '|' . $previewActorId . '|' . $previewActorName;
+            $previewUserId = (int) ($identity->id ?? 0);
+            $previewPayload = $formId . '|' . $previewUntil . '|' . $previewActorId . '|' . $previewActorName . '|' . $previewUserId;
             $previewSig = hash_hmac('sha256', $previewPayload, (string) $app->get('secret'));
             $previewUrl = Uri::root()
                 . 'index.php?option=com_contentbuilderng&task=list.display&id='
@@ -210,6 +211,7 @@ class HtmlView extends BaseHtmlView
                 . '&cb_preview_until=' . $previewUntil
                 . '&cb_preview_actor_id=' . $previewActorId
                 . '&cb_preview_actor_name=' . rawurlencode($previewActorName)
+                . '&cb_preview_user_id=' . $previewUserId
                 . '&cb_preview_sig=' . $previewSig;
             $toolbar->appendButton(
                 'Link',

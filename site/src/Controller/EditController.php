@@ -75,14 +75,19 @@ class EditController extends BaseController
         $this->frontend = $this->siteApp->isClient('site');
        
         $this->siteApp->input->set('cbIsNew', 0);
+        $storageId = (int) $this->siteApp->input->getInt('storage_id', 0);
+        $isDirectStorageMode = $storageId > 0 && $this->siteApp->input->getInt('id', 0) <= 0;
+        $isAdminPreview = $isDirectStorageMode ? $this->isValidAdminPreviewRequest(0, $storageId) : false;
 
-        if ($this->siteApp->input->getCmd('task', '') == 'delete' || $this->siteApp->input->getCmd('task', '') == 'publish') {
+        if ($isDirectStorageMode && $isAdminPreview) {
+            $this->getPermissionService()->setStoragePreviewPermissions($storageId, $this->frontend ? '_fe' : '');
+        } elseif ($this->siteApp->input->getCmd('task', '') == 'delete' || $this->siteApp->input->getCmd('task', '') == 'publish') {
             $items = $this->siteApp->input->get('cid', [], 'array');
             $this->getPermissionService()->setPermissions($this->siteApp->input->getInt('id', 0), $items, $this->frontend ? '_fe' : '');
         } else {
-            if ($this->siteApp->input->getCmd('record_id', '')) {
+            if (!$isDirectStorageMode && $this->siteApp->input->getCmd('record_id', '')) {
                 $this->getPermissionService()->setPermissions($this->siteApp->input->getInt('id', 0), $this->siteApp->input->getCmd('record_id', ''), $this->frontend ? '_fe' : '');
-            } else {
+            } elseif (!$isDirectStorageMode) {
                 $this->siteApp->input->set('cbIsNew', 1);
                 $this->getPermissionService()->setPermissions($this->siteApp->input->getInt('id', 0), 0, $this->frontend ? '_fe' : '');
             }
@@ -434,13 +439,19 @@ class EditController extends BaseController
 
         $actorId = (int) $this->input->getInt('cb_preview_actor_id', 0);
         $actorName = trim((string) $this->input->getString('cb_preview_actor_name', ''));
+        $userId = (int) $this->input->getInt('cb_preview_user_id', 0);
         $adminReturn = trim((string) $this->input->getCmd('cb_admin_return', ''));
+
+        if ($userId < 1) {
+            return '';
+        }
 
         return '&cb_preview=1'
             . '&cb_preview_until=' . $until
             . '&cb_preview_actor_id=' . $actorId
             . '&cb_preview_actor_name=' . rawurlencode($actorName)
             . '&cb_preview_sig=' . rawurlencode($sig)
+            . '&cb_preview_user_id=' . $userId
             . ($adminReturn !== '' ? '&cb_admin_return=' . rawurlencode($adminReturn) : '');
     }
 
@@ -460,6 +471,8 @@ class EditController extends BaseController
         $app   = $this->siteApp;
 
         $suffix = '_fe';
+        $storageId = (int) $this->input->getInt('storage_id', 0);
+        $isDirectStorageMode = $storageId > 0 && $this->input->getInt('id', 0) <= 0;
 
         // 1) d'abord depuis l'URL
         $formId   = $this->input->getInt('id', 0);
@@ -487,11 +500,17 @@ class EditController extends BaseController
         $this->siteApp->input->set('view', 'edit');
 
         // Permissions
-        $this->getPermissionService()->setPermissions($formId, $recordId, $suffix);
-
-        $isAdminPreview = $this->isValidAdminPreviewRequest($formId);
+        $isAdminPreview = $isDirectStorageMode
+            ? $this->isValidAdminPreviewRequest(0, $storageId)
+            : $this->isValidAdminPreviewRequest($formId);
         $this->input->set('cb_preview_ok', $isAdminPreview ? 1 : 0);
         $this->siteApp->input->set('cb_preview_ok', $isAdminPreview ? 1 : 0);
+
+        if ($isDirectStorageMode && $isAdminPreview) {
+            $this->getPermissionService()->setStoragePreviewPermissions($storageId, $this->frontend ? '_fe' : '');
+        } elseif (!$isDirectStorageMode) {
+            $this->getPermissionService()->setPermissions($formId, $recordId, $suffix);
+        }
         if (!$isAdminPreview) {
             if ($this->siteApp->input->getCmd('record_id', '')) {
                 $this->getPermissionService()->checkPermissions('edit', Text::_('COM_CONTENTBUILDERNG_PERMISSIONS_EDIT_NOT_ALLOWED'), $this->frontend ? '_fe' : '');
@@ -520,6 +539,10 @@ class EditController extends BaseController
         $sig   = (string) $this->input->getString('cb_preview_sig', '');
         $actorId = (int) $this->input->getInt('cb_preview_actor_id', 0);
         $actorName = trim((string) $this->input->getString('cb_preview_actor_name', ''));
+        $userId = (int) $this->input->getInt('cb_preview_user_id', 0);
+        if ($userId < 1 || $userId !== (int) ($this->siteApp->getIdentity()->id ?? 0)) {
+            return false;
+        }
 
         if ($until < time() || $sig === '') {
             return false;
@@ -539,7 +562,7 @@ class EditController extends BaseController
         }
 
         foreach ($targets as $target) {
-            $payload  = $target . '|' . $until;
+            $payload  = $target . '|' . $until . '|' . $userId;
             $expected = hash_hmac('sha256', $payload, $secret);
             $actorPayload = $payload . '|' . $actorId . '|' . $actorName;
             $actorExpected = hash_hmac('sha256', $actorPayload, $secret);

@@ -335,6 +335,43 @@ class PermissionService
         return (bool) $this->checkPermissions($action, '', '_fe', true);
     }
 
+    public function setStoragePreviewPermissions(int $storageId, string $suffix = '_fe'): void
+    {
+        if ($storageId < 1) {
+            return;
+        }
+
+        $app = $this->getApp();
+        $session = $app->getSession();
+        $key = 'com_contentbuilderng.permissions' . $suffix;
+
+        $permissions = [
+            'published' => true,
+            'limit_edit' => true,
+            'limit_add' => true,
+            'verify_view' => true,
+            'verify_new' => true,
+            'verify_edit' => true,
+            'own' . $suffix => [
+                'view' => ['own' => true, 'form_id' => 0, 'record_id' => 0],
+                'new' => ['own' => true, 'form_id' => 0, 'record_id' => 0],
+                'edit' => ['own' => true, 'form_id' => 0, 'record_id' => 0],
+                'listaccess' => ['own' => true, 'form_id' => 0, 'record_id' => 0],
+            ],
+        ];
+
+        foreach (Access::getGroupsByUser($this->getCurrentUserId()) as $groupId) {
+            $permissions[(int) $groupId] = [
+                'view' => true,
+                'new' => true,
+                'edit' => true,
+                'listaccess' => true,
+            ];
+        }
+
+        $session->set($key, $permissions);
+    }
+
     private function isSignedAdminPreviewRequest(int $formId): bool
     {
         $app = $this->getApp();
@@ -359,7 +396,12 @@ class PermissionService
 
         $actorId = (int) $input->getInt('cb_preview_actor_id', 0);
         $actorName = trim((string) $input->getString('cb_preview_actor_name', ''));
-        $payload = $formId . '|' . $until;
+        $userId = (int) $input->getInt('cb_preview_user_id', 0);
+        if ($userId < 1 || $userId !== (int) ($app->getIdentity()->id ?? 0)) {
+            return false;
+        }
+
+        $payload = $formId . '|' . $until . '|' . $userId;
         $expected = hash_hmac('sha256', $payload, $secret);
         $actorPayload = $payload . '|' . $actorId . '|' . $actorName;
         $actorExpected = hash_hmac('sha256', $actorPayload, $secret);

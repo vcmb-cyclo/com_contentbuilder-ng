@@ -325,6 +325,9 @@ class ListController extends BaseController
         $isAdminPreview = $this->isValidAdminPreviewRequest($formId, $storageId);
         $this->input->set('cb_preview_ok', $isAdminPreview ? 1 : 0);
         Factory::getApplication()->input->set('cb_preview_ok', $isAdminPreview ? 1 : 0);
+        if ($isDirectStorageMode && $isAdminPreview) {
+            $this->getPermissionService()->setStoragePreviewPermissions($storageId, $suffix);
+        }
         if ($isAdminPreview && !$isDirectStorageMode) {
             $this->enqueueUnpublishedPreviewNotice($formId);
         }
@@ -451,6 +454,12 @@ class ListController extends BaseController
             return false;
         }
 
+        $userId = (int) $this->input->getInt('cb_preview_user_id', 0);
+        $app = Factory::getApplication();
+        if ($userId < 1 || $userId !== (int) ($app->getIdentity()->id ?? 0)) {
+            return false;
+        }
+
         $targets = [];
         if ($formId > 0) {
             $targets[] = (string) $formId;
@@ -460,7 +469,7 @@ class ListController extends BaseController
         }
 
         foreach ($targets as $target) {
-            $payload  = $target . '|' . $until;
+            $payload  = $target . '|' . $until . '|' . $userId;
             $expected = hash_hmac('sha256', $payload, $secret);
             $actorPayload = $payload . '|' . $actorId . '|' . $actorName;
             $actorExpected = hash_hmac('sha256', $actorPayload, $secret);
@@ -540,12 +549,14 @@ class ListController extends BaseController
 
         $actorId = (int) $this->input->getInt('cb_preview_actor_id', 0);
         $actorName = trim((string) $this->input->getString('cb_preview_actor_name', ''));
+        $userId = (int) $this->input->getInt('cb_preview_user_id', 0);
         $adminReturn = trim((string) $this->input->getCmd('cb_admin_return', ''));
 
         return '&cb_preview=1'
             . '&cb_preview_until=' . $until
             . '&cb_preview_actor_id=' . $actorId
             . '&cb_preview_actor_name=' . rawurlencode($actorName)
+            . '&cb_preview_user_id=' . $userId
             . '&cb_preview_sig=' . rawurlencode($sig)
             . ($adminReturn !== '' ? '&cb_admin_return=' . rawurlencode($adminReturn) : '');
     }

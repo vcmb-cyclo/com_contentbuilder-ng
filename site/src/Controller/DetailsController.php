@@ -174,9 +174,14 @@ class DetailsController extends BaseController
         if (!$isDirectStorageMode) {
             $this->getPermissionService()->setPermissions($form_id, $recordId, $suffix);
         }
-        $isAdminPreview = !$isDirectStorageMode && $this->isValidAdminPreviewRequest($form_id);
+        $isAdminPreview = $isDirectStorageMode
+            ? $this->isValidAdminPreviewRequest(0, $storageId)
+            : $this->isValidAdminPreviewRequest($form_id);
         $this->input->set('cb_preview_ok', $isAdminPreview ? 1 : 0);
         $this->siteApp->input->set('cb_preview_ok', $isAdminPreview ? 1 : 0);
+        if ($isDirectStorageMode && $isAdminPreview) {
+            $this->getPermissionService()->setStoragePreviewPermissions($storageId, $suffix);
+        }
         if (!$isDirectStorageMode && !$isAdminPreview) {
             $this->getPermissionService()->checkPermissions('view', Text::_('COM_CONTENTBUILDERNG_PERMISSIONS_VIEW_NOT_ALLOWED'), $this->frontend ? '_fe' : '');
         }
@@ -255,9 +260,9 @@ class DetailsController extends BaseController
     /**
      * Validates a short-lived preview signature generated in admin toolbar.
      */
-    private function isValidAdminPreviewRequest(int $formId): bool
+    private function isValidAdminPreviewRequest(int $formId, int $storageId = 0): bool
     {
-        if ($formId < 1 || !$this->input->getBool('cb_preview', false)) {
+        if (($formId < 1 && $storageId < 1) || !$this->input->getBool('cb_preview', false)) {
             return false;
         }
 
@@ -265,6 +270,10 @@ class DetailsController extends BaseController
         $sig   = (string) $this->input->getString('cb_preview_sig', '');
         $actorId = (int) $this->input->getInt('cb_preview_actor_id', 0);
         $actorName = trim((string) $this->input->getString('cb_preview_actor_name', ''));
+        $userId = (int) $this->input->getInt('cb_preview_user_id', 0);
+        if ($userId < 1 || $userId !== (int) ($this->siteApp->getIdentity()->id ?? 0)) {
+            return false;
+        }
 
         if ($until < time() || $sig === '') {
             return false;
@@ -275,25 +284,35 @@ class DetailsController extends BaseController
             return false;
         }
 
-        $payload  = $formId . '|' . $until;
-        $expected = hash_hmac('sha256', $payload, $secret);
-        $actorPayload = $payload . '|' . $actorId . '|' . $actorName;
-        $actorExpected = hash_hmac('sha256', $actorPayload, $secret);
-
-        if (($actorId > 0 || $actorName !== '') && hash_equals($actorExpected, $sig)) {
-            $this->input->set('cb_preview_actor_id', $actorId);
-            $this->input->set('cb_preview_actor_name', $actorName);
-            $this->siteApp->input->set('cb_preview_actor_id', $actorId);
-            $this->siteApp->input->set('cb_preview_actor_name', $actorName);
-            return true;
+        $targets = [];
+        if ($formId > 0) {
+            $targets[] = (string) $formId;
+        }
+        if ($storageId > 0) {
+            $targets[] = 'storage:' . $storageId;
         }
 
-        if (hash_equals($expected, $sig)) {
-            $this->input->set('cb_preview_actor_id', 0);
-            $this->input->set('cb_preview_actor_name', '');
-            $this->siteApp->input->set('cb_preview_actor_id', 0);
-            $this->siteApp->input->set('cb_preview_actor_name', '');
-            return true;
+        foreach ($targets as $target) {
+            $payload  = $target . '|' . $until . '|' . $userId;
+            $expected = hash_hmac('sha256', $payload, $secret);
+            $actorPayload = $payload . '|' . $actorId . '|' . $actorName;
+            $actorExpected = hash_hmac('sha256', $actorPayload, $secret);
+
+            if (($actorId > 0 || $actorName !== '') && hash_equals($actorExpected, $sig)) {
+                $this->input->set('cb_preview_actor_id', $actorId);
+                $this->input->set('cb_preview_actor_name', $actorName);
+                $this->siteApp->input->set('cb_preview_actor_id', $actorId);
+                $this->siteApp->input->set('cb_preview_actor_name', $actorName);
+                return true;
+            }
+
+            if (hash_equals($expected, $sig)) {
+                $this->input->set('cb_preview_actor_id', 0);
+                $this->input->set('cb_preview_actor_name', '');
+                $this->siteApp->input->set('cb_preview_actor_id', 0);
+                $this->siteApp->input->set('cb_preview_actor_name', '');
+                return true;
+            }
         }
 
         return false;

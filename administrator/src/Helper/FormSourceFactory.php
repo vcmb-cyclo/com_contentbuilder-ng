@@ -40,8 +40,12 @@ final class FormSourceFactory
 
         $actorId = (int) $input->getInt('cb_preview_actor_id', 0);
         $actorName = trim((string) $input->getString('cb_preview_actor_name', ''));
+        $userId = (int) $input->getInt('cb_preview_user_id', 0);
+        if ($userId < 1 || $userId !== (int) ($app->getIdentity()->id ?? 0)) {
+            return false;
+        }
 
-        $payload = $formId . '|' . $until;
+        $payload = $formId . '|' . $until . '|' . $userId;
         $expected = hash_hmac('sha256', $payload, $secret);
         $actorPayload = $payload . '|' . $actorId . '|' . $actorName;
         $actorExpected = hash_hmac('sha256', $actorPayload, $secret);

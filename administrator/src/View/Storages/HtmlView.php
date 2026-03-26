@@ -114,7 +114,8 @@ class HtmlView extends BaseHtmlView
                 continue;
             }
 
-            $previewPayload = 'storage:' . $storageId . '|' . $previewUntil . '|' . $previewActorId . '|' . $previewActorName;
+            $previewUserId = (int) ($identity->id ?? 0);
+            $previewPayload = 'storage:' . $storageId . '|' . $previewUntil . '|' . $previewActorId . '|' . $previewActorName . '|' . $previewUserId;
             $previewSig = hash_hmac('sha256', $previewPayload, $secret);
 
             $links[$storageId] = Uri::root()
@@ -124,6 +125,7 @@ class HtmlView extends BaseHtmlView
                 . '&cb_preview_until=' . $previewUntil
                 . '&cb_preview_actor_id=' . $previewActorId
                 . '&cb_preview_actor_name=' . rawurlencode($previewActorName)
+                . '&cb_preview_user_id=' . $previewUserId
                 . '&cb_preview_sig=' . $previewSig
                 . '&cb_admin_return=storages';
         }
