@@ -85,22 +85,22 @@ $sortLink = function (string $label, string $field) use ($ordering, $direction, 
             <option> -
                 <?php echo Text::_('COM_CONTENTBUILDERNG_SET_VERIFICATION'); ?> -
             </option>
-            <option value="verified_view">
+            <option value="users.verified_view">
                 <?php echo Text::_('COM_CONTENTBUILDERNG_VERIFIED_VIEW'); ?>
             </option>
-            <option value="not_verified_view">
+            <option value="users.not_verified_view">
                 <?php echo Text::_('COM_CONTENTBUILDERNG_UNVERIFIED_VIEW'); ?>
             </option>
-            <option value="verified_new">
+            <option value="users.verified_new">
                 <?php echo Text::_('COM_CONTENTBUILDERNG_VERIFIED_NEW'); ?>
             </option>
-            <option value="not_verified_new">
+            <option value="users.not_verified_new">
                 <?php echo Text::_('COM_CONTENTBUILDERNG_UNVERIFIED_NEW'); ?>
             </option>
-            <option value="verified_edit">
+            <option value="users.verified_edit">
                 <?php echo Text::_('COM_CONTENTBUILDERNG_VERIFIED_EDIT'); ?>
             </option>
-            <option value="not_verified_edit">
+            <option value="users.not_verified_edit">
                 <?php echo Text::_('COM_CONTENTBUILDERNG_UNVERIFIED_EDIT'); ?>
             </option>
         </select>

@@ -397,7 +397,7 @@ CSS
                 'extraHtml' => $detailsToolbarExtraHtml,
                 'showDelete' => $delete_allowed,
                 'deleteTitle' => Text::_('COM_CONTENTBUILDERNG_DELETE'),
-                'showClose' => $showCloseButton && ($showTopBar || (!$showTopBar && (!$this->show_page_heading || !$this->page_title))),
+                'showClose' => $showCloseButton,
                 'closeTitle' => Text::_('COM_CONTENTBUILDERNG_CLOSE'),
                 'closeHref' => $closeListLink,
             ],
