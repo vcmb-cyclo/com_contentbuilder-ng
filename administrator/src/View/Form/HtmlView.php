@@ -121,7 +121,7 @@ class HtmlView extends BaseHtmlView
         }
 
         ToolbarHelper::title(
-            Text::_('COM_CONTENTBUILDERNG') . ' / ' . Text::_('COM_CONTENTBUILDERNG_FORMS') . ' / ' . $formLabel
+            Text::_('COM_CONTENTBUILDERNG') . ' / ' . Text::_('COM_CONTENTBUILDERNG_ABOUT_CONFIG_SECTION_FORMS') . ' / ' . $formLabel
                 . ' <small><small>[ ' . $text . ' ]</small></small>',
             'logo_left'
         );

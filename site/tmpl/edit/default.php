@@ -116,7 +116,7 @@ $previewFrontendPermissionKey = in_array((string) $recordId, ['', '0'], true)
 $previewFrontendPermissionHint = Text::sprintf(
     'COM_CONTENTBUILDERNG_PREVIEW_FRONTEND_PERMISSION_HINT',
     Text::_($previewFrontendPermissionKey),
-    Text::_('COM_CONTENTBUILDERNG_PERMISSIONS_FRONTEND')
+    Text::_('COM_CONTENTBUILDERNG_DISPLAY_FRONTEND')
 );
 $editScreenAdminUrl = Uri::root() . 'administrator/index.php?option=com_contentbuilderng&view=form&layout=edit&id=' . (int) $id . '&tab=tab5&force_view_tab=tab5';
 if ($previewEnabled && $previewUntil > 0 && $previewSig !== '') {

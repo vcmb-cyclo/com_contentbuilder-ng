@@ -36,7 +36,7 @@ $tooltipLinkGithub = Text::_('COM_CONTENTBUILDERNG_ABOUT_TOOLTIP_LINK_GITHUB');
 $tooltipLinkLicense = Text::_('COM_CONTENTBUILDERNG_ABOUT_TOOLTIP_LINK_LICENSE');
 $labelAuditButton = Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT');
 $labelDbRepairButton = Text::_('COM_CONTENTBUILDERNG_ABOUT_MIGRATE_PACKED_DATA');
-$labelShowLogButton = Text::_('COM_CONTENTBUILDERNG_ABOUT_SHOW_LOG');
+$labelShowLogButton = Text::_('COM_CONTENTBUILDERNG_ABOUT_LAST_LOG');
 $auditRowNumberLabel = Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_ROW');
 $auditReport = is_array($this->auditReport ?? null) ? $this->auditReport : [];
 $auditSummary = (array) ($auditReport['summary'] ?? []);
@@ -992,7 +992,7 @@ $renderNumberedAuditTitle = static function (int $number, string $label, bool $h
                         <td><?php echo max(0, count($mixedTableCollations) - 1); ?></td>
                     </tr>
                     <tr class="<?php echo $missingAuditColumnsTableCount > 0 ? 'table-warning' : ''; ?>">
-                        <th scope="row"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_MISSING_AUDIT_COLUMNS_TABLES'); ?></th>
+                        <th scope="row"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_MISSING_AUDIT_COLUMNS'); ?></th>
                         <td><?php echo $missingAuditColumnsTableCount; ?></td>
                     </tr>
                     <tr class="<?php echo $missingAuditColumnsTotal > 0 ? 'table-warning' : ''; ?>">
@@ -1761,7 +1761,7 @@ $renderNumberedAuditTitle = static function (int $number, string $label, bool $h
             <?php endif; ?>
 
             <?php if (!empty($cbMissingNgTables)) : ?>
-                <h4 class="h6 mt-3"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_CB_NG_TABLES_MISSING_LIST'); ?></h4>
+                <h4 class="h6 mt-3"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_CB_NG_TABLES_MISSING'); ?></h4>
                 <ol class="mb-0 ps-3">
                     <?php foreach ($cbMissingNgTables as $missingNgTable) : ?>
                         <li><?php echo htmlspecialchars((string) $missingNgTable, ENT_QUOTES, 'UTF-8'); ?></li>
@@ -1842,7 +1842,7 @@ $renderNumberedAuditTitle = static function (int $number, string $label, bool $h
             <div class="col-12 col-md-6 col-lg-1">
                 <div class="cb-about-version-tile cb-about-version-tile--version">
                     <span class="cb-about-version-icon" aria-hidden="true">VER</span>
-                    <p class="cb-about-version-label"><?php echo Text::_('COM_CONTENTBUILDERNG_VERSION_LABEL'); ?></p>
+                    <p class="cb-about-version-label"><?php echo Text::_('COM_CONTENTBUILDERNG_JS_LIBRARY_VERSION'); ?></p>
                     <p class="cb-about-version-value"><?php echo htmlspecialchars($versionValue, ENT_QUOTES, 'UTF-8'); ?></p>
                 </div>
             </div>
@@ -1856,7 +1856,7 @@ $renderNumberedAuditTitle = static function (int $number, string $label, bool $h
             <div class="col-12 col-md-6 col-lg-4">
                 <div class="cb-about-version-tile cb-about-version-tile--author">
                     <span class="cb-about-version-icon" aria-hidden="true">DEV</span>
-                    <p class="cb-about-version-label"><?php echo Text::_('COM_CONTENTBUILDERNG_AUTHOR_LABEL'); ?></p>
+                    <p class="cb-about-version-label"><?php echo Text::_('COM_CONTENTBUILDERNG_AUTHOR'); ?></p>
                     <p class="cb-about-version-value"><?php echo htmlspecialchars($authorValue, ENT_QUOTES, 'UTF-8'); ?></p>
                     <p class="cb-about-version-label mt-2"><?php echo Text::_('COM_CONTENTBUILDERNG_COPYRIGHT_LABEL'); ?></p>
                     <p class="cb-about-version-value"><?php echo htmlspecialchars($copyrightValue, ENT_QUOTES, 'UTF-8'); ?></p>
@@ -1911,8 +1911,8 @@ $renderNumberedAuditTitle = static function (int $number, string $label, bool $h
                                 <table class="table table-sm table-striped align-middle mb-0">
                                     <thead>
                                     <tr>
-                                        <th scope="col"><?php echo Text::_('COM_CONTENTBUILDERNG_PHP_LIBRARY'); ?></th>
-                                        <th scope="col"><?php echo Text::_('COM_CONTENTBUILDERNG_PHP_LIBRARY_VERSION'); ?></th>
+                                        <th scope="col"><?php echo Text::_('COM_CONTENTBUILDERNG_JS_LIBRARY'); ?></th>
+                                        <th scope="col"><?php echo Text::_('COM_CONTENTBUILDERNG_JS_LIBRARY_VERSION'); ?></th>
                                         <th scope="col"><?php echo Text::_('COM_CONTENTBUILDERNG_PHP_LIBRARY_SCOPE'); ?></th>
                                     </tr>
                                     </thead>

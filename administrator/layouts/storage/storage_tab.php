@@ -82,7 +82,7 @@ $ordering = !empty($displayData['ordering']);
                         <td width="100">
                             <label for="title">
                                 <b>
-                                    <?php echo Text::_('COM_CONTENTBUILDERNG_STORAGE_TITLE'); ?>
+                                    <?php echo Text::_('COM_CONTENTBUILDERNG_LIST_STATES_TITLE'); ?>
                                 </b>
                             </label>
                         </td>
@@ -223,7 +223,7 @@ $ordering = !empty($displayData['ordering']);
                                     <thead>
                                         <tr>
                                             <th style="width:40%;"><?php echo Text::_('COM_CONTENTBUILDERNG_NAME'); ?></th>
-                                            <th style="width:45%;"><?php echo Text::_('COM_CONTENTBUILDERNG_STORAGE_TITLE'); ?></th>
+                                            <th style="width:45%;"><?php echo Text::_('COM_CONTENTBUILDERNG_LIST_STATES_TITLE'); ?></th>
                                             <th style="width:15%;"><?php echo Text::_('JSTATUS'); ?></th>
                                         </tr>
                                     </thead>
@@ -277,7 +277,7 @@ $ordering = !empty($displayData['ordering']);
                                 <td width="100">
                                     <label for="fieldtitle">
                                         <b>
-                                            <?php echo Text::_('COM_CONTENTBUILDERNG_STORAGE_TITLE'); ?>
+                                            <?php echo Text::_('COM_CONTENTBUILDERNG_LIST_STATES_TITLE'); ?>
                                         </b>
                                     </label>
                                 </td>
@@ -343,7 +343,7 @@ Label 3;value3</textarea>
                             <?php echo is_callable($sortLink) ? $sortLink(Text::_('COM_CONTENTBUILDERNG_NAME'), 'name') : Text::_('COM_CONTENTBUILDERNG_NAME'); ?>
                         </th>
                         <th>
-                            <?php echo is_callable($sortLink) ? $sortLink(Text::_('COM_CONTENTBUILDERNG_STORAGE_TITLE'), 'title') : Text::_('COM_CONTENTBUILDERNG_STORAGE_TITLE'); ?>
+                            <?php echo is_callable($sortLink) ? $sortLink(Text::_('COM_CONTENTBUILDERNG_LIST_STATES_TITLE'), 'title') : Text::_('COM_CONTENTBUILDERNG_LIST_STATES_TITLE'); ?>
                         </th>
                         <th>
                             <?php echo is_callable($sortLink) ? $sortLink(Text::_('COM_CONTENTBUILDERNG_STORAGE_GROUP'), 'group_definition') : Text::_('COM_CONTENTBUILDERNG_STORAGE_GROUP'); ?>
@@ -352,7 +352,7 @@ Label 3;value3</textarea>
                             <?php echo is_callable($sortLink) ? $sortLink(Text::_('COM_CONTENTBUILDERNG_ORDERBY'), 'ordering') : Text::_('COM_CONTENTBUILDERNG_ORDERBY'); ?>
                         </th>
                         <th>
-                            <?php echo is_callable($sortLink) ? $sortLink(Text::_('COM_CONTENTBUILDERNG_PUBLISHED'), 'published') : Text::_('COM_CONTENTBUILDERNG_PUBLISHED'); ?>
+                            <?php echo is_callable($sortLink) ? $sortLink(Text::_('COM_CONTENTBUILDERNG_LIST_STATES_PUBLISHED'), 'published') : Text::_('COM_CONTENTBUILDERNG_LIST_STATES_PUBLISHED'); ?>
                         </th>
                     </tr>
                 </thead>

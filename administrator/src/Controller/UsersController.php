@@ -90,7 +90,7 @@ class UsersController extends BaseController
             $model->setListVerifiedView();
 
             if ($this->isAjaxCall()) {
-                $this->respondAjax(true, Text::_('COM_CONTENTBUILDERNG_SAVED'));
+                $this->respondAjax(true, Text::_('COM_CONTENTBUILDERNG_SAVE'));
                 return;
             }
         } catch (\Throwable $e) {
@@ -110,7 +110,7 @@ class UsersController extends BaseController
             $model->setListNotVerifiedView();
 
             if ($this->isAjaxCall()) {
-                $this->respondAjax(true, Text::_('COM_CONTENTBUILDERNG_SAVED'));
+                $this->respondAjax(true, Text::_('COM_CONTENTBUILDERNG_SAVE'));
                 return;
             }
         } catch (\Throwable $e) {
@@ -130,7 +130,7 @@ class UsersController extends BaseController
             $model->setListVerifiedNew();
 
             if ($this->isAjaxCall()) {
-                $this->respondAjax(true, Text::_('COM_CONTENTBUILDERNG_SAVED'));
+                $this->respondAjax(true, Text::_('COM_CONTENTBUILDERNG_SAVE'));
                 return;
             }
         } catch (\Throwable $e) {
@@ -150,7 +150,7 @@ class UsersController extends BaseController
             $model->setListNotVerifiedNew();
 
             if ($this->isAjaxCall()) {
-                $this->respondAjax(true, Text::_('COM_CONTENTBUILDERNG_SAVED'));
+                $this->respondAjax(true, Text::_('COM_CONTENTBUILDERNG_SAVE'));
                 return;
             }
         } catch (\Throwable $e) {
@@ -170,7 +170,7 @@ class UsersController extends BaseController
             $model->setListVerifiedEdit();
 
             if ($this->isAjaxCall()) {
-                $this->respondAjax(true, Text::_('COM_CONTENTBUILDERNG_SAVED'));
+                $this->respondAjax(true, Text::_('COM_CONTENTBUILDERNG_SAVE'));
                 return;
             }
         } catch (\Throwable $e) {
@@ -190,7 +190,7 @@ class UsersController extends BaseController
             $model->setListNotVerifiedEdit();
 
             if ($this->isAjaxCall()) {
-                $this->respondAjax(true, Text::_('COM_CONTENTBUILDERNG_SAVED'));
+                $this->respondAjax(true, Text::_('COM_CONTENTBUILDERNG_SAVE'));
                 return;
             }
         } catch (\Throwable $e) {
@@ -225,7 +225,7 @@ class UsersController extends BaseController
             $model->setPublished();
 
             if ($this->isAjaxCall()) {
-                $this->respondAjax(true, Text::_('COM_CONTENTBUILDERNG_PUBLISHED'));
+                $this->respondAjax(true, Text::_('COM_CONTENTBUILDERNG_LIST_STATES_PUBLISHED'));
                 return;
             }
         } catch (\Throwable $e) {
@@ -236,7 +236,7 @@ class UsersController extends BaseController
             $this->setMessage($e->getMessage(), 'warning');
         }
 
-        $this->setRedirect(Route::_($this->getUsersListLink($this->input->getInt('limitstart')), false), Text::_('COM_CONTENTBUILDERNG_PUBLISHED'));
+        $this->setRedirect(Route::_($this->getUsersListLink($this->input->getInt('limitstart')), false), Text::_('COM_CONTENTBUILDERNG_LIST_STATES_PUBLISHED'));
     }
     
     public function unpublish() {

@@ -58,11 +58,11 @@ $formatDate = $displayData['formatDate'] ?? null;
                     <td colspan="3"><?php echo htmlspecialchars($storageName !== '' ? $storageName : '-', ENT_QUOTES, 'UTF-8'); ?></td>
                 </tr>
                 <tr>
-                    <th scope="row"><?php echo Text::_('COM_CONTENTBUILDERNG_STORAGE_TITLE'); ?></th>
+                    <th scope="row"><?php echo Text::_('COM_CONTENTBUILDERNG_LIST_STATES_TITLE'); ?></th>
                     <td colspan="3"><?php echo htmlspecialchars($storageTitle !== '' ? $storageTitle : '-', ENT_QUOTES, 'UTF-8'); ?></td>
                 </tr>
                 <tr>
-                    <th scope="row"><?php echo Text::_('COM_CONTENTBUILDERNG_PUBLISHED'); ?></th>
+                    <th scope="row"><?php echo Text::_('COM_CONTENTBUILDERNG_LIST_STATES_PUBLISHED'); ?></th>
                     <td colspan="3">
                         <?php if ((int) ($item->id ?? 0) > 0) : ?>
                             <?php echo $publishedToggleHtml; ?>

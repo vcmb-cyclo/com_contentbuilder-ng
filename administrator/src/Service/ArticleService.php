@@ -72,7 +72,12 @@ class ArticleService
         }
 
         $db = Factory::getContainer()->get(DatabaseInterface::class);
-        $db->setQuery('Select * From #__contentbuilderng_forms Where id = ' . (int) $contentbuilderngFormId . ' And published = 1');
+        $query = $db->getQuery(true)
+            ->select('*')
+            ->from($db->quoteName('#__contentbuilderng_forms'))
+            ->where($db->quoteName('id') . ' = ' . (int)$contentbuilderngFormId)
+            ->where($db->quoteName('published') . ' = 1');
+        $db->setQuery($query);
         $form = $db->loadAssoc();
 
         if (!$form) {
@@ -89,10 +94,18 @@ class ArticleService
             if ($recordId) {
                 $formObject = $this->formResolverService->getForm($form['type'], $form['reference_id']);
                 $meta = $formObject->getRecordMetadata($recordId);
-                $db->setQuery('Select * From #__users Where id = ' . $meta->created_id);
+                $query = $db->getQuery(true)
+                    ->select('*')
+                    ->from($db->quoteName('#__users'))
+                    ->where($db->quoteName('id') . ' = ' . (int)$meta->created_id);
+                $db->setQuery($query);
                 $user = $db->loadObject();
             } elseif ($this->getCurrentUserId()) {
-                $db->setQuery('Select * From #__users Where id = ' . $this->getCurrentUserId());
+                $query = $db->getQuery(true)
+                    ->select('*')
+                    ->from($db->quoteName('#__users'))
+                    ->where($db->quoteName('id') . ' = ' . (int)$this->getCurrentUserId());
+                $db->setQuery($query);
                 $user = $db->loadObject();
             }
         }
@@ -134,25 +147,36 @@ class ArticleService
             [$introtext, $fulltext] = preg_split($pattern, $tpl, 2);
         }
 
-        $db->setQuery(
-            'Select published, is_future, publish_up, publish_down From #__contentbuilderng_records'
-            . ' Where `type` = ' . $db->quote($form['type'])
-            . ' And reference_id = ' . $db->quote($form['reference_id'])
-            . ' And record_id = ' . $db->quote($recordId)
-        );
+        $query = $db->getQuery(true)
+            ->select([
+                $db->quoteName('published'),
+                $db->quoteName('is_future'),
+                $db->quoteName('publish_up'),
+                $db->quoteName('publish_down')
+            ])
+            ->from($db->quoteName('#__contentbuilderng_records'))
+            ->where($db->quoteName('type') . ' = ' . $db->quote($form['type']))
+            ->where($db->quoteName('reference_id') . ' = ' . $db->quote($form['reference_id']))
+            ->where($db->quoteName('record_id') . ' = ' . $db->quote($recordId));
+        $db->setQuery($query);
         $stateData = $db->loadAssoc();
         $publishUpRecord = $stateData['publish_up'];
         $publishDownRecord = $stateData['publish_down'];
         $state = $stateData['is_future'] ? 1 : $stateData['published'];
 
         $alias = '';
-        $db->setQuery(
-            'Select articles.`article_id`, content.`alias`'
-            . ' From #__contentbuilderng_articles As articles, #__content As content'
-            . ' Where content.id = articles.article_id And (content.state = 1 Or content.state = 0)'
-            . ' And articles.form_id = ' . (int) $contentbuilderngFormId
-            . ' And articles.record_id = ' . $db->quote($recordId)
-        );
+        $query = $db->getQuery(true)
+            ->select([
+                $db->quoteName('articles.article_id'),
+                $db->quoteName('content.alias')
+            ])
+            ->from($db->quoteName('#__contentbuilderng_articles', 'articles'))
+            ->innerJoin($db->quoteName('#__content', 'content') . ' ON '
+                . $db->quoteName('content.id') . ' = ' . $db->quoteName('articles.article_id'))
+            ->where($db->quoteName('content.state') . ' IN (0, 1)')
+            ->where($db->quoteName('articles.form_id') . ' = ' . (int)$contentbuilderngFormId)
+            ->where($db->quoteName('articles.record_id') . ' = ' . $db->quote($recordId));
+        $db->setQuery($query);
         $article = $db->loadAssoc();
 
         if (is_array($article)) {
@@ -202,7 +226,12 @@ class ArticleService
         $ignoreLangCode = '*';
 
         if ($form['default_lang_code_ignore']) {
-            $db->setQuery("Select lang_code From #__languages Where published = 1 And sef = " . $db->quote($input->getCmd('lang', '')));
+            $query = $db->getQuery(true)
+                ->select($db->quoteName('lang_code'))
+                ->from($db->quoteName('#__languages'))
+                ->where($db->quoteName('published') . ' = 1')
+                ->where($db->quoteName('sef') . ' = ' . $db->quote($input->getCmd('lang', '')));
+            $db->setQuery($query);
             $ignoreLangCode = $db->loadResult() ?: '*';
         }
 
@@ -218,34 +247,42 @@ class ArticleService
             $language = $config['language'] ?? $language;
 
             if ($form['article_record_impact_language'] && isset($config['language'])) {
-                $db->setQuery('Select sef From #__languages Where published = 1 And lang_code = ' . $db->quote($config['language']));
+                $query = $db->getQuery(true)
+                    ->select($db->quoteName('sef'))
+                    ->from($db->quoteName('#__languages'))
+                    ->where($db->quoteName('published') . ' = 1')
+                    ->where($db->quoteName('lang_code') . ' = ' . $db->quote($config['language']));
+                $db->setQuery($query);
                 $sef = $db->loadResult() ?? '';
-                $db->setQuery(
-                    'Update #__contentbuilderng_records Set sef = ' . $db->quote($sef)
-                    . ', lang_code = ' . $db->quote($config['language'])
-                    . ' Where `type` = ' . $db->quote($form['type'])
-                    . ' And reference_id = ' . $db->quote($form['reference_id'])
-                    . ' And record_id = ' . $db->quote($recordId)
-                );
+                $query = $db->getQuery(true)
+                    ->update($db->quoteName('#__contentbuilderng_records'))
+                    ->set($db->quoteName('sef') . ' = ' . $db->quote($sef))
+                    ->set($db->quoteName('lang_code') . ' = ' . $db->quote($config['language']))
+                    ->where($db->quoteName('type') . ' = ' . $db->quote($form['type']))
+                    ->where($db->quoteName('reference_id') . ' = ' . $db->quote($form['reference_id']))
+                    ->where($db->quoteName('record_id') . ' = ' . $db->quote($recordId));
+                $db->setQuery($query);
                 $db->execute();
             }
 
             if ($form['article_record_impact_publish'] && isset($config['publish_up']) && $config['publish_up'] != $publishUp) {
                 $___now = $_now->toSql();
                 $publishUpConfig = $config['publish_up'] ?? null;
-                $setPart = '';
-
+                
+                $query = $db->getQuery(true)
+                    ->update($db->quoteName('#__contentbuilderng_records'));
+                
                 if ($publishUpConfig && strtotime($publishUpConfig) >= strtotime($___now)) {
-                    $setPart = 'published = 0, is_future = 1, ';
+                    $query->set($db->quoteName('published') . ' = 0')
+                        ->set($db->quoteName('is_future') . ' = 1');
                 }
-
-                $db->setQuery(
-                    'UPDATE #__contentbuilderng_records SET ' . $setPart
-                    . ' publish_up = ' . ($publishUpConfig ? $db->quote($publishUpConfig) : 'NULL')
-                    . ' WHERE `type` = ' . $db->quote($form['type'])
-                    . ' AND reference_id = ' . $db->quote($form['reference_id'])
-                    . ' AND record_id = ' . $db->quote($recordId)
-                );
+                
+                $query->set($db->quoteName('publish_up') . ' = ' . ($publishUpConfig ? $db->quote($publishUpConfig) : 'NULL'))
+                    ->where($db->quoteName('type') . ' = ' . $db->quote($form['type']))
+                    ->where($db->quoteName('reference_id') . ' = ' . $db->quote($form['reference_id']))
+                    ->where($db->quoteName('record_id') . ' = ' . $db->quote($recordId));
+                
+                $db->setQuery($query);
                 $db->execute();
             }
 
@@ -254,19 +291,20 @@ class ArticleService
             if ($form['article_record_impact_publish'] && isset($config['publish_down']) && $config['publish_down'] != $publishDown) {
                 $___now = $_now->toSql();
                 $publishDownConfig = $config['publish_down'] ?? null;
-                $setPart = '';
-
+                
+                $query = $db->getQuery(true)
+                    ->update($db->quoteName('#__contentbuilderng_records'));
+                
                 if ($publishDownConfig && strtotime($publishDownConfig) <= strtotime($___now)) {
-                    $setPart = 'published = 0, ';
+                    $query->set($db->quoteName('published') . ' = 0');
                 }
-
-                $db->setQuery(
-                    'UPDATE #__contentbuilderng_records SET ' . $setPart
-                    . ' publish_down = ' . ($publishDownConfig ? $db->quote($publishDownConfig) : 'NULL')
-                    . ' WHERE `type` = ' . $db->quote($form['type'])
-                    . ' AND reference_id = ' . $db->quote($form['reference_id'])
-                    . ' AND record_id = ' . $db->quote($recordId)
-                );
+                
+                $query->set($db->quoteName('publish_down') . ' = ' . ($publishDownConfig ? $db->quote($publishDownConfig) : 'NULL'))
+                    ->where($db->quoteName('type') . ' = ' . $db->quote($form['type']))
+                    ->where($db->quoteName('reference_id') . ' = ' . $db->quote($form['reference_id']))
+                    ->where($db->quoteName('record_id') . ' = ' . $db->quote($recordId));
+                
+                $db->setQuery($query);
                 $db->execute();
             }
 
@@ -305,17 +343,18 @@ class ArticleService
 
             $createdByAlias = $config['created_by_alias'] ?? '';
 
-            $db->setQuery(
-                'Update #__contentbuilderng_records Set robots = ' . $db->quote($robots)
-                . ', author = ' . $db->quote($author)
-                . ', rights = ' . $db->quote($rights)
-                . ', xreference = ' . $db->quote($xreference)
-                . ', metakey = ' . $db->quote($metakey)
-                . ', metadesc = ' . $db->quote($metadesc)
-                . ' Where `type` = ' . $db->quote($form['type'])
-                . ' And reference_id = ' . $db->quote($form['reference_id'])
-                . ' And record_id = ' . $db->quote($recordId)
-            );
+            $query = $db->getQuery(true)
+                ->update($db->quoteName('#__contentbuilderng_records'))
+                ->set($db->quoteName('robots') . ' = ' . $db->quote($robots))
+                ->set($db->quoteName('author') . ' = ' . $db->quote($author))
+                ->set($db->quoteName('rights') . ' = ' . $db->quote($rights))
+                ->set($db->quoteName('xreference') . ' = ' . $db->quote($xreference))
+                ->set($db->quoteName('metakey') . ' = ' . $db->quote($metakey))
+                ->set($db->quoteName('metadesc') . ' = ' . $db->quote($metadesc))
+                ->where($db->quoteName('type') . ' = ' . $db->quote($form['type']))
+                ->where($db->quoteName('reference_id') . ' = ' . $db->quote($form['reference_id']))
+                ->where($db->quoteName('record_id') . ' = ' . $db->quote($recordId));
+            $db->setQuery($query);
             $db->execute();
 
             $isNew = true;
@@ -411,7 +450,7 @@ class ArticleService
                 . (int) $contentbuilderngFormId . ')'
             );
             $db->execute();
-            $db->setQuery("Update #__content Set introtext = concat('<div style=\\'display:none;\\'><!--(cbArticleId:$article)--></div>', introtext) Where id = $article");
+            $db->setQuery("Update #__content Set introtext = concat('<div style=\'display:none;\'><!--(cbArticleId:" . $article . ")--></div>', introtext) Where id = " . (int)$article);
             $db->execute();
 
             $db->setQuery('Select * From #__assets Where `name` = ' . $db->quote('com_content.category.' . (int) $form['default_category']));
@@ -427,11 +466,19 @@ class ArticleService
                 $assetId = $db->insertid();
                 $db->setQuery('Select max(mrgt.rgt)+1 From #__assets As mrgt');
                 $rgt = $db->loadResult();
-                $db->setQuery('Update `#__assets` Set rgt = ' . $rgt . " Where `name` = 'root.1' And level = 0");
+                $db->setQuery('Update `#__assets` Set rgt = ' . (int)$rgt . " Where name = 'root.1' And level = 0");
                 $db->execute();
-                $db->setQuery('Update `#__content` Set asset_id = ' . $db->quote($assetId) . ' Where `id` = ' . $db->quote($article));
+                $query = $db->getQuery(true)
+                    ->update($db->quoteName('#__content'))
+                    ->set($db->quoteName('asset_id') . ' = ' . (int)$assetId)
+                    ->where($db->quoteName('id') . ' = ' . (int)$article);
+                $db->setQuery($query);
                 $db->execute();
-                $db->setQuery("Insert Into #__workflow_associations (item_id, stage_id, extension) Values (" . $db->quote($article) . " , 1, 'com_content.article')");
+                $query = $db->getQuery(true)
+                    ->insert($db->quoteName('#__workflow_associations'))
+                    ->columns([$db->quoteName('item_id'), $db->quoteName('stage_id'), $db->quoteName('extension')])
+                    ->values((int)$article . ', 1, ' . $db->quote('com_content.article'));
+                $db->setQuery($query);
                 $db->execute();
             }
         } else {

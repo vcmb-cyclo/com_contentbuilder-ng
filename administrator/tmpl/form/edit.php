@@ -490,7 +490,7 @@ if (!empty($editablePrepareSnippetOptions)) {
 }
 
 $prepareEffectOptions = [
-    ['value' => 'none', 'text' => Text::_('COM_CONTENTBUILDERNG_PREPARE_EFFECT_NONE')],
+    ['value' => 'none', 'text' => Text::_('COM_CONTENTBUILDERNG_NONE')],
     ['value' => 'bold', 'text' => Text::_('COM_CONTENTBUILDERNG_PREPARE_EFFECT_BOLD')],
     ['value' => 'red', 'text' => Text::_('COM_CONTENTBUILDERNG_PREPARE_EFFECT_RED')],
     ['value' => 'italic', 'text' => Text::_('COM_CONTENTBUILDERNG_PREPARE_EFFECT_ITALIC')],
@@ -2743,7 +2743,7 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
                                     <div class="d-inline-flex align-items-center gap-2 ms-sm-4 ps-sm-2">
                                         <span class="fw-semibold editlinktip hasTip"
                                             title="<?php echo Text::_('COM_CONTENTBUILDERNG_PUBLISH_TIP'); ?>">
-                                            <?php echo Text::_('COM_CONTENTBUILDERNG_PUBLISHED'); ?> :
+                                            <?php echo Text::_('COM_CONTENTBUILDERNG_LIST_STATES_PUBLISHED'); ?> :
                                         </span>
                                         <?php
                                         $publishedToggleHtml = HTMLHelper::_(

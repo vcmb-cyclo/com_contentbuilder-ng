@@ -54,7 +54,7 @@ $prepareEffectOptions = is_array($displayData['prepareEffectOptions'] ?? null) ?
             <div class="col-lg-8">
                 <label for="upload_directory" class="form-label mb-2"><span class="editlinktip hasTip"
                         title="<?php echo Text::_('COM_CONTENTBUILDERNG_UPLOAD_DIRECTORY_TIP'); ?>">
-                        <?php echo Text::_('COM_CONTENTBUILDERNG_UPLOAD_DIRECTORY'); ?>
+                        <?php echo Text::_('COM_CONTENTBUILDERNG_ELEMENT_OPTIONS_UPLOAD_DIRECTORY'); ?>
                     </span></label>
                 <input class="form-control form-control-sm" type="text"
                     value="<?php echo htmlspecialchars(trim((string) ($item->upload_directory ?? '')) ?: JPATH_SITE . '/media/com_contentbuilderng/upload', ENT_QUOTES, 'UTF-8'); ?>"

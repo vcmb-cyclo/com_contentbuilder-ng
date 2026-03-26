@@ -368,7 +368,7 @@ class StorageController extends BaseFormController
 
         $message = trim((string) ($this->message ?? ''));
         if ($message === '') {
-            $message = Text::_('COM_CONTENTBUILDERNG_SAVED');
+            $message = Text::_('COM_CONTENTBUILDERNG_SAVE');
         }
         $this->setRedirect($link, $message);
         return true;
@@ -589,7 +589,7 @@ class StorageController extends BaseFormController
 
         $this->setRedirect(
             Route::_('index.php?option=com_contentbuilderng&task=storage.display&limitstart=' . $this->input->getInt('limitstart'), false),
-            Text::_('COM_CONTENTBUILDERNG_PUBLISHED'));
+            Text::_('COM_CONTENTBUILDERNG_LIST_STATES_PUBLISHED'));
     }
 
     public function unpublish()

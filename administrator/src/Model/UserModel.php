@@ -48,10 +48,20 @@ class UserModel extends BaseDatabaseModel
             return;
         }
 
-        $this->getDatabase()->setQuery("Select id From #__contentbuilderng_users Where form_id = " . $formId . " And userid = " . $userId);
-        if (!$this->getDatabase()->loadResult()) {
-            $this->getDatabase()->setQuery("Insert Into #__contentbuilderng_users (form_id, userid, published) Values (" . $formId . ", " . $userId . ", 1)");
-            $this->getDatabase()->execute();
+        $db = $this->getDatabase();
+        $query = $db->getQuery(true)
+            ->select($db->quoteName('id'))
+            ->from($db->quoteName('#__contentbuilderng_users'))
+            ->where($db->quoteName('form_id') . ' = ' . (int)$formId)
+            ->where($db->quoteName('userid') . ' = ' . (int)$userId);
+        $db->setQuery($query);
+        if (!$db->loadResult()) {
+            $query = $db->getQuery(true)
+                ->insert($db->quoteName('#__contentbuilderng_users'))
+                ->columns([$db->quoteName('form_id'), $db->quoteName('userid'), $db->quoteName('published')])
+                ->values((int)$formId . ', ' . (int)$userId . ', 1');
+            $db->setQuery($query);
+            $db->execute();
         }
     }
 
@@ -92,9 +102,14 @@ class UserModel extends BaseDatabaseModel
                 $this->ensureContentbuilderngUserRow($this->getCurrentFormId(), (int) $cid);
             }
             
-            $this->getDatabase()->setQuery( ' Update #__contentbuilderng_users '.
-                        '  Set verified_view = 1 Where form_id = '.$this->_form_id.' And userid In ( '.implode(',', $items) . ')' );
-            $this->getDatabase()->execute();
+            $db = $this->getDatabase();
+            $query = $db->getQuery(true)
+                ->update($db->quoteName('#__contentbuilderng_users'))
+                ->set($db->quoteName('verified_view') . ' = 1')
+                ->where($db->quoteName('form_id') . ' = ' . (int)$this->_form_id)
+                ->where($db->quoteName('userid') . ' IN (' . implode(',', array_map('intval', $items)) . ')');
+            $db->setQuery($query);
+            $db->execute();
         }
     }
     
@@ -107,9 +122,14 @@ class UserModel extends BaseDatabaseModel
                 $this->ensureContentbuilderngUserRow($this->getCurrentFormId(), (int) $cid);
             }
             
-            $this->getDatabase()->setQuery( ' Update #__contentbuilderng_users '.
-                        '  Set verified_view = 0 Where form_id = '.$this->_form_id.' And userid In ( '.implode(',', $items) . ')' );
-            $this->getDatabase()->execute();
+            $db = $this->getDatabase();
+            $query = $db->getQuery(true)
+                ->update($db->quoteName('#__contentbuilderng_users'))
+                ->set($db->quoteName('verified_view') . ' = 0')
+                ->where($db->quoteName('form_id') . ' = ' . (int)$this->_form_id)
+                ->where($db->quoteName('userid') . ' IN (' . implode(',', array_map('intval', $items)) . ')');
+            $db->setQuery($query);
+            $db->execute();
         }
     }
 
@@ -121,9 +141,14 @@ class UserModel extends BaseDatabaseModel
                 $this->ensureContentbuilderngUserRow($this->getCurrentFormId(), (int) $cid);
             }
             
-            $this->getDatabase()->setQuery( ' Update #__contentbuilderng_users '.
-                        '  Set verified_new = 1 Where form_id = '.$this->_form_id.' And userid In ( '.implode(',', $items) . ')' );
-            $this->getDatabase()->execute();
+            $db = $this->getDatabase();
+            $query = $db->getQuery(true)
+                ->update($db->quoteName('#__contentbuilderng_users'))
+                ->set($db->quoteName('verified_new') . ' = 1')
+                ->where($db->quoteName('form_id') . ' = ' . (int)$this->_form_id)
+                ->where($db->quoteName('userid') . ' IN (' . implode(',', array_map('intval', $items)) . ')');
+            $db->setQuery($query);
+            $db->execute();
         }
     }
     
@@ -136,9 +161,14 @@ class UserModel extends BaseDatabaseModel
                 $this->ensureContentbuilderngUserRow($this->getCurrentFormId(), (int) $cid);
             }
             
-            $this->getDatabase()->setQuery( ' Update #__contentbuilderng_users '.
-                        '  Set verified_new = 0 Where form_id = '.$this->_form_id.' And userid In ( '.implode(',', $items) . ')' );
-            $this->getDatabase()->execute();
+            $db = $this->getDatabase();
+            $query = $db->getQuery(true)
+                ->update($db->quoteName('#__contentbuilderng_users'))
+                ->set($db->quoteName('verified_new') . ' = 0')
+                ->where($db->quoteName('form_id') . ' = ' . (int)$this->_form_id)
+                ->where($db->quoteName('userid') . ' IN (' . implode(',', array_map('intval', $items)) . ')');
+            $db->setQuery($query);
+            $db->execute();
         }
     }
     
@@ -150,9 +180,14 @@ class UserModel extends BaseDatabaseModel
                 $this->ensureContentbuilderngUserRow($this->getCurrentFormId(), (int) $cid);
             }
             
-            $this->getDatabase()->setQuery( ' Update #__contentbuilderng_users '.
-                        '  Set verified_edit = 1 Where form_id = '.$this->_form_id.' And userid In ( '.implode(',', $items) . ')' );
-            $this->getDatabase()->execute();
+            $db = $this->getDatabase();
+            $query = $db->getQuery(true)
+                ->update($db->quoteName('#__contentbuilderng_users'))
+                ->set($db->quoteName('verified_edit') . ' = 1')
+                ->where($db->quoteName('form_id') . ' = ' . (int)$this->_form_id)
+                ->where($db->quoteName('userid') . ' IN (' . implode(',', array_map('intval', $items)) . ')');
+            $db->setQuery($query);
+            $db->execute();
         }
     }
     
@@ -165,9 +200,14 @@ class UserModel extends BaseDatabaseModel
                 $this->ensureContentbuilderngUserRow($this->getCurrentFormId(), (int) $cid);
             }
             
-            $this->getDatabase()->setQuery( ' Update #__contentbuilderng_users '.
-                        '  Set verified_edit = 0 Where form_id = '.$this->_form_id.' And userid In ( '.implode(',', $items) . ')' );
-            $this->getDatabase()->execute();
+            $db = $this->getDatabase();
+            $query = $db->getQuery(true)
+                ->update($db->quoteName('#__contentbuilderng_users'))
+                ->set($db->quoteName('verified_edit') . ' = 0')
+                ->where($db->quoteName('form_id') . ' = ' . (int)$this->_form_id)
+                ->where($db->quoteName('userid') . ' IN (' . implode(',', array_map('intval', $items)) . ')');
+            $db->setQuery($query);
+            $db->execute();
         }
     }
     
@@ -195,9 +235,19 @@ class UserModel extends BaseDatabaseModel
         $input = $this->getInput();
         $formId = $this->getCurrentFormId();
         $joomlaUserId = (int) $input->getInt('joomla_userid', 0);
-        $this->getDatabase()->setQuery("Select id From #__contentbuilderng_users Where form_id = " . $formId . " And userid = " . $joomlaUserId);
-        if(!$this->getDatabase()->loadResult() && $formId && $joomlaUserId){
-            $this->getDatabase()->setQuery("Insert Into #__contentbuilderng_users (form_id, userid, published) Values (" . $formId . ", " . $joomlaUserId . ", 1)");
+        $db = $this->getDatabase();
+        $query = $db->getQuery(true)
+            ->select($db->quoteName('id'))
+            ->from($db->quoteName('#__contentbuilderng_users'))
+            ->where($db->quoteName('form_id') . ' = ' . (int)$formId)
+            ->where($db->quoteName('userid') . ' = ' . (int)$joomlaUserId);
+        $db->setQuery($query);
+        if(!$db->loadResult() && $formId && $joomlaUserId){
+            $query = $db->getQuery(true)
+                ->insert($db->quoteName('#__contentbuilderng_users'))
+                ->columns([$db->quoteName('form_id'), $db->quoteName('userid'), $db->quoteName('published')])
+                ->values((int)$formId . ', ' . (int)$joomlaUserId . ', 1');
+            $db->setQuery($query);
             $this->getDatabase()->execute();
             $insert = $this->getDatabase()->insertid();
         }

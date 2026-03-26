@@ -54,7 +54,7 @@ if (trim($value) === '' && $emptyValue !== '') {
     <span class="d-inline-flex align-items-center gap-2">
         <span class="form-check form-check-inline mb-0">
             <input class="form-check-input" type="radio" name="<?php echo $slotName; ?>" id="<?php echo $slotValueId; ?>" value="value" checked="checked" <?php echo empty($snippetOptions) ? 'disabled="disabled"' : ''; ?> />
-            <label class="form-check-label" for="<?php echo $slotValueId; ?>"><?php echo Text::_('COM_CONTENTBUILDERNG_PREPARE_TARGET_VALUE_OPTION'); ?></label>
+            <label class="form-check-label" for="<?php echo $slotValueId; ?>"><?php echo Text::_('COM_CONTENTBUILDERNG_COLUMN_HEADER_VALUE'); ?></label>
         </span>
         <span class="form-check form-check-inline mb-0">
             <input class="form-check-input" type="radio" name="<?php echo $slotName; ?>" id="<?php echo $slotLabelId; ?>" value="label" <?php echo empty($snippetOptions) ? 'disabled="disabled"' : ''; ?> />

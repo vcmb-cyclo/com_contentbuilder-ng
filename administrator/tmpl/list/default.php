@@ -306,7 +306,7 @@ if ($themeJs !== '') {
                                 <?php echo Text::_('JOPTION_SELECT_PUBLISHED'); ?> -
                             </option>
                             <option value="1" <?php echo $this->lists['filter_publish'] == 1 ? ' selected="selected"' : ''; ?>>
-                                <?php echo Text::_('COM_CONTENTBUILDERNG_PUBLISHED') ?>
+                                <?php echo Text::_('COM_CONTENTBUILDERNG_LIST_STATES_PUBLISHED') ?>
                             </option>
                             <option value="0" <?php echo $this->lists['filter_publish'] == 0 ? ' selected="selected"' : ''; ?>>
                                 <?php echo Text::_('COM_CONTENTBUILDERNG_UNPUBLISHED') ?>
@@ -432,7 +432,7 @@ if ($themeJs !== '') {
                     if ($this->list_publish && $publish_allowed) {
                         ?>
                         <th class="align-middle text-nowrap small text-uppercase" width="20">
-                            <?php echo Text::_('COM_CONTENTBUILDERNG_PUBLISHED'); ?>
+                            <?php echo Text::_('COM_CONTENTBUILDERNG_LIST_STATES_PUBLISHED'); ?>
                         </th>
                         <?php
                     }

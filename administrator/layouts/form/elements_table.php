@@ -74,7 +74,7 @@ $isModifiedElementSettings = $displayData['isModifiedElementSettings'] ?? null;
                 </span>
             </th>
             <th>
-                <?php echo is_callable($sortLink) ? $sortLink(Text::_('COM_CONTENTBUILDERNG_PUBLISHED'), 'published') : Text::_('COM_CONTENTBUILDERNG_PUBLISHED'); ?>
+                <?php echo is_callable($sortLink) ? $sortLink(Text::_('COM_CONTENTBUILDERNG_LIST_STATES_PUBLISHED'), 'published') : Text::_('COM_CONTENTBUILDERNG_LIST_STATES_PUBLISHED'); ?>
             </th>
             <th width="120" class="cb-order-head">
                 <?php if (!empty($elements)) : ?>
@@ -128,7 +128,7 @@ $isModifiedElementSettings = $displayData['isModifiedElementSettings'] ?? null;
                                 <?php echo Text::_('COM_CONTENTBUILDERNG_ORDER_TYPES'); ?> -
                             </option>
                             <option value="CHAR" <?php echo $row->order_type == 'CHAR' ? ' selected="selected"' : '' ?>>
-                                <?php echo Text::_('COM_CONTENTBUILDERNG_ORDER_TYPES_TEXT'); ?>
+                                <?php echo Text::_('COM_CONTENTBUILDERNG_ELEMENT_TYPE_TEXT'); ?>
                             </option>
                             <option value="DATETIME" <?php echo $row->order_type == 'DATETIME' ? ' selected="selected"' : '' ?>>
                                 <?php echo Text::_('COM_CONTENTBUILDERNG_ORDER_TYPES_DATETIME'); ?>

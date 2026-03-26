@@ -132,11 +132,11 @@ if ($previewFormName === '') {
     $previewFormName = Text::_('COM_CONTENTBUILDERNG_NOT_AVAILABLE');
 }
 $previewFormName = htmlspecialchars($previewFormName, ENT_QUOTES, 'UTF-8');
-$previewConfigTabLabel = Text::sprintf('COM_CONTENTBUILDERNG_PREVIEW_CONFIG_TAB', Text::_('COM_CONTENTBUILDERNG_PREVIEW_TAB_VIEW'));
+$previewConfigTabLabel = Text::sprintf('COM_CONTENTBUILDERNG_PREVIEW_CONFIG_TAB', Text::_('COM_CONTENTBUILDERNG_FORM'));
 $previewFrontendPermissionHint = Text::sprintf(
     'COM_CONTENTBUILDERNG_PREVIEW_FRONTEND_PERMISSION_HINT',
     Text::_('COM_CONTENTBUILDERNG_PERM_LIST_ACCESS'),
-    Text::_('COM_CONTENTBUILDERNG_PERMISSIONS_FRONTEND')
+    Text::_('COM_CONTENTBUILDERNG_DISPLAY_FRONTEND')
 );
 $currentListLayout = trim((string) $input->getCmd('layout', 'default'));
 if ($currentListLayout === '') {
@@ -1658,7 +1658,7 @@ by this block. -->
 									onchange="document.adminForm.submit();">
 									<option value="-1"> - <?php echo Text::_('JOPTION_SELECT_PUBLISHED'); ?> -</option>
 									<option value="1" <?php echo $this->lists['filter_publish'] == 1 ? 'selected' : ''; ?>>
-										<?php echo Text::_('COM_CONTENTBUILDERNG_PUBLISHED') ?>
+										<?php echo Text::_('COM_CONTENTBUILDERNG_LIST_STATES_PUBLISHED') ?>
 									</option>
 									<option value="0" <?php echo $this->lists['filter_publish'] == 0 ? 'selected' : ''; ?>>
 										<?php echo Text::_('COM_CONTENTBUILDERNG_UNPUBLISHED') ?>
@@ -1975,7 +1975,7 @@ by this block. -->
 							<?php endif; ?>
 							<?php if ($this->list_rating) : ?>
 								<div class="cb-list-card-field">
-									<div class="cb-list-card-label"><?php echo Text::_('COM_CONTENTBUILDERNG_RATING'); ?></div>
+									<div class="cb-list-card-label"><?php echo Text::_('COM_CONTENTBUILDERNG_PERM_RATING'); ?></div>
 									<div class="cb-list-card-value">
 										<?php echo RatingHelper::getRating($input->getInt('id', 0), $row->colRecord, $row->colRating, $this->rating_slots, $input->getCmd('lang', ''), $rating_allowed, $row->colRatingCount, $row->colRatingSum); ?>
 									</div>
@@ -2124,7 +2124,7 @@ by this block. -->
 						if ($this->list_publish || $directStorageMode) {
 						?>
 							<th class="table-light" width="20">
-								<?php echo HTMLHelper::_('grid.sort', Text::_('COM_CONTENTBUILDERNG_PUBLISHED'), 'colPublished', $this->lists['order_Dir'], $this->lists['order']); ?>
+								<?php echo HTMLHelper::_('grid.sort', Text::_('COM_CONTENTBUILDERNG_LIST_STATES_PUBLISHED'), 'colPublished', $this->lists['order_Dir'], $this->lists['order']); ?>
 							</th>
 						<?php
 						}

@@ -134,7 +134,7 @@ if (!is_callable($renderCheckbox)) {
                             <?php echo $renderCheckbox('jform[edit_button]', 'edit_button', (bool) ($item->edit_button ?? false)); ?>
                             <label class="form-check-label" for="edit_button">
                                 <span class="editlinktip hasTip" title="<?php echo Text::_('COM_CONTENTBUILDERNG_SHOW_EDIT_BUTTON_TIP'); ?>">
-                                    <?php echo Text::_('COM_CONTENTBUILDERNG_EDIT_BUTTON'); ?>
+                                    <?php echo Text::_('COM_CONTENTBUILDERNG_EDIT'); ?>
                                 </span>
                             </label>
                         </div>
@@ -342,14 +342,14 @@ if (!is_callable($renderCheckbox)) {
             <fieldset class="d-flex flex-column flex-grow-1">
                 <legend>
                     <h3>
-                        <?php echo Text::_('COM_CONTENTBUILDERNG_RATING'); ?>
+                        <?php echo Text::_('COM_CONTENTBUILDERNG_PERM_RATING'); ?>
                     </h3>
                 </legend>
                 <div class="alert flex-grow-1 mb-0">
                     <input type="hidden" name="jform[list_rating]" value="0" />
                     <?php echo $renderCheckbox('jform[list_rating]', 'list_rating', (bool) ($item->list_rating ?? false)); ?>
                     <label class="form-check-label" for="list_rating">
-                        <?php echo Text::_('COM_CONTENTBUILDERNG_RATING'); ?>
+                        <?php echo Text::_('COM_CONTENTBUILDERNG_PERM_RATING'); ?>
                     </label>
 
                     <select class="form-select-sm" name="jform[rating_slots]" id="rating_slots">

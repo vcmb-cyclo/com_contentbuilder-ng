@@ -183,7 +183,7 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
             <tr class="row0">
                 <td width="20%" align="right" class="key">
                     <label for="published">
-                        <?php echo Text::_('COM_CONTENTBUILDERNG_PUBLISHED'); ?>
+                        <?php echo Text::_('COM_CONTENTBUILDERNG_LIST_STATES_PUBLISHED'); ?>
                     </label>
                 </td>
                 <td>

@@ -132,7 +132,7 @@ class RuntimeUtilityService
                         <?php echo $pages_current - 1 > 0 ? '<a title="' . Text::_('COM_CONTENTBUILDERNG_START') . '" href="' . $open . '" class="pagenav">' . Text::_('COM_CONTENTBUILDERNG_START') . '</a>' : '<span class="pagenav">' . Text::_('COM_CONTENTBUILDERNG_START') . '</span>'; ?>
                     </li>
                     <li class="pagination-prev">
-                        <?php echo $pages_current - 1 > 0 ? '<a title="' . Text::_('COM_CONTENTBUILDERNG_PREV') . '" href="' . $open . 'start=' . ($limitstart - $limit) . '" class="pagenav">' . Text::_('COM_CONTENTBUILDERNG_PREV') . '</a>' : '<span class="pagenav">' . Text::_('COM_CONTENTBUILDERNG_PREV') . '</span>'; ?>
+                        <?php echo $pages_current - 1 > 0 ? '<a title="' . Text::_('COM_CONTENTBUILDERNG_BACK') . '" href="' . $open . 'start=' . ($limitstart - $limit) . '" class="pagenav">' . Text::_('COM_CONTENTBUILDERNG_BACK') . '</a>' : '<span class="pagenav">' . Text::_('COM_CONTENTBUILDERNG_BACK') . '</span>'; ?>
                     </li>
                     <?php echo $begin; ?>
                     <?php for ($i = $start; $i <= $stop; $i++) : ?>
@@ -144,7 +144,7 @@ class RuntimeUtilityService
                     <?php endfor; ?>
                     <?php echo $end; ?>
                     <li class="pagination-next">
-                        <?php echo $pages_current < $pages_total ? '<a title="' . Text::_('COM_CONTENTBUILDERNG_NEXT') . '" href="' . $open . 'start=' . ($pages_current * $limit) . '" class="pagenav">' . Text::_('COM_CONTENTBUILDERNG_NEXT') . '</a>' : '<span class="pagenav">' . Text::_('COM_CONTENTBUILDERNG_NEXT') . '</span>'; ?>
+                        <?php echo $pages_current < $pages_total ? '<a title="' . Text::_('COM_CONTENTBUILDERNG_DB_REPAIR_WORKFLOW_NEXT') . '" href="' . $open . 'start=' . ($pages_current * $limit) . '" class="pagenav">' . Text::_('COM_CONTENTBUILDERNG_DB_REPAIR_WORKFLOW_NEXT') . '</a>' : '<span class="pagenav">' . Text::_('COM_CONTENTBUILDERNG_DB_REPAIR_WORKFLOW_NEXT') . '</span>'; ?>
                     </li>
                     <li class="pagination-end">
                         <?php echo $pages_total > 1 && $pages_current < $pages_total ? '<a title="' . Text::_('COM_CONTENTBUILDERNG_END') . '" href="' . $open . 'start=' . (($pages_total - 1) * $limit) . '" class="pagenav">' . Text::_('COM_CONTENTBUILDERNG_END') . '</a>' : '<span class="pagenav">' . Text::_('COM_CONTENTBUILDERNG_END') . '</span>'; ?>

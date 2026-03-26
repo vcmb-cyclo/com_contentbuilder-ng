@@ -149,7 +149,7 @@ class EditController extends BaseController
         $type = 'message';
         if ($id && !$submission_failed) {
 
-            $msg = Text::_('COM_CONTENTBUILDERNG_SAVED');
+            $msg = Text::_('COM_CONTENTBUILDERNG_SAVE');
             $return = NavigationLinkHelper::decodeInternalReturn((string) $this->siteApp->input->get('return', '', 'string'));
             if ($return !== '') {
                 $this->siteApp->enqueueMessage($msg, 'warning');
@@ -304,7 +304,7 @@ class EditController extends BaseController
         $model->setIds($this->siteApp->input->getInt('id', 0), $this->siteApp->input->getCmd('record_id', 0));
         $model->change_list_publish();
         if ($this->siteApp->input->getInt('list_publish', 0)) {
-            $msg = Text::_('COM_CONTENTBUILDERNG_PUBLISHED');
+            $msg = Text::_('COM_CONTENTBUILDERNG_LIST_STATES_PUBLISHED');
         } else {
             $msg = Text::_('COM_CONTENTBUILDERNG_UNPUBLISHED');
         }

@@ -266,7 +266,7 @@ class ListController extends BaseController
         $changedCount = (int) $model->change_list_publish();
 
         $msg = $this->input->getInt('list_publish', 0)
-            ? Text::_('COM_CONTENTBUILDERNG_PUBLISHED')
+            ? Text::_('COM_CONTENTBUILDERNG_LIST_STATES_PUBLISHED')
             : Text::_('COM_CONTENTBUILDERNG_UNPUBLISHED');
         $msg .= ' (' . $changedCount . ')';
 

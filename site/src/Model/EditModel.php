@@ -952,7 +952,7 @@ var contentbuilderng = new function(){
                                 $this->getDatabase()->setQuery("Select count(id) From #__users Where `email` = " . $this->getDatabase()->quote($email));
                                 if ($this->getDatabase()->loadResult()) {
                                     $this->app->input->set('cb_submission_failed', 1);
-                                    $this->app->enqueueMessage(Text::_('COM_CONTENTBUILDERNG_EMAIL_NOT_AVAILABLE'), 'error');
+                                    $this->app->enqueueMessage(Text::_('COM_CONTENTBUILDERNG_EMAIL_EMPTY'), 'error');
                                 }
 
                                 if ($pw1 != $pw2) {
@@ -979,7 +979,7 @@ var contentbuilderng = new function(){
                                     $this->getDatabase()->setQuery("Select count(id) From #__users Where id <> " . $this->getDatabase()->quote($meta->created_id) . " And `email` = " . $this->getDatabase()->quote($email));
                                     if ($this->getDatabase()->loadResult()) {
                                         $this->app->input->set('cb_submission_failed', 1);
-                                        $this->app->enqueueMessage(Text::_('COM_CONTENTBUILDERNG_EMAIL_NOT_AVAILABLE'), 'error');
+                                        $this->app->enqueueMessage(Text::_('COM_CONTENTBUILDERNG_EMAIL_EMPTY'), 'error');
                                     }
                                 } else {
                                     $this->getDatabase()->setQuery("Select count(id) From #__users Where id <> " . $this->getDatabase()->quote((int) ($this->app->getIdentity()->id ?? 0)) . " And `username` = " . $this->getDatabase()->quote($username));
@@ -991,7 +991,7 @@ var contentbuilderng = new function(){
                                     $this->getDatabase()->setQuery("Select count(id) From #__users Where id <> " . $this->getDatabase()->quote((int) ($this->app->getIdentity()->id ?? 0)) . " And `email` = " . $this->getDatabase()->quote($email));
                                     if ($this->getDatabase()->loadResult()) {
                                         $this->app->input->set('cb_submission_failed', 1);
-                                        $this->app->enqueueMessage(Text::_('COM_CONTENTBUILDERNG_EMAIL_NOT_AVAILABLE'), 'error');
+                                        $this->app->enqueueMessage(Text::_('COM_CONTENTBUILDERNG_EMAIL_EMPTY'), 'error');
                                     }
                                 }
 

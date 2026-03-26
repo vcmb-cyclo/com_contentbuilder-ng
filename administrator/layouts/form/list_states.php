@@ -30,7 +30,7 @@ $listStates = is_array($item->list_states ?? null) ? $item->list_states : [];
                 <?php echo Text::_('COM_CONTENTBUILDERNG_LIST_STATES_COLOR') ?>
             </th>
             <th>
-                <?php echo Text::_('COM_CONTENTBUILDERNG_LIST_STATES_ACTION') ?>
+                <?php echo Text::_('COM_CONTENTBUILDERNG_ELEMENT_ACTION') ?>
             </th>
         </tr>
     </thead>

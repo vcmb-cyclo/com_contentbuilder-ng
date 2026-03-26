@@ -55,7 +55,7 @@ $permSectionTitle = static function (string $labelKey, string $iconClass, ?strin
 
 $activePermTab = $session ? $session->get('slideStartOffset', 'permtab1', 'com_contentbuilderng') : 'permtab1';
 echo HTMLHelper::_('uitab.startTabSet', 'perm-pane', ['active' => $activePermTab]);
-echo HTMLHelper::_('uitab.addTab', 'perm-pane', 'permtab1', Text::_('COM_CONTENTBUILDERNG_PERMISSIONS_FRONTEND'));
+echo HTMLHelper::_('uitab.addTab', 'perm-pane', 'permtab1', Text::_('COM_CONTENTBUILDERNG_DISPLAY_FRONTEND'));
 ?>
 <table class="table table-striped">
     <tr class="row0">
@@ -258,7 +258,7 @@ echo HTMLHelper::_('uitab.addTab', 'perm-pane', 'permtab1', Text::_('COM_CONTENT
 </table>
 <?php
 echo HTMLHelper::_('uitab.endTab');
-echo HTMLHelper::_('uitab.addTab', 'perm-pane', 'permtab2', Text::_('COM_CONTENTBUILDERNG_PERMISSIONS_USERS'));
+echo HTMLHelper::_('uitab.addTab', 'perm-pane', 'permtab2', Text::_('COM_CONTENTBUILDERNG_EMAIL_USERS'));
 ?>
 <div class="cb-perm-users-grid">
     <section class="cb-perm-users-card">

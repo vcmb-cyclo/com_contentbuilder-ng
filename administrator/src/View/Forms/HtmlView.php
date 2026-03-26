@@ -45,7 +45,7 @@ class HtmlView extends BaseHtmlView
         );
 
         // Et pour le title, garde un identifiant cohérent :
-        ToolbarHelper::title(Text::_('COM_CONTENTBUILDERNG') . ' / ' . Text::_('COM_CONTENTBUILDERNG_FORMS'), 'logo_left');
+        ToolbarHelper::title(Text::_('COM_CONTENTBUILDERNG') . ' / ' . Text::_('COM_CONTENTBUILDERNG_ABOUT_CONFIG_SECTION_FORMS'), 'logo_left');
         ToolbarHelper::addNew('form.add');
         ToolbarHelper::custom('forms.copy', 'copy', '', Text::_('COM_CONTENTBUILDERNG_COPY'));
         ToolbarHelper::editList('form.edit');

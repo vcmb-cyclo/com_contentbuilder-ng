@@ -580,7 +580,7 @@ class ContentbuilderngHelper
             'verified_view',
             'not_verified_view',
             'COM_CONTENTBUILDERNG_VERIFIED_VIEW',
-            'COM_CONTENTBUILDERNG_VERIFIED_VIEW'
+            'COM_CONTENTBUILDERNG_UNVERIFIED_VIEW'
         );
     }
 
@@ -593,7 +593,7 @@ class ContentbuilderngHelper
             'verified_new',
             'not_verified_new',
             'COM_CONTENTBUILDERNG_VERIFIED_NEW',
-            'COM_CONTENTBUILDERNG_VERIFIED_NEW'
+            'COM_CONTENTBUILDERNG_UNVERIFIED_NEW'
         );
     }
 
@@ -606,7 +606,7 @@ class ContentbuilderngHelper
             'verified_edit',
             'not_verified_edit',
             'COM_CONTENTBUILDERNG_VERIFIED_EDIT',
-            'COM_CONTENTBUILDERNG_VERIFIED_EDIT'
+            'COM_CONTENTBUILDERNG_UNVERIFIED_EDIT'
         );
     }
 

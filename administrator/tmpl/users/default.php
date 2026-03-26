@@ -134,7 +134,7 @@ $sortLink = function (string $label, string $field) use ($ordering, $direction, 
                         <?php echo $sortLink(Text::_('COM_CONTENTBUILDERNG_VERIFIED_EDIT'), 'a.verified_edit'); ?>
                     </th>
                     <th width="5">
-                        <?php echo $sortLink(Text::_('COM_CONTENTBUILDERNG_PUBLISHED'), 'a.published'); ?>
+                        <?php echo $sortLink(Text::_('COM_CONTENTBUILDERNG_LIST_STATES_PUBLISHED'), 'a.published'); ?>
                     </th>
                 </tr>
             </thead>

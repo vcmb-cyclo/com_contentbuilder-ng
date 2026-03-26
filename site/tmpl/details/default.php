@@ -100,7 +100,7 @@ $detailsTemplateMissing = $isAdminPreview && trim((string) ($this->tpl ?? '')) =
 $previewFrontendPermissionHint = Text::sprintf(
     'COM_CONTENTBUILDERNG_PREVIEW_FRONTEND_PERMISSION_HINT',
     Text::_('COM_CONTENTBUILDERNG_PERM_VIEW'),
-    Text::_('COM_CONTENTBUILDERNG_PERMISSIONS_FRONTEND')
+    Text::_('COM_CONTENTBUILDERNG_DISPLAY_FRONTEND')
 );
 $detailsScreenAdminUrl = Uri::root() . 'administrator/index.php?option=com_contentbuilderng&view=form&layout=edit&id=' . (int) $input->getInt('id', 0) . '&tab=tab3&force_view_tab=tab3';
 

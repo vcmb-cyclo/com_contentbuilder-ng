@@ -248,7 +248,7 @@ $typeIconMap = [
         // Démarrer les onglets
         echo HTMLHelper::_('uitab.startTabSet', 'view-pane', ['active' => 'tab0']);
         // Premier onglet
-        echo HTMLHelper::_('uitab.addTab', 'view-pane', 'tab0', Text::_('COM_CONTENTBUILDERNG_ELEMENT_OPTIONS'));
+        echo HTMLHelper::_('uitab.addTab', 'view-pane', 'tab0', Text::_('COM_CONTENTBUILDERNG_BULK_OPTIONS'));
         ?>
         <h3>
             <?php echo htmlentities($this->element->label, ENT_QUOTES, 'UTF-8'); ?>

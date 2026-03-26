@@ -81,7 +81,7 @@ if ($this->page_heading) {
                 ?>
 
                 <<?php echo $th; ?> style="width: 200px !important;" class="align-middle text-nowrap small text-uppercase">
-                    <?php echo Text::_('COM_CONTENTBUILDERNG_VIEW_NAME'); ?>
+                    <?php echo Text::_('COM_CONTENTBUILDERNG_FORM'); ?>
                     <?php // echo HTMLHelper::_('grid.sort', Text::_( 'COM_CONTENTBUILDERNG_VIEW_NAME' ), 'name', $this->lists['order_Dir'], $this->lists['order'] );     ?>
                 </<?php echo $th; ?>>
 
@@ -102,7 +102,7 @@ if ($this->page_heading) {
                     ?>
 
                     <<?php echo $th; ?> class="align-middle text-nowrap small text-uppercase">
-                        <?php echo Text::_('COM_CONTENTBUILDERNG_INTROTEXT'); ?>
+                        <?php echo Text::_('COM_CONTENTBUILDERNG_API_DESCRIPTION'); ?>
                     </<?php echo $th; ?>>
 
                     <?php
