@@ -603,7 +603,7 @@ CSS
             'showDelete' => $this->record_id && $delete_allowed,
             'deleteTitle' => Text::_('COM_CONTENTBUILDERNG_DELETE'),
             'showClose' => $showBack,
-            'closeTitle' => Text::_('COM_CONTENTBUILDERNG_CLOSE'),
+            'closeTitle' => Text::_('COM_CONTENTBUILDERNG_BACK'),
             'closeHref' => $jsBack ? '' : $backHref,
             'closeOnclick' => $jsBack ? 'history.back(-1);void(0);' : '',
         ],

@@ -398,7 +398,7 @@ CSS
                 'showDelete' => $delete_allowed,
                 'deleteTitle' => Text::_('COM_CONTENTBUILDERNG_DELETE'),
                 'showClose' => $showCloseButton,
-                'closeTitle' => Text::_('COM_CONTENTBUILDERNG_CLOSE'),
+                'closeTitle' => Text::_('COM_CONTENTBUILDERNG_BACK'),
                 'closeHref' => $closeListLink,
             ],
             JPATH_COMPONENT_SITE . '/layouts'

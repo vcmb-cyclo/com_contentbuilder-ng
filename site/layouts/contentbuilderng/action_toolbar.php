@@ -22,7 +22,7 @@ $extraHtml = (string) ($displayData['extraHtml'] ?? '');
 $showDelete = !empty($displayData['showDelete']);
 $deleteTitle = (string) ($displayData['deleteTitle'] ?? Text::_('COM_CONTENTBUILDERNG_DELETE'));
 $showClose = !empty($displayData['showClose']);
-$closeTitle = (string) ($displayData['closeTitle'] ?? Text::_('COM_CONTENTBUILDERNG_CLOSE'));
+$closeTitle = (string) ($displayData['closeTitle'] ?? Text::_('COM_CONTENTBUILDERNG_BACK'));
 $closeHref = trim((string) ($displayData['closeHref'] ?? ''));
 $closeOnclick = trim((string) ($displayData['closeOnclick'] ?? ''));
 
@@ -74,14 +74,14 @@ if (!$hasActions) {
             <button class="btn btn-sm btn-outline-secondary cbButton cbBackButton cbCloseButton"
                 title="<?php echo htmlspecialchars($closeTitle, ENT_QUOTES, 'UTF-8'); ?>"
                 onclick="<?php echo htmlspecialchars($closeOnclick, ENT_QUOTES, 'UTF-8'); ?>">
-                <span class="fa-solid fa-xmark me-1" aria-hidden="true"></span>
+                <span class="icon-undo me-1" aria-hidden="true"></span>
                 <?php echo htmlspecialchars($closeTitle, ENT_QUOTES, 'UTF-8'); ?>
             </button>
         <?php elseif ($closeHref !== '') : ?>
             <a class="btn btn-sm btn-outline-secondary cbButton cbBackButton cbCloseButton"
                 title="<?php echo htmlspecialchars($closeTitle, ENT_QUOTES, 'UTF-8'); ?>"
                 href="<?php echo $closeHref; ?>">
-                <span class="fa-solid fa-xmark me-1" aria-hidden="true"></span>
+                <span class="icon-undo me-1" aria-hidden="true"></span>
                 <?php echo htmlspecialchars($closeTitle, ENT_QUOTES, 'UTF-8'); ?>
             </a>
         <?php endif; ?>
