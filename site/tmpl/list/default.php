@@ -969,6 +969,39 @@ CSS
 		}
 	}
 
+	function contentbuilderng_getResetFilterValues(form) {
+		if (!form) return [];
+
+		var values = [];
+		var filterInput = form.querySelector('#contentbuilderng_filter');
+		if (filterInput) {
+			values.push(String(filterInput.value || '').trim());
+		}
+
+		['list_state_filter', 'list_publish_filter', 'list_language_filter'].forEach(function(name) {
+			var select = form.querySelector('[name="' + name + '"]');
+			if (select) {
+				values.push(String(select.value || '').trim());
+			}
+		});
+
+		return values;
+	}
+
+	function contentbuilderng_updateResetButtonState(form) {
+		if (!form) return;
+
+		var resetButton = form.querySelector('#cbResetButton');
+		if (!resetButton) return;
+
+		var hasActiveFilter = contentbuilderng_getResetFilterValues(form).some(function(value) {
+			return value !== '' && value !== '0' && value !== '-1' && value !== '*';
+		});
+
+		resetButton.classList.remove('btn-outline-secondary', 'btn-warning');
+		resetButton.classList.add(hasActiveFilter ? 'btn-warning' : 'btn-outline-secondary');
+	}
+
 	function contentbuilderng_updateBoxchecked(form) {
 		if (!form) return;
 		var boxes = form.querySelectorAll('input[name="cid[]"]');
@@ -1315,6 +1348,23 @@ CSS
 			});
 		});
 
+		const resetButton = document.getElementById('cbResetButton');
+		if (resetButton) {
+			['contentbuilderng_filter', 'list_state_filter', 'list_publish_filter', 'list_language_filter'].forEach(function(name) {
+				var field = form.querySelector('#' + name + ', [name="' + name + '"]');
+				if (!field) return;
+				field.addEventListener('change', function() {
+					contentbuilderng_updateResetButtonState(form);
+				});
+				if (name === 'contentbuilderng_filter') {
+					field.addEventListener('input', function() {
+						contentbuilderng_updateResetButtonState(form);
+					});
+				}
+			});
+			contentbuilderng_updateResetButtonState(form);
+		}
+
 		document.addEventListener('click', function(event) {
 			var toggle = event.target ? event.target.closest('[data-cb-publish-toggle]') : null;
 			if (!toggle) {
@@ -1498,12 +1548,13 @@ by this block. -->
 										value="<?php echo $this->escape($this->lists['filter']); ?>"
 										onchange="document.adminForm.submit();" />
 
-										<button type="submit" class="btn btn-primary d-inline-flex align-items-center gap-1" id="cbSearchButton">
+										<button type="submit" class="btn btn-primary d-inline-flex align-items-center gap-1" id="cbSearchButton" title="<?php echo htmlspecialchars(Text::_('COM_CONTENTBUILDERNG_LIST_SEARCH_TOOLTIP'), ENT_QUOTES, 'UTF-8'); ?>">
 											<span class="fa-solid fa-magnifying-glass" aria-hidden="true"></span>
 											<?php echo Text::_('COM_CONTENTBUILDERNG_SEARCH'); ?>
 										</button>
 
-										<button type="button" class="btn btn-outline-secondary d-inline-flex align-items-center gap-1"
+										<button type="button" class="btn btn-outline-secondary d-inline-flex align-items-center gap-1" id="cbResetButton"
+											title="<?php echo htmlspecialchars(Text::_('COM_CONTENTBUILDERNG_LIST_RESET_TOOLTIP'), ENT_QUOTES, 'UTF-8'); ?>"
 											onclick="document.getElementById('contentbuilderng_filter').value='';
                 <?php echo $this->list_language && count($this->languages) ? "if(document.getElementById('list_language_filter')) document.getElementById('list_language_filter').selectedIndex=0;" : ""; ?>
                 <?php echo $this->list_state && count($this->states) ? "if(document.getElementById('list_state_filter')) document.getElementById('list_state_filter').selectedIndex=0;" : ""; ?>
