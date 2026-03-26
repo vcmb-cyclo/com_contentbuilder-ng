@@ -91,7 +91,11 @@ final class AboutController extends BaseController
         $this->checkToken();
 
         $app = $this->getAuthorizedApplication();
-        $app->setUserState(self::REPAIR_WORKFLOW_STATE_KEY, $this->createRepairWorkflowState());
+        $workflow = $this->createRepairWorkflowState();
+        $app->setUserState(self::REPAIR_WORKFLOW_STATE_KEY, $workflow);
+        Logger::info('DB repair workflow started', [
+            'steps' => count((array) ($workflow['steps'] ?? [])),
+        ]);
         $this->setMessage(Text::_('COM_CONTENTBUILDERNG_DB_REPAIR_WORKFLOW_STARTED'), 'message');
         $this->setRedirect(Route::_('index.php?option=com_contentbuilderng&view=about&repair_workflow=1', false));
     }
@@ -179,6 +183,7 @@ final class AboutController extends BaseController
         $workflow['updated_at'] = $currentStep['completed_at'];
         $app->setUserState(self::REPAIR_WORKFLOW_STATE_KEY, $workflow);
 
+        $this->logRepairWorkflowStepResult($requestedStepId, $action, $result);
         $this->setMessage((string) ($result['summary'] ?? ''), (string) ($result['level'] ?? 'message'));
         $this->setRedirect(Route::_('index.php?option=com_contentbuilderng&view=about&repair_workflow=1', false));
     }
@@ -241,6 +246,12 @@ final class AboutController extends BaseController
             $issuesTotal = (int) ($report['summary']['issues_total'] ?? 0);
             $scannedTables = (int) ($report['scanned_tables'] ?? 0);
             $errorsCount = count((array) ($report['errors'] ?? []));
+            $this->logDatabaseAuditReport($report);
+            Logger::info('Database audit completed', [
+                'issues_total' => $issuesTotal,
+                'scanned_tables' => $scannedTables,
+                'errors' => $errorsCount,
+            ]);
 
             if ($issuesTotal === 0 && $errorsCount === 0) {
                 $this->setMessage(
@@ -2173,6 +2184,7 @@ final class AboutController extends BaseController
             $menuViewIssues = (array) ($auditReport['menu_view_issues'] ?? []);
             $frontendPermissionIssues = (array) ($auditReport['frontend_permission_issues'] ?? []);
             $elementReferenceIssues = (array) ($auditReport['element_reference_issues'] ?? []);
+            $encodingTargetCollation = \CB\Component\Contentbuilderng\Administrator\Helper\Audit\EncodingAuditHelper::resolveTargetCollation($db);
 
             $prechecks['duplicate_indexes'] = [
                 'count' => $duplicateIndexesToDrop,
@@ -2199,8 +2211,20 @@ final class AboutController extends BaseController
             $prechecks['table_encoding'] = [
                 'count' => $collationIssueCount,
                 'description' => match (true) {
-                    $collationIssueCount <= 0 => 'No table or column encoding/collation mismatch was detected by the last audit.',
-                    default => $collationIssueCount . ' encoding/collation issues were detected by the last audit (' . $tableEncodingCount . ' table, ' . $columnEncodingCount . ' column, ' . $mixedCollationsCount . ' mixed collation groups) and can be repaired in this step.',
+                    $collationIssueCount <= 0 => Text::sprintf(
+                        'COM_CONTENTBUILDERNG_DB_REPAIR_WORKFLOW_ENCODING_PRECHECK_NONE',
+                        'utf8mb4',
+                        $encodingTargetCollation
+                    ),
+                    default => Text::sprintf(
+                        'COM_CONTENTBUILDERNG_DB_REPAIR_WORKFLOW_ENCODING_PRECHECK',
+                        $collationIssueCount,
+                        $tableEncodingCount,
+                        $columnEncodingCount,
+                        $mixedCollationsCount,
+                        'utf8mb4',
+                        $encodingTargetCollation
+                    ),
                 },
                 'skip_summary' => 'No encoding/collation issue detected by the pre-check. Skipped automatically.',
                 'has_errors' => false,
@@ -2510,20 +2534,44 @@ final class AboutController extends BaseController
     {
         $supported = (bool) ($summary['supported'] ?? false);
         $target = (string) ($summary['target_collation'] ?? 'utf8mb4_0900_ai_ci');
+        $nativeTarget = 'utf8mb4_0900_ai_ci';
         $scanned = (int) ($summary['scanned'] ?? 0);
+        $issues = (int) ($summary['issues'] ?? 0);
+        $tableIssues = (int) ($summary['table_issues'] ?? 0);
+        $columnIssues = (int) ($summary['column_issues'] ?? 0);
+        $mixedCollationGroups = (int) ($summary['mixed_collation_groups'] ?? 0);
         $converted = (int) ($summary['converted'] ?? 0);
         $unchanged = (int) ($summary['unchanged'] ?? 0);
         $errors = (int) ($summary['errors'] ?? 0);
         $lines = [];
 
         if (!$supported) {
-            $lines[] = Text::sprintf('COM_CONTENTBUILDERNG_COLLATION_REPAIR_UNSUPPORTED', $target);
+            $lines[] = Text::sprintf('COM_CONTENTBUILDERNG_COLLATION_REPAIR_UNSUPPORTED', $nativeTarget, $target);
 
             return [
                 'level' => 'warning',
-                'summary' => Text::sprintf('COM_CONTENTBUILDERNG_DB_REPAIR_WORKFLOW_ENCODING_SUMMARY', $scanned, $converted, $unchanged, $errors),
+                'summary' => Text::sprintf(
+                    'COM_CONTENTBUILDERNG_DB_REPAIR_WORKFLOW_ENCODING_SUMMARY_DETAIL',
+                    $scanned,
+                    $tableIssues,
+                    $columnIssues,
+                    $mixedCollationGroups,
+                    $converted,
+                    $unchanged,
+                    $errors,
+                    'utf8mb4',
+                    $target
+                ),
                 'lines' => $lines,
             ];
+        }
+
+        if ($target !== $nativeTarget) {
+            $lines[] = Text::sprintf(
+                'COM_CONTENTBUILDERNG_COLLATION_REPAIR_FALLBACK',
+                $nativeTarget,
+                $target
+            );
         }
 
         foreach ((array) ($summary['tables'] ?? []) as $table) {
@@ -2537,20 +2585,35 @@ final class AboutController extends BaseController
             }
 
             $status = (string) ($table['status'] ?? '');
+            $statusLabel = $status !== '' ? $status : 'unknown';
             if ($status === 'converted') {
                 $lines[] = Text::sprintf(
-                    'COM_CONTENTBUILDERNG_COLLATION_REPAIR_TABLE_CONVERTED',
-                    (string) ($table['table'] ?? ''),
-                    $from,
-                    (string) ($table['to'] ?? $target)
-                );
-            } elseif ($status === 'error') {
-                $lines[] = Text::sprintf(
-                    'COM_CONTENTBUILDERNG_COLLATION_REPAIR_TABLE_ERROR',
+                    'COM_CONTENTBUILDERNG_COLLATION_REPAIR_TABLE_CONVERTED_DETAIL',
                     (string) ($table['table'] ?? ''),
                     $from,
                     (string) ($table['to'] ?? $target),
+                    (int) ($table['table_issues'] ?? 0),
+                    (int) ($table['column_issues'] ?? 0)
+                );
+            } elseif ($status === 'error') {
+                $lines[] = Text::sprintf(
+                    'COM_CONTENTBUILDERNG_COLLATION_REPAIR_TABLE_ERROR_DETAIL',
+                    (string) ($table['table'] ?? ''),
+                    $from,
+                    (string) ($table['to'] ?? $target),
+                    (int) ($table['table_issues'] ?? 0),
+                    (int) ($table['column_issues'] ?? 0),
                     (string) ($table['error'] ?? '')
+                );
+            } else {
+                $lines[] = Text::sprintf(
+                    'COM_CONTENTBUILDERNG_COLLATION_REPAIR_TABLE_STATUS_DETAIL',
+                    (string) ($table['table'] ?? ''),
+                    $from,
+                    (string) ($table['to'] ?? $target),
+                    $statusLabel,
+                    (int) ($table['table_issues'] ?? 0),
+                    (int) ($table['column_issues'] ?? 0)
                 );
             }
         }
@@ -2564,9 +2627,328 @@ final class AboutController extends BaseController
 
         return [
             'level' => $errors > 0 ? 'warning' : 'message',
-            'summary' => Text::sprintf('COM_CONTENTBUILDERNG_DB_REPAIR_WORKFLOW_ENCODING_SUMMARY', $scanned, $converted, $unchanged, $errors),
+            'summary' => Text::sprintf(
+                'COM_CONTENTBUILDERNG_DB_REPAIR_WORKFLOW_ENCODING_SUMMARY_DETAIL',
+                $scanned,
+                $tableIssues,
+                $columnIssues,
+                $mixedCollationGroups,
+                $converted,
+                $unchanged,
+                $errors,
+                'utf8mb4',
+                $target
+            ),
             'lines' => $lines,
         ];
+    }
+
+    private function logRepairWorkflowStepResult(string $stepId, string $action, array $result): void
+    {
+        $level = strtolower((string) ($result['level'] ?? 'info'));
+        $summary = trim((string) ($result['summary'] ?? ''));
+        $lines = array_values(array_filter(
+            array_map('trim', array_map('strval', (array) ($result['lines'] ?? []))),
+            static fn(string $line): bool => $line !== ''
+        ));
+
+        $blockLines = [
+            'step: ' . $stepId,
+            'action: ' . $action,
+            'summary: ' . ($summary !== '' ? $summary : '-'),
+            'details_count: ' . count($lines),
+        ];
+
+        foreach ($lines as $index => $line) {
+            $blockLines[] = sprintf('%d. %s', $index + 1, $line);
+        }
+
+        $context = [
+            'step' => $stepId,
+            'action' => $action,
+            'summary' => $summary,
+            'lines_count' => count($lines),
+        ];
+
+        if (in_array($level, ['warning', 'error', 'danger'], true)) {
+            $this->logStructuredReport('DB repair workflow step completed', $blockLines, $context, $level);
+            return;
+        }
+
+        $this->logStructuredReport('DB repair workflow step completed', $blockLines, $context, 'info');
+    }
+
+    private function logDatabaseAuditReport(array $report): void
+    {
+        $summary = (array) ($report['summary'] ?? []);
+        $duplicateIndexes = (array) ($report['duplicate_indexes'] ?? []);
+        $historicalTables = (array) ($report['historical_tables'] ?? []);
+        $historicalMenuEntries = (array) ($report['historical_menu_entries'] ?? []);
+        $tableEncodingIssues = (array) ($report['table_encoding_issues'] ?? []);
+        $columnEncodingIssues = (array) ($report['column_encoding_issues'] ?? []);
+        $mixedTableCollations = (array) ($report['mixed_table_collations'] ?? []);
+        $missingAuditColumns = (array) ($report['missing_audit_columns'] ?? []);
+        $pluginExtensionDuplicates = (array) ($report['plugin_extension_duplicates'] ?? []);
+        $bfFieldSyncIssues = (array) ($report['bf_view_field_sync_issues'] ?? []);
+        $menuViewIssues = (array) ($report['menu_view_issues'] ?? []);
+        $frontendPermissionIssues = (array) ($report['frontend_permission_issues'] ?? []);
+        $elementReferenceIssues = (array) ($report['element_reference_issues'] ?? []);
+        $summaryLines = [
+            'scanned_tables: ' . (int) ($report['scanned_tables'] ?? 0),
+            'issues_total: ' . (int) ($summary['issues_total'] ?? 0),
+            'table_encoding_issues: ' . (int) ($summary['table_encoding_issues'] ?? 0),
+            'column_encoding_issues: ' . (int) ($summary['column_encoding_issues'] ?? 0),
+            'mixed_table_collations: ' . (int) ($summary['mixed_table_collations'] ?? 0),
+            'duplicate_index_groups: ' . (int) ($summary['duplicate_index_groups'] ?? 0),
+            'duplicate_indexes_to_drop: ' . (int) ($summary['duplicate_indexes_to_drop'] ?? 0),
+            'historical_tables: ' . (int) ($summary['historical_tables'] ?? 0),
+            'historical_menu_entries: ' . (int) ($summary['historical_menu_entries'] ?? 0),
+            'missing_audit_columns_total: ' . (int) ($summary['missing_audit_columns_total'] ?? 0),
+            'plugin_duplicate_groups: ' . (int) ($summary['plugin_duplicate_groups'] ?? 0),
+            'plugin_duplicate_rows_to_remove: ' . (int) ($summary['plugin_duplicate_rows_to_remove'] ?? 0),
+            'bf_view_field_sync_views: ' . (int) ($summary['bf_view_field_sync_views'] ?? 0),
+            'menu_view_issues: ' . (int) ($summary['menu_view_issues'] ?? 0),
+            'frontend_permission_issues: ' . (int) ($summary['frontend_permission_issues'] ?? 0),
+            'element_reference_issues: ' . (int) ($summary['element_reference_issues'] ?? 0),
+        ];
+
+        $this->logStructuredReport(
+            'Database audit summary',
+            $summaryLines,
+            [
+                'scanned_tables' => (int) ($report['scanned_tables'] ?? 0),
+                'issues_total' => (int) ($summary['issues_total'] ?? 0),
+            ]
+        );
+
+        $this->logStructuredSection('Database audit table collation issues', $tableEncodingIssues, static function (array $issue, int $index): ?string {
+            $table = (string) ($issue['table'] ?? '');
+            if ($table === '') {
+                return null;
+            }
+
+            return sprintf(
+                '%d. table=%s current=%s expected=%s',
+                $index + 1,
+                $table,
+                (string) ($issue['collation'] ?? ''),
+                (string) ($issue['expected'] ?? '')
+            );
+        });
+
+        $this->logStructuredSection('Database audit column collation issues', $columnEncodingIssues, static function (array $issue, int $index): ?string {
+            $table = (string) ($issue['table'] ?? '');
+            $column = (string) ($issue['column'] ?? '');
+            if ($table === '' || $column === '') {
+                return null;
+            }
+
+            return sprintf(
+                '%d. table=%s column=%s charset=%s collation=%s expected_charset=%s expected_collation=%s',
+                $index + 1,
+                $table,
+                $column,
+                (string) ($issue['charset'] ?? ''),
+                (string) ($issue['collation'] ?? ''),
+                (string) ($issue['expected_charset'] ?? ''),
+                (string) ($issue['expected_collation'] ?? '')
+            );
+        });
+
+        $this->logStructuredSection('Database audit mixed table collations', $mixedTableCollations, static function (array $item, int $index): ?string {
+            $collation = (string) ($item['collation'] ?? '');
+            if ($collation === '') {
+                return null;
+            }
+
+            return sprintf(
+                '%d. collation=%s count=%d tables=%s',
+                $index + 1,
+                $collation,
+                (int) ($item['count'] ?? 0),
+                implode(', ', array_values((array) ($item['tables'] ?? [])))
+            );
+        });
+
+        $this->logStructuredSection('Database audit duplicate index groups', $duplicateIndexes, static function (array $group, int $index): ?string {
+            $table = (string) ($group['table'] ?? '');
+            if ($table === '') {
+                return null;
+            }
+
+            return sprintf(
+                '%d. table=%s keep=%s drop=%s',
+                $index + 1,
+                $table,
+                (string) ($group['keep'] ?? ''),
+                implode(', ', array_values((array) ($group['drop'] ?? [])))
+            );
+        });
+
+        $this->logStructuredSection('Database audit historical tables', $historicalTables, static function (string|array $historicalTable, int $index): ?string {
+            $table = trim((string) $historicalTable);
+            return $table === '' ? null : sprintf('%d. %s', $index + 1, $table);
+        });
+
+        $this->logStructuredSection('Database audit historical menu entries', $historicalMenuEntries, static function (array $entry, int $index): ?string {
+            $menuId = (int) ($entry['menu_id'] ?? 0);
+            if ($menuId <= 0) {
+                return null;
+            }
+
+            return sprintf(
+                '%d. menu_id=%d title=%s normalized_title=%s link=%s',
+                $index + 1,
+                $menuId,
+                (string) ($entry['title'] ?? ''),
+                (string) ($entry['normalized_title'] ?? ''),
+                (string) ($entry['link'] ?? '')
+            );
+        });
+
+        $this->logStructuredSection('Database audit missing audit columns', $missingAuditColumns, static function (array $issue, int $index): ?string {
+            $table = (string) ($issue['table'] ?? '');
+            if ($table === '') {
+                return null;
+            }
+
+            return sprintf(
+                '%d. table=%s storage_id=%d storage_name=%s missing=%s',
+                $index + 1,
+                $table,
+                (int) ($issue['storage_id'] ?? 0),
+                (string) ($issue['storage_name'] ?? ''),
+                implode(', ', array_values((array) ($issue['missing'] ?? [])))
+            );
+        });
+
+        $this->logStructuredSection('Database audit plugin duplicate groups', $pluginExtensionDuplicates, static function (array $group, int $index): ?string {
+            $folder = (string) ($group['canonical_folder'] ?? '');
+            if ($folder === '') {
+                return null;
+            }
+
+            return sprintf(
+                '%d. canonical_folder=%s canonical_element=%s keep_id=%d duplicate_ids=%s',
+                $index + 1,
+                $folder,
+                (string) ($group['canonical_element'] ?? ''),
+                (int) ($group['keep_id'] ?? 0),
+                implode(', ', array_values((array) ($group['duplicate_ids'] ?? [])))
+            );
+        });
+
+        $this->logStructuredSection('Database audit BF field sync issues', $bfFieldSyncIssues, static function (array $issue, int $index): ?string {
+            $formId = (int) ($issue['form_id'] ?? 0);
+            if ($formId <= 0) {
+                return null;
+            }
+
+            return sprintf(
+                '%d. form_id=%d form_name=%s source_name=%s missing_count=%d orphan_count=%d',
+                $index + 1,
+                $formId,
+                (string) ($issue['form_name'] ?? ''),
+                (string) ($issue['source_name'] ?? ''),
+                (int) ($issue['missing_count'] ?? 0),
+                (int) ($issue['orphan_count'] ?? 0)
+            );
+        });
+
+        $this->logStructuredSection('Database audit menu consistency issues', $menuViewIssues, static function (array $issue, int $index): ?string {
+            $menuId = (int) ($issue['menu_id'] ?? 0);
+            if ($menuId <= 0) {
+                return null;
+            }
+
+            return sprintf(
+                '%d. menu_id=%d title=%s target=%s issues=%s',
+                $index + 1,
+                $menuId,
+                (string) ($issue['title'] ?? ''),
+                (string) ($issue['target'] ?? ''),
+                implode(', ', array_values((array) ($issue['issues'] ?? [])))
+            );
+        });
+
+        $this->logStructuredSection('Database audit frontend permission issues', $frontendPermissionIssues, static function (array $issue, int $index): ?string {
+            $formId = (int) ($issue['form_id'] ?? 0);
+            if ($formId <= 0) {
+                return null;
+            }
+
+            return sprintf(
+                '%d. form_id=%d form_name=%s issues=%s',
+                $index + 1,
+                $formId,
+                (string) ($issue['form_name'] ?? ''),
+                implode(', ', array_values((array) ($issue['issues'] ?? [])))
+            );
+        });
+
+        $this->logStructuredSection('Database audit element reference issues', $elementReferenceIssues, static function (array $issue, int $index): ?string {
+            $formId = (int) ($issue['form_id'] ?? 0);
+            if ($formId <= 0) {
+                return null;
+            }
+
+            return sprintf(
+                '%d. form_id=%d form_name=%s type=%s empty_reference_ids=%s duplicate_reference_ids=%s orphan_reference_ids=%s',
+                $index + 1,
+                $formId,
+                (string) ($issue['form_name'] ?? ''),
+                (string) ($issue['type'] ?? ''),
+                implode(', ', array_values((array) ($issue['empty_reference_ids'] ?? []))),
+                implode(', ', array_values((array) ($issue['duplicate_reference_ids'] ?? []))),
+                implode(', ', array_values((array) ($issue['orphan_reference_ids'] ?? [])))
+            );
+        });
+    }
+
+    private function logStructuredReport(string $title, array $lines, array $context = [], string $level = 'info'): void
+    {
+        $message = $title;
+
+        foreach ($lines as $line) {
+            $line = trim((string) $line);
+            if ($line === '') {
+                continue;
+            }
+
+            $message .= "\n- " . $line;
+        }
+
+        match ($level) {
+            'warning', 'warn' => Logger::warning($message, $context),
+            'error', 'danger' => Logger::error($message, $context),
+            default => Logger::info($message, $context),
+        };
+    }
+
+    /**
+     * @param array<int, mixed> $items
+     * @param callable(array<mixed>, int): ?string $formatter
+     */
+    private function logStructuredSection(string $title, array $items, callable $formatter): void
+    {
+        $lines = [];
+
+        foreach (array_values($items) as $index => $item) {
+            if (!is_array($item)) {
+                continue;
+            }
+
+            $line = $formatter($item, $index);
+            if (is_string($line) && trim($line) !== '') {
+                $lines[] = $line;
+            }
+        }
+
+        if ($lines === []) {
+            return;
+        }
+
+        $this->logStructuredReport($title, $lines);
     }
 
     private function buildPackedDataStepResult(array $summary): array

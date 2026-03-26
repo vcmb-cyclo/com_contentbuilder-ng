@@ -168,6 +168,7 @@ final class DatabaseAuditHelper
         $toAlias = [AuditTableSupportHelper::class, 'toAlias'];
 
         $tables = AuditTableSupportHelper::collectAuditableTables($db, $errors);
+        $encodingTargetCollation = EncodingAuditHelper::resolveTargetCollation($db);
 
         sort($tables, SORT_NATURAL | SORT_FLAG_CASE);
 
@@ -203,6 +204,8 @@ final class DatabaseAuditHelper
         return DatabaseAuditReportBuilder::build([
             'tables' => $tables,
             'prefix' => $prefix,
+            'encoding_target_charset' => 'utf8mb4',
+            'encoding_target_collation' => $encodingTargetCollation,
             'duplicate_indexes' => $duplicateIndexes,
             'historical_tables' => $historicalTables,
             'historical_menu_entries' => $historicalMenuEntries,

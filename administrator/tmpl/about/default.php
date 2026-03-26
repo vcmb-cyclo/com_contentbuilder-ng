@@ -37,6 +37,7 @@ $tooltipLinkLicense = Text::_('COM_CONTENTBUILDERNG_ABOUT_TOOLTIP_LINK_LICENSE')
 $labelAuditButton = Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT');
 $labelDbRepairButton = Text::_('COM_CONTENTBUILDERNG_ABOUT_MIGRATE_PACKED_DATA');
 $labelShowLogButton = Text::_('COM_CONTENTBUILDERNG_ABOUT_SHOW_LOG');
+$auditRowNumberLabel = Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_ROW');
 $auditReport = is_array($this->auditReport ?? null) ? $this->auditReport : [];
 $auditSummary = (array) ($auditReport['summary'] ?? []);
 $duplicateIndexes = (array) ($auditReport['duplicate_indexes'] ?? []);
@@ -52,6 +53,8 @@ $bfFieldSyncIssues = (array) ($auditReport['bf_view_field_sync_issues'] ?? []);
 $menuViewIssues = (array) ($auditReport['menu_view_issues'] ?? []);
 $frontendPermissionIssues = (array) ($auditReport['frontend_permission_issues'] ?? []);
 $elementReferenceIssues = (array) ($auditReport['element_reference_issues'] ?? []);
+$encodingTargetCharset = (string) ($auditSummary['encoding_target_charset'] ?? 'utf8mb4');
+$encodingTargetCollation = (string) ($auditSummary['encoding_target_collation'] ?? 'utf8mb4_0900_ai_ci');
 $missingAuditColumnsTotal = (int) ($auditSummary['missing_audit_columns_total'] ?? 0);
 $missingAuditColumnsTableCount = (int) ($auditSummary['missing_audit_column_tables'] ?? count($missingAuditColumns));
 $pluginDuplicateGroups = (int) ($auditSummary['plugin_duplicate_groups'] ?? count($pluginExtensionDuplicates));
@@ -205,7 +208,10 @@ $repairWorkflowStepLabels = [
     'duplicate_indexes' => Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_DUPLICATE_GROUPS'),
     'historical_tables' => Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_HISTORICAL_TABLES'),
     'historical_menu_entries' => Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_HISTORICAL_MENU_ENTRIES'),
-    'table_encoding' => Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_TABLE_ENCODING_ISSUES')
+    'table_encoding' => Text::sprintf(
+        'COM_CONTENTBUILDERNG_DB_REPAIR_STEP_TABLE_ENCODING_TITLE_WITH_TARGET',
+        $encodingTargetCollation
+    )
         . ' / '
         . Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_COLUMN_ENCODING_ISSUES')
         . ' / '
@@ -234,6 +240,9 @@ $repairWorkflowStepDescriptions = [
 $phpLibrariesCount = count((array) $this->phpLibraries);
 $javascriptLibrariesCount = count((array) $this->javascriptLibraries);
 $columnEncodingIssueLimit = 200;
+$tableEncodingIssueCount = count($tableEncodingIssues);
+$columnEncodingIssueCount = count($columnEncodingIssues);
+$mixedCollationIssueCount = max(0, count($mixedTableCollations) - 1);
 $columnEncodingIssuesDisplayed = array_slice($columnEncodingIssues, 0, $columnEncodingIssueLimit);
 $columnEncodingIssueHiddenCount = max(0, count($columnEncodingIssues) - count($columnEncodingIssuesDisplayed));
 $hasAuditIssues = (int) ($auditSummary['issues_total'] ?? 0) > 0;
@@ -241,10 +250,10 @@ $hasDuplicateIndexIssues = !empty($duplicateIndexes);
 $hasDuplicateIndexDropIssues = (int) ($auditSummary['duplicate_indexes_to_drop'] ?? 0) > 0;
 $hasLegacyTableIssues = !empty($historicalTables);
 $hasLegacyMenuIssues = $historicalMenuEntriesCount > 0;
-$hasTableEncodingIssues = !empty($tableEncodingIssues);
+$hasTableEncodingIssues = $tableEncodingIssueCount > 0;
 $hasPackedDataIssues = (int) ($auditSummary['packed_data_candidates'] ?? 0) > 0;
-$hasColumnEncodingIssues = !empty($columnEncodingIssues);
-$hasMixedCollationIssues = count($mixedTableCollations) > 1;
+$hasColumnEncodingIssues = $columnEncodingIssueCount > 0;
+$hasMixedCollationIssues = $mixedCollationIssueCount > 0;
 $hasMissingAuditColumnIssues = $missingAuditColumnsTableCount > 0 || $missingAuditColumnsTotal > 0;
 $hasPluginDuplicateIssues = $pluginDuplicateGroups > 0 || $pluginDuplicateRowsToRemove > 0;
 $hasBfFieldSyncIssues = $bfFieldSyncViews > 0 || $bfFieldSyncMissingTotal > 0 || $bfFieldSyncOrphanTotal > 0;
@@ -1076,6 +1085,7 @@ $renderNumberedAuditTitle = static function (int $number, string $label, bool $h
                     <table class="table table-sm table-striped align-middle">
                         <thead>
                         <tr>
+                            <th scope="col"><?php echo $auditRowNumberLabel; ?></th>
                             <th scope="col"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_TABLE'); ?></th>
                             <th scope="col"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_INDEX_KEEP'); ?></th>
                             <th scope="col"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_INDEX_DROP'); ?></th>
@@ -1083,8 +1093,10 @@ $renderNumberedAuditTitle = static function (int $number, string $label, bool $h
                         </tr>
                         </thead>
                         <tbody>
+                        <?php $duplicateIndexRowNumber = 1; ?>
                         <?php foreach ($duplicateIndexes as $duplicateIndex) : ?>
                             <tr>
+                                <td><?php echo $duplicateIndexRowNumber++; ?></td>
                                 <td><?php echo htmlspecialchars((string) ($duplicateIndex['table'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></td>
                                 <td><?php echo htmlspecialchars((string) ($duplicateIndex['keep'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></td>
                                 <td><?php echo htmlspecialchars(implode(', ', (array) ($duplicateIndex['drop'] ?? [])), ENT_QUOTES, 'UTF-8'); ?></td>
@@ -1109,6 +1121,7 @@ $renderNumberedAuditTitle = static function (int $number, string $label, bool $h
                     <table class="table table-sm table-striped align-middle">
                         <thead>
                         <tr>
+                            <th scope="col"><?php echo $auditRowNumberLabel; ?></th>
                             <th scope="col"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_CANONICAL_PLUGIN'); ?></th>
                             <th scope="col"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_INDEX_KEEP'); ?></th>
                             <th scope="col"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_INDEX_DROP'); ?></th>
@@ -1116,6 +1129,7 @@ $renderNumberedAuditTitle = static function (int $number, string $label, bool $h
                         </tr>
                         </thead>
                         <tbody>
+                        <?php $pluginDuplicateRowNumber = 1; ?>
                         <?php foreach ($pluginExtensionDuplicates as $pluginExtensionDuplicate) : ?>
                             <?php
                             $canonicalFolder = trim((string) ($pluginExtensionDuplicate['canonical_folder'] ?? ''));
@@ -1146,6 +1160,7 @@ $renderNumberedAuditTitle = static function (int $number, string $label, bool $h
                             }
                             ?>
                             <tr>
+                                <td><?php echo $pluginDuplicateRowNumber++; ?></td>
                                 <td><?php echo htmlspecialchars($canonicalLabel, ENT_QUOTES, 'UTF-8'); ?></td>
                                 <td><?php echo $keepId; ?></td>
                                 <td><?php echo htmlspecialchars(implode(', ', $dropIds), ENT_QUOTES, 'UTF-8'); ?></td>
@@ -1166,11 +1181,11 @@ $renderNumberedAuditTitle = static function (int $number, string $label, bool $h
                     </span>
                 </div>
             <?php else : ?>
-                <ul class="mb-0">
+                <ol class="mb-0 ps-3">
                     <?php foreach ($historicalTables as $historicalTable) : ?>
                         <li><?php echo htmlspecialchars((string) $historicalTable, ENT_QUOTES, 'UTF-8'); ?></li>
                     <?php endforeach; ?>
-                </ul>
+                </ol>
             <?php endif; ?>
 
             <h4 class="h6 mt-3<?php echo $hasLegacyMenuIssues ? ' text-warning' : ''; ?>"><?php echo $renderNumberedAuditTitle(4, Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_HISTORICAL_MENU_ENTRIES'), $hasLegacyMenuIssues); ?></h4>
@@ -1186,6 +1201,7 @@ $renderNumberedAuditTitle = static function (int $number, string $label, bool $h
                     <table class="table table-sm table-striped align-middle">
                         <thead>
                         <tr>
+                            <th scope="col"><?php echo $auditRowNumberLabel; ?></th>
                             <th scope="col"><?php echo Text::_('COM_CONTENTBUILDERNG_ID'); ?></th>
                             <th scope="col"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_MENU_TITLE'); ?></th>
                             <th scope="col"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_MENU_NORMALIZED_TITLE'); ?></th>
@@ -1193,8 +1209,10 @@ $renderNumberedAuditTitle = static function (int $number, string $label, bool $h
                         </tr>
                         </thead>
                         <tbody>
+                        <?php $historicalMenuEntryRowNumber = 1; ?>
                         <?php foreach ($historicalMenuEntries as $historicalMenuEntry) : ?>
                             <tr>
+                                <td><?php echo $historicalMenuEntryRowNumber++; ?></td>
                                 <td><?php echo (int) ($historicalMenuEntry['menu_id'] ?? 0); ?></td>
                                 <td><?php echo htmlspecialchars((string) ($historicalMenuEntry['title'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></td>
                                 <td><?php echo htmlspecialchars((string) ($historicalMenuEntry['normalized_title'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></td>
@@ -1219,6 +1237,7 @@ $renderNumberedAuditTitle = static function (int $number, string $label, bool $h
                     <table class="table table-sm table-striped align-middle">
                         <thead>
                         <tr>
+                            <th scope="col"><?php echo $auditRowNumberLabel; ?></th>
                             <th scope="col"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_TABLE'); ?></th>
                             <th scope="col"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_STORAGE_ID'); ?></th>
                             <th scope="col"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_STORAGE'); ?></th>
@@ -1227,8 +1246,10 @@ $renderNumberedAuditTitle = static function (int $number, string $label, bool $h
                         </tr>
                         </thead>
                         <tbody>
+                        <?php $missingAuditColumnRowNumber = 1; ?>
                         <?php foreach ($missingAuditColumns as $missingAuditColumn) : ?>
                             <tr>
+                                <td><?php echo $missingAuditColumnRowNumber++; ?></td>
                                 <td><?php echo htmlspecialchars((string) ($missingAuditColumn['table'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></td>
                                 <td><?php echo (int) ($missingAuditColumn['storage_id'] ?? 0); ?></td>
                                 <td><?php echo htmlspecialchars((string) ($missingAuditColumn['storage_name'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></td>
@@ -1254,6 +1275,7 @@ $renderNumberedAuditTitle = static function (int $number, string $label, bool $h
                     <table class="table table-sm table-striped align-middle">
                         <thead>
                         <tr>
+                            <th scope="col"><?php echo $auditRowNumberLabel; ?></th>
                             <th scope="col"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_BF_FIELD_SYNC_VIEW_ID'); ?></th>
                             <th scope="col"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_BF_FIELD_SYNC_VIEW'); ?></th>
                             <th scope="col"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_BF_FIELD_SYNC_SOURCE'); ?></th>
@@ -1262,6 +1284,7 @@ $renderNumberedAuditTitle = static function (int $number, string $label, bool $h
                         </tr>
                         </thead>
                         <tbody>
+                        <?php $bfFieldSyncIssueRowNumber = 1; ?>
                         <?php foreach ($bfFieldSyncIssues as $bfFieldSyncIssue) : ?>
                             <?php
                             $formId = (int) ($bfFieldSyncIssue['form_id'] ?? 0);
@@ -1291,6 +1314,7 @@ $renderNumberedAuditTitle = static function (int $number, string $label, bool $h
                             $orphanList = (array) ($bfFieldSyncIssue['orphan_in_cb'] ?? []);
                             ?>
                             <tr>
+                                <td><?php echo $bfFieldSyncIssueRowNumber++; ?></td>
                                 <td><?php echo $formId; ?></td>
                                 <td>
                                     <?php if ($formEditLink !== '') : ?>
@@ -1344,6 +1368,7 @@ $renderNumberedAuditTitle = static function (int $number, string $label, bool $h
                     <table class="table table-sm table-striped align-middle">
                         <thead>
                         <tr>
+                            <th scope="col"><?php echo $auditRowNumberLabel; ?></th>
                             <th scope="col"><?php echo Text::_('COM_CONTENTBUILDERNG_ID'); ?></th>
                             <th scope="col"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_MENU_TITLE'); ?></th>
                             <th scope="col"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_MENU_TARGET'); ?></th>
@@ -1352,6 +1377,7 @@ $renderNumberedAuditTitle = static function (int $number, string $label, bool $h
                         </tr>
                         </thead>
                         <tbody>
+                        <?php $menuViewIssueRowNumber = 1; ?>
                         <?php foreach ($menuViewIssues as $menuViewIssue) : ?>
                             <?php
                             $menuId = (int) ($menuViewIssue['menu_id'] ?? 0);
@@ -1366,6 +1392,7 @@ $renderNumberedAuditTitle = static function (int $number, string $label, bool $h
                             )));
                             ?>
                             <tr>
+                                <td><?php echo $menuViewIssueRowNumber++; ?></td>
                                 <td><?php echo $menuId; ?></td>
                                 <td>
                                     <?php if ($menuEditLink !== '') : ?>
@@ -1405,12 +1432,14 @@ $renderNumberedAuditTitle = static function (int $number, string $label, bool $h
                     <table class="table table-sm table-striped align-middle">
                         <thead>
                         <tr>
+                            <th scope="col"><?php echo $auditRowNumberLabel; ?></th>
                             <th scope="col"><?php echo Text::_('COM_CONTENTBUILDERNG_ID'); ?></th>
                             <th scope="col"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_BF_FIELD_SYNC_VIEW'); ?></th>
                             <th scope="col"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_ISSUES'); ?></th>
                         </tr>
                         </thead>
                         <tbody>
+                        <?php $frontendPermissionIssueRowNumber = 1; ?>
                         <?php foreach ($frontendPermissionIssues as $frontendPermissionIssue) : ?>
                             <?php
                             $formId = (int) ($frontendPermissionIssue['form_id'] ?? 0);
@@ -1448,6 +1477,7 @@ $renderNumberedAuditTitle = static function (int $number, string $label, bool $h
                             }
                             ?>
                             <tr>
+                                <td><?php echo $frontendPermissionIssueRowNumber++; ?></td>
                                 <td><?php echo $formId; ?></td>
                                 <td>
                                     <?php if ($formEditLink !== '') : ?>
@@ -1485,6 +1515,7 @@ $renderNumberedAuditTitle = static function (int $number, string $label, bool $h
                     <table class="table table-sm table-striped align-middle">
                         <thead>
                         <tr>
+                            <th scope="col"><?php echo $auditRowNumberLabel; ?></th>
                             <th scope="col"><?php echo Text::_('COM_CONTENTBUILDERNG_ID'); ?></th>
                             <th scope="col"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_BF_FIELD_SYNC_VIEW'); ?></th>
                             <th scope="col"><?php echo Text::_('COM_CONTENTBUILDERNG_TYPE'); ?></th>
@@ -1492,6 +1523,7 @@ $renderNumberedAuditTitle = static function (int $number, string $label, bool $h
                         </tr>
                         </thead>
                         <tbody>
+                        <?php $elementReferenceIssueRowNumber = 1; ?>
                         <?php foreach ($elementReferenceIssues as $elementReferenceIssue) : ?>
                             <?php
                             $formId = (int) ($elementReferenceIssue['form_id'] ?? 0);
@@ -1536,6 +1568,7 @@ $renderNumberedAuditTitle = static function (int $number, string $label, bool $h
 
                             ?>
                             <tr>
+                                <td><?php echo $elementReferenceIssueRowNumber++; ?></td>
                                 <td><?php echo $formId; ?></td>
                                 <td>
                                     <?php if ($formEditLink !== '') : ?>
@@ -1561,7 +1594,7 @@ $renderNumberedAuditTitle = static function (int $number, string $label, bool $h
                 </div>
             <?php endif; ?>
 
-            <h4 class="h6 mt-3<?php echo $hasTableEncodingIssues ? ' text-warning' : ''; ?>"><?php echo $renderNumberedAuditTitle(10, Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_TABLE_ENCODING_ISSUES'), $hasTableEncodingIssues); ?></h4>
+            <h4 class="h6 mt-3<?php echo $hasTableEncodingIssues ? ' text-warning' : ''; ?>"><?php echo $renderNumberedAuditTitle(10, Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_TABLE_ENCODING_ISSUES') . ' (' . $tableEncodingIssueCount . ')', $hasTableEncodingIssues); ?></h4>
             <?php if (empty($tableEncodingIssues)) : ?>
                 <div class="alert cb-audit-ok-alert">
                     <span class="cb-audit-section-title">
@@ -1574,14 +1607,17 @@ $renderNumberedAuditTitle = static function (int $number, string $label, bool $h
                     <table class="table table-sm table-striped align-middle">
                         <thead>
                         <tr>
+                            <th scope="col"><?php echo $auditRowNumberLabel; ?></th>
                             <th scope="col"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_TABLE'); ?></th>
                             <th scope="col"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_COLLATION'); ?></th>
                             <th scope="col"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_EXPECTED'); ?></th>
                         </tr>
                         </thead>
                         <tbody>
+                        <?php $tableEncodingIssueRowNumber = 1; ?>
                         <?php foreach ($tableEncodingIssues as $tableIssue) : ?>
                             <tr>
+                                <td><?php echo $tableEncodingIssueRowNumber++; ?></td>
                                 <td><?php echo htmlspecialchars((string) ($tableIssue['table'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></td>
                                 <td><?php echo htmlspecialchars((string) (($tableIssue['collation'] ?? '') !== '' ? $tableIssue['collation'] : Text::_('COM_CONTENTBUILDERNG_NOT_AVAILABLE')), ENT_QUOTES, 'UTF-8'); ?></td>
                                 <td><?php echo htmlspecialchars((string) ($tableIssue['expected'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></td>
@@ -1592,7 +1628,7 @@ $renderNumberedAuditTitle = static function (int $number, string $label, bool $h
                 </div>
             <?php endif; ?>
 
-            <h4 class="h6 mt-3<?php echo $hasColumnEncodingIssues ? ' text-warning' : ''; ?>"><?php echo $renderNumberedAuditTitle(11, Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_COLUMN_ENCODING_ISSUES'), $hasColumnEncodingIssues); ?></h4>
+            <h4 class="h6 mt-3<?php echo $hasColumnEncodingIssues ? ' text-warning' : ''; ?>"><?php echo $renderNumberedAuditTitle(11, Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_COLUMN_ENCODING_ISSUES') . ' (' . $columnEncodingIssueCount . ')', $hasColumnEncodingIssues); ?></h4>
             <?php if (empty($columnEncodingIssuesDisplayed)) : ?>
                 <div class="alert cb-audit-ok-alert">
                     <span class="cb-audit-section-title">
@@ -1605,19 +1641,32 @@ $renderNumberedAuditTitle = static function (int $number, string $label, bool $h
                     <table class="table table-sm table-striped align-middle">
                         <thead>
                         <tr>
+                            <th scope="col"><?php echo $auditRowNumberLabel; ?></th>
                             <th scope="col"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_TABLE'); ?></th>
                             <th scope="col"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_COLUMN'); ?></th>
                             <th scope="col"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_CHARSET'); ?></th>
                             <th scope="col"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_COLLATION'); ?></th>
+                            <th scope="col"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_EXPECTED'); ?></th>
                         </tr>
                         </thead>
                         <tbody>
+                        <?php $columnEncodingIssueRowNumber = 1; ?>
                         <?php foreach ($columnEncodingIssuesDisplayed as $columnIssue) : ?>
                             <tr>
+                                <td><?php echo $columnEncodingIssueRowNumber++; ?></td>
                                 <td><?php echo htmlspecialchars((string) ($columnIssue['table'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></td>
                                 <td><?php echo htmlspecialchars((string) ($columnIssue['column'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></td>
                                 <td><?php echo htmlspecialchars((string) (($columnIssue['charset'] ?? '') !== '' ? $columnIssue['charset'] : Text::_('COM_CONTENTBUILDERNG_NOT_AVAILABLE')), ENT_QUOTES, 'UTF-8'); ?></td>
                                 <td><?php echo htmlspecialchars((string) (($columnIssue['collation'] ?? '') !== '' ? $columnIssue['collation'] : Text::_('COM_CONTENTBUILDERNG_NOT_AVAILABLE')), ENT_QUOTES, 'UTF-8'); ?></td>
+                                <td><?php echo htmlspecialchars(
+                                    (string) (
+                                        (($columnIssue['expected_charset'] ?? '') !== '' ? $columnIssue['expected_charset'] : Text::_('COM_CONTENTBUILDERNG_NOT_AVAILABLE'))
+                                        . ' / '
+                                        . (($columnIssue['expected_collation'] ?? '') !== '' ? $columnIssue['expected_collation'] : Text::_('COM_CONTENTBUILDERNG_NOT_AVAILABLE'))
+                                    ),
+                                    ENT_QUOTES,
+                                    'UTF-8'
+                                ); ?></td>
                             </tr>
                         <?php endforeach; ?>
                         </tbody>
@@ -1630,7 +1679,19 @@ $renderNumberedAuditTitle = static function (int $number, string $label, bool $h
                 <?php endif; ?>
             <?php endif; ?>
 
-            <h4 class="h6 mt-3<?php echo $hasMixedCollationIssues ? ' text-warning' : ''; ?>"><?php echo $renderNumberedAuditTitle(12, Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_MIXED_COLLATIONS'), $hasMixedCollationIssues); ?></h4>
+            <h4 class="h6 mt-3<?php echo $hasMixedCollationIssues ? ' text-warning' : ''; ?>"><?php echo $renderNumberedAuditTitle(12, Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_MIXED_COLLATIONS') . ' (' . $mixedCollationIssueCount . ')', $hasMixedCollationIssues); ?></h4>
+            <p class="text-muted small mb-2">
+                <?php echo Text::sprintf('COM_CONTENTBUILDERNG_ABOUT_AUDIT_EXPECTED_TARGET', $encodingTargetCharset, $encodingTargetCollation); ?>
+            </p>
+            <?php if ($encodingTargetCollation !== 'utf8mb4_0900_ai_ci') : ?>
+                <div class="alert alert-warning py-2 mb-2">
+                    <?php echo Text::sprintf(
+                        'COM_CONTENTBUILDERNG_ABOUT_AUDIT_ENCODING_TARGET_FALLBACK',
+                        'utf8mb4_0900_ai_ci',
+                        $encodingTargetCollation
+                    ); ?>
+                </div>
+            <?php endif; ?>
             <?php if (count($mixedTableCollations) <= 1) : ?>
                 <div class="alert cb-audit-ok-alert">
                     <span class="cb-audit-section-title">
@@ -1643,14 +1704,17 @@ $renderNumberedAuditTitle = static function (int $number, string $label, bool $h
                     <table class="table table-sm table-striped align-middle">
                         <thead>
                         <tr>
+                            <th scope="col"><?php echo $auditRowNumberLabel; ?></th>
                             <th scope="col"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_COLLATION'); ?></th>
                             <th scope="col"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_COUNT'); ?></th>
                             <th scope="col"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_TABLE'); ?></th>
                         </tr>
                         </thead>
                         <tbody>
+                        <?php $mixedCollationRowNumber = 1; ?>
                         <?php foreach ($mixedTableCollations as $collationStat) : ?>
                             <tr>
+                                <td><?php echo $mixedCollationRowNumber++; ?></td>
                                 <td><?php echo htmlspecialchars((string) ($collationStat['collation'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></td>
                                 <td><?php echo (int) ($collationStat['count'] ?? 0); ?></td>
                                 <td><?php echo htmlspecialchars(implode(', ', (array) ($collationStat['tables'] ?? [])), ENT_QUOTES, 'UTF-8'); ?></td>
@@ -1671,6 +1735,7 @@ $renderNumberedAuditTitle = static function (int $number, string $label, bool $h
                     <table class="table table-sm table-striped align-middle">
                         <thead>
                         <tr>
+                            <th scope="col"><?php echo $auditRowNumberLabel; ?></th>
                             <th scope="col"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_TABLE'); ?></th>
                             <th scope="col"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_COUNT'); ?></th>
                             <th scope="col"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_SIZE'); ?></th>
@@ -1679,8 +1744,10 @@ $renderNumberedAuditTitle = static function (int $number, string $label, bool $h
                         </tr>
                         </thead>
                         <tbody>
+                        <?php $cbTableDetailRowNumber = 1; ?>
                         <?php foreach ($cbTableDetails as $cbTableDetail) : ?>
                             <tr>
+                                <td><?php echo $cbTableDetailRowNumber++; ?></td>
                                 <td><?php echo htmlspecialchars((string) ($cbTableDetail['table'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></td>
                                 <td><?php echo number_format((int) ($cbTableDetail['rows'] ?? 0), 0, '.', ' '); ?></td>
                                 <td><?php echo $formatBytes((int) ($cbTableDetail['size_bytes'] ?? 0)); ?></td>
@@ -1695,11 +1762,11 @@ $renderNumberedAuditTitle = static function (int $number, string $label, bool $h
 
             <?php if (!empty($cbMissingNgTables)) : ?>
                 <h4 class="h6 mt-3"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_CB_NG_TABLES_MISSING_LIST'); ?></h4>
-                <ul class="mb-0">
+                <ol class="mb-0 ps-3">
                     <?php foreach ($cbMissingNgTables as $missingNgTable) : ?>
                         <li><?php echo htmlspecialchars((string) $missingNgTable, ENT_QUOTES, 'UTF-8'); ?></li>
                     <?php endforeach; ?>
-                </ul>
+                </ol>
             <?php endif; ?>
 
             <?php if (!empty($auditWarnings)) : ?>

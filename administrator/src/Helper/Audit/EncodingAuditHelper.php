@@ -17,18 +17,33 @@ final class EncodingAuditHelper
 {
     private const TARGET_CHARSET = 'utf8mb4';
     private const TARGET_COLLATION = 'utf8mb4_0900_ai_ci';
+    private const FALLBACK_COLLATION = 'utf8mb4_general_ci';
+
+    public static function resolveTargetCollation(DatabaseInterface $db): string
+    {
+        if (self::isCollationSupported($db, self::TARGET_COLLATION)) {
+            return self::TARGET_COLLATION;
+        }
+
+        if (self::isCollationSupported($db, self::FALLBACK_COLLATION)) {
+            return self::FALLBACK_COLLATION;
+        }
+
+        return self::TARGET_COLLATION;
+    }
 
     /**
      * @param array<int,string> $tables
      * @return array{
      *   0:array<int,array{table:string,collation:string,expected:string}>,
-     *   1:array<int,array{table:string,column:string,charset:string,collation:string}>,
+     *   1:array<int,array{table:string,column:string,charset:string,collation:string,expected_charset:string,expected_collation:string}>,
      *   2:array<int,array{collation:string,count:int,tables:array<int,string>}>,
      *   3:array<int,string>
      * }
      */
     public static function inspect(DatabaseInterface $db, array $tables, string $prefix, callable $toAlias): array
     {
+        $targetCollation = self::resolveTargetCollation($db);
         $tableIssues = [];
         $columnIssues = [];
         $mixedCollations = [];
@@ -73,11 +88,11 @@ final class EncodingAuditHelper
                 $tablesByCollation[$collation][] = $toAlias($tableName, $prefix);
             }
 
-            if ($collation === '' || strcasecmp($collation, self::TARGET_COLLATION) !== 0) {
+            if ($collation === '' || strcasecmp($collation, $targetCollation) !== 0) {
                 $tableIssues[] = [
                     'table' => $toAlias($tableName, $prefix),
                     'collation' => $collation,
-                    'expected' => self::TARGET_COLLATION,
+                    'expected' => $targetCollation,
                 ];
             }
         }
@@ -117,12 +132,14 @@ final class EncodingAuditHelper
                 continue;
             }
 
-            if ($charset !== self::TARGET_CHARSET || strcasecmp($collation, self::TARGET_COLLATION) !== 0) {
+            if ($charset !== self::TARGET_CHARSET || strcasecmp($collation, $targetCollation) !== 0) {
                 $columnIssues[] = [
                     'table' => $toAlias($tableName, $prefix),
                     'column' => $columnName,
                     'charset' => $charset,
                     'collation' => $collation,
+                    'expected_charset' => self::TARGET_CHARSET,
+                    'expected_collation' => $targetCollation,
                 ];
             }
         }
@@ -140,5 +157,19 @@ final class EncodingAuditHelper
         );
 
         return [$tableIssues, $columnIssues, $mixedCollations, $errors];
+    }
+
+    private static function isCollationSupported(DatabaseInterface $db, string $collation): bool
+    {
+        try {
+            $db->setQuery(
+                'SELECT COUNT(*)'
+                . ' FROM information_schema.COLLATIONS'
+                . ' WHERE COLLATION_NAME = ' . $db->quote($collation)
+            );
+            return ((int) $db->loadResult()) > 0;
+        } catch (\Throwable) {
+            return false;
+        }
     }
 }

@@ -13,6 +13,7 @@ namespace CB\Component\Contentbuilderng\Administrator\Helper;
 
 use Joomla\CMS\Factory;
 use Joomla\Database\DatabaseInterface;
+use CB\Component\Contentbuilderng\Administrator\Helper\Audit\EncodingAuditHelper;
 
 final class PackedDataMigrationHelper
 {
@@ -337,30 +338,43 @@ final class PackedDataMigrationHelper
      *   target_charset:string,
      *   supported:bool,
      *   scanned:int,
+     *   issues:int,
+     *   table_issues:int,
+     *   column_issues:int,
+     *   mixed_collation_groups:int,
      *   converted:int,
      *   unchanged:int,
      *   errors:int,
-     *   tables:array<int,array{table:string,from:string,to:string,status:string,error:string}>,
+     *   tables:array<int,array{
+     *     table:string,
+     *     from:string,
+     *     to:string,
+     *     status:string,
+     *     table_issues:int,
+     *     column_issues:int,
+     *     error:string
+     *   }>,
      *   warnings:array<int,string>
      * }
      */
     private static function repairTableCollations(DatabaseInterface $db): array
     {
+        $targetCollation = EncodingAuditHelper::resolveTargetCollation($db);
         $summary = [
-            'target_collation' => self::TARGET_COLLATION,
+            'target_collation' => $targetCollation,
             'target_charset' => self::TARGET_CHARSET,
             'supported' => false,
             'scanned' => 0,
+            'issues' => 0,
+            'table_issues' => 0,
+            'column_issues' => 0,
+            'mixed_collation_groups' => 0,
             'converted' => 0,
             'unchanged' => 0,
             'errors' => 0,
             'tables' => [],
             'warnings' => [],
         ];
-
-        if (!self::isCollationSupported($db, self::TARGET_COLLATION)) {
-            return $summary;
-        }
 
         $summary['supported'] = true;
 
@@ -382,21 +396,76 @@ final class PackedDataMigrationHelper
             $summary['errors'] += count($collationWarnings);
         }
 
+        [$tableIssues, $columnIssues, $mixedTableCollations, $encodingErrors] =
+            EncodingAuditHelper::inspect(
+                $db,
+                $tables,
+                $db->getPrefix(),
+                static fn(string $tableName, string $prefix): string => self::toAlias($tableName, $prefix)
+            );
+
+        if ($encodingErrors !== []) {
+            $summary['warnings'] = array_merge($summary['warnings'], $encodingErrors);
+            $summary['errors'] += count($encodingErrors);
+        }
+
+        $summary['table_issues'] = count($tableIssues);
+        $summary['column_issues'] = count($columnIssues);
+        $summary['mixed_collation_groups'] = max(0, count($mixedTableCollations) - 1);
+        $summary['issues'] = $summary['table_issues'] + $summary['column_issues'] + $summary['mixed_collation_groups'];
+
+        $issueTables = [];
+        $columnIssueCounts = [];
+
+        foreach ($tableIssues as $tableIssue) {
+            if (!is_array($tableIssue)) {
+                continue;
+            }
+
+            $alias = trim((string) ($tableIssue['table'] ?? ''));
+            if ($alias !== '') {
+                $issueTables[$alias] = true;
+            }
+        }
+
+        foreach ($columnIssues as $columnIssue) {
+            if (!is_array($columnIssue)) {
+                continue;
+            }
+
+            $alias = trim((string) ($columnIssue['table'] ?? ''));
+            if ($alias === '') {
+                continue;
+            }
+
+            $issueTables[$alias] = true;
+            $columnIssueCounts[$alias] = ($columnIssueCounts[$alias] ?? 0) + 1;
+        }
+
         $prefix = $db->getPrefix();
 
         foreach ($tables as $tableName) {
             $currentCollation = (string) ($tableCollations[$tableName] ?? '');
             $tableAlias = self::toAlias($tableName, $prefix);
+            $tableIssueCount = isset($issueTables[$tableAlias]) ? 1 : 0;
+            $columnIssueCount = (int) ($columnIssueCounts[$tableAlias] ?? 0);
 
             $summary['scanned']++;
 
-            if ($currentCollation !== '' && strcasecmp($currentCollation, self::TARGET_COLLATION) === 0) {
+            if (
+                $tableIssueCount === 0
+                && $columnIssueCount === 0
+                && $currentCollation !== ''
+                && strcasecmp($currentCollation, $targetCollation) === 0
+            ) {
                 $summary['unchanged']++;
                 $summary['tables'][] = [
                     'table' => $tableAlias,
                     'from' => $currentCollation,
-                    'to' => self::TARGET_COLLATION,
+                    'to' => $targetCollation,
                     'status' => 'unchanged',
+                    'table_issues' => $tableIssueCount,
+                    'column_issues' => $columnIssueCount,
                     'error' => '',
                 ];
                 continue;
@@ -406,7 +475,7 @@ final class PackedDataMigrationHelper
                 $db->setQuery(
                     'ALTER TABLE ' . $db->quoteName($tableName)
                     . ' CONVERT TO CHARACTER SET ' . self::TARGET_CHARSET
-                    . ' COLLATE ' . self::TARGET_COLLATION
+                    . ' COLLATE ' . $targetCollation
                 );
                 $db->execute();
             } catch (\Throwable $e) {
@@ -414,8 +483,10 @@ final class PackedDataMigrationHelper
                 $summary['tables'][] = [
                     'table' => $tableAlias,
                     'from' => $currentCollation,
-                    'to' => self::TARGET_COLLATION,
+                    'to' => $targetCollation,
                     'status' => 'error',
+                    'table_issues' => $tableIssueCount,
+                    'column_issues' => $columnIssueCount,
                     'error' => $e->getMessage(),
                 ];
                 continue;
@@ -425,27 +496,15 @@ final class PackedDataMigrationHelper
             $summary['tables'][] = [
                 'table' => $tableAlias,
                 'from' => $currentCollation,
-                'to' => self::TARGET_COLLATION,
+                'to' => $targetCollation,
                 'status' => 'converted',
+                'table_issues' => $tableIssueCount,
+                'column_issues' => $columnIssueCount,
                 'error' => '',
             ];
         }
 
         return $summary;
-    }
-
-    private static function isCollationSupported(DatabaseInterface $db, string $collation): bool
-    {
-        try {
-            $db->setQuery(
-                'SELECT COUNT(*)'
-                . ' FROM information_schema.COLLATIONS'
-                . ' WHERE COLLATION_NAME = ' . $db->quote($collation)
-            );
-            return ((int) $db->loadResult()) > 0;
-        } catch (\Throwable $e) {
-            return false;
-        }
     }
 
     /**
