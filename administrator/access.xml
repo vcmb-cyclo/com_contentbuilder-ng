@@ -21,8 +21,8 @@
 
 		<action
 			name="contentbuilderng.admin"
-			title="JACTION_ADMIN"
-			description="JACTION_ADMIN_COMPONENT_DESC"
+			title="COM_CONTENTBUILDERNG_ACTION_ADMIN"
+			description="COM_CONTENTBUILDERNG_ACTION_ADMIN_DESC"
 		/>
 
     </section>
