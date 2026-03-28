@@ -49,7 +49,23 @@ final class DatabaseAuditHelper
      *     migrated:int,
      *     unchanged:int,
      *     errors:int,
-     *     tables:array<int,array{table:string,column:string,scanned:int,candidates:int,migrated:int,unchanged:int,errors:int}>
+     *     tables:array<int,array{
+     *       table:string,
+     *       column:string,
+     *       scanned:int,
+     *       candidates:int,
+     *       migrated:int,
+     *       unchanged:int,
+     *       errors:int,
+     *       rows:array<int,array{
+     *         record_id:int,
+     *         record_label:string,
+     *         form_id:int,
+     *         form_label:string,
+     *         status:string,
+     *         error:string
+     *       }>
+     *     }>
      *   },
      *   column_encoding_issues:array<int,array{table:string,column:string,charset:string,collation:string}>,
      *   mixed_table_collations:array<int,array{collation:string,count:int,tables:array<int,string>}>,
