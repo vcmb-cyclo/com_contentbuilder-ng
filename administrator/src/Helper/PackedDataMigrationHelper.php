@@ -12,6 +12,7 @@ namespace CB\Component\Contentbuilderng\Administrator\Helper;
 \defined('_JEXEC') or die('Restricted access');
 
 use Joomla\CMS\Factory;
+use Joomla\CMS\Language\Text;
 use Joomla\Database\DatabaseInterface;
 use CB\Component\Contentbuilderng\Administrator\Helper\Audit\EncodingAuditHelper;
 
@@ -49,6 +50,42 @@ final class PackedDataMigrationHelper
         return true;
     }
 
+    private static function detectPackedPayloadType(string $raw): string
+    {
+        $decoded = base64_decode($raw, true);
+
+        if ($decoded === false) {
+            return 'invalid';
+        }
+
+        $jsonPayload = null;
+        if (strpos($decoded, 'j:') === 0) {
+            $jsonPayload = substr($decoded, 2);
+        } elseif (strpos(ltrim($decoded), '{') === 0 || strpos(ltrim($decoded), '[') === 0) {
+            $jsonPayload = $decoded;
+        }
+
+        if ($jsonPayload !== null) {
+            try {
+                json_decode($jsonPayload, false, 512, JSON_THROW_ON_ERROR);
+
+                return 'json';
+            } catch (\Throwable) {
+            }
+        }
+
+        try {
+            $legacyPayload = @unserialize($decoded, ['allowed_classes' => ['stdClass']]);
+
+            if ($legacyPayload !== false || $decoded === 'b:0;') {
+                return 'legacy_php';
+            }
+        } catch (\Throwable) {
+        }
+
+        return 'invalid';
+    }
+
     /**
      * Migrate packed payloads in database columns to the JSON-based packed format.
      *
@@ -58,7 +95,23 @@ final class PackedDataMigrationHelper
      *   migrated:int,
      *   unchanged:int,
      *   errors:int,
-     *   tables:array<int,array{table:string,column:string,scanned:int,candidates:int,migrated:int,unchanged:int,errors:int}>,
+     *   tables:array<int,array{
+     *     table:string,
+     *     column:string,
+     *     scanned:int,
+     *     candidates:int,
+     *     migrated:int,
+     *     unchanged:int,
+     *     errors:int,
+     *     rows:array<int,array{
+     *       record_id:int,
+     *       record_label:string,
+     *       form_id:int,
+     *       form_label:string,
+     *       status:string,
+     *       error:string
+     *     }>
+     *   }>,
      *   repair:array{
      *     target_collation:string,
      *     target_charset:string,
@@ -143,7 +196,23 @@ final class PackedDataMigrationHelper
      *   migrated:int,
      *   unchanged:int,
      *   errors:int,
-     *   tables:array<int,array{table:string,column:string,scanned:int,candidates:int,migrated:int,unchanged:int,errors:int}>
+     *   tables:array<int,array{
+     *     table:string,
+     *     column:string,
+     *     scanned:int,
+     *     candidates:int,
+     *     migrated:int,
+     *     unchanged:int,
+     *     errors:int,
+     *     rows:array<int,array{
+     *       record_id:int,
+     *       record_label:string,
+     *       form_id:int,
+     *       form_label:string,
+     *       status:string,
+     *       error:string
+     *     }>
+     *   }>
      * }
      */
     public static function migratePackedPayloadsStep(?DatabaseInterface $db = null): array
@@ -158,7 +227,23 @@ final class PackedDataMigrationHelper
      *   migrated:int,
      *   unchanged:int,
      *   errors:int,
-     *   tables:array<int,array{table:string,column:string,scanned:int,candidates:int,migrated:int,unchanged:int,errors:int}>
+     *   tables:array<int,array{
+     *     table:string,
+     *     column:string,
+     *     scanned:int,
+     *     candidates:int,
+     *     migrated:int,
+     *     unchanged:int,
+     *     errors:int,
+     *     rows:array<int,array{
+     *       record_id:int,
+     *       record_label:string,
+     *       form_id:int,
+     *       form_label:string,
+     *       status:string,
+     *       error:string
+     *     }>
+     *   }>
      * }
      */
     public static function auditPackedPayloadsStep(?DatabaseInterface $db = null): array
@@ -214,7 +299,23 @@ final class PackedDataMigrationHelper
      *   migrated:int,
      *   unchanged:int,
      *   errors:int,
-     *   tables:array<int,array{table:string,column:string,scanned:int,candidates:int,migrated:int,unchanged:int,errors:int}>
+     *   tables:array<int,array{
+     *     table:string,
+     *     column:string,
+     *     scanned:int,
+     *     candidates:int,
+     *     migrated:int,
+     *     unchanged:int,
+     *     errors:int,
+     *     rows:array<int,array{
+     *       record_id:int,
+     *       record_label:string,
+     *       form_id:int,
+     *       form_label:string,
+     *       status:string,
+     *       error:string
+     *     }>
+     *   }>
      * }
      */
     private static function migratePackedPayloads(DatabaseInterface $db, bool $applyChanges = true): array
@@ -237,17 +338,43 @@ final class PackedDataMigrationHelper
                 'migrated' => 0,
                 'unchanged' => 0,
                 'errors' => 0,
+                'rows' => [],
             ];
 
             try {
-                $query = $db->getQuery(true)
-                    ->select([
-                        $db->quoteName($target['primaryKey']),
-                        $db->quoteName($target['column']),
-                    ])
-                    ->from($db->quoteName($target['table']))
-                    ->where($db->quoteName($target['column']) . ' IS NOT NULL')
-                    ->where($db->quoteName($target['column']) . " <> ''");
+                $query = $db->getQuery(true);
+
+                if ($target['table'] === '#__contentbuilderng_elements') {
+                    $query
+                        ->select([
+                            $db->quoteName('e.id'),
+                            $db->quoteName('e.form_id'),
+                            $db->quoteName('e.label'),
+                            $db->quoteName('e.reference_id'),
+                            $db->quoteName('e.options'),
+                            $db->quoteName('f.name', 'form_name'),
+                            $db->quoteName('f.title', 'form_title'),
+                        ])
+                        ->from($db->quoteName($target['table'], 'e'))
+                        ->join(
+                            'LEFT',
+                            $db->quoteName('#__contentbuilderng_forms', 'f')
+                            . ' ON ' . $db->quoteName('f.id') . ' = ' . $db->quoteName('e.form_id')
+                        )
+                        ->where($db->quoteName('e.options') . ' IS NOT NULL')
+                        ->where($db->quoteName('e.options') . " <> ''");
+                } else {
+                    $query
+                        ->select([
+                            $db->quoteName('f.id'),
+                            $db->quoteName('f.name'),
+                            $db->quoteName('f.title'),
+                            $db->quoteName('f.config'),
+                        ])
+                        ->from($db->quoteName($target['table'], 'f'))
+                        ->where($db->quoteName('f.config') . ' IS NOT NULL')
+                        ->where($db->quoteName('f.config') . " <> ''");
+                }
 
                 $db->setQuery($query);
                 $rows = $db->loadAssocList();
@@ -270,6 +397,21 @@ final class PackedDataMigrationHelper
 
                 $id = (int) ($row[$target['primaryKey']] ?? 0);
                 $raw = (string) ($row[$target['column']] ?? '');
+                $formId = $target['table'] === '#__contentbuilderng_elements'
+                    ? (int) ($row['form_id'] ?? 0)
+                    : $id;
+                $formName = trim((string) ($row['form_name'] ?? ($row['name'] ?? '')));
+                $formTitle = trim((string) ($row['form_title'] ?? ($row['title'] ?? '')));
+                $formLabel = $formName !== '' ? $formName : ($formTitle !== '' ? $formTitle : '#'.$formId);
+                $recordLabel = $target['table'] === '#__contentbuilderng_elements'
+                    ? trim((string) ($row['label'] ?? ''))
+                    : trim((string) ($row['name'] ?? ''));
+                if ($recordLabel === '') {
+                    $recordLabel = trim((string) ($row['reference_id'] ?? ''));
+                }
+                if ($recordLabel === '') {
+                    $recordLabel = '#' . $id;
+                }
 
                 $tableStats['scanned']++;
                 $summary['scanned']++;
@@ -288,6 +430,16 @@ final class PackedDataMigrationHelper
 
                 $tableStats['candidates']++;
                 $summary['candidates']++;
+                $tableStats['rows'][] = [
+                    'record_id' => $id,
+                    'record_label' => $recordLabel,
+                    'form_id' => $formId,
+                    'form_label' => $formLabel,
+                    'payload_type' => self::detectPackedPayloadType($raw),
+                    'status' => 'pending',
+                    'error' => '',
+                ];
+                $rowIndex = array_key_last($tableStats['rows']);
 
                 $sentinel = new \stdClass();
                 $decoded = PackedDataHelper::decodePackedData($raw, $sentinel, false);
@@ -295,6 +447,14 @@ final class PackedDataMigrationHelper
                 if ($decoded === $sentinel) {
                     $tableStats['errors']++;
                     $summary['errors']++;
+                    if ($rowIndex !== null) {
+                        $tableStats['rows'][$rowIndex]['status'] = 'error';
+                        $tableStats['rows'][$rowIndex]['error'] = Text::sprintf(
+                            'COM_CONTENTBUILDERNG_PACKED_DATA_DECODE_FAILED',
+                            (string) $target['table'],
+                            (string) $target['column']
+                        );
+                    }
                     continue;
                 }
 
@@ -303,6 +463,9 @@ final class PackedDataMigrationHelper
                 if ($encoded === $raw) {
                     $tableStats['unchanged']++;
                     $summary['unchanged']++;
+                    if ($rowIndex !== null) {
+                        $tableStats['rows'][$rowIndex]['status'] = 'unchanged';
+                    }
                     continue;
                 }
 
@@ -318,12 +481,19 @@ final class PackedDataMigrationHelper
                     } catch (\Throwable $e) {
                         $tableStats['errors']++;
                         $summary['errors']++;
+                        if ($rowIndex !== null) {
+                            $tableStats['rows'][$rowIndex]['status'] = 'error';
+                            $tableStats['rows'][$rowIndex]['error'] = $e->getMessage();
+                        }
                         continue;
                     }
                 }
 
                 $tableStats['migrated']++;
                 $summary['migrated']++;
+                if ($rowIndex !== null) {
+                    $tableStats['rows'][$rowIndex]['status'] = 'migrated';
+                }
             }
 
             $summary['tables'][] = $tableStats;

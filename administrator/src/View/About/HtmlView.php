@@ -31,6 +31,7 @@ class HtmlView extends BaseHtmlView
     protected array $javascriptLibraries = [];
     protected array $auditReport = [];
     protected array $logReport = [];
+    protected array $packedPayloadReport = [];
     protected array $repairWorkflow = [];
 
     public function display($tpl = null)
@@ -71,7 +72,9 @@ class HtmlView extends BaseHtmlView
         );
 
         ToolbarHelper::title(
-            Text::_('COM_CONTENTBUILDERNG') . ' / ' . Text::_('COM_CONTENTBUILDERNG_ABOUT'),
+            $this->getLayout() === 'packedpayload'
+                ? Text::_('COM_CONTENTBUILDERNG_DB_REPAIR_WORKFLOW_PACKED_DATA_RAW_TITLE')
+                : Text::_('COM_CONTENTBUILDERNG') . ' / ' . Text::_('COM_CONTENTBUILDERNG_ABOUT'),
             'logo_left'
         );
 
@@ -137,6 +140,9 @@ class HtmlView extends BaseHtmlView
         $logReport = $app->getUserState('com_contentbuilderng.about.log', []);
         $this->logReport = is_array($logReport) ? $logReport : [];
         $app->setUserState('com_contentbuilderng.about.log', []);
+        $this->packedPayloadReport = $this->getLayout() === 'packedpayload'
+            ? $this->getPackedPayloadReport($app)
+            : [];
         $repairWorkflow = $app->getUserState('com_contentbuilderng.about.repair_workflow', []);
         $this->repairWorkflow = is_array($repairWorkflow) ? $repairWorkflow : [];
 
@@ -218,6 +224,86 @@ class HtmlView extends BaseHtmlView
         }
 
         return $versionInformation;
+    }
+
+    private function getPackedPayloadReport(AdministratorApplication $app): array
+    {
+        $source = trim((string) $app->input->get('packed_source', '', 'cmd'));
+        $recordId = $app->input->getInt('id', 0);
+
+        if (!in_array($source, ['elements', 'forms'], true) || $recordId <= 0) {
+            return [];
+        }
+
+        try {
+            $db = Factory::getContainer()->get(DatabaseInterface::class);
+
+            if ($source === 'elements') {
+                $query = $db->getQuery(true)
+                    ->select([
+                        $db->quoteName('e.id'),
+                        $db->quoteName('e.label'),
+                        $db->quoteName('e.reference_id'),
+                        $db->quoteName('e.options', 'raw_value'),
+                    ])
+                    ->from($db->quoteName('#__contentbuilderng_elements', 'e'))
+                    ->where($db->quoteName('e.id') . ' = ' . $recordId);
+
+                $table = '#__contentbuilderng_elements';
+                $column = 'options';
+            } else {
+                $query = $db->getQuery(true)
+                    ->select([
+                        $db->quoteName('f.id'),
+                        $db->quoteName('f.name'),
+                        $db->quoteName('f.title'),
+                        $db->quoteName('f.config', 'raw_value'),
+                    ])
+                    ->from($db->quoteName('#__contentbuilderng_forms', 'f'))
+                    ->where($db->quoteName('f.id') . ' = ' . $recordId);
+
+                $table = '#__contentbuilderng_forms';
+                $column = 'config';
+            }
+
+            $db->setQuery($query);
+            $row = $db->loadAssoc();
+
+            if (!is_array($row) || $row === []) {
+                return [
+                    'status' => 'error',
+                    'message' => Text::_('COM_CONTENTBUILDERNG_DB_REPAIR_WORKFLOW_PACKED_DATA_RAW_NOT_FOUND'),
+                ];
+            }
+
+            $recordLabel = trim((string) ($row['label'] ?? ''));
+            if ($recordLabel === '') {
+                $recordLabel = trim((string) ($row['reference_id'] ?? ''));
+            }
+            if ($recordLabel === '') {
+                $recordLabel = trim((string) ($row['name'] ?? ''));
+            }
+            if ($recordLabel === '') {
+                $recordLabel = trim((string) ($row['title'] ?? ''));
+            }
+            if ($recordLabel === '') {
+                $recordLabel = '#' . $recordId;
+            }
+
+            return [
+                'status' => 'ok',
+                'table' => $table,
+                'column' => $column,
+                'record_id' => $recordId,
+                'record_label' => $recordLabel,
+                'raw_value' => (string) ($row['raw_value'] ?? ''),
+            ];
+        } catch (\Throwable $e) {
+            return [
+                'status' => 'error',
+                'message' => $e->getMessage(),
+            ];
+        }
     }
 
     private function getInstalledPhpLibraries(): array

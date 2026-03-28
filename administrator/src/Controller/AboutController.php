@@ -2960,16 +2960,52 @@ final class AboutController extends BaseController
                 continue;
             }
 
+            $tableName = (string) ($table['table'] ?? '');
+            $tableColumn = (string) ($table['column'] ?? '');
             $lines[] = Text::sprintf(
                 'COM_CONTENTBUILDERNG_PACKED_MIGRATION_TABLE_SUMMARY',
-                (string) ($table['table'] ?? ''),
-                (string) ($table['column'] ?? ''),
+                $tableName,
+                $tableColumn,
                 (int) ($table['scanned'] ?? 0),
                 (int) ($table['candidates'] ?? 0),
                 (int) ($table['migrated'] ?? 0),
                 (int) ($table['unchanged'] ?? 0),
                 (int) ($table['errors'] ?? 0)
             );
+
+            foreach ((array) ($table['rows'] ?? []) as $row) {
+                if (!is_array($row)) {
+                    continue;
+                }
+
+                $rowStatus = (string) ($row['status'] ?? '');
+                $rowStatusLabelKey = match ($rowStatus) {
+                    'migrated' => 'COM_CONTENTBUILDERNG_DB_REPAIR_WORKFLOW_PACKED_DATA_ROW_STATUS_MIGRATED',
+                    'unchanged' => 'COM_CONTENTBUILDERNG_DB_REPAIR_WORKFLOW_PACKED_DATA_ROW_STATUS_UNCHANGED',
+                    'error' => 'COM_CONTENTBUILDERNG_DB_REPAIR_WORKFLOW_PACKED_DATA_ROW_STATUS_ERROR',
+                    default => 'COM_CONTENTBUILDERNG_DB_REPAIR_WORKFLOW_PACKED_DATA_ROW_STATUS_UNCHANGED',
+                };
+                $payloadType = (string) ($row['payload_type'] ?? '');
+                $payloadTypeLabelKey = match ($payloadType) {
+                    'json' => 'COM_CONTENTBUILDERNG_DB_REPAIR_WORKFLOW_PACKED_DATA_FORMAT_JSON',
+                    'legacy_php' => 'COM_CONTENTBUILDERNG_DB_REPAIR_WORKFLOW_PACKED_DATA_FORMAT_LEGACY_PHP',
+                    default => 'COM_CONTENTBUILDERNG_DB_REPAIR_WORKFLOW_PACKED_DATA_FORMAT_INVALID',
+                };
+                $rowError = trim((string) ($row['error'] ?? ''));
+                $rowErrorSuffix = $rowError !== '' ? '; error=' . $rowError : '';
+
+                $lines[] = Text::sprintf(
+                    'COM_CONTENTBUILDERNG_PACKED_MIGRATION_ROW_DETAIL',
+                    $tableName,
+                    $tableColumn,
+                    (int) ($row['record_id'] ?? 0),
+                    (string) ($row['record_label'] ?? ''),
+                    (string) ($row['form_label'] ?? ''),
+                    Text::_($payloadTypeLabelKey),
+                    Text::_($rowStatusLabelKey),
+                    $rowErrorSuffix
+                );
+            }
         }
 
         return [

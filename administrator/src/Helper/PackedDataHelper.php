@@ -42,6 +42,29 @@ final class PackedDataHelper
             }
         }
 
+        try {
+            $legacyPayload = @unserialize($decoded, ['allowed_classes' => ['stdClass']]);
+
+            if ($legacyPayload !== false || $decoded === 'b:0;') {
+                if ($assoc) {
+                    return json_decode(
+                        json_encode($legacyPayload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+                        true,
+                        512,
+                        JSON_THROW_ON_ERROR
+                    );
+                }
+
+                if (is_array($legacyPayload)) {
+                    return (object) $legacyPayload;
+                }
+
+                return $legacyPayload;
+            }
+        } catch (\Throwable $e) {
+            return $default;
+        }
+
         return $default;
     }
 
