@@ -261,7 +261,10 @@ class EditModel extends BaseDatabaseModel
                 }
 
                 if ($item->getParams()->get('show_page_heading', null) !== null) {
-                    $this->_show_page_heading = $item->getParams()->get('show_page_heading', null);
+                    $this->_show_page_heading = MenuParamHelper::resolvePageHeadingToggle(
+                        $item->getParams()->get('show_page_heading', null),
+                        $this->_show_page_heading ? 1 : 0
+                    );
                 }
 
                 if ($item->getParams()->get('page_title', null) !== null) {

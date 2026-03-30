@@ -113,7 +113,10 @@ class PublicformsModel extends ListModel
                 $this->show_permissions_edit = (bool) MenuParamHelper::getMenuParam($params, 'cb_show_permission_edit_column', 0);
 
                 if ($item->getParams()->get('show_page_heading', null) !== null) {
-                    $this->_show_page_heading = $item->getParams()->get('show_page_heading', null);
+                    $this->_show_page_heading = MenuParamHelper::resolvePageHeadingToggle(
+                        $item->getParams()->get('show_page_heading', null),
+                        $this->_show_page_heading ? 1 : 0
+                    );
                 }
 
                 $this->show_introtext = (bool) MenuParamHelper::getMenuParam($params, 'cb_show_introtext', 0);
