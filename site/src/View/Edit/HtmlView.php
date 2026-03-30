@@ -61,7 +61,7 @@ class HtmlView extends BaseHtmlView
     public int $next_record_start = 0;
     public int $cb_show_author = 1;
     public int $cb_show_top_bar = 1;
-    public int $cb_show_bottom_bar = 1;
+    public int $cb_show_bottom_bar = 0;
     public int $cb_filter_in_title = 0;
     public int $cb_prefix_in_title = 0;
 

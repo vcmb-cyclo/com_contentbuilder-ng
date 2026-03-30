@@ -20,7 +20,7 @@ use CB\Component\Contentbuilderng\Administrator\Helper\Audit\EncodingAuditHelper
 use CB\Component\Contentbuilderng\Administrator\Helper\Audit\FrontendPermissionAuditHelper;
 use CB\Component\Contentbuilderng\Administrator\Helper\Audit\HistoricalAssetAuditHelper;
 use CB\Component\Contentbuilderng\Administrator\Helper\Audit\MenuViewAuditHelper;
-use CB\Component\Contentbuilderng\Administrator\Helper\FormAuditColumnsHelper;
+use CB\Component\Contentbuilderng\Administrator\Helper\FormDisplayColumnsHelper;
 use Joomla\CMS\Factory;
 use Joomla\Database\DatabaseInterface;
 
@@ -211,7 +211,7 @@ final class DatabaseAuditHelper
         $auditColumnsSummary = StorageAuditColumnsHelper::audit($db);
         $missingAuditColumns = (array) ($auditColumnsSummary['issues'] ?? []);
         $errors = array_merge($errors, (array) ($auditColumnsSummary['warnings'] ?? []));
-        $formAuditColumnsSummary = FormAuditColumnsHelper::audit($db);
+        $formAuditColumnsSummary = FormDisplayColumnsHelper::audit($db);
         $missingFormAuditColumns = (array) ($formAuditColumnsSummary['issues'] ?? []);
         $errors = array_merge($errors, (array) ($formAuditColumnsSummary['warnings'] ?? []));
         $pluginDuplicatesSummary = PluginExtensionDedupHelper::audit($db);

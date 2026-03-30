@@ -25,6 +25,9 @@ use Joomla\Database\DatabaseInterface;
 use Joomla\Filesystem\Folder;
 use Joomla\Filesystem\File;
 use Joomla\Registry\Registry;
+use CB\Component\Contentbuilderng\Administrator\Helper\FormDisplayColumnsHelper;
+
+require_once __DIR__ . '/administrator/src/Helper/FormDisplayColumnsHelper.php';
 
 /**
  * Installer Script class for com_contentbuilderng
@@ -277,7 +280,7 @@ class com_contentbuilderngInstallerScript
 
             // DB migrations / hardening
             $this->updateDateColumns();
-            $this->ensureFormsNewButtonColumn();
+            $this->ensureFormsDisplayColumns();
             $this->ensureElementsLinkableDefault();
 
             // Normalize menu links and titles
@@ -1386,12 +1389,13 @@ class com_contentbuilderngInstallerScript
         $this->log('[OK] Date fields updated to support NULL correctly, if necessary.');
     }
 
-    private function ensureFormsNewButtonColumn(): void
+    private function ensureFormsDisplayColumns(): void
     {
         $db = $this->db();
+
         try {
             $cols = $db->getTableColumns('#__contentbuilderng_forms', false);
-            if (!is_array($cols) || array_key_exists('new_button', $cols)) {
+            if (!is_array($cols)) {
                 return;
             }
         } catch (\Throwable $e) {
@@ -1399,14 +1403,33 @@ class com_contentbuilderngInstallerScript
             return;
         }
 
-        try {
-            $db->setQuery(
-                'ALTER TABLE ' . $db->quoteName('#__contentbuilderng_forms')
-                    . ' ADD COLUMN ' . $db->quoteName('new_button') . " TINYINT(1) NOT NULL DEFAULT '0'"
-            )->execute();
-            $this->log('[OK] Added #__contentbuilderng_forms.new_button column.');
-        } catch (\Throwable $e) {
-            $this->log('[WARNING] Failed adding #__contentbuilderng_forms.new_button column: ' . $e->getMessage(), Log::WARNING);
+        $requiredColumns = FormDisplayColumnsHelper::requiredColumns();
+
+        $knownColumns = [];
+        foreach ((array) $cols as $columnName => $_definition) {
+            $knownColumns[strtolower((string) $columnName)] = true;
+        }
+
+        $added = [];
+        foreach ($requiredColumns as $columnName => $definition) {
+            if (isset($knownColumns[$columnName])) {
+                continue;
+            }
+
+            try {
+                $db->setQuery(
+                    'ALTER TABLE ' . $db->quoteName('#__contentbuilderng_forms')
+                        . ' ADD COLUMN ' . $db->quoteName($columnName) . ' ' . $definition
+                )->execute();
+                $added[] = $columnName;
+                $this->log('[OK] Added #__contentbuilderng_forms.' . $columnName . ' column.');
+            } catch (\Throwable $e) {
+                $this->log('[WARNING] Failed adding #__contentbuilderng_forms.' . $columnName . ' column: ' . $e->getMessage(), Log::WARNING);
+            }
+        }
+
+        if ($added === []) {
+            $this->log('[OK] #__contentbuilderng_forms already contains all display columns.');
         }
     }
 

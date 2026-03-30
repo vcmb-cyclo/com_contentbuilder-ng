@@ -233,7 +233,7 @@ CREATE TABLE IF NOT EXISTS `#__contentbuilderng_forms`
     `cb_show_bottom_bar` tinyint
 (
     1
-) NOT NULL DEFAULT '1',
+) NOT NULL DEFAULT '0',
     `cb_show_details_top_bar` tinyint
 (
     1

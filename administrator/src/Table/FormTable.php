@@ -119,7 +119,7 @@ class FormTable extends Table
     public $list_last_modification = 0;
     public $cb_show_author = 1;
     public $cb_show_top_bar = 1;
-    public $cb_show_bottom_bar = 1;
+    public $cb_show_bottom_bar = 0;
     public $cb_show_details_top_bar = 1;
     public $cb_show_details_bottom_bar = 0;
     public $show_back_button = 1;

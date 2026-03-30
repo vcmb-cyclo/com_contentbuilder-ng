@@ -31,7 +31,6 @@ use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
 use CB\Component\Contentbuilderng\Administrator\Service\FormSupportService;
 use CB\Component\Contentbuilderng\Administrator\Service\PathService;
 use CB\Component\Contentbuilderng\Administrator\Helper\FormSourceFactory;
-use CB\Component\Contentbuilderng\Administrator\Helper\FormAuditColumnsHelper;
 use CB\Component\Contentbuilderng\Administrator\Helper\Logger;
 use CB\Component\Contentbuilderng\Administrator\Helper\PackedDataHelper;
 
@@ -106,45 +105,6 @@ class FormModel extends AdminModel
         }
 
         return $hex;
-    }
-
-    private function ensureListDisplayColumns(): void
-    {
-        $db = $this->getDatabase();
-        $tableName = $db->getPrefix() . 'contentbuilderng_forms';
-
-        try {
-            $columns = $db->getTableColumns($tableName, true);
-        } catch (\Throwable $e) {
-            Logger::warning('Could not inspect form table columns', ['error' => $e->getMessage()]);
-            return;
-        }
-
-        $knownColumns = [];
-        foreach ((array) $columns as $columnName => $_type) {
-            $knownColumns[strtolower((string) $columnName)] = true;
-        }
-
-        $requiredColumns = FormAuditColumnsHelper::requiredColumns();
-
-        foreach ($requiredColumns as $columnName => $definition) {
-            if (isset($knownColumns[$columnName])) {
-                continue;
-            }
-
-            try {
-                $db->setQuery(
-                    'ALTER TABLE ' . $db->quoteName('#__contentbuilderng_forms')
-                    . ' ADD ' . $db->quoteName($columnName) . ' ' . $definition
-                );
-                $db->execute();
-            } catch (\Throwable $e) {
-                Logger::warning('Could not add missing form table column', [
-                    'column' => $columnName,
-                    'error' => $e->getMessage(),
-                ]);
-            }
-        }
     }
 
     private function saveElementListSettings(
@@ -647,7 +607,7 @@ class FormModel extends AdminModel
             $data->list_rating = 0;
             $data->cb_show_author = 1;
             $data->cb_show_top_bar = 1;
-            $data->cb_show_bottom_bar = 1;
+            $data->cb_show_bottom_bar = 0;
             $data->cb_show_details_top_bar = 1;
             $data->cb_show_details_bottom_bar = 0;
             $data->show_back_button = 1;
@@ -746,7 +706,7 @@ class FormModel extends AdminModel
         }
 
         if (!isset($data->cb_show_bottom_bar)) {
-            $data->cb_show_bottom_bar = 1;
+            $data->cb_show_bottom_bar = 0;
         }
 
         if (!isset($data->cb_show_details_top_bar)) {
@@ -1273,7 +1233,6 @@ class FormModel extends AdminModel
 
         // 8) Sauvegarde STANDARD Joomla (bind/check/store + prepareTable() + events)
         // IMPORTANT: parent::save() prend un array "jform-like"
-        $this->ensureListDisplayColumns();
         $ok = parent::save($jform);
         if (!$ok) {
             return false;

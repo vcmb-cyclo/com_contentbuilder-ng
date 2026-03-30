@@ -50,7 +50,7 @@ $prepareEffectOptions = is_array($displayData['prepareEffectOptions'] ?? null) ?
                 </div>
                 <div>
                     <input type="hidden" name="jform[cb_show_bottom_bar]" value="0" />
-                    <?php echo $renderCheckbox('jform[cb_show_bottom_bar]', 'cb_show_bottom_bar', (bool) ($item->cb_show_bottom_bar ?? true)); ?>
+                    <?php echo $renderCheckbox('jform[cb_show_bottom_bar]', 'cb_show_bottom_bar', (bool) ($item->cb_show_bottom_bar ?? false)); ?>
                     <label class="form-check-label" for="cb_show_bottom_bar">
                         <span class="editlinktip hasTip" title="<?php echo Text::_('COM_CONTENTBUILDERNG_SHOW_BOTTOM_BAR_DESC'); ?>">
                             <?php echo Text::_('COM_CONTENTBUILDERNG_SHOW_BOTTOM_BAR'); ?>

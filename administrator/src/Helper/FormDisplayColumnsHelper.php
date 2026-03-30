@@ -13,7 +13,7 @@ namespace CB\Component\Contentbuilderng\Administrator\Helper;
 
 use Joomla\Database\DatabaseInterface;
 
-final class FormAuditColumnsHelper
+final class FormDisplayColumnsHelper
 {
     /**
      * Columns managed by the list/detail display defaults.
@@ -23,13 +23,14 @@ final class FormAuditColumnsHelper
     public static function requiredColumns(): array
     {
         return [
+            'new_button' => 'TINYINT(1) NOT NULL DEFAULT 0',
             'button_bar_sticky' => 'TINYINT(1) NOT NULL DEFAULT 0',
             'list_header_sticky' => 'TINYINT(1) NOT NULL DEFAULT 0',
             'show_preview_link' => 'TINYINT(1) NOT NULL DEFAULT 0',
             'list_last_modification' => 'TINYINT(1) NOT NULL DEFAULT 0',
             'cb_show_author' => 'TINYINT(1) NOT NULL DEFAULT 1',
             'cb_show_top_bar' => 'TINYINT(1) NOT NULL DEFAULT 1',
-            'cb_show_bottom_bar' => 'TINYINT(1) NOT NULL DEFAULT 1',
+            'cb_show_bottom_bar' => 'TINYINT(1) NOT NULL DEFAULT 0',
             'cb_show_details_top_bar' => 'TINYINT(1) NOT NULL DEFAULT 1',
             'cb_show_details_bottom_bar' => 'TINYINT(1) NOT NULL DEFAULT 0',
             'show_back_button' => 'TINYINT(1) NOT NULL DEFAULT 1',

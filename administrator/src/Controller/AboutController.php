@@ -13,7 +13,7 @@ namespace CB\Component\Contentbuilderng\Administrator\Controller;
 
 use CB\Component\Contentbuilderng\Administrator\Helper\DatabaseAuditHelper;
 use CB\Component\Contentbuilderng\Administrator\Helper\DatabaseRepairHelper;
-use CB\Component\Contentbuilderng\Administrator\Helper\FormAuditColumnsHelper;
+use CB\Component\Contentbuilderng\Administrator\Helper\FormDisplayColumnsHelper;
 use CB\Component\Contentbuilderng\Administrator\Helper\Logger;
 use CB\Component\Contentbuilderng\Administrator\Helper\PackedDataMigrationHelper;
 use Joomla\CMS\Application\AdministratorApplication;
@@ -2456,7 +2456,7 @@ final class AboutController extends BaseController
             'table_encoding' => $this->buildTableEncodingStepResult(PackedDataMigrationHelper::repairTableCollationsStep($db)),
             'packed_data' => $this->buildPackedDataStepResult(PackedDataMigrationHelper::migratePackedPayloadsStep($db)),
             'audit_columns' => $this->buildAuditColumnsStepResult(\CB\Component\Contentbuilderng\Administrator\Helper\StorageAuditColumnsHelper::repair($db)),
-            'form_audit_columns' => $this->buildAuditColumnsStepResult(FormAuditColumnsHelper::repair($db)),
+            'form_audit_columns' => $this->buildAuditColumnsStepResult(FormDisplayColumnsHelper::repair($db)),
             'plugin_duplicates' => $this->buildPluginDuplicateStepResult(\CB\Component\Contentbuilderng\Administrator\Helper\PluginExtensionDedupHelper::repair($db)),
             'historical_menu_entries' => $this->buildHistoricalMenuStepResult(PackedDataMigrationHelper::repairLegacyMenuEntriesStep($db)),
             'bf_field_sync' => $this->buildBfFieldSyncStepResult(DatabaseAuditHelper::run()),
