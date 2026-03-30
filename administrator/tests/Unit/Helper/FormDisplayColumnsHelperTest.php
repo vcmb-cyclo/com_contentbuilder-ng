@@ -8,48 +8,6 @@ use CB\Component\Contentbuilderng\Administrator\Helper\FormDisplayColumnsHelper;
 use Joomla\Database\DatabaseInterface;
 use PHPUnit\Framework\TestCase;
 
-final class FormDisplayColumnsHelperTestDatabase implements DatabaseInterface
-{
-    /** @var array<string,string> */
-    private array $columns;
-    /** @var array<int,string> */
-    public array $queries = [];
-    public int $executions = 0;
-
-    /**
-     * @param array<string,string> $columns
-     */
-    public function __construct(array $columns)
-    {
-        $this->columns = $columns;
-    }
-
-    public function getPrefix(): string
-    {
-        return 'jos_';
-    }
-
-    public function getTableColumns(string $table, bool $type = true): array
-    {
-        return $this->columns;
-    }
-
-    public function quoteName(string $name): string
-    {
-        return '`' . $name . '`';
-    }
-
-    public function setQuery(string $query): void
-    {
-        $this->queries[] = $query;
-    }
-
-    public function execute(): void
-    {
-        $this->executions++;
-    }
-}
-
 final class FormDisplayColumnsHelperTest extends TestCase
 {
     public function testRequiredColumnsReturnsExpectedDefinitions(): void
@@ -73,7 +31,9 @@ final class FormDisplayColumnsHelperTest extends TestCase
 
     public function testAuditReportsMissingColumns(): void
     {
-        $db = new FormDisplayColumnsHelperTestDatabase([
+        $db = $this->createMock(DatabaseInterface::class);
+        $db->method('getPrefix')->willReturn('jos_');
+        $db->method('getTableColumns')->with('jos_contentbuilderng_forms', true)->willReturn([
             'id' => 'int',
             'name' => 'varchar',
             'cb_show_author' => 'tinyint',
@@ -104,7 +64,10 @@ final class FormDisplayColumnsHelperTest extends TestCase
 
     public function testRepairAddsMissingColumns(): void
     {
-        $db = new FormDisplayColumnsHelperTestDatabase([
+        $sql = [];
+        $db = $this->createMock(DatabaseInterface::class);
+        $db->method('getPrefix')->willReturn('jos_');
+        $db->method('getTableColumns')->with('jos_contentbuilderng_forms', true)->willReturn([
             'id' => 'int',
             'name' => 'varchar',
             'new_button' => 'tinyint',
@@ -119,6 +82,11 @@ final class FormDisplayColumnsHelperTest extends TestCase
             'show_back_button' => 'tinyint',
             'cb_filter_in_title' => 'tinyint',
         ]);
+        $db->method('quoteName')->willReturnCallback(static fn (string $name): string => '`' . $name . '`');
+        $db->method('setQuery')->willReturnCallback(static function (string $query) use (&$sql): void {
+            $sql[] = $query;
+        });
+        $db->expects(self::exactly(2))->method('execute');
 
         $summary = FormDisplayColumnsHelper::repair($db);
 
@@ -136,21 +104,20 @@ final class FormDisplayColumnsHelperTest extends TestCase
             'cb_show_details_bottom_bar',
             'cb_prefix_in_title',
         ], $summary['tables'][0]['added']);
-        self::assertCount(2, $db->queries);
+        self::assertCount(2, $sql);
         self::assertTrue(
             \in_array(
                 'ALTER TABLE `#__contentbuilderng_forms` ADD `cb_prefix_in_title` TINYINT(1) NOT NULL DEFAULT 0',
-                $db->queries,
+                $sql,
                 true
             )
         );
         self::assertTrue(
             \in_array(
                 'ALTER TABLE `#__contentbuilderng_forms` ADD `cb_show_details_bottom_bar` TINYINT(1) NOT NULL DEFAULT 0',
-                $db->queries,
+                $sql,
                 true
             )
         );
-        self::assertSame(2, $db->executions);
     }
 }

@@ -2,3 +2,5 @@
 *.zip
 administrator/.phpunit.cache/
 administrator/vendor/
+administrator/.phpunit.result.cache
+

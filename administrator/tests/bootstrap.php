@@ -20,6 +20,11 @@ namespace Joomla\Database {
     if (!\interface_exists(DatabaseInterface::class, false)) {
         interface DatabaseInterface
         {
+            public function getPrefix(): string;
+            public function getTableColumns(string $table, bool $type = true): array;
+            public function quoteName(string $name): string;
+            public function setQuery(string $query): void;
+            public function execute(): void;
         }
     }
 }
