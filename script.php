@@ -16,9 +16,11 @@
 defined('_JEXEC') or die('Direct Access to this location is not allowed.');
 
 use Joomla\CMS\Factory;
+use Joomla\CMS\Language\Text;
 use Joomla\CMS\Installer\Installer;
 use Joomla\CMS\Installer\InstallerAdapter;
 use Joomla\CMS\Log\Log;
+use Joomla\CMS\Router\Route;
 use Joomla\Database\DatabaseInterface;
 use Joomla\Filesystem\Folder;
 use Joomla\Filesystem\File;
@@ -90,6 +92,7 @@ class com_contentbuilderngInstallerScript
     public function __construct()
     {
         $this->installStartedAt = microtime(true);
+        $this->loadComponentLanguage();
         $this->bootLogger();
         $this->writeInstallLogEntry('[INFO] ---------------------------------------------------------', Log::INFO);
         $this->log('[OK] <strong>ContentBuilder NG</strong> installer script booted.', Log::INFO);
@@ -358,11 +361,20 @@ class com_contentbuilderngInstallerScript
                 ->format('Y-m-d H:i:s');
             $durationSeconds = max(0.0, microtime(true) - $this->installStartedAt);
 
-            $this->log(
-                '[OK] ContentBuilder NG installation finished. ' . $finishedAt
-                    . ' ' . $timezoneName
-                    . '. Duration: ' . number_format($durationSeconds, 2, '.', '') . 's.'
+            $finishedMessage = '[OK] ContentBuilder NG installation finished. ' . $finishedAt
+                . ' ' . $timezoneName
+                . '. Duration: ' . number_format($durationSeconds, 2, '.', '') . 's.';
+
+            $auditUrl = Route::_('index.php?option=com_contentbuilderng&view=about#cb-audit-section', false);
+            $auditLink = '<a href="' . htmlspecialchars($auditUrl, ENT_QUOTES, 'UTF-8') . '">'
+                . htmlspecialchars(Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT'), ENT_QUOTES, 'UTF-8')
+                . '</a>';
+            $auditReminder = Text::sprintf(
+                'COM_CONTENTBUILDERNG_INSTALLATION_AUDIT_REMINDER',
+                $auditLink
             );
+
+            $this->log($finishedMessage, Log::INFO, $finishedMessage . '<br>' . $auditReminder);
         } catch (\Throwable $e) {
             // In installer scripts, throwing aborts installer; log & rethrow for visibility
             $this->log('[ERROR] Postflight aborted: ' . $e->getMessage(), Log::ERROR);
@@ -444,7 +456,7 @@ class com_contentbuilderngInstallerScript
         }
     }
 
-    private function log(string $message, int $priority = Log::INFO): void
+    private function log(string $message, int $priority = Log::INFO, ?string $displayMessage = null): void
     {
         if ($priority === Log::ERROR) {
             $this->criticalFailureDetected = true;
@@ -463,9 +475,21 @@ class com_contentbuilderngInstallerScript
                 Log::WARNING => 'warning',
                 default      => 'message',
             };
-            $app->enqueueMessage($this->formatInstallMessageForDisplay($message), $type);
+            $app->enqueueMessage(
+                $this->formatInstallMessageForDisplay($displayMessage ?? $message),
+                $type
+            );
         } catch (\Throwable) {
             // ignore enqueue failures
+        }
+    }
+
+    private function loadComponentLanguage(): void
+    {
+        try {
+            Factory::getApplication()->getLanguage()->load('com_contentbuilderng', JPATH_ADMINISTRATOR);
+        } catch (\Throwable) {
+            // Installer output falls back to raw keys if language loading fails.
         }
     }
 

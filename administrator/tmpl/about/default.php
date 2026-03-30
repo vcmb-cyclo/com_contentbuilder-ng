@@ -943,7 +943,7 @@ $renderNumberedAuditTitle = static function (int $number, string $label, bool $h
     </div>
 <?php endif; ?>
 
-<div class="card mt-3">
+<div class="card mt-3" id="cb-audit-section">
     <div class="card-body">
         <h3 class="h6 card-title mb-3"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_TITLE'); ?></h3>
 
