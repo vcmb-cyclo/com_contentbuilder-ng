@@ -646,7 +646,22 @@ $renderNumberedAuditTitle = static function (string $sectionId, string $label, b
         gap: 1rem;
     }
     .cb-audit-section-block {
+        display: flex;
+        flex-direction: column;
+        gap: .75rem;
         min-width: 0;
+        border: 1px solid rgba(0, 0, 0, .08);
+        border-radius: .85rem;
+        padding: .75rem .9rem;
+        background: linear-gradient(135deg, rgba(248, 249, 250, .95), rgba(255, 255, 255, .98));
+    }
+    .cb-audit-section-block > h4:first-child {
+        margin: 0 !important;
+    }
+    .cb-audit-section-block > .alert,
+    .cb-audit-section-block > .table-responsive,
+    .cb-audit-section-block > ol {
+        margin: 0;
     }
     .cb-audit-ok-check {
         color: #198754;
