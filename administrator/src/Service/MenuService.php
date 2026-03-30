@@ -18,76 +18,95 @@ class MenuService
     {
         $db = Factory::getContainer()->get(DatabaseInterface::class);
         $parentId = 0;
-        $db->setQuery("Select id From #__components Where `option`='' And admin_menu_link='option=com_contentbuilderng&viewcontainer=true'");
+
+        $query = $db->getQuery(true)
+            ->select($db->quoteName('id'))
+            ->from($db->quoteName('#__components'))
+            ->where([
+                $db->quoteName('option') . ' = ' . $db->quote(''),
+                $db->quoteName('admin_menu_link') . ' = ' . $db->quote('option=com_contentbuilderng&viewcontainer=true'),
+            ]);
+        $db->setQuery($query);
         $res = $db->loadResult();
+
         if ($res) {
             $parentId = $res;
         } else {
-            $db->setQuery(
-                "Insert Into #__components
-                 (
-                    `name`,
-                    `admin_menu_link`,
-                    `admin_menu_alt`,
-                    `option`,
-                    `admin_menu_img`,
-                    `iscore`
-                 )
-                 Values
-                 (
-                    'ContentBuilder NG Views',
-                    'option=com_contentbuilderng&viewcontainer=true',
-                    'contentbuilderng',
-                    '',
-                    'media/com_contentbuilderng/images/logo_icon_cb.png',
-                    1
-                 )"
-            );
+            $query = $db->getQuery(true)
+                ->insert($db->quoteName('#__components'))
+                ->columns($db->quoteName([
+                    'name',
+                    'admin_menu_link',
+                    'admin_menu_alt',
+                    'option',
+                    'admin_menu_img',
+                    'iscore',
+                ]))
+                ->values(implode(',', [
+                    $db->quote('ContentBuilder NG Views'),
+                    $db->quote('option=com_contentbuilderng&viewcontainer=true'),
+                    $db->quote('contentbuilderng'),
+                    $db->quote(''),
+                    $db->quote('media/com_contentbuilderng/images/logo_icon_cb.png'),
+                    1,
+                ]));
+            $db->setQuery($query);
             $db->execute();
             $parentId = $db->insertid();
         }
 
-        $db->setQuery("Select id From #__components Where admin_menu_link = 'option=com_contentbuilderng&task=list.display&id=" . (int) $contentbuilderngFormId . "'");
+        $query = $db->getQuery(true)
+            ->select($db->quoteName('id'))
+            ->from($db->quoteName('#__components'))
+            ->where(
+                $db->quoteName('admin_menu_link') . ' = ' . $db->quote('option=com_contentbuilderng&task=list.display&id=' . (int) $contentbuilderngFormId)
+            );
+        $db->setQuery($query);
         $menuitem = $db->loadResult();
+
         if (!$update) {
             return;
         }
 
-        $db->setQuery("Select count(published) From #__contentbuilderng_elements Where form_id = " . (int) $contentbuilderngFormId);
+        $query = $db->getQuery(true)
+            ->select('count(' . $db->quoteName('published') . ')')
+            ->from($db->quoteName('#__contentbuilderng_elements'))
+            ->where($db->quoteName('form_id') . ' = ' . (int) $contentbuilderngFormId);
+        $db->setQuery($query);
+
         if ($db->loadResult()) {
             if (!$menuitem) {
-                $db->setQuery(
-                    "Insert Into #__components
-                     (
-                        `name`,
-                        `admin_menu_link`,
-                        `admin_menu_alt`,
-                        `option`,
-                        `admin_menu_img`,
-                        `iscore`,
-                        `parent`
-                     )
-                     Values
-                     (
-                        " . $db->quote($name) . ",
-                        'option=com_contentbuilderng&task=list.display&id=" . (int) $contentbuilderngFormId . "',
-                        " . $db->quote($name) . ",
-                        'com_contentbuilderng',
-                        'media/com_contentbuilderng/images/logo_icon_cb.png',
+                $query = $db->getQuery(true)
+                    ->insert($db->quoteName('#__components'))
+                    ->columns($db->quoteName([
+                        'name',
+                        'admin_menu_link',
+                        'admin_menu_alt',
+                        'option',
+                        'admin_menu_img',
+                        'iscore',
+                        'parent',
+                    ]))
+                    ->values(implode(',', [
+                        $db->quote($name),
+                        $db->quote('option=com_contentbuilderng&task=list.display&id=' . (int) $contentbuilderngFormId),
+                        $db->quote($name),
+                        $db->quote('com_contentbuilderng'),
+                        $db->quote('media/com_contentbuilderng/images/logo_icon_cb.png'),
                         1,
-                        '$parentId'
-                     )"
-                );
+                        (int) $parentId,
+                    ]));
             } else {
-                $db->setQuery(
-                    "Update #__components
-                     Set
-                     `name` = " . $db->quote($name) . ",
-                     `admin_menu_alt` = " . $db->quote($name) . ",
-                     `parent` = $parentId
-                     Where id = $menuitem"
-                );
+                $query = $db->getQuery(true)
+                    ->update($db->quoteName('#__components'))
+                    ->set([
+                        $db->quoteName('name') . ' = ' . $db->quote($name),
+                        $db->quoteName('admin_menu_alt') . ' = ' . $db->quote($name),
+                        $db->quoteName('parent') . ' = ' . (int) $parentId,
+                    ])
+                    ->where($db->quoteName('id') . ' = ' . (int) $menuitem);
             }
+            $db->setQuery($query);
             $db->execute();
         }
     }
@@ -100,14 +119,29 @@ class MenuService
 
         $db = Factory::getContainer()->get(DatabaseInterface::class);
 
-        $db->setQuery("Select component_id From #__menu Where `link`='index.php?option=com_contentbuilderng' And parent_id = 1");
+        $query = $db->getQuery(true)
+            ->select($db->quoteName('component_id'))
+            ->from($db->quoteName('#__menu'))
+            ->where([
+                $db->quoteName('link') . ' = ' . $db->quote('index.php?option=com_contentbuilderng'),
+                $db->quoteName('parent_id') . ' = ' . 1,
+            ]);
+        $db->setQuery($query);
         $result = $db->loadResult();
 
-        $db->setQuery("Select id From #__menu Where `link`='index.php?option=com_contentbuilderng&viewcontainer=true' And parent_id = 1");
+        $query = $db->getQuery(true)
+            ->select($db->quoteName('id'))
+            ->from($db->quoteName('#__menu'))
+            ->where([
+                $db->quoteName('link') . ' = ' . $db->quote('index.php?option=com_contentbuilderng&viewcontainer=true'),
+                $db->quoteName('parent_id') . ' = ' . 1,
+            ]);
+        $db->setQuery($query);
         $oldId = $db->loadResult();
         $parentId = $oldId;
 
         if (!$oldId) {
+            // lft/rgt use subqueries in VALUES — kept as raw string per DDL/complex-subquery exception
             $db->setQuery(
                 "insert into #__menu (
                     `title`, alias, menutype, parent_id,
@@ -123,14 +157,30 @@ class MenuService
             $db->execute();
             $parentId = $db->insertid();
 
-            $db->setQuery("Select max(mrgt.rgt)+1 From #__menu As mrgt");
+            $query = $db->getQuery(true)
+                ->select('max(' . $db->quoteName('mrgt') . '.' . $db->quoteName('rgt') . ')+1')
+                ->from($db->quoteName('#__menu', 'mrgt'));
+            $db->setQuery($query);
             $rgt = $db->loadResult();
 
-            $db->setQuery("Update `#__menu` Set rgt = " . $rgt . " Where `title` = 'Menu_Item_Root' And `alias` = 'root'");
+            $query = $db->getQuery(true)
+                ->update($db->quoteName('#__menu'))
+                ->set($db->quoteName('rgt') . ' = ' . (int) $rgt)
+                ->where([
+                    $db->quoteName('title') . ' = ' . $db->quote('Menu_Item_Root'),
+                    $db->quoteName('alias') . ' = ' . $db->quote('root'),
+                ]);
+            $db->setQuery($query);
             $db->execute();
         }
 
-        $db->setQuery("Select id From #__menu Where link = 'index.php?option=com_contentbuilderng&task=list.display&id=" . (int) $contentbuilderngFormId . "'");
+        $query = $db->getQuery(true)
+            ->select($db->quoteName('id'))
+            ->from($db->quoteName('#__menu'))
+            ->where(
+                $db->quoteName('link') . ' = ' . $db->quote('index.php?option=com_contentbuilderng&task=list.display&id=' . (int) $contentbuilderngFormId)
+            );
+        $db->setQuery($query);
         $menuitem = $db->loadResult();
 
         if (!$update) {
@@ -140,7 +190,15 @@ class MenuService
             die("ContentBuilder main menu item not found!");
         }
 
-        $db->setQuery("Select id From #__menu Where alias = " . $db->quote($name) . " And link Like 'index.php?option=com_contentbuilderng&task=list.display&id=%' And link <> 'index.php?option=com_contentbuilderng&task=list.display&id=" . (int) $contentbuilderngFormId . "'");
+        $query = $db->getQuery(true)
+            ->select($db->quoteName('id'))
+            ->from($db->quoteName('#__menu'))
+            ->where([
+                $db->quoteName('alias') . ' = ' . $db->quote($name),
+                $db->quoteName('link') . ' LIKE ' . $db->quote('index.php?option=com_contentbuilderng&task=list.display&id=%'),
+                $db->quoteName('link') . ' <> ' . $db->quote('index.php?option=com_contentbuilderng&task=list.display&id=' . (int) $contentbuilderngFormId),
+            ]);
+        $db->setQuery($query);
         $nameExists = $db->loadResult();
 
         if ($nameExists) {
@@ -148,6 +206,7 @@ class MenuService
         }
 
         if (!$menuitem) {
+            // lft/rgt use subqueries in VALUES — kept as raw string per DDL/complex-subquery exception
             $db->setQuery(
                 "insert into #__menu (
                     `title`, alias, menutype, parent_id,
@@ -155,7 +214,7 @@ class MenuService
                     ordering, level, component_id, client_id, img,lft,rgt
                 )
                 values (
-                    " . $db->quote($name) . ", " . $db->quote($name) . ", 'main', '$parentId',
+                    " . $db->quote($name) . ", " . $db->quote($name) . ", 'main', " . (int) $parentId . ",
                     'index.php?option=com_contentbuilderng&task=list.display&id=" . (int) $contentbuilderngFormId . "',
                     '0', 1, " . (int) $result . ", 1, 'media/com_contentbuilderng/images/logo_icon_cb.png',
                     ( Select mlftrgt From (Select max(mlft.rgt)+1 As mlftrgt From #__menu As mlft) As tbone), ( Select mrgtrgt From (Select max(mrgt.rgt)+2 As mrgtrgt From #__menu As mrgt) As filet)
@@ -163,15 +222,31 @@ class MenuService
             );
             $db->execute();
 
-            $db->setQuery("Select max(mrgt.rgt)+1 From #__menu As mrgt");
+            $query = $db->getQuery(true)
+                ->select('max(' . $db->quoteName('mrgt') . '.' . $db->quoteName('rgt') . ')+1')
+                ->from($db->quoteName('#__menu', 'mrgt'));
+            $db->setQuery($query);
             $rgt = $db->loadResult();
 
-            $db->setQuery("Update `#__menu` Set rgt = " . $rgt . " Where `title` = 'Menu_Item_Root' And `alias` = 'root'");
+            $query = $db->getQuery(true)
+                ->update($db->quoteName('#__menu'))
+                ->set($db->quoteName('rgt') . ' = ' . (int) $rgt)
+                ->where([
+                    $db->quoteName('title') . ' = ' . $db->quote('Menu_Item_Root'),
+                    $db->quoteName('alias') . ' = ' . $db->quote('root'),
+                ]);
+            $db->setQuery($query);
             $db->execute();
         } else {
-            $db->setQuery(
-                "Update #__menu Set `title` = " . $db->quote($name) . ", alias = " . $db->quote($name) . ", `parent_id` = '$parentId' Where id = $menuitem"
-            );
+            $query = $db->getQuery(true)
+                ->update($db->quoteName('#__menu'))
+                ->set([
+                    $db->quoteName('title') . ' = ' . $db->quote($name),
+                    $db->quoteName('alias') . ' = ' . $db->quote($name),
+                    $db->quoteName('parent_id') . ' = ' . (int) $parentId,
+                ])
+                ->where($db->quoteName('id') . ' = ' . (int) $menuitem);
+            $db->setQuery($query);
             $db->execute();
         }
     }
@@ -184,14 +259,29 @@ class MenuService
 
         $db = Factory::getContainer()->get(DatabaseInterface::class);
 
-        $db->setQuery("Select component_id From #__menu Where `link`='index.php?option=com_contentbuilderng' And parent_id = 1");
+        $query = $db->getQuery(true)
+            ->select($db->quoteName('component_id'))
+            ->from($db->quoteName('#__menu'))
+            ->where([
+                $db->quoteName('link') . ' = ' . $db->quote('index.php?option=com_contentbuilderng'),
+                $db->quoteName('parent_id') . ' = ' . 1,
+            ]);
+        $db->setQuery($query);
         $result = $db->loadResult();
 
-        $db->setQuery("Select id From #__menu Where `link`='index.php?option=com_contentbuilderng&viewcontainer=true' And parent_id = 1");
+        $query = $db->getQuery(true)
+            ->select($db->quoteName('id'))
+            ->from($db->quoteName('#__menu'))
+            ->where([
+                $db->quoteName('link') . ' = ' . $db->quote('index.php?option=com_contentbuilderng&viewcontainer=true'),
+                $db->quoteName('parent_id') . ' = ' . 1,
+            ]);
+        $db->setQuery($query);
         $oldId = $db->loadResult();
         $parentId = $oldId;
 
         if (!$oldId) {
+            // lft/rgt use subqueries in VALUES — kept as raw string per DDL/complex-subquery exception
             $db->setQuery(
                 "insert into #__menu (
                     `title`, alias, menutype, type, parent_id,
@@ -207,14 +297,30 @@ class MenuService
             $db->execute();
             $parentId = $db->insertid();
 
-            $db->setQuery("Select max(mrgt.rgt)+1 From #__menu As mrgt");
+            $query = $db->getQuery(true)
+                ->select('max(' . $db->quoteName('mrgt') . '.' . $db->quoteName('rgt') . ')+1')
+                ->from($db->quoteName('#__menu', 'mrgt'));
+            $db->setQuery($query);
             $rgt = $db->loadResult();
 
-            $db->setQuery("Update `#__menu` Set rgt = " . $rgt . " Where `title` = 'Menu_Item_Root' And `alias` = 'root'");
+            $query = $db->getQuery(true)
+                ->update($db->quoteName('#__menu'))
+                ->set($db->quoteName('rgt') . ' = ' . (int) $rgt)
+                ->where([
+                    $db->quoteName('title') . ' = ' . $db->quote('Menu_Item_Root'),
+                    $db->quoteName('alias') . ' = ' . $db->quote('root'),
+                ]);
+            $db->setQuery($query);
             $db->execute();
         }
 
-        $db->setQuery("Select id From #__menu Where link = 'index.php?option=com_contentbuilderng&task=list.display&id=" . (int) $contentbuilderngFormId . "'");
+        $query = $db->getQuery(true)
+            ->select($db->quoteName('id'))
+            ->from($db->quoteName('#__menu'))
+            ->where(
+                $db->quoteName('link') . ' = ' . $db->quote('index.php?option=com_contentbuilderng&task=list.display&id=' . (int) $contentbuilderngFormId)
+            );
+        $db->setQuery($query);
         $menuitem = $db->loadResult();
 
         if (!$update) {
@@ -224,7 +330,15 @@ class MenuService
             die("ContentBuilder NG main menu item not found!");
         }
 
-        $db->setQuery("Select id From #__menu Where alias = " . $db->quote($name) . " And link Like 'index.php?option=com_contentbuilderng&task=list.display&id=%' And link <> 'index.php?option=com_contentbuilderng&task=list.display&id=" . (int) $contentbuilderngFormId . "'");
+        $query = $db->getQuery(true)
+            ->select($db->quoteName('id'))
+            ->from($db->quoteName('#__menu'))
+            ->where([
+                $db->quoteName('alias') . ' = ' . $db->quote($name),
+                $db->quoteName('link') . ' LIKE ' . $db->quote('index.php?option=com_contentbuilderng&task=list.display&id=%'),
+                $db->quoteName('link') . ' <> ' . $db->quote('index.php?option=com_contentbuilderng&task=list.display&id=' . (int) $contentbuilderngFormId),
+            ]);
+        $db->setQuery($query);
         $nameExists = $db->loadResult();
 
         if ($nameExists) {
@@ -232,6 +346,7 @@ class MenuService
         }
 
         if (!$menuitem) {
+            // lft/rgt use subqueries in VALUES — kept as raw string per DDL/complex-subquery exception
             $db->setQuery(
                 "insert into #__menu (
                     params,`path`,`title`, alias, menutype, type, parent_id,
@@ -239,7 +354,7 @@ class MenuService
                     level, component_id, client_id, img,lft,rgt
                 )
                 values (
-                    '',''," . $db->quote($name) . ", " . $db->quote($name) . ", 'main', 'component', '$parentId',
+                    '',''," . $db->quote($name) . ", " . $db->quote($name) . ", 'main', 'component', " . (int) $parentId . ",
                     'index.php?option=com_contentbuilderng&task=list.display&id=" . (int) $contentbuilderngFormId . "',
                     1, " . (int) $result . ", 1, 'media/com_contentbuilderng/images/logo_icon_cb.png',
                     ( Select mlftrgt From (Select max(mlft.rgt)+1 As mlftrgt From #__menu As mlft) As tbone), ( Select mrgtrgt From (Select max(mrgt.rgt)+2 As mrgtrgt From #__menu As mrgt) As filet)
@@ -247,15 +362,31 @@ class MenuService
             );
             $db->execute();
 
-            $db->setQuery("Select max(mrgt.rgt)+1 From #__menu As mrgt");
+            $query = $db->getQuery(true)
+                ->select('max(' . $db->quoteName('mrgt') . '.' . $db->quoteName('rgt') . ')+1')
+                ->from($db->quoteName('#__menu', 'mrgt'));
+            $db->setQuery($query);
             $rgt = $db->loadResult();
 
-            $db->setQuery("Update `#__menu` Set rgt = " . $rgt . " Where `title` = 'Menu_Item_Root' And `alias` = 'root'");
+            $query = $db->getQuery(true)
+                ->update($db->quoteName('#__menu'))
+                ->set($db->quoteName('rgt') . ' = ' . (int) $rgt)
+                ->where([
+                    $db->quoteName('title') . ' = ' . $db->quote('Menu_Item_Root'),
+                    $db->quoteName('alias') . ' = ' . $db->quote('root'),
+                ]);
+            $db->setQuery($query);
             $db->execute();
         } else {
-            $db->setQuery(
-                "Update #__menu Set `title` = " . $db->quote($name) . ", alias = " . $db->quote($name) . ", `parent_id` = '$parentId' Where id = $menuitem"
-            );
+            $query = $db->getQuery(true)
+                ->update($db->quoteName('#__menu'))
+                ->set([
+                    $db->quoteName('title') . ' = ' . $db->quote($name),
+                    $db->quoteName('alias') . ' = ' . $db->quote($name),
+                    $db->quoteName('parent_id') . ' = ' . (int) $parentId,
+                ])
+                ->where($db->quoteName('id') . ' = ' . (int) $menuitem);
+            $db->setQuery($query);
             $db->execute();
         }
     }

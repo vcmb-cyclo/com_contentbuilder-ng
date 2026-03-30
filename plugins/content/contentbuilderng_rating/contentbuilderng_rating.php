@@ -122,7 +122,25 @@ class plgContentContentbuilderng_rating extends CMSPlugin implements SubscriberI
                 if (isset($article->id) && $article->id && !isset($article->cbrecord)) {
 
                     // try to obtain the record id if if this is just an article
-                    $db->setQuery("Select form.rating_slots,form.`title_field`,form.`protect_upload_directory`,form.`reference_id`,article.`record_id`,article.`form_id`,form.`type`,form.`published_only`,form.`own_only`,form.`own_only_fe` From #__contentbuilderng_articles As article, #__contentbuilderng_forms As form Where form.`published` = 1 And form.id = article.`form_id` And article.`article_id` = " . $db->quote($article->id));
+                    $ratingQuery = $db->getQuery(true)
+                        ->select([
+                            $db->quoteName('form.rating_slots'),
+                            $db->quoteName('form.title_field'),
+                            $db->quoteName('form.protect_upload_directory'),
+                            $db->quoteName('form.reference_id'),
+                            $db->quoteName('article.record_id'),
+                            $db->quoteName('article.form_id'),
+                            $db->quoteName('form.type'),
+                            $db->quoteName('form.published_only'),
+                            $db->quoteName('form.own_only'),
+                            $db->quoteName('form.own_only_fe'),
+                        ])
+                        ->from($db->quoteName('#__contentbuilderng_articles', 'article'))
+                        ->join('INNER', $db->quoteName('#__contentbuilderng_forms', 'form')
+                            . ' ON ' . $db->quoteName('form.id') . ' = ' . $db->quoteName('article.form_id'))
+                        ->where($db->quoteName('form.published') . ' = 1')
+                        ->where($db->quoteName('article.article_id') . ' = ' . $db->quote($article->id));
+                    $db->setQuery($ratingQuery);
                     $data = $db->loadAssoc();
 
                     require_once(JPATH_SITE .'/administrator/components/com_contentbuilderng/src/contentbuilderng.php');

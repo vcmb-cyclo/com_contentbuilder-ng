@@ -165,37 +165,34 @@ class plgSystemContentbuilderng_system extends CMSPlugin implements SubscriberIn
                     $kill_kunena_session = true;
                 }
 
-                $this->db->setQuery("
-                        Select cv.userid, cv.verified_view, cv.verification_date_view, forms.verification_days_view, groups.group_id, groups.user_id
-                            From 
-                        (
-                            #__contentbuilderng_users As cv,
-                            #__contentbuilderng_forms As forms
-                        )
-                        Left Join #__user_usergroup_map As groups On ( groups.user_id = cv.userid And groups.group_id In (" . implode(',', array_map('intval', $pluginParams->get('auto_groups', array()))) . ") )
-                            Where 
-                        cv.verification_date_view IS NOT NULL  
-                            And 
-                        cv.verified_view = 1
-                            And
-                        cv.userid <> 0
-                            And
-                        cv.form_id = forms.id 
-                            And
-                        cv.published = 1
-                            And
-                        forms.verification_required_view = 1
-                            And
-                        " . (count($operateViews) ? ' forms.id In (' . implode(',', $operateViews) . ') And ' : '') . "
-                        forms.published = 1
-                            And
-                        (
-                            (
-                               groups.user_id Is Null And groups.group_id Is Null
-                                Or
-                               groups.user_id = cv.userid And groups.group_id Not In (" . implode(',', $pluginParams->get('auto_groups', array())) . ")
-                            )
-                        )");
+                $db = $this->db;
+                $autoGroupsIntList = implode(',', array_map('intval', $pluginParams->get('auto_groups', [])));
+                $autoGroupsRawList = implode(',', array_map('intval', $pluginParams->get('auto_groups', [])));
+                $query = $db->getQuery(true)
+                    ->select([
+                        $db->quoteName('cv.userid'),
+                        $db->quoteName('cv.verified_view'),
+                        $db->quoteName('cv.verification_date_view'),
+                        $db->quoteName('forms.verification_days_view'),
+                        $db->quoteName('groups.group_id'),
+                        $db->quoteName('groups.user_id'),
+                    ])
+                    ->from('(' . $db->quoteName('#__contentbuilderng_users', 'cv') . ', ' . $db->quoteName('#__contentbuilderng_forms', 'forms') . ')')
+                    ->join('LEFT', $db->quoteName('#__user_usergroup_map', 'groups') . ' ON (' . $db->quoteName('groups.user_id') . ' = ' . $db->quoteName('cv.userid') . ' AND ' . $db->quoteName('groups.group_id') . ' IN (' . $autoGroupsIntList . '))')
+                    ->where([
+                        $db->quoteName('cv.verification_date_view') . ' IS NOT NULL',
+                        $db->quoteName('cv.verified_view') . ' = 1',
+                        $db->quoteName('cv.userid') . ' <> 0',
+                        $db->quoteName('cv.form_id') . ' = ' . $db->quoteName('forms.id'),
+                        $db->quoteName('cv.published') . ' = 1',
+                        $db->quoteName('forms.verification_required_view') . ' = 1',
+                        $db->quoteName('forms.published') . ' = 1',
+                        '(' . $db->quoteName('groups.user_id') . ' IS NULL AND ' . $db->quoteName('groups.group_id') . ' IS NULL OR ' . $db->quoteName('groups.user_id') . ' = ' . $db->quoteName('cv.userid') . ' AND ' . $db->quoteName('groups.group_id') . ' NOT IN (' . $autoGroupsRawList . '))',
+                    ]);
+                if (count($operateViews)) {
+                    $query->where($db->quoteName('forms.id') . ' IN (' . implode(',', $operateViews) . ')');
+                }
+                $db->setQuery($query);
 
                 $users = $this->db->loadAssocList();
 
@@ -210,27 +207,34 @@ class plgSystemContentbuilderng_system extends CMSPlugin implements SubscriberIn
                         $db->setQuery($query);
                         $db->execute();
                         if ($kill_kunena_session) {
-                            $db->setQuery("Delete From #__kunena_sessions Where userid = " . (int)$user['userid']);
+                            $kunenaQuery = $db->getQuery(true)
+                                ->delete($db->quoteName('#__kunena_sessions'))
+                                ->where($db->quoteName('userid') . ' = ' . (int) $user['userid']);
+                            $db->setQuery($kunenaQuery);
                             $db->execute();
                         }
                     }
                 }
 
-                $this->db->setQuery(
-                    "
-                        Select cv.id, groups.user_id, groups.group_id, cv.userid, cv.verified_view
-                            From 
-                        #__user_usergroup_map As groups
-                            Left Join #__contentbuilderng_users As cv On ( cv.userid = groups.user_id And groups.group_id In (" . implode(',', $pluginParams->get('auto_groups', array())) . ") ) 
-                        Where 
-                            cv.userid = groups.user_id
-                        And
-                            cv.userid Is Not Null
-                        And
-                            groups.group_id In (" . implode(',', $pluginParams->get('auto_groups', array())) . ")
-                        Group By groups.user_id, groups.group_id
-                            Having Sum(cv.verified_view) = 0"
-                );
+                $autoGroupsIntList2 = implode(',', array_map('intval', $pluginParams->get('auto_groups', [])));
+                $query2 = $db->getQuery(true)
+                    ->select([
+                        $db->quoteName('cv.id'),
+                        $db->quoteName('groups.user_id'),
+                        $db->quoteName('groups.group_id'),
+                        $db->quoteName('cv.userid'),
+                        $db->quoteName('cv.verified_view'),
+                    ])
+                    ->from($db->quoteName('#__user_usergroup_map', 'groups'))
+                    ->join('LEFT', $db->quoteName('#__contentbuilderng_users', 'cv') . ' ON (' . $db->quoteName('cv.userid') . ' = ' . $db->quoteName('groups.user_id') . ' AND ' . $db->quoteName('groups.group_id') . ' IN (' . $autoGroupsIntList2 . '))')
+                    ->where([
+                        $db->quoteName('cv.userid') . ' = ' . $db->quoteName('groups.user_id'),
+                        $db->quoteName('cv.userid') . ' IS NOT NULL',
+                        $db->quoteName('groups.group_id') . ' IN (' . $autoGroupsIntList2 . ')',
+                    ])
+                    ->group([$db->quoteName('groups.user_id'), $db->quoteName('groups.group_id')])
+                    ->having('SUM(' . $db->quoteName('cv.verified_view') . ') = 0');
+                $this->db->setQuery($query2);
 
                 $user_groups = $this->db->loadAssocList();
 
@@ -243,7 +247,10 @@ class plgSystemContentbuilderng_system extends CMSPlugin implements SubscriberIn
                     $db->setQuery($query);
                     $db->execute();
                     if ($kill_kunena_session) {
-                        $db->setQuery("Delete From #__kunena_sessions Where userid = " . (int)$user_group['user_id']);
+                        $kunenaQuery2 = $db->getQuery(true)
+                            ->delete($db->quoteName('#__kunena_sessions'))
+                            ->where($db->quoteName('userid') . ' = ' . (int) $user_group['user_id']);
+                        $db->setQuery($kunenaQuery2);
                         $db->execute();
                     }
                 }
@@ -279,7 +286,18 @@ class plgSystemContentbuilderng_system extends CMSPlugin implements SubscriberIn
                 $wa->getRegistry()->addExtensionRegistryFile('com_contentbuilderng');
                 $wa->useScript('com_contentbuilderng.contentbuilderng');
 
-                $this->db->setQuery("Select Distinct forms.theme_plugin From #__contentbuilderng_forms As forms, #__contentbuilderng_articles As articles, #__content As content Where forms.id = articles.form_id And articles.article_id In (" . $the_ids . ") And content.id = articles.article_id And (content.state = 1 Or content.state = 0)");
+                $themeQuery = $this->db->getQuery(true)
+                    ->select('DISTINCT ' . $this->db->quoteName('forms.theme_plugin'))
+                    ->from($this->db->quoteName('#__contentbuilderng_forms', 'forms'))
+                    ->from($this->db->quoteName('#__contentbuilderng_articles', 'articles'))
+                    ->from($this->db->quoteName('#__content', 'content'))
+                    ->where([
+                        $this->db->quoteName('forms.id') . ' = ' . $this->db->quoteName('articles.form_id'),
+                        $this->db->quoteName('articles.article_id') . ' IN (' . $the_ids . ')',
+                        $this->db->quoteName('content.id') . ' = ' . $this->db->quoteName('articles.article_id'),
+                        '(' . $this->db->quoteName('content.state') . ' = 1 OR ' . $this->db->quoteName('content.state') . ' = 0)',
+                    ]);
+                $this->db->setQuery($themeQuery);
                 $themes = $this->db->loadColumn();
                 foreach ($themes as $theme) {
                     if ($theme) {
@@ -325,7 +343,16 @@ class plgSystemContentbuilderng_system extends CMSPlugin implements SubscriberIn
             // redirect to content edit if there is a record existing for this article
             if ($option == 'com_content' && (($id && $view == 'article' && $task == 'edit') || ($a_id && $view == 'form' && $layout == 'edit'))) {
                 $id = $a_id;
-                $this->db->setQuery("Select article.record_id, article.form_id From #__contentbuilderng_articles As article, #__content As content Where content.id = " . intval($id) . " And (content.state = 0 Or content.state = 1) And article.article_id = content.id");
+                $redirectQuery = $this->db->getQuery(true)
+                    ->select([$this->db->quoteName('article.record_id'), $this->db->quoteName('article.form_id')])
+                    ->from($this->db->quoteName('#__contentbuilderng_articles', 'article'))
+                    ->from($this->db->quoteName('#__content', 'content'))
+                    ->where([
+                        $this->db->quoteName('content.id') . ' = ' . (int) $id,
+                        '(' . $this->db->quoteName('content.state') . ' = 0 OR ' . $this->db->quoteName('content.state') . ' = 1)',
+                        $this->db->quoteName('article.article_id') . ' = ' . $this->db->quoteName('content.id'),
+                    ]);
+                $this->db->setQuery($redirectQuery);
                 $article = $this->db->loadAssoc();
                 if (is_array($article)) {
                     $this->app->redirect('index.php?option=com_contentbuilderng&task=edit.display&id=' . $article['form_id'] . "&record_id=" . $article['record_id'] . "&jsback=1&Itemid=" . $app->input->getInt('Itemid', 0));
@@ -344,7 +371,11 @@ class plgSystemContentbuilderng_system extends CMSPlugin implements SubscriberIn
         $isSyncMutationRequest = $this->isSyncMutationRequest();
         // register non-existent records
         if ($isSyncMutationRequest) {
-            $this->db->setQuery("Select `type`, `reference_id` From #__contentbuilderng_forms Where published = 1");
+            $formsQuery = $this->db->getQuery(true)
+                ->select([$this->db->quoteName('type'), $this->db->quoteName('reference_id')])
+                ->from($this->db->quoteName('#__contentbuilderng_forms'))
+                ->where($this->db->quoteName('published') . ' = 1');
+            $this->db->setQuery($formsQuery);
             $views = $this->db->loadAssocList();
             $typeview = array();
             foreach ($views as $view) {
@@ -409,63 +440,41 @@ class plgSystemContentbuilderng_system extends CMSPlugin implements SubscriberIn
 
         if ($isSyncMutationRequest) {
 
-            $this->db->setQuery("
-                    Update 
-                        #__contentbuilderng_records As records,
-                        #__contentbuilderng_forms As forms,
-                        #__contentbuilderng_registered_users As cbusers,
-                        #__users As users
-                    Set 
-                        records.published = 0
-                    Where
-                        records.reference_id = forms.reference_id
-                    And
-                        records.published = 1
-                    And
-                        records.`type` = forms.`type`
-                    And
-                        forms.act_as_registration = 1
-                    And
-                        forms.id = cbusers.form_id
-                    And
-                        records.record_id = cbusers.record_id
-                    And
-                      (
-                        (
-                            users.id = cbusers.user_id
-                          And
-                            users.block = 1
-                        )
-                      )
-                    ");
-            $this->db->execute();
+            // Multi-table UPDATE (MySQL-specific syntax): DDL-style raw string with quoted identifiers.
+            $db = $this->db;
+            $db->setQuery(
+                'UPDATE ' . $db->quoteName('#__contentbuilderng_records', 'records') . ','
+                . $db->quoteName('#__contentbuilderng_forms', 'forms') . ','
+                . $db->quoteName('#__contentbuilderng_registered_users', 'cbusers') . ','
+                . $db->quoteName('#__users', 'users')
+                . ' SET ' . $db->quoteName('records.published') . ' = 0'
+                . ' WHERE ' . $db->quoteName('records.reference_id') . ' = ' . $db->quoteName('forms.reference_id')
+                . ' AND ' . $db->quoteName('records.published') . ' = 1'
+                . ' AND ' . $db->quoteName('records.type') . ' = ' . $db->quoteName('forms.type')
+                . ' AND ' . $db->quoteName('forms.act_as_registration') . ' = 1'
+                . ' AND ' . $db->quoteName('forms.id') . ' = ' . $db->quoteName('cbusers.form_id')
+                . ' AND ' . $db->quoteName('records.record_id') . ' = ' . $db->quoteName('cbusers.record_id')
+                . ' AND (' . $db->quoteName('users.id') . ' = ' . $db->quoteName('cbusers.user_id')
+                . ' AND ' . $db->quoteName('users.block') . ' = 1)'
+            );
+            $db->execute();
 
-            $this->db->setQuery("
-                    Update 
-                        #__contentbuilderng_records As records,
-                        #__contentbuilderng_forms As forms,
-                        #__contentbuilderng_registered_users As cbusers,
-                        #__users As users
-                    Set 
-                        records.published = forms.auto_publish
-                    Where
-                        records.reference_id = forms.reference_id
-                    And
-                        records.published = 0
-                    And
-                        records.`type` = forms.`type`
-                    And
-                        forms.act_as_registration = 1
-                    And
-                        forms.id = cbusers.form_id
-                    And
-                        records.record_id = cbusers.record_id
-                    And
-                        users.id = cbusers.user_id
-                    And
-                        users.block = 0
-                    ");
-            $this->db->execute();
+            $db->setQuery(
+                'UPDATE ' . $db->quoteName('#__contentbuilderng_records', 'records') . ','
+                . $db->quoteName('#__contentbuilderng_forms', 'forms') . ','
+                . $db->quoteName('#__contentbuilderng_registered_users', 'cbusers') . ','
+                . $db->quoteName('#__users', 'users')
+                . ' SET ' . $db->quoteName('records.published') . ' = ' . $db->quoteName('forms.auto_publish')
+                . ' WHERE ' . $db->quoteName('records.reference_id') . ' = ' . $db->quoteName('forms.reference_id')
+                . ' AND ' . $db->quoteName('records.published') . ' = 0'
+                . ' AND ' . $db->quoteName('records.type') . ' = ' . $db->quoteName('forms.type')
+                . ' AND ' . $db->quoteName('forms.act_as_registration') . ' = 1'
+                . ' AND ' . $db->quoteName('forms.id') . ' = ' . $db->quoteName('cbusers.form_id')
+                . ' AND ' . $db->quoteName('records.record_id') . ' = ' . $db->quoteName('cbusers.record_id')
+                . ' AND ' . $db->quoteName('users.id') . ' = ' . $db->quoteName('cbusers.user_id')
+                . ' AND ' . $db->quoteName('users.block') . ' = 0'
+            );
+            $db->execute();
         }
     }
 
@@ -495,133 +504,95 @@ class plgSystemContentbuilderng_system extends CMSPlugin implements SubscriberIn
         if ($app->isClient('site')) {
             $user = $this->app->getIdentity();
 
-            $this->db->setQuery("
-                    Update
-                        #__contentbuilderng_articles As articles,
-                        #__content As content, 
-                        #__contentbuilderng_forms As forms,
-                        #__contentbuilderng_registered_users As cbusers,
-                        #__users As users
-                    Set 
-                        content.state = 0
-                    Where 
-                        articles.article_id = content.id
-                    And
-                        content.state = 1
-                    And
-                        articles.form_id = forms.id
-                    And
-                        forms.act_as_registration = 1
-                    And
-                        forms.id = cbusers.form_id
-                    And
-                        content.created_by = cbusers.user_id
-                    And
-                      (
-                        (
-                            users.id = cbusers.user_id
-                          And
-                            users.block = 1
-                        )
-                      )
-                    ");
-            $this->db->execute();
+            // Multi-table UPDATE (MySQL-specific syntax): DDL-style raw string with quoted identifiers.
+            $db = $this->db;
+            $db->setQuery(
+                'UPDATE ' . $db->quoteName('#__contentbuilderng_articles', 'articles') . ','
+                . $db->quoteName('#__content', 'content') . ','
+                . $db->quoteName('#__contentbuilderng_forms', 'forms') . ','
+                . $db->quoteName('#__contentbuilderng_registered_users', 'cbusers') . ','
+                . $db->quoteName('#__users', 'users')
+                . ' SET ' . $db->quoteName('content.state') . ' = 0'
+                . ' WHERE ' . $db->quoteName('articles.article_id') . ' = ' . $db->quoteName('content.id')
+                . ' AND ' . $db->quoteName('content.state') . ' = 1'
+                . ' AND ' . $db->quoteName('articles.form_id') . ' = ' . $db->quoteName('forms.id')
+                . ' AND ' . $db->quoteName('forms.act_as_registration') . ' = 1'
+                . ' AND ' . $db->quoteName('forms.id') . ' = ' . $db->quoteName('cbusers.form_id')
+                . ' AND ' . $db->quoteName('content.created_by') . ' = ' . $db->quoteName('cbusers.user_id')
+                . ' AND (' . $db->quoteName('users.id') . ' = ' . $db->quoteName('cbusers.user_id')
+                . ' AND ' . $db->quoteName('users.block') . ' = 1)'
+            );
+            $db->execute();
 
-            $this->db->setQuery("
-                    Update 
-                        #__contentbuilderng_articles As articles,
-                        #__content As content, 
-                        #__contentbuilderng_forms As forms,
-                        #__contentbuilderng_records As records,
-                        #__contentbuilderng_registered_users As cbusers,
-                        #__users As users
-                    Set 
-                        content.state = forms.auto_publish
-                    Where 
-                        articles.article_id = content.id
-                    And
-                        content.state = 0
-                    And
-                        articles.form_id = forms.id
-                    And
-                        forms.act_as_registration = 1
-                    And
-                        forms.id = cbusers.form_id
-                    And
-                        content.created_by = cbusers.user_id
-                    And
-                        users.id = cbusers.user_id
-                    And
-                        records.record_id = cbusers.record_id
-                    And
-                        records.`type` = forms.`type`
-                    And
-                        users.block = 0
-                    ");
-            $this->db->execute();
+            $db->setQuery(
+                'UPDATE ' . $db->quoteName('#__contentbuilderng_articles', 'articles') . ','
+                . $db->quoteName('#__content', 'content') . ','
+                . $db->quoteName('#__contentbuilderng_forms', 'forms') . ','
+                . $db->quoteName('#__contentbuilderng_records', 'records') . ','
+                . $db->quoteName('#__contentbuilderng_registered_users', 'cbusers') . ','
+                . $db->quoteName('#__users', 'users')
+                . ' SET ' . $db->quoteName('content.state') . ' = ' . $db->quoteName('forms.auto_publish')
+                . ' WHERE ' . $db->quoteName('articles.article_id') . ' = ' . $db->quoteName('content.id')
+                . ' AND ' . $db->quoteName('content.state') . ' = 0'
+                . ' AND ' . $db->quoteName('articles.form_id') . ' = ' . $db->quoteName('forms.id')
+                . ' AND ' . $db->quoteName('forms.act_as_registration') . ' = 1'
+                . ' AND ' . $db->quoteName('forms.id') . ' = ' . $db->quoteName('cbusers.form_id')
+                . ' AND ' . $db->quoteName('content.created_by') . ' = ' . $db->quoteName('cbusers.user_id')
+                . ' AND ' . $db->quoteName('users.id') . ' = ' . $db->quoteName('cbusers.user_id')
+                . ' AND ' . $db->quoteName('records.record_id') . ' = ' . $db->quoteName('cbusers.record_id')
+                . ' AND ' . $db->quoteName('records.type') . ' = ' . $db->quoteName('forms.type')
+                . ' AND ' . $db->quoteName('users.block') . ' = 0'
+            );
+            $db->execute();
 
             $pluginParams = $this->params;
 
-            $this->db->setQuery("
-                Select 
-                    form.id As form_id,
-                    form.act_as_registration,
-                    form.default_category,
-                    form.registration_name_field, 
-                    form.registration_username_field, 
-                    form.registration_email_field, 
-                    form.registration_email_repeat_field, 
-                    form.`last_update`,
-                    article.`article_id`,
-                    form.`title_field`,
-                    form.`create_articles`,
-                    form.`name`,
-                    form.`use_view_name_as_title`,
-                    form.`protect_upload_directory`,
-                    form.`reference_id`,
-                    records.`record_id`,
-                    form.`type`,
-                    form.`published_only`,
-                    form.`own_only`,
-                    form.`own_only_fe`,
-                    records.`last_update` As record_last_update,
-                    article.`last_update` As article_last_update
-                From
-                    #__contentbuilderng_records As records
-                    Left Join #__contentbuilderng_forms As form On ( form.`type` = records.`type` And form.reference_id = records.reference_id )
-                    Left Join #__contentbuilderng_articles As article On ( form.`type` = records.`type` And form.reference_id = records.reference_id And article.form_id = form.id And article.record_id = records.record_id )
-                    Left Join #__content As content On ( form.`type` = records.`type` And form.reference_id = records.reference_id And article.article_id = content.id And article.form_id = form.id And article.record_id = records.record_id )
-                Where 
-                    form.`published` = 1
-                And
-                    form.create_articles = 1
-                And
-                    form.`type` = records.`type`
-                And 
-                    form.reference_id = records.reference_id
-                And
-                   (
-                     (
-                        article.form_id = form.id 
-                      And 
-                        article.record_id = records.record_id
-                      And 
-                        article.article_id = content.id 
-                      And 
-                        ( content.state = 1 Or content.state = 0 )
-                      And
-                      (
-                        form.`last_update` > article.`last_update`   
-                       Or
-                        records.`last_update` > article.`last_update`
-                      )
-                     )
-                     Or
-                     (
-                        form.id Is Not Null And records.id Is Not Null And content.id Is Null And article.id Is Null
-                     )
-                   )
-                Limit " . intval($pluginParams->def('limit_per_turn', 50)));
+            $syncQuery = $db->getQuery(true)
+                ->select([
+                    $db->quoteName('form.id', 'form_id'),
+                    $db->quoteName('form.act_as_registration'),
+                    $db->quoteName('form.default_category'),
+                    $db->quoteName('form.registration_name_field'),
+                    $db->quoteName('form.registration_username_field'),
+                    $db->quoteName('form.registration_email_field'),
+                    $db->quoteName('form.registration_email_repeat_field'),
+                    $db->quoteName('form.last_update'),
+                    $db->quoteName('article.article_id'),
+                    $db->quoteName('form.title_field'),
+                    $db->quoteName('form.create_articles'),
+                    $db->quoteName('form.name'),
+                    $db->quoteName('form.use_view_name_as_title'),
+                    $db->quoteName('form.protect_upload_directory'),
+                    $db->quoteName('form.reference_id'),
+                    $db->quoteName('records.record_id'),
+                    $db->quoteName('form.type'),
+                    $db->quoteName('form.published_only'),
+                    $db->quoteName('form.own_only'),
+                    $db->quoteName('form.own_only_fe'),
+                    $db->quoteName('records.last_update', 'record_last_update'),
+                    $db->quoteName('article.last_update', 'article_last_update'),
+                ])
+                ->from($db->quoteName('#__contentbuilderng_records', 'records'))
+                ->join('LEFT', $db->quoteName('#__contentbuilderng_forms', 'form') . ' ON (' . $db->quoteName('form.type') . ' = ' . $db->quoteName('records.type') . ' AND ' . $db->quoteName('form.reference_id') . ' = ' . $db->quoteName('records.reference_id') . ')')
+                ->join('LEFT', $db->quoteName('#__contentbuilderng_articles', 'article') . ' ON (' . $db->quoteName('form.type') . ' = ' . $db->quoteName('records.type') . ' AND ' . $db->quoteName('form.reference_id') . ' = ' . $db->quoteName('records.reference_id') . ' AND ' . $db->quoteName('article.form_id') . ' = ' . $db->quoteName('form.id') . ' AND ' . $db->quoteName('article.record_id') . ' = ' . $db->quoteName('records.record_id') . ')')
+                ->join('LEFT', $db->quoteName('#__content', 'content') . ' ON (' . $db->quoteName('form.type') . ' = ' . $db->quoteName('records.type') . ' AND ' . $db->quoteName('form.reference_id') . ' = ' . $db->quoteName('records.reference_id') . ' AND ' . $db->quoteName('article.article_id') . ' = ' . $db->quoteName('content.id') . ' AND ' . $db->quoteName('article.form_id') . ' = ' . $db->quoteName('form.id') . ' AND ' . $db->quoteName('article.record_id') . ' = ' . $db->quoteName('records.record_id') . ')')
+                ->where([
+                    $db->quoteName('form.published') . ' = 1',
+                    $db->quoteName('form.create_articles') . ' = 1',
+                    $db->quoteName('form.type') . ' = ' . $db->quoteName('records.type'),
+                    $db->quoteName('form.reference_id') . ' = ' . $db->quoteName('records.reference_id'),
+                    '((' . $db->quoteName('article.form_id') . ' = ' . $db->quoteName('form.id')
+                        . ' AND ' . $db->quoteName('article.record_id') . ' = ' . $db->quoteName('records.record_id')
+                        . ' AND ' . $db->quoteName('article.article_id') . ' = ' . $db->quoteName('content.id')
+                        . ' AND (' . $db->quoteName('content.state') . ' = 1 OR ' . $db->quoteName('content.state') . ' = 0)'
+                        . ' AND (' . $db->quoteName('form.last_update') . ' > ' . $db->quoteName('article.last_update')
+                        . ' OR ' . $db->quoteName('records.last_update') . ' > ' . $db->quoteName('article.last_update') . ')'
+                        . ') OR ('
+                        . $db->quoteName('form.id') . ' IS NOT NULL AND ' . $db->quoteName('records.id') . ' IS NOT NULL AND ' . $db->quoteName('content.id') . ' IS NULL AND ' . $db->quoteName('article.id') . ' IS NULL'
+                        . '))',
+                ])
+                ->setLimit((int) $pluginParams->def('limit_per_turn', 50));
+            $this->db->setQuery($syncQuery);
             $list = $this->db->loadAssocList();
 
             if (isset($list[0])) {
@@ -650,7 +621,16 @@ class plgSystemContentbuilderng_system extends CMSPlugin implements SubscriberIn
                         }
 
                         if (count($ids)) {
-                            $this->db->setQuery("Select Distinct `label`, reference_id From #__contentbuilderng_elements Where form_id = " . intval($data['form_id']) . " And reference_id In (" . implode(',', $ids) . ") And published = 1 Order By ordering");
+                            $elementsQuery = $this->db->getQuery(true)
+                                ->select('DISTINCT ' . $this->db->quoteName('label') . ', ' . $this->db->quoteName('reference_id'))
+                                ->from($this->db->quoteName('#__contentbuilderng_elements'))
+                                ->where([
+                                    $this->db->quoteName('form_id') . ' = ' . (int) $data['form_id'],
+                                    $this->db->quoteName('reference_id') . ' IN (' . implode(',', $ids) . ')',
+                                    $this->db->quoteName('published') . ' = 1',
+                                ])
+                                ->order($this->db->quoteName('ordering'));
+                            $this->db->setQuery($elementsQuery);
                             $rows = $this->db->loadAssocList();
                             $ids = array();
                             foreach ($rows as $row) {
@@ -663,7 +643,15 @@ class plgSystemContentbuilderng_system extends CMSPlugin implements SubscriberIn
                         $article_id = (new ArticleService())->createArticle($data['form_id'], $data['record_id'], $data['items'], $ids, $data['title_field'], $form->getRecordMetadata($data['record_id']), array(), false, 1, $data['default_category']);
 
                         if ($article_id) {
-                            $this->db->setQuery("Update #__contentbuilderng_articles Set `last_update`=" . $this->db->Quote($now) . " Where article_id = " . $this->db->Quote($article_id) . " And record_id = " . $this->db->Quote($data['record_id']) . " And form_id = " . $this->db->Quote($data['form_id']));
+                            $updateArticleQuery = $this->db->getQuery(true)
+                                ->update($this->db->quoteName('#__contentbuilderng_articles'))
+                                ->set($this->db->quoteName('last_update') . ' = ' . $this->db->quote($now))
+                                ->where([
+                                    $this->db->quoteName('article_id') . ' = ' . $this->db->quote($article_id),
+                                    $this->db->quoteName('record_id') . ' = ' . $this->db->quote($data['record_id']),
+                                    $this->db->quoteName('form_id') . ' = ' . $this->db->quote($data['form_id']),
+                                ]);
+                            $this->db->setQuery($updateArticleQuery);
                             $this->db->execute();
                         }
                     }

@@ -233,35 +233,44 @@ class StorageModel extends AdminModel
         $db = Factory::getContainer()->get(DatabaseInterface::class);
 
         // Unicité
-        $db->setQuery(
-            "SELECT id FROM #__contentbuilderng_storage_fields
-            WHERE storage_id = " . (int) $storageId . " AND `name` = " . $db->quote($newfieldname)
-        );
+        $query = $db->getQuery(true)
+            ->select($db->quoteName('id'))
+            ->from($db->quoteName('#__contentbuilderng_storage_fields'))
+            ->where($db->quoteName('storage_id') . ' = ' . (int) $storageId)
+            ->where($db->quoteName('name') . ' = ' . $db->quote($newfieldname));
+        $db->setQuery($query);
         if ($db->loadResult()) {
             return false;
         }
 
         // Ordering max+1
-        $db->setQuery(
-            "SELECT COALESCE(MAX(ordering), 0) + 1
-            FROM #__contentbuilderng_storage_fields
-            WHERE storage_id = " . (int) $storageId
-        );
+        $query = $db->getQuery(true)
+            ->select('COALESCE(MAX(' . $db->quoteName('ordering') . '), 0) + 1')
+            ->from($db->quoteName('#__contentbuilderng_storage_fields'))
+            ->where($db->quoteName('storage_id') . ' = ' . (int) $storageId);
+        $db->setQuery($query);
         $max = (int) $db->loadResult();
 
         // Insert field
-        $db->setQuery(
-            "INSERT INTO #__contentbuilderng_storage_fields
-            (ordering, storage_id, `name`, `title`, `is_group`, `group_definition`)
-            VALUES (" . (int) $max . ", " . (int) $storageId . ", " . $db->quote($newfieldname) . ", " . $db->quote($newfieldtitle) . ", " . (int) $isGroup . ", " . $db->quote($groupDef) . ")"
-        );
+        $query = $db->getQuery(true)
+            ->insert($db->quoteName('#__contentbuilderng_storage_fields'))
+            ->columns($db->quoteName(['ordering', 'storage_id', 'name', 'title', 'is_group', 'group_definition']))
+            ->values(
+                (int) $max . ', '
+                . (int) $storageId . ', '
+                . $db->quote($newfieldname) . ', '
+                . $db->quote($newfieldtitle) . ', '
+                . (int) $isGroup . ', '
+                . $db->quote($groupDef)
+            );
+        $db->setQuery($query);
         $db->execute();
 
         // Assurer l’existence de la table data puis ajouter la colonne
         // (si ta table data existe toujours, tu peux garder juste l’ALTER)
         if (!empty($storage->name)) {
             try {
-                $db->setQuery("ALTER TABLE `#__" . $storage->name . "` ADD `" . $newfieldname . "` TEXT NULL");
+                $db->setQuery('ALTER TABLE ' . $db->quoteName('#__' . $storage->name) . ' ADD ' . $db->quoteName($newfieldname) . ' TEXT NULL');
                 $db->execute();
             } catch (\Throwable $e) {
                 // Si la colonne existe déjà ou table absente, on log et on renvoie false
@@ -432,14 +441,20 @@ class StorageModel extends AdminModel
         $db = Factory::getContainer()->get(DatabaseInterface::class);
 
         // ordering max+1
-        $db->setQuery("SELECT COALESCE(MAX(ordering), 0) + 1 FROM #__contentbuilderng_storage_fields WHERE storage_id = " . (int) $storageId);
+        $query = $db->getQuery(true)
+            ->select('COALESCE(MAX(' . $db->quoteName('ordering') . '), 0) + 1')
+            ->from($db->quoteName('#__contentbuilderng_storage_fields'))
+            ->where($db->quoteName('storage_id') . ' = ' . (int) $storageId);
+        $db->setQuery($query);
         $max = (int) $db->loadResult();
 
         // unicité
-        $db->setQuery(
-            "SELECT `name` FROM #__contentbuilderng_storage_fields WHERE `name` = " . $db->quote($newfieldname) .
-            " AND storage_id = " . (int) $storageId
-        );
+        $query = $db->getQuery(true)
+            ->select($db->quoteName('name'))
+            ->from($db->quoteName('#__contentbuilderng_storage_fields'))
+            ->where($db->quoteName('name') . ' = ' . $db->quote($newfieldname))
+            ->where($db->quoteName('storage_id') . ' = ' . (int) $storageId);
+        $db->setQuery($query);
         $exists = $db->loadResult();
 
         if ($exists) {
@@ -454,17 +469,25 @@ class StorageModel extends AdminModel
             'is_group' => $isGroup,
         ]);
 
-        $db->setQuery(
-            "INSERT INTO #__contentbuilderng_storage_fields (ordering, storage_id, `name`, `title`, `is_group`, `group_definition`)
-             VALUES (" . (int)$max . "," . (int)$storageId . "," . $db->quote($newfieldname) . "," . $db->quote($newfieldtitle) . "," . (int)$isGroup . "," . $db->quote($groupDef) . ")"
-        );
+        $query = $db->getQuery(true)
+            ->insert($db->quoteName('#__contentbuilderng_storage_fields'))
+            ->columns($db->quoteName(['ordering', 'storage_id', 'name', 'title', 'is_group', 'group_definition']))
+            ->values(
+                (int) $max . ', '
+                . (int) $storageId . ', '
+                . $db->quote($newfieldname) . ', '
+                . $db->quote($newfieldtitle) . ', '
+                . (int) $isGroup . ', '
+                . $db->quote($groupDef)
+            );
+        $db->setQuery($query);
         $db->execute();
 
         // Colonne dans table data (si table existe déjà)
         $storage = $this->getItem($storageId);
         if (!empty($storage->name)) {
             try {
-                $db->setQuery("ALTER TABLE `#__" . $storage->name . "` ADD `" . $newfieldname . "` TEXT NULL");
+                $db->setQuery('ALTER TABLE ' . $db->quoteName('#__' . $storage->name) . ' ADD ' . $db->quoteName($newfieldname) . ' TEXT NULL');
                 $db->execute();
             } catch (\Throwable $e) {
                 Logger::exception($e);
@@ -529,7 +552,7 @@ class StorageModel extends AdminModel
                     $oldPrefixed = $db->getPrefix() . $oldName;
                     if (isset($tables[$oldPrefixed])) {
                         Logger::info('Rename data table', ['from' => $oldName, 'to' => $name]);
-                        $db->setQuery("RENAME TABLE `#__" . $oldName . "` TO `#__" . $name . "`");
+                        $db->setQuery('RENAME TABLE ' . $db->quoteName('#__' . $oldName) . ' TO ' . $db->quoteName('#__' . $name));
                         $db->execute();
                         $this->lastDataTableRename = [
                             'from' => $oldName,
@@ -550,29 +573,29 @@ class StorageModel extends AdminModel
                 Logger::info('Create data table', ['name' => $name, 'storageId' => $storageId]);
 
                 try {
-                    $db->setQuery("
-                        CREATE TABLE `#__{$name}` (
-                            `id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-                            `storage_id` INT NOT NULL DEFAULT " . (int)$storageId . ",
-                            `user_id` INT NOT NULL DEFAULT 0,
-                            `created` DATETIME NOT NULL DEFAULT " . $db->quote($last_update) . ",
-                            `created_by` VARCHAR(255) NOT NULL DEFAULT '',
-                            `modified_user_id` INT NOT NULL DEFAULT 0,
-                            `modified` DATETIME NULL DEFAULT NULL,
-                            `modified_by` VARCHAR(255) NOT NULL DEFAULT ''
-                        )
-                    ");
+                    $db->setQuery(
+                        'CREATE TABLE ' . $db->quoteName('#__' . $name) . ' ('
+                        . $db->quoteName('id') . ' INT NOT NULL AUTO_INCREMENT PRIMARY KEY,'
+                        . $db->quoteName('storage_id') . ' INT NOT NULL DEFAULT ' . (int) $storageId . ','
+                        . $db->quoteName('user_id') . ' INT NOT NULL DEFAULT 0,'
+                        . $db->quoteName('created') . ' DATETIME NOT NULL DEFAULT ' . $db->quote($last_update) . ','
+                        . $db->quoteName('created_by') . " VARCHAR(255) NOT NULL DEFAULT '',"
+                        . $db->quoteName('modified_user_id') . ' INT NOT NULL DEFAULT 0,'
+                        . $db->quoteName('modified') . ' DATETIME NULL DEFAULT NULL,'
+                        . $db->quoteName('modified_by') . " VARCHAR(255) NOT NULL DEFAULT ''"
+                        . ')'
+                    );
                     $db->execute();
 
-                    $db->setQuery("ALTER TABLE `#__{$name}` ADD INDEX (`storage_id`)");
+                    $db->setQuery('ALTER TABLE ' . $db->quoteName('#__' . $name) . ' ADD INDEX (' . $db->quoteName('storage_id') . ')');
                     $db->execute();
-                    $db->setQuery("ALTER TABLE `#__{$name}` ADD INDEX (`user_id`)");
+                    $db->setQuery('ALTER TABLE ' . $db->quoteName('#__' . $name) . ' ADD INDEX (' . $db->quoteName('user_id') . ')');
                     $db->execute();
-                    $db->setQuery("ALTER TABLE `#__{$name}` ADD INDEX (`created`)");
+                    $db->setQuery('ALTER TABLE ' . $db->quoteName('#__' . $name) . ' ADD INDEX (' . $db->quoteName('created') . ')');
                     $db->execute();
-                    $db->setQuery("ALTER TABLE `#__{$name}` ADD INDEX (`modified_user_id`)");
+                    $db->setQuery('ALTER TABLE ' . $db->quoteName('#__' . $name) . ' ADD INDEX (' . $db->quoteName('modified_user_id') . ')');
                     $db->execute();
-                    $db->setQuery("ALTER TABLE `#__{$name}` ADD INDEX (`modified`)");
+                    $db->setQuery('ALTER TABLE ' . $db->quoteName('#__' . $name) . ' ADD INDEX (' . $db->quoteName('modified') . ')');
                     $db->execute();
                 } catch (\Throwable $e) {
                     Logger::exception($e);
@@ -616,22 +639,35 @@ class StorageModel extends AdminModel
         $fieldin = rtrim($fieldin, ',');
 
         // ordering max+1
-        $db->setQuery("SELECT COALESCE(MAX(ordering), 0) + 1 FROM #__contentbuilderng_storage_fields WHERE storage_id = " . (int) $storageId);
+        $query = $db->getQuery(true)
+            ->select('COALESCE(MAX(' . $db->quoteName('ordering') . '), 0) + 1')
+            ->from($db->quoteName('#__contentbuilderng_storage_fields'))
+            ->where($db->quoteName('storage_id') . ' = ' . (int) $storageId);
+        $db->setQuery($query);
         $max = (int) $db->loadResult();
 
         if ($fieldin !== '') {
-            $db->setQuery(
-                "SELECT `name` FROM #__contentbuilderng_storage_fields
-                 WHERE `name` IN ($fieldin) AND storage_id = " . (int) $storageId
-            );
+            $query = $db->getQuery(true)
+                ->select($db->quoteName('name'))
+                ->from($db->quoteName('#__contentbuilderng_storage_fields'))
+                ->where($db->quoteName('name') . ' IN (' . $fieldin . ')')
+                ->where($db->quoteName('storage_id') . ' = ' . (int) $storageId);
+            $db->setQuery($query);
             $existingNames = $db->loadColumn() ?: [];
 
             foreach ($fields as $field => $type) {
                 if (!in_array($field, $existingNames, true) && !in_array($field, $system_fields, true)) {
-                    $db->setQuery(
-                        "INSERT INTO #__contentbuilderng_storage_fields (ordering, storage_id, `name`, `title`, `is_group`, `group_definition`)
-                         VALUES (" . (int)$max . "," . (int)$storageId . "," . $db->quote($field) . "," . $db->quote($field) . ",0,'')"
-                    );
+                    $query = $db->getQuery(true)
+                        ->insert($db->quoteName('#__contentbuilderng_storage_fields'))
+                        ->columns($db->quoteName(['ordering', 'storage_id', 'name', 'title', 'is_group', 'group_definition']))
+                        ->values(
+                            (int) $max . ', '
+                            . (int) $storageId . ', '
+                            . $db->quote($field) . ', '
+                            . $db->quote($field) . ', '
+                            . '0, ' . $db->quote('')
+                        );
+                    $db->setQuery($query);
                     $db->execute();
                 }
             }
@@ -646,42 +682,42 @@ class StorageModel extends AdminModel
             try {
                 switch ($missing) {
                     case 'id':
-                        $db->setQuery("ALTER TABLE `{$name}` ADD `id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY");
+                        $db->setQuery('ALTER TABLE ' . $db->quoteName($name) . ' ADD ' . $db->quoteName('id') . ' INT NOT NULL AUTO_INCREMENT PRIMARY KEY');
                         $db->execute();
                         break;
 
                     case 'storage_id':
-                        $db->setQuery("ALTER TABLE `{$name}` ADD `storage_id` INT NOT NULL DEFAULT " . (int)$storageId . ", ADD INDEX (`storage_id`)");
+                        $db->setQuery('ALTER TABLE ' . $db->quoteName($name) . ' ADD ' . $db->quoteName('storage_id') . ' INT NOT NULL DEFAULT ' . (int) $storageId . ', ADD INDEX (' . $db->quoteName('storage_id') . ')');
                         $db->execute();
                         break;
 
                     case 'user_id':
-                        $db->setQuery("ALTER TABLE `{$name}` ADD `user_id` INT NOT NULL DEFAULT 0, ADD INDEX (`user_id`)");
+                        $db->setQuery('ALTER TABLE ' . $db->quoteName($name) . ' ADD ' . $db->quoteName('user_id') . ' INT NOT NULL DEFAULT 0, ADD INDEX (' . $db->quoteName('user_id') . ')');
                         $db->execute();
                         break;
 
                     case 'created':
-                        $db->setQuery("ALTER TABLE `{$name}` ADD `created` DATETIME NOT NULL DEFAULT " . $db->quote($last_update) . ", ADD INDEX (`created`)");
+                        $db->setQuery('ALTER TABLE ' . $db->quoteName($name) . ' ADD ' . $db->quoteName('created') . ' DATETIME NOT NULL DEFAULT ' . $db->quote($last_update) . ', ADD INDEX (' . $db->quoteName('created') . ')');
                         $db->execute();
                         break;
 
                     case 'created_by':
-                        $db->setQuery("ALTER TABLE `{$name}` ADD `created_by` VARCHAR(255) NOT NULL DEFAULT ''");
+                        $db->setQuery('ALTER TABLE ' . $db->quoteName($name) . ' ADD ' . $db->quoteName('created_by') . " VARCHAR(255) NOT NULL DEFAULT ''");
                         $db->execute();
                         break;
 
                     case 'modified_user_id':
-                        $db->setQuery("ALTER TABLE `{$name}` ADD `modified_user_id` INT NOT NULL DEFAULT 0, ADD INDEX (`modified_user_id`)");
+                        $db->setQuery('ALTER TABLE ' . $db->quoteName($name) . ' ADD ' . $db->quoteName('modified_user_id') . ' INT NOT NULL DEFAULT 0, ADD INDEX (' . $db->quoteName('modified_user_id') . ')');
                         $db->execute();
                         break;
 
                     case 'modified':
-                        $db->setQuery("ALTER TABLE `{$name}` ADD `modified` DATETIME NULL DEFAULT NULL, ADD INDEX (`modified`)");
+                        $db->setQuery('ALTER TABLE ' . $db->quoteName($name) . ' ADD ' . $db->quoteName('modified') . ' DATETIME NULL DEFAULT NULL, ADD INDEX (' . $db->quoteName('modified') . ')');
                         $db->execute();
                         break;
 
                     case 'modified_by':
-                        $db->setQuery("ALTER TABLE `{$name}` ADD `modified_by` VARCHAR(255) NOT NULL DEFAULT ''");
+                        $db->setQuery('ALTER TABLE ' . $db->quoteName($name) . ' ADD ' . $db->quoteName('modified_by') . " VARCHAR(255) NOT NULL DEFAULT ''");
                         $db->execute();
                         break;
                 }
@@ -694,19 +730,33 @@ class StorageModel extends AdminModel
         if ($isNew) {
             try {
                 // set default + set storage_id
-                $db->setQuery("UPDATE `{$name}` SET `storage_id` = " . (int)$storageId);
+                $query = $db->getQuery(true)
+                    ->update($db->quoteName($name))
+                    ->set($db->quoteName('storage_id') . ' = ' . (int) $storageId);
+                $db->setQuery($query);
                 $db->execute();
 
-                $db->setQuery("SELECT id FROM `{$name}`");
+                $query = $db->getQuery(true)
+                    ->select($db->quoteName('id'))
+                    ->from($db->quoteName($name));
+                $db->setQuery($query);
                 $thirdPartyIds = $db->loadColumn() ?: [];
 
                 foreach ($thirdPartyIds as $thirdPartyId) {
-                    $db->setQuery(
-                        "INSERT INTO #__contentbuilderng_records
-                        (`type`, last_update, is_future, lang_code, sef, published, record_id, reference_id)
-                        VALUES
-                        ('com_contentbuilderng', " . $db->quote($last_update) . ", 0, '*', '', 1, " . (int)$thirdPartyId . ", " . (int)$storageId . ")"
-                    );
+                    $query = $db->getQuery(true)
+                        ->insert($db->quoteName('#__contentbuilderng_records'))
+                        ->columns($db->quoteName(['type', 'last_update', 'is_future', 'lang_code', 'sef', 'published', 'record_id', 'reference_id']))
+                        ->values(
+                            $db->quote('com_contentbuilderng') . ', '
+                            . $db->quote($last_update) . ', '
+                            . '0, '
+                            . $db->quote('*') . ', '
+                            . $db->quote('') . ', '
+                            . '1, '
+                            . (int) $thirdPartyId . ', '
+                            . (int) $storageId
+                        );
+                    $db->setQuery($query);
                     $db->execute();
                 }
             } catch (\Throwable $e) {
@@ -755,24 +805,30 @@ class StorageModel extends AdminModel
 
             if (!$bytable) {
                 // old name
-                $db->setQuery("SELECT `name` FROM #__contentbuilderng_storage_fields WHERE id = " . (int)$field_id);
+                $query = $db->getQuery(true)
+                    ->select($db->quoteName('name'))
+                    ->from($db->quoteName('#__contentbuilderng_storage_fields'))
+                    ->where($db->quoteName('id') . ' = ' . (int) $field_id);
+                $db->setQuery($query);
                 $old_name = (string) $db->loadResult();
 
                 // update storage_fields
-                $db->setQuery(
-                    "UPDATE #__contentbuilderng_storage_fields
-                     SET group_definition = " . $db->quote($groupDef) . ",
-                         is_group = " . (int)$isGroup . ",
-                         `name` = " . $db->quote($name) . ",
-                         `title` = " . $db->quote($title) . "
-                     WHERE id = " . (int)$field_id
-                );
+                $query = $db->getQuery(true)
+                    ->update($db->quoteName('#__contentbuilderng_storage_fields'))
+                    ->set([
+                        $db->quoteName('group_definition') . ' = ' . $db->quote($groupDef),
+                        $db->quoteName('is_group') . ' = ' . (int) $isGroup,
+                        $db->quoteName('name') . ' = ' . $db->quote($name),
+                        $db->quoteName('title') . ' = ' . $db->quote($title),
+                    ])
+                    ->where($db->quoteName('id') . ' = ' . (int) $field_id);
+                $db->setQuery($query);
                 $db->execute();
 
                 // rename column if needed
                 if ($old_name !== '' && $old_name !== $name) {
                     try {
-                        $db->setQuery("ALTER TABLE `#__" . $storageTable->name . "` CHANGE `" . $old_name . "` `" . $name . "` TEXT");
+                        $db->setQuery('ALTER TABLE ' . $db->quoteName('#__' . $storageTable->name) . ' CHANGE ' . $db->quoteName($old_name) . ' ' . $db->quoteName($name) . ' TEXT');
                         $db->execute();
                     } catch (\Throwable $e) {
                         Logger::exception($e);
@@ -780,13 +836,15 @@ class StorageModel extends AdminModel
                 }
             } else {
                 // bytable => pas de rename colonne
-                $db->setQuery(
-                    "UPDATE #__contentbuilderng_storage_fields
-                     SET group_definition = " . $db->quote($groupDef) . ",
-                         is_group = " . (int)$isGroup . ",
-                         `title` = " . $db->quote($title) . "
-                     WHERE id = " . (int)$field_id
-                );
+                $query = $db->getQuery(true)
+                    ->update($db->quoteName('#__contentbuilderng_storage_fields'))
+                    ->set([
+                        $db->quoteName('group_definition') . ' = ' . $db->quote($groupDef),
+                        $db->quoteName('is_group') . ' = ' . (int) $isGroup,
+                        $db->quoteName('title') . ' = ' . $db->quote($title),
+                    ])
+                    ->where($db->quoteName('id') . ' = ' . (int) $field_id);
+                $db->setQuery($query);
                 $db->execute();
             }
         }
@@ -831,7 +889,11 @@ class StorageModel extends AdminModel
         $db = Factory::getContainer()->get(DatabaseInterface::class);
 
         // Liste des champs définis
-        $db->setQuery("SELECT `name` FROM #__contentbuilderng_storage_fields WHERE storage_id = " . (int)$storageId);
+        $query = $db->getQuery(true)
+            ->select($db->quoteName('name'))
+            ->from($db->quoteName('#__contentbuilderng_storage_fields'))
+            ->where($db->quoteName('storage_id') . ' = ' . (int) $storageId);
+        $db->setQuery($query);
         $fieldNames = $db->loadColumn() ?: [];
 
         // Colonnes existantes

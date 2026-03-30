@@ -1213,9 +1213,13 @@ class com_contentbuilderngInstallerScript
                 $targetHasRows = false;
 
                 try {
-                    $db->setQuery('SELECT 1 FROM ' . $db->quoteName($legacyFull) . ' LIMIT 1');
+                    $db->setQuery(
+                        $db->getQuery(true)->select('1')->from($db->quoteName($legacyFull))->setLimit(1)
+                    );
                     $legacyHasRows = (bool) $db->loadResult();
-                    $db->setQuery('SELECT 1 FROM ' . $db->quoteName($targetFull) . ' LIMIT 1');
+                    $db->setQuery(
+                        $db->getQuery(true)->select('1')->from($db->quoteName($targetFull))->setLimit(1)
+                    );
                     $targetHasRows = (bool) $db->loadResult();
                 } catch (\Throwable $e) {
                     $this->log('[WARNING] Could not inspect row presence for collision ' . $legacyFull . ' / ' . $targetFull . ': ' . $e->getMessage(), Log::WARNING);
@@ -1265,9 +1269,13 @@ class com_contentbuilderngInstallerScript
                 $legacyHasRows = false;
 
                 try {
-                    $db->setQuery('SELECT 1 FROM ' . $db->quoteName($targetFull) . ' LIMIT 1');
+                    $db->setQuery(
+                        $db->getQuery(true)->select('1')->from($db->quoteName($targetFull))->setLimit(1)
+                    );
                     $targetHasRows = (bool) $db->loadResult();
-                    $db->setQuery('SELECT 1 FROM ' . $db->quoteName($legacyFull) . ' LIMIT 1');
+                    $db->setQuery(
+                        $db->getQuery(true)->select('1')->from($db->quoteName($legacyFull))->setLimit(1)
+                    );
                     $legacyHasRows = (bool) $db->loadResult();
                 } catch (\Throwable $e) {
                     $this->log("[WARNING] Could not inspect {$targetFull}/{$legacyFull}: " . $e->getMessage(), Log::WARNING);
@@ -1331,46 +1339,46 @@ class com_contentbuilderngInstallerScript
 
         $queries = [
             // #__contentbuilderng_forms
-            "ALTER TABLE `#__contentbuilderng_forms` MODIFY `created` DATETIME NULL DEFAULT CURRENT_TIMESTAMP",
-            "UPDATE `#__contentbuilderng_forms` SET `created` = NULL WHERE `created` = '0000-00-00'",
-            "ALTER TABLE `#__contentbuilderng_forms` MODIFY `modified` DATETIME NULL DEFAULT NULL",
-            "UPDATE `#__contentbuilderng_forms` SET `modified` = NULL WHERE `modified` = '0000-00-00'",
-            "ALTER TABLE `#__contentbuilderng_forms` MODIFY `last_update` DATETIME NULL DEFAULT NULL",
-            "UPDATE `#__contentbuilderng_forms` SET `last_update` = NULL WHERE `last_update` = '0000-00-00'",
-            "ALTER TABLE `#__contentbuilderng_forms` MODIFY `rand_date_update` DATETIME NULL DEFAULT NULL",
-            "UPDATE `#__contentbuilderng_forms` SET `rand_date_update` = NULL WHERE `rand_date_update` = '0000-00-00'",
+            'ALTER TABLE ' . $db->quoteName('#__contentbuilderng_forms') . ' MODIFY ' . $db->quoteName('created') . ' DATETIME NULL DEFAULT CURRENT_TIMESTAMP',
+            $db->getQuery(true)->update($db->quoteName('#__contentbuilderng_forms'))->set($db->quoteName('created') . ' = NULL')->where($db->quoteName('created') . ' = ' . $db->quote('0000-00-00')),
+            'ALTER TABLE ' . $db->quoteName('#__contentbuilderng_forms') . ' MODIFY ' . $db->quoteName('modified') . ' DATETIME NULL DEFAULT NULL',
+            $db->getQuery(true)->update($db->quoteName('#__contentbuilderng_forms'))->set($db->quoteName('modified') . ' = NULL')->where($db->quoteName('modified') . ' = ' . $db->quote('0000-00-00')),
+            'ALTER TABLE ' . $db->quoteName('#__contentbuilderng_forms') . ' MODIFY ' . $db->quoteName('last_update') . ' DATETIME NULL DEFAULT NULL',
+            $db->getQuery(true)->update($db->quoteName('#__contentbuilderng_forms'))->set($db->quoteName('last_update') . ' = NULL')->where($db->quoteName('last_update') . ' = ' . $db->quote('0000-00-00')),
+            'ALTER TABLE ' . $db->quoteName('#__contentbuilderng_forms') . ' MODIFY ' . $db->quoteName('rand_date_update') . ' DATETIME NULL DEFAULT NULL',
+            $db->getQuery(true)->update($db->quoteName('#__contentbuilderng_forms'))->set($db->quoteName('rand_date_update') . ' = NULL')->where($db->quoteName('rand_date_update') . ' = ' . $db->quote('0000-00-00')),
 
             // #__contentbuilderng_records
-            "ALTER TABLE `#__contentbuilderng_records` MODIFY `publish_up` DATETIME NULL DEFAULT NULL",
-            "UPDATE `#__contentbuilderng_records` SET `publish_up` = NULL WHERE `publish_up` = '0000-00-00'",
-            "ALTER TABLE `#__contentbuilderng_records` MODIFY `publish_down` DATETIME NULL DEFAULT NULL",
-            "UPDATE `#__contentbuilderng_records` SET `publish_down` = NULL WHERE `publish_down` = '0000-00-00'",
-            "ALTER TABLE `#__contentbuilderng_records` MODIFY `last_update` DATETIME NULL DEFAULT NULL",
-            "UPDATE `#__contentbuilderng_records` SET `last_update` = NULL WHERE `last_update` = '0000-00-00'",
-            "ALTER TABLE `#__contentbuilderng_records` MODIFY `rand_date` DATETIME NULL DEFAULT NULL",
-            "UPDATE `#__contentbuilderng_records` SET `rand_date` = NULL WHERE `rand_date` = '0000-00-00'",
+            'ALTER TABLE ' . $db->quoteName('#__contentbuilderng_records') . ' MODIFY ' . $db->quoteName('publish_up') . ' DATETIME NULL DEFAULT NULL',
+            $db->getQuery(true)->update($db->quoteName('#__contentbuilderng_records'))->set($db->quoteName('publish_up') . ' = NULL')->where($db->quoteName('publish_up') . ' = ' . $db->quote('0000-00-00')),
+            'ALTER TABLE ' . $db->quoteName('#__contentbuilderng_records') . ' MODIFY ' . $db->quoteName('publish_down') . ' DATETIME NULL DEFAULT NULL',
+            $db->getQuery(true)->update($db->quoteName('#__contentbuilderng_records'))->set($db->quoteName('publish_down') . ' = NULL')->where($db->quoteName('publish_down') . ' = ' . $db->quote('0000-00-00')),
+            'ALTER TABLE ' . $db->quoteName('#__contentbuilderng_records') . ' MODIFY ' . $db->quoteName('last_update') . ' DATETIME NULL DEFAULT NULL',
+            $db->getQuery(true)->update($db->quoteName('#__contentbuilderng_records'))->set($db->quoteName('last_update') . ' = NULL')->where($db->quoteName('last_update') . ' = ' . $db->quote('0000-00-00')),
+            'ALTER TABLE ' . $db->quoteName('#__contentbuilderng_records') . ' MODIFY ' . $db->quoteName('rand_date') . ' DATETIME NULL DEFAULT NULL',
+            $db->getQuery(true)->update($db->quoteName('#__contentbuilderng_records'))->set($db->quoteName('rand_date') . ' = NULL')->where($db->quoteName('rand_date') . ' = ' . $db->quote('0000-00-00')),
 
             // #__contentbuilderng_articles
-            "ALTER TABLE `#__contentbuilderng_articles` MODIFY `last_update` DATETIME NULL DEFAULT NULL",
-            "UPDATE `#__contentbuilderng_articles` SET `last_update` = NULL WHERE `last_update` = '0000-00-00'",
+            'ALTER TABLE ' . $db->quoteName('#__contentbuilderng_articles') . ' MODIFY ' . $db->quoteName('last_update') . ' DATETIME NULL DEFAULT NULL',
+            $db->getQuery(true)->update($db->quoteName('#__contentbuilderng_articles'))->set($db->quoteName('last_update') . ' = NULL')->where($db->quoteName('last_update') . ' = ' . $db->quote('0000-00-00')),
 
             // #__contentbuilderng_users
-            "ALTER TABLE `#__contentbuilderng_users` MODIFY `verification_date_view` DATETIME NULL DEFAULT NULL",
-            "UPDATE `#__contentbuilderng_users` SET `verification_date_view` = NULL WHERE `verification_date_view` = '0000-00-00'",
-            "ALTER TABLE `#__contentbuilderng_users` MODIFY `verification_date_new` DATETIME NULL DEFAULT NULL",
-            "UPDATE `#__contentbuilderng_users` SET `verification_date_new` = NULL WHERE `verification_date_new` = '0000-00-00'",
-            "ALTER TABLE `#__contentbuilderng_users` MODIFY `verification_date_edit` DATETIME NULL DEFAULT NULL",
-            "UPDATE `#__contentbuilderng_users` SET `verification_date_edit` = NULL WHERE `verification_date_edit` = '0000-00-00'",
+            'ALTER TABLE ' . $db->quoteName('#__contentbuilderng_users') . ' MODIFY ' . $db->quoteName('verification_date_view') . ' DATETIME NULL DEFAULT NULL',
+            $db->getQuery(true)->update($db->quoteName('#__contentbuilderng_users'))->set($db->quoteName('verification_date_view') . ' = NULL')->where($db->quoteName('verification_date_view') . ' = ' . $db->quote('0000-00-00')),
+            'ALTER TABLE ' . $db->quoteName('#__contentbuilderng_users') . ' MODIFY ' . $db->quoteName('verification_date_new') . ' DATETIME NULL DEFAULT NULL',
+            $db->getQuery(true)->update($db->quoteName('#__contentbuilderng_users'))->set($db->quoteName('verification_date_new') . ' = NULL')->where($db->quoteName('verification_date_new') . ' = ' . $db->quote('0000-00-00')),
+            'ALTER TABLE ' . $db->quoteName('#__contentbuilderng_users') . ' MODIFY ' . $db->quoteName('verification_date_edit') . ' DATETIME NULL DEFAULT NULL',
+            $db->getQuery(true)->update($db->quoteName('#__contentbuilderng_users'))->set($db->quoteName('verification_date_edit') . ' = NULL')->where($db->quoteName('verification_date_edit') . ' = ' . $db->quote('0000-00-00')),
 
             // #__contentbuilderng_rating_cache
-            "ALTER TABLE `#__contentbuilderng_rating_cache` MODIFY COLUMN `date` DATETIME NULL DEFAULT NULL",
-            "UPDATE `#__contentbuilderng_rating_cache` SET `date` = NULL WHERE `date` = '0000-00-00'",
+            'ALTER TABLE ' . $db->quoteName('#__contentbuilderng_rating_cache') . ' MODIFY COLUMN ' . $db->quoteName('date') . ' DATETIME NULL DEFAULT NULL',
+            $db->getQuery(true)->update($db->quoteName('#__contentbuilderng_rating_cache'))->set($db->quoteName('date') . ' = NULL')->where($db->quoteName('date') . ' = ' . $db->quote('0000-00-00')),
 
             // #__contentbuilderng_verifications
-            "ALTER TABLE `#__contentbuilderng_verifications` MODIFY `start_date` DATETIME NULL DEFAULT NULL",
-            "UPDATE `#__contentbuilderng_verifications` SET `start_date` = NULL WHERE `start_date` = '0000-00-00'",
-            "ALTER TABLE `#__contentbuilderng_verifications` MODIFY `verification_date` DATETIME NULL DEFAULT NULL",
-            "UPDATE `#__contentbuilderng_verifications` SET `verification_date` = NULL WHERE `verification_date` = '0000-00-00'",
+            'ALTER TABLE ' . $db->quoteName('#__contentbuilderng_verifications') . ' MODIFY ' . $db->quoteName('start_date') . ' DATETIME NULL DEFAULT NULL',
+            $db->getQuery(true)->update($db->quoteName('#__contentbuilderng_verifications'))->set($db->quoteName('start_date') . ' = NULL')->where($db->quoteName('start_date') . ' = ' . $db->quote('0000-00-00')),
+            'ALTER TABLE ' . $db->quoteName('#__contentbuilderng_verifications') . ' MODIFY ' . $db->quoteName('verification_date') . ' DATETIME NULL DEFAULT NULL',
+            $db->getQuery(true)->update($db->quoteName('#__contentbuilderng_verifications'))->set($db->quoteName('verification_date') . ' = NULL')->where($db->quoteName('verification_date') . ' = ' . $db->quote('0000-00-00')),
         ];
 
         foreach ($queries as $sql) {
@@ -1577,14 +1585,14 @@ class com_contentbuilderngInstallerScript
 
         // Normalize nulls
         $normalize = [
-            "ALTER TABLE `#__contentbuilderng_storages` MODIFY `created` DATETIME NULL DEFAULT CURRENT_TIMESTAMP",
-            "ALTER TABLE `#__contentbuilderng_storages` MODIFY `modified` DATETIME NULL DEFAULT NULL",
-            "ALTER TABLE `#__contentbuilderng_storages` MODIFY `created_by` VARCHAR(255) NOT NULL DEFAULT ''",
-            "ALTER TABLE `#__contentbuilderng_storages` MODIFY `modified_by` VARCHAR(255) NOT NULL DEFAULT ''",
-            "UPDATE `#__contentbuilderng_storages` SET `created` = NULL WHERE `created` IN ('0000-00-00', '0000-00-00 00:00:00')",
-            "UPDATE `#__contentbuilderng_storages` SET `modified` = NULL WHERE `modified` IN ('0000-00-00', '0000-00-00 00:00:00')",
-            "UPDATE `#__contentbuilderng_storages` SET `created_by` = '' WHERE `created_by` IS NULL",
-            "UPDATE `#__contentbuilderng_storages` SET `modified_by` = '' WHERE `modified_by` IS NULL",
+            'ALTER TABLE ' . $db->quoteName('#__contentbuilderng_storages') . ' MODIFY ' . $db->quoteName('created') . ' DATETIME NULL DEFAULT CURRENT_TIMESTAMP',
+            'ALTER TABLE ' . $db->quoteName('#__contentbuilderng_storages') . ' MODIFY ' . $db->quoteName('modified') . ' DATETIME NULL DEFAULT NULL',
+            'ALTER TABLE ' . $db->quoteName('#__contentbuilderng_storages') . ' MODIFY ' . $db->quoteName('created_by') . " VARCHAR(255) NOT NULL DEFAULT ''",
+            'ALTER TABLE ' . $db->quoteName('#__contentbuilderng_storages') . ' MODIFY ' . $db->quoteName('modified_by') . " VARCHAR(255) NOT NULL DEFAULT ''",
+            $db->getQuery(true)->update($db->quoteName('#__contentbuilderng_storages'))->set($db->quoteName('created') . ' = NULL')->where($db->quoteName('created') . ' IN (' . $db->quote('0000-00-00') . ', ' . $db->quote('0000-00-00 00:00:00') . ')'),
+            $db->getQuery(true)->update($db->quoteName('#__contentbuilderng_storages'))->set($db->quoteName('modified') . ' = NULL')->where($db->quoteName('modified') . ' IN (' . $db->quote('0000-00-00') . ', ' . $db->quote('0000-00-00 00:00:00') . ')'),
+            $db->getQuery(true)->update($db->quoteName('#__contentbuilderng_storages'))->set($db->quoteName('created_by') . " = ''")->where($db->quoteName('created_by') . ' IS NULL'),
+            $db->getQuery(true)->update($db->quoteName('#__contentbuilderng_storages'))->set($db->quoteName('modified_by') . " = ''")->where($db->quoteName('modified_by') . ' IS NULL'),
         ];
         foreach ($normalize as $sql) {
             $this->safe(fn() => $db->setQuery($sql)->execute());
@@ -3596,25 +3604,43 @@ class com_contentbuilderngInstallerScript
         }
 
         try {
-            $table = $db->quoteName('#__contentbuilderng_storages');
-
-            $db->setQuery("SELECT COUNT(*) FROM $table WHERE ordering = 0");
+            $db->setQuery(
+                $db->getQuery(true)
+                    ->select('COUNT(*)')
+                    ->from($db->quoteName('#__contentbuilderng_storages'))
+                    ->where($db->quoteName('ordering') . ' = 0')
+            );
             $needFix = (int) $db->loadResult();
 
             if ($needFix <= 0) {
                 return;
             }
 
-            $db->setQuery("SELECT COALESCE(MAX(ordering), 0) FROM $table");
+            $db->setQuery(
+                $db->getQuery(true)
+                    ->select('COALESCE(MAX(' . $db->quoteName('ordering') . '), 0)')
+                    ->from($db->quoteName('#__contentbuilderng_storages'))
+            );
             $max = (int) $db->loadResult();
 
-            $db->setQuery("SELECT id FROM $table WHERE ordering = 0 ORDER BY id");
+            $db->setQuery(
+                $db->getQuery(true)
+                    ->select($db->quoteName('id'))
+                    ->from($db->quoteName('#__contentbuilderng_storages'))
+                    ->where($db->quoteName('ordering') . ' = 0')
+                    ->order($db->quoteName('id') . ' ASC')
+            );
             $ids = $db->loadColumn() ?: [];
 
             $order = $max;
             foreach ($ids as $id) {
                 $order++;
-                $db->setQuery("UPDATE $table SET ordering = " . (int) $order . " WHERE id = " . (int) $id)->execute();
+                $db->setQuery(
+                    $db->getQuery(true)
+                        ->update($db->quoteName('#__contentbuilderng_storages'))
+                        ->set($db->quoteName('ordering') . ' = ' . (int) $order)
+                        ->where($db->quoteName('id') . ' = ' . (int) $id)
+                )->execute();
             }
 
             $this->log("[OK] Normalized storages ordering for {$needFix} row(s).");

@@ -376,10 +376,14 @@ class DatatableService
         // Keep storage_id consistent for internal tables.
         if (isset($cols['storage_id'])) {
             try {
-                $db->setQuery(
-                    "UPDATE $tableQN SET " . $db->quoteName('storage_id') . " = " . (int) $storageId
-                    . " WHERE " . $db->quoteName('storage_id') . " IS NULL OR " . $db->quoteName('storage_id') . " = 0"
-                );
+                $query = $db->getQuery(true)
+                    ->update($db->quoteName('#__' . $tableName))
+                    ->set($db->quoteName('storage_id') . ' = ' . (int) $storageId)
+                    ->where(
+                        '(' . $db->quoteName('storage_id') . ' IS NULL'
+                        . ' OR ' . $db->quoteName('storage_id') . ' = 0)'
+                    );
+                $db->setQuery($query);
                 $db->execute();
             } catch (\Throwable $e) {
                 Logger::exception($e);
@@ -388,10 +392,11 @@ class DatatableService
 
         if (isset($cols['created_by'])) {
             try {
-                $db->setQuery(
-                    "UPDATE $tableQN SET " . $db->quoteName('created_by') . " = ''"
-                    . " WHERE " . $db->quoteName('created_by') . " IS NULL"
-                );
+                $query = $db->getQuery(true)
+                    ->update($db->quoteName('#__' . $tableName))
+                    ->set($db->quoteName('created_by') . ' = ' . $db->quote(''))
+                    ->where($db->quoteName('created_by') . ' IS NULL');
+                $db->setQuery($query);
                 $db->execute();
             } catch (\Throwable $e) {
                 Logger::exception($e);
@@ -400,10 +405,11 @@ class DatatableService
 
         if (isset($cols['modified_by'])) {
             try {
-                $db->setQuery(
-                    "UPDATE $tableQN SET " . $db->quoteName('modified_by') . " = ''"
-                    . " WHERE " . $db->quoteName('modified_by') . " IS NULL"
-                );
+                $query = $db->getQuery(true)
+                    ->update($db->quoteName('#__' . $tableName))
+                    ->set($db->quoteName('modified_by') . ' = ' . $db->quote(''))
+                    ->where($db->quoteName('modified_by') . ' IS NULL');
+                $db->setQuery($query);
                 $db->execute();
             } catch (\Throwable $e) {
                 Logger::exception($e);

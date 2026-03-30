@@ -16,9 +16,11 @@ class StorageFieldService
         $db = Factory::getContainer()->get(DatabaseInterface::class);
 
         // 1) Charger le storage
-        $db->setQuery(
-            'SELECT id, name, bytable FROM #__contentbuilderng_storages WHERE id = ' . (int) $storageId
-        );
+        $query = $db->getQuery(true)
+            ->select($db->quoteName(['id', 'name', 'bytable']))
+            ->from($db->quoteName('#__contentbuilderng_storages'))
+            ->where($db->quoteName('id') . ' = ' . (int) $storageId);
+        $db->setQuery($query);
         $storage = $db->loadObject();
 
         if (!$storage) {
@@ -48,11 +50,12 @@ class StorageFieldService
         $groupDef = (string) ($fieldData['group_definition'] ?? '');
 
         // 3) Idempotent : si le champ existe déjà dans storage_fields -> stop
-        $db->setQuery(
-            'SELECT id FROM #__contentbuilderng_storage_fields
-             WHERE storage_id = ' . (int) $storageId . '
-               AND name = ' . $db->quote($name)
-        );
+        $query = $db->getQuery(true)
+            ->select($db->quoteName('id'))
+            ->from($db->quoteName('#__contentbuilderng_storage_fields'))
+            ->where($db->quoteName('storage_id') . ' = ' . (int) $storageId)
+            ->where($db->quoteName('name') . ' = ' . $db->quote($name));
+        $db->setQuery($query);
         $existingId = (int) $db->loadResult();
 
         if ($existingId > 0) {
@@ -60,27 +63,27 @@ class StorageFieldService
         }
 
         // 4) Calcul ordering (max+1)
-        $db->setQuery(
-            'SELECT COALESCE(MAX(ordering), 0) + 1
-             FROM #__contentbuilderng_storage_fields
-             WHERE storage_id = ' . (int) $storageId
-        );
+        $query = $db->getQuery(true)
+            ->select('COALESCE(MAX(' . $db->quoteName('ordering') . '), 0) + 1')
+            ->from($db->quoteName('#__contentbuilderng_storage_fields'))
+            ->where($db->quoteName('storage_id') . ' = ' . (int) $storageId);
+        $db->setQuery($query);
         $ordering = (int) $db->loadResult();
 
         // 5) Insert storage_fields
-        $db->setQuery(
-            'INSERT INTO #__contentbuilderng_storage_fields
-             (ordering, storage_id, name, title, is_group, group_definition, published)
-             VALUES (
-                ' . (int) $ordering . ',
-                ' . (int) $storageId . ',
-                ' . $db->quote($name) . ',
-                ' . $db->quote($title) . ',
-                ' . (int) $isGroup . ',
-                ' . $db->quote($groupDef) . ',
-                1
-             )'
-        );
+        $query = $db->getQuery(true)
+            ->insert($db->quoteName('#__contentbuilderng_storage_fields'))
+            ->columns($db->quoteName(['ordering', 'storage_id', 'name', 'title', 'is_group', 'group_definition', 'published']))
+            ->values(
+                (int) $ordering . ', '
+                . (int) $storageId . ', '
+                . $db->quote($name) . ', '
+                . $db->quote($title) . ', '
+                . (int) $isGroup . ', '
+                . $db->quote($groupDef) . ', '
+                . '1'
+            );
+        $db->setQuery($query);
         $db->execute();
 
         // 6) Ajouter la colonne dans la table data, UNIQUEMENT si la table existe
@@ -100,7 +103,7 @@ class StorageFieldService
         }
 
         // 8) ALTER TABLE (TEXT NULL column, matching the established storage format)
-        $db->setQuery('ALTER TABLE `#__' . $storageName . '` ADD `' . $name . '` TEXT NULL');
+        $db->setQuery('ALTER TABLE ' . $db->quoteName('#__' . $storageName) . ' ADD ' . $db->quoteName($name) . ' TEXT NULL');
         $db->execute();
     }
 }

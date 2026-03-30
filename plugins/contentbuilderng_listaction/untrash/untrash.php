@@ -49,7 +49,21 @@ class plgContentbuilderng_listactionUntrash extends CMSPlugin implements Subscri
 
         foreach ($record_ids as $record_id) {
 
-            $db->setQuery("Update #__content As content, #__contentbuilderng_records As record, #__contentbuilderng_articles As article Set content.state = record.published Where article.record_id = record.record_id And article.form_id = " . intval($form_id) . " And article.record_id = " . $db->Quote($record_id) . " And content.id = article.article_id");
+            $db->setQuery(
+                'UPDATE ' . $db->quoteName('#__content') . ' AS ' . $db->quoteName('content')
+                . ', ' . $db->quoteName('#__contentbuilderng_records') . ' AS ' . $db->quoteName('record')
+                . ', ' . $db->quoteName('#__contentbuilderng_articles') . ' AS ' . $db->quoteName('article')
+                . ' SET ' . $db->quoteName('content') . '.' . $db->quoteName('state')
+                    . ' = ' . $db->quoteName('record') . '.' . $db->quoteName('published')
+                . ' WHERE ' . $db->quoteName('article') . '.' . $db->quoteName('record_id')
+                    . ' = ' . $db->quoteName('record') . '.' . $db->quoteName('record_id')
+                . ' AND ' . $db->quoteName('article') . '.' . $db->quoteName('form_id')
+                    . ' = ' . (int) $form_id
+                . ' AND ' . $db->quoteName('article') . '.' . $db->quoteName('record_id')
+                    . ' = ' . $db->quote($record_id)
+                . ' AND ' . $db->quoteName('content') . '.' . $db->quoteName('id')
+                    . ' = ' . $db->quoteName('article') . '.' . $db->quoteName('article_id')
+            );
             $db->execute();
         }
 

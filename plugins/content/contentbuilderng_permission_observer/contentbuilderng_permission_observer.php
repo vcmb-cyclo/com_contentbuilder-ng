@@ -54,7 +54,22 @@ class plgContentContentbuilderng_permission_observer extends CMSPlugin implement
             }
 
             $db = Factory::getContainer()->get(DatabaseInterface::class);
-            $db->setQuery("Select form.`reference_id`,article.`record_id`,article.`form_id`,form.`type`,form.`published_only`,form.`own_only`,form.`own_only_fe` From #__contentbuilderng_articles As article, #__contentbuilderng_forms As form Where form.`published` = 1 And form.id = article.`form_id` And article.`article_id` = " . $db->quote($article->id));
+            $permQuery = $db->getQuery(true)
+                ->select([
+                    $db->quoteName('form.reference_id'),
+                    $db->quoteName('article.record_id'),
+                    $db->quoteName('article.form_id'),
+                    $db->quoteName('form.type'),
+                    $db->quoteName('form.published_only'),
+                    $db->quoteName('form.own_only'),
+                    $db->quoteName('form.own_only_fe'),
+                ])
+                ->from($db->quoteName('#__contentbuilderng_articles', 'article'))
+                ->join('INNER', $db->quoteName('#__contentbuilderng_forms', 'form')
+                    . ' ON ' . $db->quoteName('form.id') . ' = ' . $db->quoteName('article.form_id'))
+                ->where($db->quoteName('form.published') . ' = 1')
+                ->where($db->quoteName('article.article_id') . ' = ' . $db->quote($article->id));
+            $db->setQuery($permQuery);
             $data = $db->loadAssoc();
 
             require_once (JPATH_SITE .'/administrator/components/com_contentbuilderng/src/contentbuilderng.php');

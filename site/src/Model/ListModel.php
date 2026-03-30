@@ -631,16 +631,20 @@ class ListModel extends BaseListModel
 
 
     /**
-     * @return string The query
+     * @return \Joomla\Database\QueryInterface The query
      */
     private function _buildQuery()
     {
         $app = $this->app;
         $isAdminPreview = $app->input->getBool('cb_preview_ok', false);
-        $query = 'Select * From #__contentbuilderng_forms Where id = ' . intval($this->_id);
+        $db = $this->getDatabase();
+        $query = $db->getQuery(true)
+            ->select('*')
+            ->from($db->quoteName('#__contentbuilderng_forms'))
+            ->where($db->quoteName('id') . ' = ' . (int) $this->_id);
 
         if (!$isAdminPreview) {
-            $query .= ' And published = 1';
+            $query->where($db->quoteName('published') . ' = 1');
         }
 
         return $query;
@@ -735,10 +739,19 @@ class ListModel extends BaseListModel
                         $data->initial_sort_order == 'Rand' &&
                         (empty($data->rand_date_update) || $now->toUnix() - strtotime($data->rand_date_update) >= $data->rand_update)
                     ) {
-                        $this->getDatabase()->setQuery("UPDATE #__contentbuilderng_records SET rand_date = '" . $___now . "' + interval rand()*10000 day Where `type` = " . $this->getDatabase()->quote($data->type) . " And reference_id = " . $this->getDatabase()->quote($data->reference_id));
-                        $this->getDatabase()->execute();
-                        $this->getDatabase()->setQuery("Update #__contentbuilderng_forms Set rand_date_update = '" . $___now . "'");
-                        $this->getDatabase()->execute();
+                        $db = $this->getDatabase();
+                        $randQuery = $db->getQuery(true)
+                            ->update($db->quoteName('#__contentbuilderng_records'))
+                            ->set($db->quoteName('rand_date') . " = " . $db->quote($___now) . " + interval rand()*10000 day")
+                            ->where($db->quoteName('type') . ' = ' . $db->quote($data->type))
+                            ->where($db->quoteName('reference_id') . ' = ' . $db->quote($data->reference_id));
+                        $db->setQuery($randQuery);
+                        $db->execute();
+                        $randDateQuery = $db->getQuery(true)
+                            ->update($db->quoteName('#__contentbuilderng_forms'))
+                            ->set($db->quoteName('rand_date_update') . ' = ' . $db->quote($___now));
+                        $db->setQuery($randDateQuery);
+                        $db->execute();
                     }
 
                     $data->labels = $data->form->getElementLabels();
@@ -953,8 +966,22 @@ class ListModel extends BaseListModel
                     $data->labels = array();
                     $order_types = array();
                     if (count($ids)) {
-                        $this->getDatabase()->setQuery("Select Distinct `id`,`label`, reference_id, `order_type` From #__contentbuilderng_elements Where form_id = " . intval($this->_id) . " And reference_id In (" . implode(',', $ids) . ") And published = 1 And list_include = 1 Order By ordering");
-                        $rows = $this->getDatabase()->loadAssocList();
+                        $db = $this->getDatabase();
+                        $elemQuery = $db->getQuery(true)
+                            ->select('DISTINCT ' . implode(', ', [
+                                $db->quoteName('id'),
+                                $db->quoteName('label'),
+                                $db->quoteName('reference_id'),
+                                $db->quoteName('order_type'),
+                            ]))
+                            ->from($db->quoteName('#__contentbuilderng_elements'))
+                            ->where($db->quoteName('form_id') . ' = ' . (int) $this->_id)
+                            ->where($db->quoteName('reference_id') . ' IN (' . implode(',', $ids) . ')')
+                            ->where($db->quoteName('published') . ' = 1')
+                            ->where($db->quoteName('list_include') . ' = 1')
+                            ->order($db->quoteName('ordering'));
+                        $db->setQuery($elemQuery);
+                        $rows = $db->loadAssocList();
                         $ids = array();
                         foreach ($rows as $row) {
                             // cleaned up, in desired order

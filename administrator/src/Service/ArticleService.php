@@ -399,74 +399,115 @@ class ArticleService
         }
 
         if (!$article) {
-            $db->setQuery(
-                "Insert Into
-                    #__content
-                        (
-                         `images`,`urls`,`title`,`alias`,`introtext`,`fulltext`,`state`,`catid`,`created`,`created_by`,
-                         `modified`,`modified_by`,`checked_out`,`checked_out_time`,`publish_up`,`publish_down`,`attribs`,`version`,
-                         `metakey`,`metadesc`,`metadata`,`access`,`created_by_alias`,`ordering`,featured,language
-                        )
-                    Values
-                        (
-                          '{\"image_intro\":\"\",\"image_intro_alt\":\"\",\"float_intro\":\"\",\"image_intro_caption\":\"\",\"image_fulltext\":\"\",\"image_fulltext_alt\":\"\",\"float_fulltext\":\"\",\"image_fulltext_caption\":\"\"}',
-                          '{\"urla\":\"\",\"urlatext\":\"\",\"targeta\":\"\",\"urlb\":\"\",\"urlbtext\":\"\",\"targetb\":\"\",\"urlc\":\"\",\"urlctext\":\"\",\"targetc\":\"\"}',
-                          " . $db->quote($label) . ',
-                          ' . $db->quote($alias) . ',
-                          ' . $db->quote($introtext) . ',
-                          ' . $db->quote($fulltext) . ',
-                          ' . $db->quote($state) . ',
-                          ' . (int) $form['default_category'] . ',
-                          ' . $db->quote($created) . ',
-                          ' . $db->quote($createdBy ? $createdBy : $this->getCurrentUserId()) . ',
-                          ' . $db->quote($created) . ',
-                          ' . $db->quote($createdBy ? $createdBy : $this->getCurrentUserId()) . ",
-                          NULL,NULL,
-                          " . ($publishUp ? $db->quote($publishUp) : 'NULL') . ',
-                          ' . ($publishDown ? $db->quote($publishDown) : 'NULL') . ',
-                          ' . $db->quote($attribs !== '' ? $attribs : '{"article_layout":"","show_title":"","link_titles":"","show_tags":"","show_intro":"","info_block_position":"","info_block_show_title":"","show_category":"","link_category":"","show_parent_category":"","link_parent_category":"","show_author":"","link_author":"","show_create_date":"","show_modify_date":"","show_publish_date":"","show_item_navigation":"","show_hits":"","show_noauth":"","urls_position":"","alternative_readmore":"","article_page_title":"","show_publishing_options":"","show_article_options":"","show_urls_images_backend":"","show_urls_images_frontend":""}') . ",
-                          '1',
-                          " . $db->quote($metakey) . ',
-                          ' . $db->quote($metadesc) . ',
-                          ' . $db->quote($meta !== '' ? $meta : '{"robots":"","author":"","rights":""}') . ',
-                          ' . $db->quote($access) . ',
-                          ' . $db->quote($createdByAlias) . ',
-                          ' . $db->quote($ordering) . ',
-                          ' . $db->quote($featured) . ',
-                          ' . $db->quote($language) . '
-                        )'
-            );
+            $defaultAttribs = '{"article_layout":"","show_title":"","link_titles":"","show_tags":"","show_intro":"","info_block_position":"","info_block_show_title":"","show_category":"","link_category":"","show_parent_category":"","link_parent_category":"","show_author":"","link_author":"","show_create_date":"","show_modify_date":"","show_publish_date":"","show_item_navigation":"","show_hits":"","show_noauth":"","urls_position":"","alternative_readmore":"","article_page_title":"","show_publishing_options":"","show_article_options":"","show_urls_images_backend":"","show_urls_images_frontend":""}';
+            $defaultMeta = '{"robots":"","author":"","rights":""}';
+            $defaultImages = '{"image_intro":"","image_intro_alt":"","float_intro":"","image_intro_caption":"","image_fulltext":"","image_fulltext_alt":"","float_fulltext":"","image_fulltext_caption":""}';
+            $defaultUrls = '{"urla":"","urlatext":"","targeta":"","urlb":"","urlbtext":"","targetb":"","urlc":"","urlctext":"","targetc":""}';
+            $insertCreatedBy = $createdBy ? $createdBy : $this->getCurrentUserId();
+            $query = $db->getQuery(true)
+                ->insert($db->quoteName('#__content'))
+                ->columns([
+                    $db->quoteName('images'), $db->quoteName('urls'), $db->quoteName('title'),
+                    $db->quoteName('alias'), $db->quoteName('introtext'), $db->quoteName('fulltext'),
+                    $db->quoteName('state'), $db->quoteName('catid'), $db->quoteName('created'),
+                    $db->quoteName('created_by'), $db->quoteName('modified'), $db->quoteName('modified_by'),
+                    $db->quoteName('checked_out'), $db->quoteName('checked_out_time'),
+                    $db->quoteName('publish_up'), $db->quoteName('publish_down'), $db->quoteName('attribs'),
+                    $db->quoteName('version'), $db->quoteName('metakey'), $db->quoteName('metadesc'),
+                    $db->quoteName('metadata'), $db->quoteName('access'), $db->quoteName('created_by_alias'),
+                    $db->quoteName('ordering'), $db->quoteName('featured'), $db->quoteName('language'),
+                ])
+                ->values(implode(',', [
+                    $db->quote($defaultImages),
+                    $db->quote($defaultUrls),
+                    $db->quote($label),
+                    $db->quote($alias),
+                    $db->quote($introtext),
+                    $db->quote($fulltext),
+                    $db->quote($state),
+                    (int) $form['default_category'],
+                    $db->quote($created),
+                    (int) $insertCreatedBy,
+                    $db->quote($created),
+                    (int) $insertCreatedBy,
+                    'NULL',
+                    'NULL',
+                    ($publishUp ? $db->quote($publishUp) : 'NULL'),
+                    ($publishDown ? $db->quote($publishDown) : 'NULL'),
+                    $db->quote($attribs !== '' ? $attribs : $defaultAttribs),
+                    1,
+                    $db->quote($metakey),
+                    $db->quote($metadesc),
+                    $db->quote($meta !== '' ? $meta : $defaultMeta),
+                    $db->quote($access),
+                    $db->quote($createdByAlias),
+                    $db->quote($ordering),
+                    $db->quote($featured),
+                    $db->quote($language),
+                ]));
+            $db->setQuery($query);
             $db->execute();
 
             $article = $db->insertid();
             $___datenow = Factory::getDate()->toSql();
-            $db->setQuery(
-                'Insert Into #__contentbuilderng_articles (`type`,`reference_id`,`last_update`,`article_id`,`record_id`,`form_id`) Values ('
-                . $db->quote($form['type']) . ','
-                . $db->quote($form['reference_id']) . ','
-                . $db->quote($___datenow) . ','
-                . $article . ','
-                . $db->quote($recordId) . ','
-                . (int) $contentbuilderngFormId . ')'
-            );
+            $query = $db->getQuery(true)
+                ->insert($db->quoteName('#__contentbuilderng_articles'))
+                ->columns([
+                    $db->quoteName('type'), $db->quoteName('reference_id'), $db->quoteName('last_update'),
+                    $db->quoteName('article_id'), $db->quoteName('record_id'), $db->quoteName('form_id'),
+                ])
+                ->values(implode(',', [
+                    $db->quote($form['type']),
+                    $db->quote($form['reference_id']),
+                    $db->quote($___datenow),
+                    (int) $article,
+                    $db->quote($recordId),
+                    (int) $contentbuilderngFormId,
+                ]));
+            $db->setQuery($query);
             $db->execute();
-            $db->setQuery("Update #__content Set introtext = concat('<div style=\'display:none;\'><!--(cbArticleId:" . $article . ")--></div>', introtext) Where id = " . (int)$article);
+            $cbMarker = '<div style=\'display:none;\'><!--(cbArticleId:' . (int) $article . ')--></div>';
+            $query = $db->getQuery(true)
+                ->update($db->quoteName('#__content'))
+                ->set($db->quoteName('introtext') . ' = CONCAT(' . $db->quote($cbMarker) . ', ' . $db->quoteName('introtext') . ')')
+                ->where($db->quoteName('id') . ' = ' . (int) $article);
+            $db->setQuery($query);
             $db->execute();
 
-            $db->setQuery('Select * From #__assets Where `name` = ' . $db->quote('com_content.category.' . (int) $form['default_category']));
+            $query = $db->getQuery(true)
+                ->select('*')
+                ->from($db->quoteName('#__assets'))
+                ->where($db->quoteName('name') . ' = ' . $db->quote('com_content.category.' . (int) $form['default_category']));
+            $db->setQuery($query);
             $parentAsset = $db->loadAssoc();
 
             if ($parentAsset) {
                 $parentId = $parentAsset['id'];
                 $db->setQuery(
-                    'Insert Into #__assets (`rules`,`name`,title,parent_id, level, lft, rgt) Values (\'{}\',' . $db->quote('com_content.article.' . $article) . ', ' . $db->quote($label) . ',' . $db->quote($parentId) . ",3,( Select mlftrgt From (Select max(mlft.rgt)+1 As mlftrgt From #__assets As mlft) As tbone ),( Select mrgtrgt From (Select max(mrgt.rgt)+2 As mrgtrgt From #__assets As mrgt) As filet ))"
+                    'Insert Into ' . $db->quoteName('#__assets')
+                    . ' (' . $db->quoteName('rules') . ',' . $db->quoteName('name') . ',' . $db->quoteName('title') . ',' . $db->quoteName('parent_id') . ',' . $db->quoteName('level') . ',' . $db->quoteName('lft') . ',' . $db->quoteName('rgt') . ')'
+                    . ' Values ({}'
+                    . ',' . $db->quote('com_content.article.' . (int) $article)
+                    . ',' . $db->quote($label)
+                    . ',' . (int) $parentId
+                    . ',3'
+                    . ',( Select mlftrgt From (Select max(mlft.rgt)+1 As mlftrgt From ' . $db->quoteName('#__assets') . ' As mlft) As tbone )'
+                    . ',( Select mrgtrgt From (Select max(mrgt.rgt)+2 As mrgtrgt From ' . $db->quoteName('#__assets') . ' As mrgt) As filet ))'
                 );
                 $db->execute();
 
                 $assetId = $db->insertid();
-                $db->setQuery('Select max(mrgt.rgt)+1 From #__assets As mrgt');
+                $query = $db->getQuery(true)
+                    ->select('MAX(' . $db->quoteName('mrgt') . '.' . $db->quoteName('rgt') . ')+1')
+                    ->from($db->quoteName('#__assets', 'mrgt'));
+                $db->setQuery($query);
                 $rgt = $db->loadResult();
-                $db->setQuery('Update `#__assets` Set rgt = ' . (int)$rgt . " Where name = 'root.1' And level = 0");
+                $query = $db->getQuery(true)
+                    ->update($db->quoteName('#__assets'))
+                    ->set($db->quoteName('rgt') . ' = ' . (int) $rgt)
+                    ->where($db->quoteName('name') . ' = ' . $db->quote('root.1'))
+                    ->where($db->quoteName('level') . ' = 0');
+                $db->setQuery($query);
                 $db->execute();
                 $query = $db->getQuery(true)
                     ->update($db->quoteName('#__content'))
@@ -489,78 +530,114 @@ class ArticleService
             $modifiedBy = $currentUserId > 0 ? $currentUserId : $metadataModifiedBy;
 
             if ($full) {
-                $db->setQuery(
-                    "Update #__content Set
-                        `title` = " . $db->quote($label) . ",
-                        `alias` = " . $db->quote($alias) . ",
-                        `introtext` = " . $db->quote('<div style=\'display:none;\'><!--(cbArticleId:' . $article . ')--></div>' . $introtext) . ",
-                        `fulltext` = " . $db->quote($fulltext . '<div style=\'display:none;\'><!--(cbArticleId:' . $article . ')--></div>') . ",
-                        `state` = " . $db->quote($state) . ",
-                        `catid` = " . (int) $form['default_category'] . ",
-                        `modified` = " . $db->quote($modified) . ",
-                        `modified_by` = " . $db->quote($modifiedBy ? $modifiedBy : $this->getCurrentUserId()) . ",
-                        `attribs` = " . $db->quote($attribs !== '' ? $attribs : '{"article_layout":"","show_title":"","link_titles":"","show_tags":"","show_intro":"","info_block_position":"","info_block_show_title":"","show_category":"","link_category":"","show_parent_category":"","link_parent_category":"","show_author":"","link_author":"","show_create_date":"","show_modify_date":"","show_publish_date":"","show_item_navigation":"","show_hits":"","show_noauth":"","urls_position":"","alternative_readmore":"","article_page_title":"","show_publishing_options":"","show_article_options":"","show_urls_images_backend":"","show_urls_images_frontend":""}') . ",
-                        `metakey` = " . $db->quote($metakey) . ",
-                        `metadesc` = " . $db->quote($metadesc) . ",
-                        `metadata` = " . $db->quote($meta !== '' ? $meta : '{"robots":"","author":"","rights":""}') . ",
-                        `version` = `version`+1,
-                        `created` = " . $db->quote($created) . ",
-                        `created_by` = " . $db->quote($createdBy) . ",
-                        `created_by_alias` = " . $db->quote($createdByAlias) . ",
-                        `publish_up` = " . ($publishUp !== '' ? $db->quote($publishUp) : 'NULL') . ",
-                        `publish_down` = " . ($publishDown !== '' ? $db->quote($publishDown) : 'NULL') . ",
-                        `access` = " . $db->quote($access) . ",
-                        `ordering` = " . $db->quote($ordering) . ",
-                        featured = " . $db->quote($featured) . ",
-                        language = " . $db->quote($language) . "
-                    Where id = $article"
-                );
+                $defaultAttribs = '{"article_layout":"","show_title":"","link_titles":"","show_tags":"","show_intro":"","info_block_position":"","info_block_show_title":"","show_category":"","link_category":"","show_parent_category":"","link_parent_category":"","show_author":"","link_author":"","show_create_date":"","show_modify_date":"","show_publish_date":"","show_item_navigation":"","show_hits":"","show_noauth":"","urls_position":"","alternative_readmore":"","article_page_title":"","show_publishing_options":"","show_article_options":"","show_urls_images_backend":"","show_urls_images_frontend":""}';
+                $defaultMeta = '{"robots":"","author":"","rights":""}';
+                $updateModifiedBy = $modifiedBy ? $modifiedBy : $this->getCurrentUserId();
+                $introMarker = '<div style=\'display:none;\'><!--(cbArticleId:' . (int) $article . ')--></div>';
+                $query = $db->getQuery(true)
+                    ->update($db->quoteName('#__content'))
+                    ->set($db->quoteName('title') . ' = ' . $db->quote($label))
+                    ->set($db->quoteName('alias') . ' = ' . $db->quote($alias))
+                    ->set($db->quoteName('introtext') . ' = ' . $db->quote($introMarker . $introtext))
+                    ->set($db->quoteName('fulltext') . ' = ' . $db->quote($fulltext . $introMarker))
+                    ->set($db->quoteName('state') . ' = ' . $db->quote($state))
+                    ->set($db->quoteName('catid') . ' = ' . (int) $form['default_category'])
+                    ->set($db->quoteName('modified') . ' = ' . $db->quote($modified))
+                    ->set($db->quoteName('modified_by') . ' = ' . (int) $updateModifiedBy)
+                    ->set($db->quoteName('attribs') . ' = ' . $db->quote($attribs !== '' ? $attribs : $defaultAttribs))
+                    ->set($db->quoteName('metakey') . ' = ' . $db->quote($metakey))
+                    ->set($db->quoteName('metadesc') . ' = ' . $db->quote($metadesc))
+                    ->set($db->quoteName('metadata') . ' = ' . $db->quote($meta !== '' ? $meta : $defaultMeta))
+                    ->set($db->quoteName('version') . ' = ' . $db->quoteName('version') . '+1')
+                    ->set($db->quoteName('created') . ' = ' . $db->quote($created))
+                    ->set($db->quoteName('created_by') . ' = ' . (int) $createdBy)
+                    ->set($db->quoteName('created_by_alias') . ' = ' . $db->quote($createdByAlias))
+                    ->set($db->quoteName('publish_up') . ' = ' . ($publishUp !== '' ? $db->quote($publishUp) : 'NULL'))
+                    ->set($db->quoteName('publish_down') . ' = ' . ($publishDown !== '' ? $db->quote($publishDown) : 'NULL'))
+                    ->set($db->quoteName('access') . ' = ' . $db->quote($access))
+                    ->set($db->quoteName('ordering') . ' = ' . $db->quote($ordering))
+                    ->set($db->quoteName('featured') . ' = ' . $db->quote($featured))
+                    ->set($db->quoteName('language') . ' = ' . $db->quote($language))
+                    ->where($db->quoteName('id') . ' = ' . (int) $article);
+                $db->setQuery($query);
                 $db->execute();
 
-                $db->setQuery('Select * From #__assets Where `name` = ' . $db->quote('com_content.category.' . (int) $form['default_category']));
+                $query = $db->getQuery(true)
+                    ->select('*')
+                    ->from($db->quoteName('#__assets'))
+                    ->where($db->quoteName('name') . ' = ' . $db->quote('com_content.category.' . (int) $form['default_category']));
+                $db->setQuery($query);
                 $parentAsset = $db->loadAssoc();
 
                 if ($parentAsset) {
-                    $db->setQuery('Delete From `#__assets` Where `name` = ' . $db->quote('com_content.article.' . $article));
+                    $query = $db->getQuery(true)
+                        ->delete($db->quoteName('#__assets'))
+                        ->where($db->quoteName('name') . ' = ' . $db->quote('com_content.article.' . (int) $article));
+                    $db->setQuery($query);
                     $db->execute();
                     $parentId = $parentAsset['id'];
                     $db->setQuery(
-                        'Insert Into #__assets (`rules`,`name`,title,parent_id, level, lft, rgt) Values (\'{}\',' . $db->quote('com_content.article.' . $article) . ', ' . $db->quote($label) . ',' . $db->quote($parentId) . ",3,( Select mlftrgt From (Select max(mlft.rgt)+1 As mlftrgt From #__assets As mlft) As tbone ),( Select mrgtrgt From (Select max(mrgt.rgt)+2 As mrgtrgt From #__assets As mrgt) As filet ))"
+                        'Insert Into ' . $db->quoteName('#__assets')
+                        . ' (' . $db->quoteName('rules') . ',' . $db->quoteName('name') . ',' . $db->quoteName('title') . ',' . $db->quoteName('parent_id') . ',' . $db->quoteName('level') . ',' . $db->quoteName('lft') . ',' . $db->quoteName('rgt') . ')'
+                        . ' Values ({}'
+                        . ',' . $db->quote('com_content.article.' . (int) $article)
+                        . ',' . $db->quote($label)
+                        . ',' . (int) $parentId
+                        . ',3'
+                        . ',( Select mlftrgt From (Select max(mlft.rgt)+1 As mlftrgt From ' . $db->quoteName('#__assets') . ' As mlft) As tbone )'
+                        . ',( Select mrgtrgt From (Select max(mrgt.rgt)+2 As mrgtrgt From ' . $db->quoteName('#__assets') . ' As mrgt) As filet ))'
                     );
                     $db->execute();
                     $assetId = $db->insertid();
-                    $db->setQuery('Select max(mrgt.rgt)+1 From #__assets As mrgt');
+                    $query = $db->getQuery(true)
+                        ->select('MAX(' . $db->quoteName('mrgt') . '.' . $db->quoteName('rgt') . ')+1')
+                        ->from($db->quoteName('#__assets', 'mrgt'));
+                    $db->setQuery($query);
                     $rgt = $db->loadResult();
-                    $db->setQuery('Update `#__assets` Set rgt = ' . $rgt . " Where `name` = 'root.1' And level = 0");
+                    $query = $db->getQuery(true)
+                        ->update($db->quoteName('#__assets'))
+                        ->set($db->quoteName('rgt') . ' = ' . (int) $rgt)
+                        ->where($db->quoteName('name') . ' = ' . $db->quote('root.1'))
+                        ->where($db->quoteName('level') . ' = 0');
+                    $db->setQuery($query);
                     $db->execute();
-                    $db->setQuery('Update `#__content` Set asset_id = ' . $db->quote($assetId) . ' Where `id` = ' . $db->quote($article));
+                    $query = $db->getQuery(true)
+                        ->update($db->quoteName('#__content'))
+                        ->set($db->quoteName('asset_id') . ' = ' . (int) $assetId)
+                        ->where($db->quoteName('id') . ' = ' . (int) $article);
+                    $db->setQuery($query);
                     $db->execute();
                 }
             } else {
-                $db->setQuery(
-                    "Update #__content Set
-                        `title` = " . $db->quote($label) . ",
-                        `alias` = " . $db->quote($alias) . ",
-                        `introtext` = " . $db->quote('<div style=\'display:none;\'><!--(cbArticleId:' . $article . ')--></div>' . $introtext) . ",
-                        `fulltext` = " . $db->quote($fulltext . '<div style=\'display:none;\'><!--(cbArticleId:' . $article . ')--></div>') . ",
-                        `state` = " . $db->quote($state) . ",
-                        `modified` = " . $db->quote($modified) . ",
-                        `modified_by` = " . $db->quote($modifiedBy ? $modifiedBy : $this->getCurrentUserId()) . ",
-                        `version` = `version`+1,
-                        language=" . $db->quote($language) . "
-                    Where id = $article"
-                );
+                $introMarker = '<div style=\'display:none;\'><!--(cbArticleId:' . (int) $article . ')--></div>';
+                $updateModifiedBy = $modifiedBy ? $modifiedBy : $this->getCurrentUserId();
+                $query = $db->getQuery(true)
+                    ->update($db->quoteName('#__content'))
+                    ->set($db->quoteName('title') . ' = ' . $db->quote($label))
+                    ->set($db->quoteName('alias') . ' = ' . $db->quote($alias))
+                    ->set($db->quoteName('introtext') . ' = ' . $db->quote($introMarker . $introtext))
+                    ->set($db->quoteName('fulltext') . ' = ' . $db->quote($fulltext . $introMarker))
+                    ->set($db->quoteName('state') . ' = ' . $db->quote($state))
+                    ->set($db->quoteName('modified') . ' = ' . $db->quote($modified))
+                    ->set($db->quoteName('modified_by') . ' = ' . (int) $updateModifiedBy)
+                    ->set($db->quoteName('version') . ' = ' . $db->quoteName('version') . '+1')
+                    ->set($db->quoteName('language') . ' = ' . $db->quote($language))
+                    ->where($db->quoteName('id') . ' = ' . (int) $article);
+                $db->setQuery($query);
                 $db->execute();
             }
 
             $___datenow = Factory::getDate()->toSql();
-            $db->setQuery(
-                'Update #__contentbuilderng_articles Set `last_update` = ' . $db->quote($___datenow)
-                . ' Where `type` = ' . $db->quote($form['type'])
-                . ' And form_id = ' . (int) $contentbuilderngFormId
-                . ' And reference_id = ' . $db->quote($form['reference_id'])
-                . ' And record_id = ' . $db->quote($recordId)
-            );
+            $query = $db->getQuery(true)
+                ->update($db->quoteName('#__contentbuilderng_articles'))
+                ->set($db->quoteName('last_update') . ' = ' . $db->quote($___datenow))
+                ->where([
+                    $db->quoteName('type') . ' = ' . $db->quote($form['type']),
+                    $db->quoteName('form_id') . ' = ' . (int) $contentbuilderngFormId,
+                    $db->quoteName('reference_id') . ' = ' . $db->quote($form['reference_id']),
+                    $db->quoteName('record_id') . ' = ' . $db->quote($recordId),
+                ]);
+            $db->setQuery($query);
             $db->execute();
         }
 
