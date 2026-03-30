@@ -418,6 +418,8 @@ class DetailsModel extends ListModel
                     $baseTitle = '';
                     if ($this->_show_page_heading && $this->_page_title !== '') {
                         $baseTitle = (string) $this->_page_title;
+                    } elseif ($this->_menu_item) {
+                        $baseTitle = (string) $app->getDocument()->getTitle();
                     } else {
                         $baseTitle = (string) $data->form->getPageTitle();
                     }
