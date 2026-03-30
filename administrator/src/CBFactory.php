@@ -3,7 +3,7 @@
 /**
  * @package     ContentBuilder NG
  * @copyright   Copyright © 2005 - 2020 Open Source Matters, Inc. All rights reserved.
- * @copyright   (C) 2026 by XDA+GIL
+ * @copyright   Copyright © 2026 by XDA+GIL
  * @license     GNU General Public License version 2 or later; see LICENSE.txt
  */
 

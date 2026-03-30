@@ -2,7 +2,7 @@
 /**
  * @version     6.0
  * @package     ContentBuilder NG Rating
- * @copyright   (C) 2026 by XDA+GIL
+ * @copyright   Copyright © 2026 by XDA+GIL
  * @license     Released under the terms of the GNU General Public License
  **/
 

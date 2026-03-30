@@ -4,7 +4,7 @@
  * @package     ContentBuilder NG
  * @author      XDA+GIL
  * @link        https://breezingforms-ng.vcmb.fr
- * @copyright   (C) 2024-2026
+ * @copyright   Copyright © 2026 by XDA+GIL
  * @license     GNU General Public License version 2 or later; see LICENSE.txt
  *
  * script.php (Installer Script)

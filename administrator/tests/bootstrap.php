@@ -8,6 +8,22 @@ namespace {
     }
 }
 
+namespace Joomla\CMS\Application {
+    if (!\class_exists(CMSApplication::class, false)) {
+        abstract class CMSApplication
+        {
+        }
+    }
+}
+
+namespace Joomla\Database {
+    if (!\interface_exists(DatabaseInterface::class, false)) {
+        interface DatabaseInterface
+        {
+        }
+    }
+}
+
 namespace CB\Component\Contentbuilderng\Tests\Stubs {
     final class Input
     {
@@ -218,14 +234,6 @@ namespace Joomla\CMS\Access {
     }
 }
 
-namespace Joomla\CMS\Application {
-    if (!\class_exists(CMSApplication::class, false)) {
-        abstract class CMSApplication
-        {
-        }
-    }
-}
-
 namespace Joomla\CMS\Access\Exception {
     if (!\class_exists(NotAllowed::class, false)) {
         class NotAllowed extends \RuntimeException
@@ -342,4 +350,5 @@ namespace {
     require_once \dirname(__DIR__) . '/src/Model/StorageModel.php';
     require_once \dirname(__DIR__) . '/src/Model/VerifyModel.php';
     require_once \dirname(__DIR__) . '/src/Service/PermissionService.php';
+    require_once \dirname(__DIR__) . '/src/Helper/FormDisplayColumnsHelper.php';
 }
