@@ -80,14 +80,18 @@ final class MenuParamHelper
         return $intValue === 1 ? 1 : 0;
     }
 
-    public static function resolvePageHeadingToggle($value, int $default = 1): int
+    public static function resolvePageHeadingToggle($value, ?int $globalValue = null, int $default = 1): int
     {
         if ($value === null) {
             return $default;
         }
 
         if ($value === '') {
-            return 0;
+            if ($globalValue !== null) {
+                return self::resolveToggleValue($globalValue, $default);
+            }
+
+            return $default;
         }
 
         return self::resolveToggleValue($value, $default);
