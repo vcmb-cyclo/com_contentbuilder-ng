@@ -46,7 +46,7 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
     <div class="w-100">
         <table class="table table-striped">
             <tr class="row0">
-                <td width="20%" align="right" class="key">
+                <td class="key text-end" style="width: 20%;">
                     <?php echo Text::_('COM_CONTENTBUILDERNG_ID'); ?>
                 </td>
                 <td>
@@ -54,7 +54,7 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
                 </td>
             </tr>
             <tr class="row0">
-                <td width="20%" align="right" class="key">
+                <td class="key text-end" style="width: 20%;">
                     <?php echo Text::_('COM_CONTENTBUILDERNG_NAME'); ?>
                 </td>
                 <td>
@@ -62,7 +62,7 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
                 </td>
             </tr>
             <tr class="row0">
-                <td width="20%" align="right" class="key">
+                <td class="key text-end" style="width: 20%;">
                     <?php echo Text::_('COM_CONTENTBUILDERNG_USERNAME'); ?>
                 </td>
                 <td>
@@ -70,7 +70,7 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
                 </td>
             </tr>
             <tr class="row0">
-                <td width="20%" align="right" class="key">
+                <td class="key text-end" style="width: 20%;">
                     <label for="limit_add">
                         <?php echo Text::_('COM_CONTENTBUILDERNG_PERM_LIMIT_ADD'); ?>:
                     </label>
@@ -81,7 +81,7 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
                 </td>
             </tr>
             <tr class="row0">
-                <td width="20%" align="right" class="key">
+                <td class="key text-end" style="width: 20%;">
                     <label for="limit_edit">
                         <?php echo Text::_('COM_CONTENTBUILDERNG_PERM_LIMIT_EDIT'); ?>:
                     </label>
@@ -92,7 +92,7 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
                 </td>
             </tr>
             <tr class="row0">
-                <td width="20%" align="right" class="key">
+                <td class="key text-end" style="width: 20%;">
                     <label for="verification_date_view">
                         <?php echo Text::_('COM_CONTENTBUILDERNG_PERM_VERIFICATION_DATE_VIEW'); ?>:
                     </label>
@@ -121,7 +121,7 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
                 </td>
             </tr>
             <tr class="row0">
-                <td width="20%" align="right" class="key">
+                <td class="key text-end" style="width: 20%;">
                     <label for="verification_date_new">
                         <?php echo Text::_('COM_CONTENTBUILDERNG_PERM_VERIFICATION_DATE_NEW'); ?>:
                     </label>
@@ -151,7 +151,7 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
                 </td>
             </tr>
             <tr class="row0">
-                <td width="20%" align="right" class="key">
+                <td class="key text-end" style="width: 20%;">
                     <label for="verification_date_edit">
                         <?php echo Text::_('COM_CONTENTBUILDERNG_PERM_VERIFICATION_DATE_EDIT'); ?>:
                     </label>
@@ -181,7 +181,7 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
                 </td>
             </tr>
             <tr class="row0">
-                <td width="20%" align="right" class="key">
+                <td class="key text-end" style="width: 20%;">
                     <label for="published">
                         <?php echo Text::_('COM_CONTENTBUILDERNG_LIST_STATES_PUBLISHED'); ?>
                     </label>

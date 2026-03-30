@@ -99,13 +99,13 @@ $isModifiedElementSettings = $displayData['isModifiedElementSettings'] ?? null;
             $isModifiedElement = is_callable($isModifiedElementSettings) ? (bool) $isModifiedElementSettings($row) : false;
         ?>
             <tr id="cb-row-<?php echo (int) $row->id; ?>" class="<?php echo 'row' . $k; ?>" data-cb-row-id="<?php echo (int) $row->id; ?>">
-                <td valign="top">
+                <td class="align-top">
                     <?php echo $row->id; ?>
                 </td>
-                <td valign="top">
+                <td class="align-top">
                     <?php echo $checked; ?>
                 </td>
-                <td valign="top">
+                <td class="align-top">
                     <div class="cb-item-label-cell">
                         <div class="cb-item-label-display"
                             id="itemLabels_<?php echo $row->id ?>"
@@ -148,16 +148,16 @@ $isModifiedElementSettings = $displayData['isModifiedElementSettings'] ?? null;
                         </select>
                     </div>
                 </td>
-                <td valign="top">
+                <td class="align-top">
                     <?php echo $listInclude; ?>
                 </td>
-                <td valign="top">
+                <td class="align-top">
                     <?php echo $searchInclude; ?>
                 </td>
-                <td valign="top">
+                <td class="align-top">
                     <?php echo $linkable; ?>
                 </td>
-                <td valign="top">
+                <td class="align-top">
                     <?php echo $editable; ?>
                     <?php
                     if (($row->editable ?? null) && !($item->edit_by_type ?? false)) {
@@ -167,20 +167,20 @@ $isModifiedElementSettings = $displayData['isModifiedElementSettings'] ?? null;
                     }
                     ?>
                 </td>
-                <td valign="top">
+                <td class="align-top">
                     <input class="form-control form-control-sm cb-wordwrap-input" type="text" size="4" maxlength="4" inputmode="numeric" pattern="[0-9]{0,4}" oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,4);"
                         name="jform[itemWordwrap][<?php echo $row->id ?>]"
                         value="<?php echo htmlentities($row->wordwrap ?? '', ENT_QUOTES, 'UTF-8') ?>" />
                 </td>
-                <td valign="top">
+                <td class="align-top">
                     <input class="form-control form-control-sm w-100" style="width: 150px;" type="text"
                         name="jform[itemWrapper][<?php echo $row->id ?>]"
                         value="<?php echo htmlentities($row->item_wrapper ?? '', ENT_QUOTES, 'UTF-8') ?>" />
                 </td>
-                <td valign="top">
+                <td class="align-top">
                     <?php echo $published; ?>
                 </td>
-                <td class="order" width="150" valign="top">
+                <td class="order align-top" width="150">
                     <?php
                     $orderUp = '';
                     $orderDown = '';

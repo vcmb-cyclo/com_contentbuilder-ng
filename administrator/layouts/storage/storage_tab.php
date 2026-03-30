@@ -29,7 +29,7 @@ $ordering = !empty($displayData['ordering']);
 ?>
 <table width="100%">
     <tr>
-        <td width="200" valign="top">
+        <td class="align-top" style="width: 200px;">
             <fieldset class="border rounded p-3 mb-3">
                 <table width="100%">
                     <tr>
@@ -79,7 +79,7 @@ $ordering = !empty($displayData['ordering']);
                         </td>
                     </tr>
                     <tr>
-                        <td width="100">
+                        <td style="width: 100px;">
                             <label for="title">
                                 <b>
                                     <?php echo Text::_('COM_CONTENTBUILDERNG_LIST_STATES_TITLE'); ?>
@@ -95,7 +95,7 @@ $ordering = !empty($displayData['ordering']);
                         </td>
                     </tr>
                     <tr id="csvUploadHead">
-                        <td width="100">
+                        <td style="width: 100px;">
                             <br />
                             <button
                                 type="button"
@@ -274,7 +274,7 @@ $ordering = !empty($displayData['ordering']);
                                 </td>
                             </tr>
                             <tr>
-                                <td width="100">
+                                <td style="width: 100px;">
                                     <label for="fieldtitle">
                                         <b>
                                             <?php echo Text::_('COM_CONTENTBUILDERNG_LIST_STATES_TITLE'); ?>
@@ -289,7 +289,7 @@ $ordering = !empty($displayData['ordering']);
                                 </td>
                             </tr>
                             <tr>
-                                <td width="100">
+                                <td style="width: 100px;">
                                     <label for="is_group">
                                         <b>
                                             <?php echo Text::_('COM_CONTENTBUILDERNG_STORAGE_GROUP'); ?>
@@ -310,7 +310,7 @@ $ordering = !empty($displayData['ordering']);
                                 </td>
                             </tr>
                             <tr>
-                                <td width="100">
+                                <td style="width: 100px;">
                                     <label for="group_definition">
                                         <b>
                                             <?php echo Text::_('COM_CONTENTBUILDERNG_STORAGE_GROUP_DEFINITION'); ?>
@@ -319,7 +319,7 @@ $ordering = !empty($displayData['ordering']);
                                 </td>
                             </tr>
                             <tr>
-                                <td align="right">
+                                <td class="text-end">
                                     <textarea class="form-control form-control-sm" style="width: 100%; height: 100px;"
                                         id="group_definition" name="jform[group_definition]">Label 1;value1
 Label 2;value2
@@ -332,7 +332,7 @@ Label 3;value3</textarea>
             <?php endif; ?>
         </td>
 
-        <td valign="top">
+        <td class="align-top">
             <table class="table table-striped m-3 cb-storage-fields-table" style="min-width: 697px;">
                 <thead>
                     <tr>

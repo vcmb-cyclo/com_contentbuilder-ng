@@ -176,13 +176,13 @@ TXT;
         </td>
     </tr>
     <tr>
-        <td width="20%" valign="top">
+        <td width="20%" class="align-top">
             <label for="default_lang_code"><span class="editlinktip hasTip"
                     title="<?php echo Text::_('COM_CONTENTBUILDERNG_DEFAULT_LANG_CODE_TIP'); ?>">
                     <?php echo Text::_('COM_CONTENTBUILDERNG_DEFAULT_LANG_CODE'); ?>
                 </span></label>
         </td>
-        <td valign="top">
+        <td class="align-top">
             <select class="form-select-sm" name="jform[default_lang_code]" id="default_lang_code">
                 <option value="*">
                     <?php echo Text::_('COM_CONTENTBUILDERNG_ANY'); ?>
@@ -209,13 +209,13 @@ TXT;
                 <?php echo Text::_('COM_CONTENTBUILDERNG_NO'); ?>
             </label>
         </td>
-        <td width="20%" valign="top">
+        <td width="20%" class="align-top">
             <label for="default_lang_code_ignore_yes"><span class="editlinktip hasTip"
                     title="<?php echo Text::_('COM_CONTENTBUILDERNG_DEFAULT_LANG_CODE_IGNORE_TIP'); ?>">
                     <?php echo Text::_('COM_CONTENTBUILDERNG_DEFAULT_LANG_CODE_IGNORE'); ?>
                 </span></label>
         </td>
-        <td valign="top">
+        <td class="align-top">
             <input class="form-check-input" <?php echo !empty($item->default_lang_code_ignore) ? 'checked="checked" ' : '' ?>type="radio" name="jform[default_lang_code_ignore]"
                 id="default_lang_code_ignore_yes" value="1" />
             <label for="default_lang_code_ignore_yes">
@@ -230,13 +230,13 @@ TXT;
         </td>
     </tr>
     <tr>
-        <td width="20%" valign="top">
+        <td width="20%" class="align-top">
             <label for="default_publish_up_days"><span class="editlinktip hasTip"
                     title="<?php echo Text::_('COM_CONTENTBUILDERNG_DEFAULT_PUBLISH_UP_DAYS_TIP'); ?>">
                     <?php echo Text::_('COM_CONTENTBUILDERNG_DEFAULT_PUBLISH_UP_DAYS'); ?>
                 </span></label>
         </td>
-        <td valign="top">
+        <td class="align-top">
             <input class="form-control form-control-sm w-100" type="text" name="jform[default_publish_up_days]"
                 id="default_publish_up_days" value="<?php echo $item->default_publish_up_days; ?>" />
             <br /><br />
@@ -256,13 +256,13 @@ TXT;
             </label>
 
         </td>
-        <td width="20%" valign="top">
+        <td width="20%" class="align-top">
             <label for="default_publish_down_days"><span class="editlinktip hasTip"
                     title="<?php echo Text::_('COM_CONTENTBUILDERNG_DEFAULT_PUBLISH_DOWN_DAYS_TIP'); ?>">
                     <?php echo Text::_('COM_CONTENTBUILDERNG_DEFAULT_PUBLISH_DOWN_DAYS'); ?>
                 </span></label>
         </td>
-        <td valign="top">
+        <td class="align-top">
             <input class="form-control form-control-sm w-100" type="text" name="jform[default_publish_down_days]"
                 id="default_publish_down_days" value="<?php echo $item->default_publish_down_days; ?>" />
         </td>

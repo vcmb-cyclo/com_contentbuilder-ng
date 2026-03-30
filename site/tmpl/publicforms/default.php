@@ -164,7 +164,7 @@ if ($this->page_heading) {
                 if ($this->show_id) {
                     ?>
 
-                    <td valign="top">
+                    <td class="align-top">
                         <?php echo $row->id; ?>
                     </td>
 
@@ -172,7 +172,7 @@ if ($this->page_heading) {
                 }
                 ?>
 
-                <td valign="top">
+                <td class="align-top">
                     <?php echo $link_; ?>
                 </td>
 
@@ -180,7 +180,7 @@ if ($this->page_heading) {
                 if ($this->show_tags) {
                     ?>
 
-                    <td valign="top">
+                    <td class="align-top">
                         <?php echo $row->tag; ?>
                     </td>
 
@@ -211,7 +211,7 @@ if ($this->page_heading) {
                 if ($this->show_permissions) {
                     ?>
 
-                    <td valign="top">
+                    <td class="align-top">
                         <img width="16" height="16" alt=""
                             src="<?php echo $this->perms[$row->id]['view'] ? Uri::root(true) . '/components/com_contentbuilderng/assets/images/tick.png' : Uri::root(true) . '/components/com_contentbuilderng/assets/images/untick.png'; ?>" />
                     </td>
@@ -224,7 +224,7 @@ if ($this->page_heading) {
                 if ($this->show_permissions && $this->show_permissions_new) {
                     ?>
 
-                    <td valign="top">
+                    <td class="align-top">
                         <img width="16" height="16" alt=""
                             src="<?php echo $this->perms[$row->id]['new'] ? Uri::root(true) . '/components/com_contentbuilderng/assets/images/tick.png' : Uri::root(true) . '/components/com_contentbuilderng/assets/images/untick.png'; ?>" />
                     </td>
@@ -237,7 +237,7 @@ if ($this->page_heading) {
                 if ($this->show_permissions && $this->show_permissions_edit) {
                     ?>
 
-                    <td valign="top">
+                    <td class="align-top">
                         <img width="16" height="16" alt=""
                             src="<?php echo $this->perms[$row->id]['edit'] ? Uri::root(true) . '/components/com_contentbuilderng/assets/images/tick.png' : Uri::root(true) . '/components/com_contentbuilderng/assets/images/untick.png'; ?>" />
                     </td>

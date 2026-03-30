@@ -267,12 +267,12 @@ $typeIconMap = [
                         if (isset($the_item['has_hint']) && $the_item['has_hint']) {
                         ?>
                             <tr>
-                                <td width="100" align="left" class="key">
+                                <td class="key text-start" style="width: 100px;">
                                     <label for="hint">
                                         <?php echo Text::_('COM_CONTENTBUILDERNG_ELEMENT_HINT'); ?>:
                                     </label>
                                 </td>
-                                <td align="left">
+                                <td class="text-start">
                                     <textarea class="form-control" style="width:95%;height:100px;" name="hint"
                                         id="hint"><?php echo isset($this->element->hint) ? htmlentities($this->element->hint, ENT_QUOTES, 'UTF-8') : ''; ?></textarea>
                                 </td>
@@ -296,12 +296,12 @@ $typeIconMap = [
                     </legend>
                     <table class="admintable" width="95%">
                         <tr>
-                            <td width="100" align="left" class="key">
+                            <td class="key text-start" style="width: 100px;">
                                 <label for="hint">
                                     <?php echo Text::_('COM_CONTENTBUILDERNG_ELEMENT_HINT'); ?>:
                                 </label>
                             </td>
-                            <td align="left">
+                            <td class="text-start">
                                 <textarea class="form-control" style="width:95%;height:100px;" name="hint"
                                     id="hint"><?php echo isset($this->element->hint) ? htmlentities($this->element->hint, ENT_QUOTES, 'UTF-8') : ''; ?></textarea>
                             </td>
@@ -319,47 +319,47 @@ $typeIconMap = [
                     </legend>
                     <table class="admintable" width="95%">
                         <tr>
-                            <td width="100" align="left" class="key">
+                            <td class="key text-start" style="width: 100px;">
                                 <label for="hint">
                                     <?php echo Text::_('COM_CONTENTBUILDERNG_ELEMENT_HINT'); ?>:
                                 </label>
                             </td>
-                            <td align="left">
+                            <td class="text-start">
                                 <textarea class="form-control" style="width:95%;height:100px;" name="hint"
                                     id="hint"><?php echo isset($this->element->hint) ? htmlentities($this->element->hint, ENT_QUOTES, 'UTF-8') : ''; ?></textarea>
                             </td>
                         </tr>
                         <tr>
-                            <td width="100" align="left" class="key">
+                            <td class="key text-start" style="width: 100px;">
                                 <label for="allowed_file_extensions">
                                     <?php echo Text::_('COM_CONTENTBUILDERNG_ELEMENT_OPTIONS_ALLOWED_FILE_EXTENSIONS'); ?>:
                                 </label>
                             </td>
-                            <td align="left">
+                            <td class="text-start">
                                 <input class="form-control form-control-sm" style="width:95%;" type="text"
                                     name="allowed_file_extensions" id="allowed_file_extensions"
                                     value="<?php echo htmlentities(isset($this->element->options->allowed_file_extensions) && $this->element->options->allowed_file_extensions ? $this->element->options->allowed_file_extensions : 'zip, rar, 7z, pdf, doc, xls, ppt, jpg, jpeg, png, gif', ENT_QUOTES, 'UTF-8'); ?>" />
                             </td>
                         </tr>
                         <tr>
-                            <td width="100" align="left" class="key">
+                            <td class="key text-start" style="width: 100px;">
                                 <label for="max_filesize">
                                     <?php echo Text::_('COM_CONTENTBUILDERNG_ELEMENT_OPTIONS_MAX_FILESIZE'); ?>:
                                 </label>
                             </td>
-                            <td align="left">
+                            <td class="text-start">
                                 <input class="form-control form-control-sm" style="width:95%;" type="text" name="max_filesize"
                                     id="max_filesize"
                                     value="<?php echo htmlentities(isset($this->element->options->max_filesize) && $this->element->options->max_filesize ? $this->element->options->max_filesize : '2M', ENT_QUOTES, 'UTF-8'); ?>" />
                             </td>
                         </tr>
                         <tr>
-                            <td width="100" align="left" class="key">
+                            <td class="key text-start" style="width: 100px;">
                                 <label for="upload_directory">
                                     <?php echo Text::_('COM_CONTENTBUILDERNG_ELEMENT_OPTIONS_UPLOAD_DIRECTORY'); ?>:
                                 </label>
                             </td>
-                            <td align="left">
+                            <td class="text-start">
                                 <input class="form-control form-control-sm" style="width:95%;" type="text"
                                     name="upload_directory" id="upload_directory"
                                     value="<?php echo htmlentities(isset($this->element->options->upload_directory) && $this->element->options->upload_directory ? $this->element->options->upload_directory : '', ENT_QUOTES, 'UTF-8'); ?>" />
@@ -380,12 +380,12 @@ $typeIconMap = [
                     </legend>
                     <table class="admintable" width="95%">
                         <tr>
-                            <td width="100" align="left" class="key">
+                            <td class="key text-start" style="width: 100px;">
                                 <label for="hint">
                                     <?php echo Text::_('COM_CONTENTBUILDERNG_ELEMENT_HINT'); ?>:
                                 </label>
                             </td>
-                            <td align="left">
+                            <td class="text-start">
                                 <textarea class="form-control" style="width:95%;height:100px;" name="hint"
                                     id="hint"><?php echo isset($this->element->hint) ? htmlentities($this->element->hint, ENT_QUOTES, 'UTF-8') : ''; ?></textarea>
                             </td>
@@ -411,12 +411,12 @@ $typeIconMap = [
                         ?>
 
                             <tr>
-                                <td width="100" align="left" class="key">
+                                <td class="key text-start" style="width: 100px;">
                                     <label>
                                         <?php echo Text::_('COM_CONTENTBUILDERNG_ELEMENT_DEFAULT_VALUE'); ?>:
                                     </label>
                                 </td>
-                                <td align="left">
+                                <td class="text-start">
                                     <?php
                                     foreach ($this->group_definition as $key => $value) {
                                     ?>
@@ -440,22 +440,22 @@ $typeIconMap = [
                         if ($this->element->type == 'select') {
                         ?>
                             <tr>
-                                <td width="100" align="left" class="key">
+                                <td class="key text-start" style="width: 100px;">
                                     <label for="multiple">
                                         <?php echo Text::_('COM_CONTENTBUILDERNG_ELEMENT_OPTIONS_MULTIPLE'); ?>:
                                     </label>
                                 </td>
-                                <td align="left">
+                                <td class="text-start">
                                     <?php echo $renderCheckbox('multiple', 'multiple', isset($this->element->options->multiple) && $this->element->options->multiple); ?>
                                 </td>
                             </tr>
                             <tr>
-                                <td width="100" align="left" class="key">
+                                <td class="key text-start" style="width: 100px;">
                                     <label for="length">
                                         <?php echo Text::_('COM_CONTENTBUILDERNG_ELEMENT_OPTIONS_LENGTH'); ?>:
                                     </label>
                                 </td>
-                                <td align="left">
+                                <td class="text-start">
                                     <input class="form-control form-control-sm" style="width:95%;" type="text" name="length"
                                         id="length"
                                         value="<?php echo isset($this->element->options->length) ? $this->element->options->length : ''; ?>" />
@@ -466,22 +466,22 @@ $typeIconMap = [
                         if ($this->element->type == 'checkboxgroup' || $this->element->type == 'radiogroup') {
                         ?>
                             <tr>
-                                <td width="100" align="left" class="key">
+                                <td class="key text-start" style="width: 100px;">
                                     <label for="horizontal">
                                         <?php echo Text::_('COM_CONTENTBUILDERNG_ELEMENT_OPTIONS_HORIZONTAL'); ?>:
                                     </label>
                                 </td>
-                                <td align="left">
+                                <td class="text-start">
                                     <?php echo $renderCheckbox('horizontal', 'horizontal', isset($this->element->options->horizontal) && $this->element->options->horizontal); ?>
                                 </td>
                             </tr>
                             <tr>
-                                <td width="100" align="left" class="key">
+                                <td class="key text-start" style="width: 100px;">
                                     <label for="horizontal_length">
                                         <?php echo Text::_('COM_CONTENTBUILDERNG_ELEMENT_OPTIONS_HORIZONTAL_LENGTH'); ?>:
                                     </label>
                                 </td>
-                                <td align="left">
+                                <td class="text-start">
                                     <input class="form-control form-control-sm" style="width: 95%" type="text"
                                         name="horizontal_length" id="horizontal_length"
                                         value="<?php echo isset($this->element->options->horizontal_length) ? $this->element->options->horizontal_length : ''; ?>" />
@@ -491,32 +491,32 @@ $typeIconMap = [
                         }
                         ?>
                         <tr>
-                            <td width="100" align="left" class="key">
+                            <td class="key text-start" style="width: 100px;">
                                 <?php echo $renderTooltipLabel('class', 'COM_CONTENTBUILDERNG_ELEMENT_OPTIONS_CLASS', 'COM_CONTENTBUILDERNG_ELEMENT_OPTIONS_CLASS_TIP'); ?>
                             </td>
-                            <td align="left">
+                            <td class="text-start">
                                 <input class="form-control form-control-sm" style="width:95%;" type="text" name="class"
                                     id="class"
                                     value="<?php echo isset($this->element->options->class) ? htmlentities($this->element->options->class, ENT_QUOTES, 'UTF-8') : ''; ?>" />
                             </td>
                         </tr>
                         <tr>
-                            <td width="100" align="left" class="key">
+                            <td class="key text-start" style="width: 100px;">
                                 <label for="seperator">
                                     <?php echo Text::_('COM_CONTENTBUILDERNG_ELEMENT_OPTIONS_SEPERATOR'); ?>:
                                 </label>
                             </td>
-                            <td align="left">
+                            <td class="text-start">
                                 <input class="form-control form-control-sm" style="width:95%;" type="text" name="seperator"
                                     id="seperator"
                                     value="<?php echo isset($this->element->options->seperator) ? htmlentities($this->element->options->seperator, ENT_QUOTES, 'UTF-8') : ','; ?>" />
                             </td>
                         </tr>
                         <tr>
-                            <td width="100" align="left" class="key">
+                            <td class="key text-start" style="width: 100px;">
                                 <?php echo $renderTooltipLabel('allow_encoding', 'COM_CONTENTBUILDERNG_ELEMENT_OPTIONS_ALLOW_ENCODING', 'COM_CONTENTBUILDERNG_ELEMENT_OPTIONS_ALLOW_ENCODING_TIP'); ?>
                             </td>
-                            <td align="left">
+                            <td class="text-start">
                                 <input class="form-check-input" type="radio" name="allow_encoding" id="allow_encoding" value="0"
                                     <?php echo (!isset($this->element->options->allow_html) || !$this->element->options->allow_html) && (!isset($this->element->options->allow_raw) || !$this->element->options->allow_raw) ? ' checked="checked"' : ''; ?> /> <label
                                     for="allow_encoding">
@@ -547,81 +547,81 @@ $typeIconMap = [
                     </legend>
                     <table class="admintable" width="95%">
                         <tr>
-                            <td width="100" align="left" class="key">
+                            <td class="key text-start" style="width: 100px;">
                                 <?php echo $renderTooltipLabel('default_value', 'COM_CONTENTBUILDERNG_ELEMENT_DEFAULT_VALUE', 'COM_CONTENTBUILDERNG_ELEMENT_DEFAULT_VALUE_TIP'); ?>
                             </td>
-                            <td align="left">
+                            <td class="text-start">
                                 <textarea class="form-control" style="width: 95%; height: 100px;" name="default_value"
                                     id="default_value"><?php echo isset($this->element->default_value) ? htmlentities($this->element->default_value, ENT_QUOTES, 'UTF-8') : ''; ?></textarea>
                             </td>
                         </tr>
                         <tr>
-                            <td width="100" align="left" class="key">
+                            <td class="key text-start" style="width: 100px;">
                                 <?php echo $renderTooltipLabel('hint', 'COM_CONTENTBUILDERNG_ELEMENT_HINT', 'COM_CONTENTBUILDERNG_ELEMENT_HINT_TIP'); ?>
                             </td>
-                            <td align="left">
+                            <td class="text-start">
                                 <textarea class="form-control" style="width:95%;height:100px;" name="hint"
                                     id="hint"><?php echo isset($this->element->hint) ? htmlentities($this->element->hint, ENT_QUOTES, 'UTF-8') : ''; ?></textarea>
                             </td>
                         </tr>
                         <tr>
-                            <td width="100" align="left" class="key">
+                            <td class="key text-start" style="width: 100px;">
                                 <label for="width">
                                     <?php echo Text::_('COM_CONTENTBUILDERNG_ELEMENT_OPTIONS_WIDTH'); ?>:
                                 </label>
                             </td>
-                            <td align="left">
+                            <td class="text-start">
                                 <input class="form-control form-control-sm" style="width:95%;" type="text" name="width"
                                     id="width"
                                     value="<?php echo isset($this->element->options->width) ? $this->element->options->width : ''; ?>" />
                             </td>
                         </tr>
                         <tr>
-                            <td width="100" align="left" class="key">
+                            <td class="key text-start" style="width: 100px;">
                                 <label for="height">
                                     <?php echo Text::_('COM_CONTENTBUILDERNG_ELEMENT_OPTIONS_HEIGHT'); ?>:
                                 </label>
                             </td>
-                            <td align="left">
+                            <td class="text-start">
                                 <input class="form-control form-control-sm" style="width:95%;" type="text" name="height"
                                     id="height"
                                     value="<?php echo isset($this->element->options->height) ? $this->element->options->height : ''; ?>" />
                             </td>
                         </tr>
                         <tr>
-                            <td width="100" align="left" class="key">
+                            <td class="key text-start" style="width: 100px;">
                                 <label for="maxlength">
                                     <?php echo $renderTooltipLabel('maxlength', 'COM_CONTENTBUILDERNG_ELEMENT_OPTIONS_MAXLENGTH', 'COM_CONTENTBUILDERNG_ELEMENT_OPTIONS_MAXLENGTH_TIP'); ?>
                                 </td>
-                                <td align="left">
+                                <td class="text-start">
                                     <input class="form-control form-control-sm" style="width:95%;" type="text" name="maxlength"
                                     id="maxlength"
                                     value="<?php echo isset($this->element->options->maxlength) ? $this->element->options->maxlength : ''; ?>" />
                             </td>
                         </tr>
                         <tr>
-                            <td width="100" align="left" class="key">
+                            <td class="key text-start" style="width: 100px;">
                                 <?php echo $renderTooltipLabel('class', 'COM_CONTENTBUILDERNG_ELEMENT_OPTIONS_CLASS', 'COM_CONTENTBUILDERNG_ELEMENT_OPTIONS_CLASS_TIP'); ?>
                             </td>
-                            <td align="left">
+                            <td class="text-start">
                                 <input class="form-control form-control-sm" style="width:95%;" type="text" name="class"
                                     id="class"
                                     value="<?php echo isset($this->element->options->class) ? htmlentities($this->element->options->class, ENT_QUOTES, 'UTF-8') : ''; ?>" />
                             </td>
                         </tr>
                         <tr>
-                            <td width="100" align="left" class="key">
+                            <td class="key text-start" style="width: 100px;">
                                 <?php echo $renderTooltipLabel('readonly', 'COM_CONTENTBUILDERNG_ELEMENT_OPTIONS_READONLY', 'COM_CONTENTBUILDERNG_ELEMENT_OPTIONS_READONLY_TIP'); ?>
                                 </td>
-                                <td align="left">
+                                <td class="text-start">
                                     <?php echo $renderCheckbox('readonly', 'readonly', isset($this->element->options->readonly) && intval($this->element->options->readonly)); ?>
                                 </td>
                             </tr>
                         <tr>
-                            <td width="100" align="left" class="key">
+                            <td class="key text-start" style="width: 100px;">
                                 <?php echo $renderTooltipLabel('allow_encoding', 'COM_CONTENTBUILDERNG_ELEMENT_OPTIONS_ALLOW_ENCODING', 'COM_CONTENTBUILDERNG_ELEMENT_OPTIONS_ALLOW_ENCODING_TIP'); ?>
                             </td>
-                            <td align="left">
+                            <td class="text-start">
                                 <input class="form-check-input" type="radio" name="allow_encoding" id="allow_encoding" value="0"
                                     <?php echo (!isset($this->element->options->allow_html) || !$this->element->options->allow_html) && (!isset($this->element->options->allow_raw) || !$this->element->options->allow_raw) ? ' checked="checked"' : ''; ?> /> <label
                                     for="allow_encoding">
@@ -653,71 +653,71 @@ $typeIconMap = [
                     </legend>
                     <table class="admintable" width="95%">
                         <tr>
-                            <td width="100" align="left" class="key">
+                            <td class="key text-start" style="width: 100px;">
                                 <?php echo $renderTooltipLabel('default_value', 'COM_CONTENTBUILDERNG_ELEMENT_DEFAULT_VALUE', 'COM_CONTENTBUILDERNG_ELEMENT_DEFAULT_VALUE_TIP'); ?>
                             </td>
-                            <td align="left">
+                            <td class="text-start">
                                 <input class="form-control form-control-sm" style="width:95%;" type="text" name="default_value"
                                     id="default_value"
                                     value="<?php echo isset($this->element->default_value) ? htmlentities($this->element->default_value, ENT_QUOTES, 'UTF-8') : ''; ?>" />
                             </td>
                         </tr>
                         <tr>
-                            <td width="100" align="left" class="key">
+                            <td class="key text-start" style="width: 100px;">
                                 <?php echo $renderTooltipLabel('hint', 'COM_CONTENTBUILDERNG_ELEMENT_HINT', 'COM_CONTENTBUILDERNG_ELEMENT_HINT_TIP'); ?>
                             </td>
-                            <td align="left">
+                            <td class="text-start">
                                 <textarea class="form-control" style="width:95%;height:100px;" name="hint"
                                     id="hint"><?php echo isset($this->element->hint) ? htmlentities($this->element->hint, ENT_QUOTES, 'UTF-8') : ''; ?></textarea>
                             </td>
                         </tr>
                         <tr>
-                            <td width="100" align="left" class="key">
+                            <td class="key text-start" style="width: 100px;">
                                 <?php echo $renderTooltipLabel('length', 'COM_CONTENTBUILDERNG_ELEMENT_OPTIONS_LENGTH', 'COM_CONTENTBUILDERNG_ELEMENT_OPTIONS_LENGTH_TIP'); ?>
                             </td>
-                            <td align="left">
+                            <td class="text-start">
                                 <input class="form-control form-control-sm" style="width:95%;" type="text" name="length"
                                     id="length"
                                     value="<?php echo isset($this->element->options->length) ? $this->element->options->length : '100%'; ?>" />
                             </td>
                         </tr>
                         <tr>
-                            <td width="100" align="left" class="key">
+                            <td class="key text-start" style="width: 100px;">
                                 <?php echo $renderTooltipLabel('maxlength', 'COM_CONTENTBUILDERNG_ELEMENT_OPTIONS_MAXLENGTH', 'COM_CONTENTBUILDERNG_ELEMENT_OPTIONS_MAXLENGTH_TIP'); ?>
                             </td>
-                            <td align="left">
+                            <td class="text-start">
                                 <input class="form-control form-control-sm" style="width:95%;" type="text" name="maxlength"
                                     id="maxlength"
                                     value="<?php echo isset($this->element->options->maxlength) ? $this->element->options->maxlength : ''; ?>" />
                             </td>
                         </tr>
                         <tr>
-                            <td width="100" align="left" class="key">
+                            <td class="key text-start" style="width: 100px;">
                                 <label for="format">
                                     <?php echo Text::_('COM_CONTENTBUILDERNG_ELEMENT_OPTIONS_FORMAT'); ?>:
                                 </label>
                             </td>
-                            <td align="left">
+                            <td class="text-start">
                                 <input class="form-control form-control-sm" style="width:95%;" type="text" name="format"
                                     id="format"
                                     value="<?php echo isset($this->element->options->format) ? $this->element->options->format : '%Y-%m-%d'; ?>" />
                             </td>
                         </tr>
                         <tr>
-                            <td width="100" align="left" class="key">
+                            <td class="key text-start" style="width: 100px;">
                                 <?php echo $renderTooltipLabel('transfer_format', 'COM_CONTENTBUILDERNG_ELEMENT_OPTIONS_TRANSFER_FORMAT', 'COM_CONTENTBUILDERNG_ELEMENT_OPTIONS_TRANSFER_FORMAT_TIP'); ?>
                             </td>
-                            <td align="left">
+                            <td class="text-start">
                                 <input class="form-control form-control-sm" style="width:95%;" type="text"
                                     name="transfer_format" id="transfer_format"
                                     value="<?php echo isset($this->element->options->transfer_format) ? $this->element->options->transfer_format : 'YYYY-mm-dd'; ?>" />
                             </td>
                         </tr>
                         <tr>
-                            <td width="100" align="left" class="key">
+                            <td class="key text-start" style="width: 100px;">
                                 <?php echo $renderTooltipLabel('readonly', 'COM_CONTENTBUILDERNG_ELEMENT_OPTIONS_READONLY', 'COM_CONTENTBUILDERNG_ELEMENT_OPTIONS_READONLY_TIP'); ?>
                                 </td>
-                                <td align="left">
+                                <td class="text-start">
                                     <?php echo $renderCheckbox('readonly', 'readonly', isset($this->element->options->readonly) && intval($this->element->options->readonly)); ?>
                                 </td>
                             </tr>
@@ -736,26 +736,26 @@ $typeIconMap = [
                     </legend>
                     <table class="admintable" width="95%">
                         <tr>
-                            <td width="100" align="left" class="key">
+                            <td class="key text-start" style="width: 100px;">
                                 <?php echo $renderTooltipLabel('default_value', 'COM_CONTENTBUILDERNG_ELEMENT_DEFAULT_VALUE', 'COM_CONTENTBUILDERNG_ELEMENT_DEFAULT_VALUE_TIP'); ?>
                             </td>
-                            <td align="left">
+                            <td class="text-start">
                                 <input class="form-control form-control-sm" style="width:95%;" type="text" name="default_value"
                                     id="default_value"
                                     value="<?php echo isset($this->element->default_value) ? htmlentities($this->element->default_value, ENT_QUOTES, 'UTF-8') : ''; ?>" />
                             </td>
                         </tr>
                         <tr>
-                            <td width="100" align="left" class="key">
+                            <td class="key text-start" style="width: 100px;">
                                 <?php echo $renderTooltipLabel('hint', 'COM_CONTENTBUILDERNG_ELEMENT_HINT', 'COM_CONTENTBUILDERNG_ELEMENT_HINT_TIP'); ?>
                             </td>
-                            <td align="left">
+                            <td class="text-start">
                                 <textarea class="form-control" style="width:95%;height:100px;" name="hint"
                                     id="hint"><?php echo isset($this->element->hint) ? htmlentities($this->element->hint, ENT_QUOTES, 'UTF-8') : ''; ?></textarea>
                             </td>
                         </tr>
                         <tr>
-                            <td colspan="2" align="left">
+                            <td colspan="2" class="text-start">
                                 <div class="cb-inline-grid">
                                     <?php echo $renderTooltipLabel('length', 'COM_CONTENTBUILDERNG_ELEMENT_OPTIONS_LENGTH', 'COM_CONTENTBUILDERNG_ELEMENT_OPTIONS_LENGTH_TIP'); ?>
                                     <input class="form-control form-control-sm" type="text" name="length"
@@ -769,17 +769,17 @@ $typeIconMap = [
                             </td>
                         </tr>
                         <tr>
-                            <td width="100" align="left" class="key">
+                            <td class="key text-start" style="width: 100px;">
                                 <?php echo $renderTooltipLabel('class', 'COM_CONTENTBUILDERNG_ELEMENT_OPTIONS_CLASS', 'COM_CONTENTBUILDERNG_ELEMENT_OPTIONS_CLASS_TIP'); ?>
                             </td>
-                            <td align="left">
+                            <td class="text-start">
                                 <input class="form-control form-control-sm" style="width:95%;" type="text" name="class"
                                     id="class"
                                     value="<?php echo isset($this->element->options->class) ? htmlentities($this->element->options->class, ENT_QUOTES, 'UTF-8') : ''; ?>" />
                             </td>
                         </tr>
                         <tr>
-                            <td colspan="2" align="left">
+                            <td colspan="2" class="text-start">
                                 <div class="cb-inline-flags">
                                     <span>
                                         <?php echo $renderTooltipLabel('password', 'COM_CONTENTBUILDERNG_ELEMENT_OPTIONS_PASSWORD', 'COM_CONTENTBUILDERNG_ELEMENT_OPTIONS_PASSWORD_TIP'); ?>
@@ -793,10 +793,10 @@ $typeIconMap = [
                             </td>
                         </tr>
                         <tr>
-                            <td width="100" align="left" class="key">
+                            <td class="key text-start" style="width: 100px;">
                                 <?php echo $renderTooltipLabel('allow_encoding', 'COM_CONTENTBUILDERNG_ELEMENT_OPTIONS_ALLOW_ENCODING', 'COM_CONTENTBUILDERNG_ELEMENT_OPTIONS_ALLOW_ENCODING_TIP'); ?>
                             </td>
-                            <td align="left">
+                            <td class="text-start">
                                 <input class="form-check-input" type="radio" name="allow_encoding" id="allow_encoding" value="0"
                                     <?php echo (!isset($this->element->options->allow_html) || !$this->element->options->allow_html) && (!isset($this->element->options->allow_raw) || !$this->element->options->allow_raw) ? ' checked="checked"' : ''; ?> /> <label
                                     for="allow_encoding">
@@ -828,24 +828,24 @@ $typeIconMap = [
                     </legend>
                     <table class="admintable" width="95%">
                         <tr>
-                            <td width="100" align="left" class="key">
+                            <td class="key text-start" style="width: 100px;">
                                 <label for="default_value">
                                     <?php echo Text::_('COM_CONTENTBUILDERNG_ELEMENT_DEFAULT_VALUE'); ?>:
                                 </label>
                             </td>
-                            <td align="left">
+                            <td class="text-start">
                                 <input class="form-control form-control-sm" style="width:95%;" type="text" name="default_value"
                                     id="default_value"
                                     value="<?php echo isset($this->element->default_value) ? htmlentities($this->element->default_value, ENT_QUOTES, 'UTF-8') : ''; ?>" />
                             </td>
                         </tr>
                         <tr>
-                            <td width="100" align="left" class="key">
+                            <td class="key text-start" style="width: 100px;">
                                 <label for="allow_encoding">
                                     <?php echo Text::_('COM_CONTENTBUILDERNG_ELEMENT_OPTIONS_ALLOW_ENCODING'); ?>:
                                 </label>
                             </td>
-                            <td align="left">
+                            <td class="text-start">
                                 <input class="form-check-input" type="radio" name="allow_encoding" id="allow_encoding" value="0"
                                     <?php echo (!isset($this->element->options->allow_html) || !$this->element->options->allow_html) && (!isset($this->element->options->allow_raw) || !$this->element->options->allow_raw) ? ' checked="checked"' : ''; ?> /> <label
                                     for="allow_encoding">
@@ -886,24 +886,24 @@ $typeIconMap = [
                     </legend>
                     <table class="admintable" width="95%">
                         <tr>
-                            <td width="100" align="left" class="key">
+                            <td class="key text-start" style="width: 100px;">
                                 <label for="validation_message">
                                     <?php echo Text::_('COM_CONTENTBUILDERNG_ELEMENT_VALIDATION_MESSAGE'); ?>:
                                 </label>
                             </td>
-                            <td align="left">
+                            <td class="text-start">
                                 <input class="form-control form-control-sm" style="width:95%;" type="text"
                                     name="validation_message" id="validation_message"
                                     value="<?php echo htmlentities((string) ($this->element->validation_message ?? ''), ENT_QUOTES, 'UTF-8'); ?>" />
                             </td>
                         </tr>
                         <tr>
-                            <td width="100" align="left" class="key">
+                            <td class="key text-start" style="width: 100px;">
                                 <label for="validations">
                                     <?php echo Text::_('COM_CONTENTBUILDERNG_ELEMENT_SELECT_VALIDATIONS'); ?>:
                                 </label>
                             </td>
-                            <td align="left">
+                            <td class="text-start">
                                 <select class="form-select form-select-sm" style="width:95%;min-height:140px;" multiple="multiple" size="6"
                                     name="validations[]" id="validations">
                                     <?php
@@ -923,12 +923,12 @@ $typeIconMap = [
                             </td>
                         </tr>
                         <tr>
-                            <td width="100" align="left" class="key">
+                            <td class="key text-start" style="width: 100px;">
                                 <label for="custom_validation_script">
                                     <?php echo Text::_('COM_CONTENTBUILDERNG_ELEMENT_VALIDATION_CODE'); ?>:
                                 </label>
                             </td>
-                            <td align="left">
+                            <td class="text-start">
                                 <?php
                                 $params = array('syntax' => 'php');
                                 $editor = Editor::getInstance('codemirror');
@@ -949,12 +949,12 @@ $typeIconMap = [
                     </legend>
                     <table class="admintable" width="95%">
                         <tr>
-                            <td width="100" align="left" class="key">
+                            <td class="key text-start" style="width: 100px;">
                                 <label for="custom_init_script">
                                     <?php echo Text::_('COM_CONTENTBUILDERNG_ELEMENT_INIT_CODE'); ?>:
                                 </label>
                             </td>
-                            <td align="left">
+                            <td class="text-start">
                                 <?php
                                 $params = array('syntax' => 'javascript');
                                 $editor = Editor::getInstance('codemirror');
@@ -974,12 +974,12 @@ $typeIconMap = [
                     </legend>
                     <table class="admintable" width="95%">
                         <tr>
-                            <td width="100" align="left" class="key">
+                            <td class="key text-start" style="width: 100px;">
                                 <label for="custom_action_script">
                                     <?php echo Text::_('COM_CONTENTBUILDERNG_ELEMENT_ACTION_CODE'); ?>:
                                 </label>
                             </td>
-                            <td align="left">
+                            <td class="text-start">
                                 <?php
                                 $params = array('syntax' => 'php');
                                 $editor = Editor::getInstance('codemirror');

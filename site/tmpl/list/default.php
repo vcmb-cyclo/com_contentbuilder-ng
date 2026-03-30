@@ -2325,7 +2325,7 @@ by this block. -->
 						<?php
 						if ($this->list_publish || $directStorageMode) {
 						?>
-							<td align="center" valign="middle">
+							<td class="text-center align-middle">
 								<?php
 								$iconClass = $isPublished ? 'fa-solid fa-check text-success' : 'fa-solid fa-circle-xmark text-danger';
 								$iconTitle = $isPublished ? Text::_('JPUBLISHED') : Text::_('JUNPUBLISHED');

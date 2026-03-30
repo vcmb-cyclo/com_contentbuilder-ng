@@ -2690,7 +2690,7 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
 
         <table width="100%">
             <tr>
-                <td valign="top">
+                <td class="align-top">
 
                     <fieldset class="border rounded p-3 mb-3">
 
@@ -2889,7 +2889,7 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
         </td>
         </tr>
         <tr>
-            <td valign="top">
+            <td class="align-top">
                 <?php
                 echo LayoutHelper::render(
                     'form.elements_table',

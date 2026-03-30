@@ -566,7 +566,7 @@ if ($themeJs !== '') {
                     <?php
                     if ($this->list_publish && $publish_allowed) {
                         ?>
-                        <td align="center" valign="middle">
+                        <td class="text-center align-middle">
                             <?php echo ContentbuilderngHelper::publishButton(isset($this->published_items[$row->colRecord]) && $this->published_items[$row->colRecord] ? true : false, $publish_link, $unpublish_link, 'tick.png', 'publish_x.png', $publish_allowed); ?>
                         </td>
                         <?php
@@ -675,7 +675,7 @@ if ($themeJs !== '') {
                 ?>
                 <tfoot>
                     <tr>
-                        <td colspan="1000" valign="middle" align="center">
+                        <td colspan="1000" class="text-center align-middle">
                             <div class="pagination pagination-toolbar d-flex flex-column flex-md-row flex-md-nowrap justify-content-between align-items-center gap-2">
                                 <?php
                                 if ($this->show_records_per_page) {

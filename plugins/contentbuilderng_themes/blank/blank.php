@@ -222,7 +222,7 @@ CSS;
             if (is_array($result)) {
                 if ($result['type'] != 'hidden') {
                     $out .= '{hide-if-empty ' . $name . '}' . "\n\n";
-                    $out .= '<tr class="blanktable_content_row"><td width="20%" class="key" valign="top"><label>{' . $name . ':label}</label></td><td>{' . $name . ':value}</td></tr>' . "\n\n";
+                    $out .= '<tr class="blanktable_content_row"><td width="20%" class="key align-top"><label>{' . $name . ':label}</label></td><td>{' . $name . ':value}</td></tr>' . "\n\n";
                     $out .= '{/hide}' . "\n\n";
                 }
             }
@@ -287,7 +287,7 @@ CSS;
             $result = $db->loadAssoc();
             if (is_array($result)) {
                 if ($result['type'] != 'hidden') {
-                    $out .= '<tr class="blanktable_edit_row"><td width="20%" class="key" valign="top">{' . $name . ':label}</td><td>{' . $name . ':item}</td></tr>' . "\n";
+                    $out .= '<tr class="blanktable_edit_row"><td width="20%" class="key align-top">{' . $name . ':label}</td><td>{' . $name . ':item}</td></tr>' . "\n";
                 } else {
                     $hidden[] = '{' . $name . ':item}' . "\n";
                 }

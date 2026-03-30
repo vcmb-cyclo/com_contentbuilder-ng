@@ -122,7 +122,7 @@ final class RatingHelper
                                         <div class="cbRatingImage" style="cursor:pointer;"
                                             onclick="cbRate('<?php echo $rating_link . '&rate=5'; ?>','cbRatingMsg<?php echo $record_id; ?>');">
                                         </div>
-                                        <div align="center" class="cbRatingCount">
+                                        <div class="cbRatingCount text-center">
                                         <?php echo $percentage2 ? $percentage2 . '%' : ''; ?>
                                         </div>
                                     </div>
@@ -130,12 +130,12 @@ final class RatingHelper
                                         <div class="cbRatingImage2" style="cursor:pointer;"
                                             onclick="cbRate('<?php echo $rating_link . '&rate=1'; ?>','cbRatingMsg<?php echo $record_id; ?>');">
                                         </div>
-                                        <div align="center" class="cbRatingCount">
+                                        <div class="cbRatingCount text-center">
                                         <?php echo $percentage3 ? $percentage3 . '%' : ''; ?>
                                         </div>
                                     </div>
                                     <div style="clear: both;"></div>
-                                    <div align="center" class="cbRatingVotes">
+                                    <div class="cbRatingVotes text-center">
                                     <?php echo $rating_count == 1 ? $rating_count . ' ' . Text::_('COM_CONTENTBUILDERNG_VOTES_SINGULAR') : $rating_count . ' ' . Text::_('COM_CONTENTBUILDERNG_VOTES_PLURAL'); ?>
                                     </div>
                                 </div>
@@ -147,10 +147,10 @@ final class RatingHelper
                                     <div class="cbRatingImage" style="cursor:pointer;"
                                         onclick="cbRate('<?php echo $rating_link . '&rate=' . $x; ?>','cbRatingMsg<?php echo $record_id; ?>');">
                                     </div>
-                                    <div align="center" id="cbRatingMsg<?php echo $record_id; ?>Counter" class="cbRatingCount">
+                                    <div id="cbRatingMsg<?php echo $record_id; ?>Counter" class="cbRatingCount text-center">
                                     <?php echo $rating_count; ?>
                                     </div>
-                                    <div align="center" class="cbRatingVotes">
+                                    <div class="cbRatingVotes text-center">
                                     <?php echo $rating_count == 1 ? Text::_('COM_CONTENTBUILDERNG_VOTES_SINGULAR') : Text::_('COM_CONTENTBUILDERNG_VOTES_PLURAL'); ?>
                                     </div>
                                 </div>
@@ -166,18 +166,18 @@ final class RatingHelper
                                 <div class="cbRatingUpDown">
                                     <div style="float: left;">
                                         <div class="cbRatingImage" style="cursor:default;"></div>
-                                        <div align="center" class="cbRatingCount">
+                                        <div class="cbRatingCount text-center">
                                         <?php echo $percentage2 ? $percentage2 . '%' : ''; ?>
                                         </div>
                                     </div>
                                     <div style="float: right;">
                                         <div class="cbRatingImage2" style="cursor:default;"></div>
-                                        <div align="center" class="cbRatingCount">
+                                        <div class="cbRatingCount text-center">
                                         <?php echo $percentage3 ? $percentage3 . '%' : ''; ?>
                                         </div>
                                     </div>
                                     <div style="clear: both;"></div>
-                                    <div align="center" class="cbRatingVotes">
+                                    <div class="cbRatingVotes text-center">
                                     <?php echo $rating_count == 1 ? $rating_count . ' ' . Text::_('COM_CONTENTBUILDERNG_VOTES_SINGULAR') : $rating_count . ' ' . Text::_('COM_CONTENTBUILDERNG_VOTES_PLURAL'); ?>
                                     </div>
                                 </div>
@@ -187,10 +187,10 @@ final class RatingHelper
                     ?>
                                 <div class="cbRating">
                                     <div class="cbRatingImage" style="cursor:default;"></div>
-                                    <div align="center" class="cbRatingCount">
+                                    <div class="cbRatingCount text-center">
                                     <?php echo $rating_count; ?>
                                     </div>
-                                    <div align="center" class="cbRatingVotes">
+                                    <div class="cbRatingVotes text-center">
                                     <?php echo $rating_count == 1 ? Text::_('COM_CONTENTBUILDERNG_VOTES_SINGULAR') : Text::_('COM_CONTENTBUILDERNG_VOTES_PLURAL'); ?>
                                     </div>
                                 </div>
@@ -204,7 +204,7 @@ final class RatingHelper
                 <div class="cbVotingStars" id="cbVotingStars<?php echo $record_id; ?>" style="width: <?php echo $percentage; ?>px;">
                 </div>
                 <div style="clear: left;"></div>
-                <div align="center" class="cbRatingVotes">
+                <div class="cbRatingVotes text-center">
                     <?php echo $rating_count == 1 ? $rating_count . ' ' . Text::_('COM_CONTENTBUILDERNG_VOTES_SINGULAR') : $rating_count . ' ' . Text::_('COM_CONTENTBUILDERNG_VOTES_PLURAL'); ?>
                 </div>
             </div>

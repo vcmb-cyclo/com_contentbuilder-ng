@@ -130,7 +130,7 @@ SELECT
                 <td>
 
                 </td>
-                <td align="right" width="40%" class="text-nowrap">
+                <td class="text-nowrap text-end" style="width: 40%;">
                     <?php
                     if ($new_allowed) {
                         ?>
@@ -247,7 +247,7 @@ SELECT
                 <?php
                 if ($this->display_filter) {
                     ?>
-                    <td align="left" width="60%" class="text-nowrap">
+                    <td class="text-nowrap text-start" style="width: 60%;">
                         <?php echo Text::_('COM_CONTENTBUILDERNG_FILTER') . '&nbsp;'; ?>
                         <input type="text" id="contentbuilderng_filter" name="filter"
                             value="<?php echo $this->escape($this->lists['filter']); ?>" class="form-control form-control-sm d-inline-block"
@@ -536,7 +536,7 @@ SELECT
                     <?php
                     if ($this->list_publish && $publish_allowed) {
                         ?>
-                        <td align="center" valign="middle">
+                        <td class="text-center align-middle">
                             <?php echo ContentbuilderngHelper::publishButton(isset($this->published_items[$row->colRecord]) && $this->published_items[$row->colRecord] ? true : false, $publish_link, $unpublish_link, 'tick.png', 'publish_x.png', $publish_allowed); ?>
                         </td>
                         <?php
@@ -637,7 +637,7 @@ SELECT
                 ?>
                 <tfoot>
                     <tr>
-                        <td colspan="1000" valign="middle" align="center">
+                        <td colspan="1000" class="text-center align-middle">
                             <div class="pagination">
                                 <?php echo $pages_links; ?>
                             </div>

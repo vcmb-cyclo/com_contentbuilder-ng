@@ -59,7 +59,7 @@ echo HTMLHelper::_('uitab.addTab', 'perm-pane', 'permtab1', Text::_('COM_CONTENT
 ?>
 <table class="table table-striped">
     <tr class="row0">
-        <td width="20%" align="right" class="key">
+        <td class="key text-end" style="width: 20%;">
             <label for="own_only_fe">
                 <span class="editlinktip hasTip"
                     title="<?php echo Text::_('COM_CONTENTBUILDERNG_PERM_OWN_OWNLY_TIP'); ?>">
@@ -73,7 +73,7 @@ echo HTMLHelper::_('uitab.addTab', 'perm-pane', 'permtab1', Text::_('COM_CONTENT
         </td>
     </tr>
     <tr class="row0">
-        <td width="20%" align="right" class="key">
+        <td class="key text-end" style="width: 20%;">
             <label for="limited_article_options_fe">
                 <span class="editlinktip hasTip"
                     title="<?php echo Text::_('COM_CONTENTBUILDERNG_PERM_LIMITED_ARTICLE_OPTIONS_TIP'); ?>">
@@ -87,7 +87,7 @@ echo HTMLHelper::_('uitab.addTab', 'perm-pane', 'permtab1', Text::_('COM_CONTENT
         </td>
     </tr>
     <tr class="row0">
-        <td width="20%" align="right" class="key">
+        <td class="key text-end" style="width: 20%;">
             <label>
                 <span class="editlinktip hasTip"
                     title="<?php echo Text::_('COM_CONTENTBUILDERNG_PERM_OWN_TIP'); ?>">
@@ -115,7 +115,7 @@ echo HTMLHelper::_('uitab.addTab', 'perm-pane', 'permtab1', Text::_('COM_CONTENT
         </td>
     </tr>
     <tr class="row0">
-        <td width="20%" align="right" class="key">
+        <td class="key text-end" style="width: 20%;">
             <label for="show_all_languages_fe">
                 <span class="editlinktip hasTip"
                     title="<?php echo Text::_('COM_CONTENTBUILDERNG_PERM_SHOW_ALL_LANGUAGES_TIP'); ?>">
@@ -130,7 +130,7 @@ echo HTMLHelper::_('uitab.addTab', 'perm-pane', 'permtab1', Text::_('COM_CONTENT
     </tr>
     <?php if (!empty($item->edit_by_type)) : ?>
         <tr class="row0">
-            <td width="20%" align="right" class="key">
+            <td class="key text-end" style="width: 20%;">
                 <label for="force_login">
                     <?php echo Text::_('COM_CONTENTBUILDERNG_PERM_FORCE_LOGIN'); ?>
                 </label>
@@ -141,7 +141,7 @@ echo HTMLHelper::_('uitab.addTab', 'perm-pane', 'permtab1', Text::_('COM_CONTENT
             </td>
         </tr>
         <tr class="row0">
-            <td width="20%" align="right" class="key">
+            <td class="key text-end" style="width: 20%;">
                 <label for="force_url">
                     <?php echo Text::_('COM_CONTENTBUILDERNG_PERM_FORCE_URL'); ?>
                 </label>
