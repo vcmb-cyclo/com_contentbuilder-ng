@@ -30,14 +30,6 @@ class plgContentContentbuilderng_rating extends CMSPlugin implements SubscriberI
         return ['onContentPrepare' => 'onContentPrepare'];
     }
 
-    /**
-     * Joomla 1.5 compatibility
-     */
-    function onPrepareContent(&$article, &$params, $limitstart = 0, $is_list = false, $form = null, $item = null)
-    {
-        $this->onContentPrepare('', $article, $params, $limitstart, $is_list, $form, $item);
-    }
-
     function onContentPrepare($context = '', $article = null, $params = null, $limitstart = 0, $is_list = false, $form = null, $item = null)
     {
         if ($context instanceof \Joomla\Event\EventInterface) {

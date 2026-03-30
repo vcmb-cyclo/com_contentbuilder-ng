@@ -24,13 +24,7 @@ class plgContentContentbuilderng_permission_observer extends CMSPlugin implement
         return ['onContentPrepare' => 'onContentPrepare'];
     }
 
-    /**
-     * Joomla 1.5 compatibility
-     */
-    function onPrepareContent(&$article, &$params, $limitstart = 0)
-    {
-        $this->onContentPrepare('', $article, $params, $limitstart);
-    }
+
 
     function onContentPrepare($context = '', $article = null, $params = null, $limitstart = 0)
     {

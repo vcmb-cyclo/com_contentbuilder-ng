@@ -68,14 +68,6 @@ class plgContentContentbuilderng_verify extends CMSPlugin implements SubscriberI
         return $value;
     }
 
-    /**
-     * Joomla 1.5 compatibility
-     */
-    function onPrepareContent(&$article, &$params, $limitstart = 0)
-    {
-        $this->onContentPrepare('', $article, $params, $limitstart);
-    }
-
     function onContentPrepare($context = '', $article = null, $params = null, $limitstart = 0)
     {
         if ($context instanceof \Joomla\Event\EventInterface) {
