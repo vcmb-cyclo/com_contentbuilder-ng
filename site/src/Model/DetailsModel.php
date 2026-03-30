@@ -227,10 +227,14 @@ class DetailsModel extends ListModel
         }
 
         $isAdminPreview = $this->app->input->getBool('cb_preview_ok', false);
-        $query = 'Select * From #__contentbuilderng_forms Where id = ' . intval($this->_id);
+        $db = $this->getDatabase();
+        $query = $db->getQuery(true)
+            ->select('*')
+            ->from($db->quoteName('#__contentbuilderng_forms'))
+            ->where($db->quoteName('id') . ' = ' . (int)$this->_id);
 
         if (!$isAdminPreview) {
-            $query .= ' And published = 1';
+            $query->where($db->quoteName('published') . ' = 1');
         }
 
         return $query;
@@ -332,8 +336,16 @@ class DetailsModel extends ListModel
                     }
 
                     if (count($ids)) {
-                        $this->getDatabase()->setQuery("Select Distinct `label`, reference_id From #__contentbuilderng_elements Where form_id = " . intval($this->_id) . " And reference_id In (" . implode(',', $ids) . ") And published = 1 Order By ordering");
-                        $rows = $this->getDatabase()->loadAssocList();
+                        $db = $this->getDatabase();
+                        $query = $db->getQuery(true)
+                            ->select([$db->quoteName('label'), $db->quoteName('reference_id')])
+                            ->from($db->quoteName('#__contentbuilderng_elements'))
+                            ->where($db->quoteName('form_id') . ' = ' . (int)$this->_id)
+                            ->where($db->quoteName('reference_id') . ' IN (' . implode(',', $ids) . ')')
+                            ->where($db->quoteName('published') . ' = 1')
+                            ->order($db->quoteName('ordering'));
+                        $db->setQuery($query);
+                        $rows = $db->loadAssocList();
                         $ids = array();
                         foreach ($rows as $row) {
                             $ids[] = $row['reference_id'];
@@ -436,8 +448,13 @@ class DetailsModel extends ListModel
 
                         if ($data->act_as_registration) {
                             $meta = $data->form->getRecordMetadata($this->_record_id);
-                            $this->getDatabase()->setQuery("Select * From #__users Where id = " . $meta->created_id);
-                            $user = $this->getDatabase()->loadObject();
+                            $db = $this->getDatabase();
+                            $query = $db->getQuery(true)
+                                ->select('*')
+                                ->from($db->quoteName('#__users'))
+                                ->where($db->quoteName('id') . ' = ' . (int)$meta->created_id);
+                            $db->setQuery($query);
+                            $user = $db->loadObject();
                         }
 
                         $label = '';

@@ -172,7 +172,7 @@ class plgSystemContentbuilderng_system extends CMSPlugin implements SubscriberIn
                             #__contentbuilderng_users As cv,
                             #__contentbuilderng_forms As forms
                         )
-                        Left Join #__user_usergroup_map As groups On ( groups.user_id = cv.userid And groups.group_id In (" . implode(',', $pluginParams->get('auto_groups', array())) . ") )
+                        Left Join #__user_usergroup_map As groups On ( groups.user_id = cv.userid And groups.group_id In (" . implode(',', array_map('intval', $pluginParams->get('auto_groups', array()))) . ") )
                             Where 
                         cv.verification_date_view IS NOT NULL  
                             And 
@@ -202,11 +202,16 @@ class plgSystemContentbuilderng_system extends CMSPlugin implements SubscriberIn
                 foreach ($users as $user) {
                     $groups = $pluginParams->get('auto_groups', array());
                     foreach ($groups as $group) {
-                        $this->db->setQuery("Insert Ignore Into #__user_usergroup_map (user_id, group_id) Values (" . $user['userid'] . ", " . intval($group) . ")");
-                        $this->db->execute();
+                        $db = $this->db;
+                        $query = $db->getQuery(true)
+                            ->insert($db->quoteName('#__user_usergroup_map'))
+                            ->columns([$db->quoteName('user_id'), $db->quoteName('group_id')])
+                            ->values((int)$user['userid'] . ',' . (int)$group);
+                        $db->setQuery($query);
+                        $db->execute();
                         if ($kill_kunena_session) {
-                            $this->db->setQuery("Delete From #__kunena_sessions Where userid = " . $user['userid']);
-                            $this->db->execute();
+                            $db->setQuery("Delete From #__kunena_sessions Where userid = " . (int)$user['userid']);
+                            $db->execute();
                         }
                     }
                 }
@@ -230,11 +235,16 @@ class plgSystemContentbuilderng_system extends CMSPlugin implements SubscriberIn
                 $user_groups = $this->db->loadAssocList();
 
                 foreach ($user_groups as $user_group) {
-                    $this->db->setQuery("Delete From #__user_usergroup_map Where user_id = " . $user_group['user_id'] . " And group_id = " . intval($user_group['group_id']) . "");
-                    $this->db->execute();
+                    $db = $this->db;
+                    $query = $db->getQuery(true)
+                        ->delete($db->quoteName('#__user_usergroup_map'))
+                        ->where($db->quoteName('user_id') . ' = ' . (int)$user_group['user_id'])
+                        ->where($db->quoteName('group_id') . ' = ' . (int)$user_group['group_id']);
+                    $db->setQuery($query);
+                    $db->execute();
                     if ($kill_kunena_session) {
-                        $this->db->setQuery("Delete From #__kunena_sessions Where userid = " . $user_group['user_id']);
-                        $this->db->execute();
+                        $db->setQuery("Delete From #__kunena_sessions Where userid = " . (int)$user_group['user_id']);
+                        $db->execute();
                     }
                 }
             }
@@ -352,11 +362,23 @@ class plgSystemContentbuilderng_system extends CMSPlugin implements SubscriberIn
             // managing published states
             $date = Factory::getDate()->toSql();
 
-            $this->db->setQuery("Update #__contentbuilderng_records Set published = 1 Where is_future = 1 And publish_up IS NOT NULL And publish_up <= '" . $date . "'");
-            $this->db->execute();
+            $db = $this->db;
+            $query = $db->getQuery(true)
+                ->update($db->quoteName('#__contentbuilderng_records'))
+                ->set($db->quoteName('published') . ' = 1')
+                ->where($db->quoteName('is_future') . ' = 1')
+                ->where($db->quoteName('publish_up') . ' IS NOT NULL')
+                ->where($db->quoteName('publish_up') . ' <= ' . $db->quote($date));
+            $db->setQuery($query);
+            $db->execute();
 
-            $this->db->setQuery("Update #__contentbuilderng_records Set published = 0 Where publish_down IS NOT NULL And publish_down <= '" . $date . "'");
-            $this->db->execute();
+            $query = $db->getQuery(true)
+                ->update($db->quoteName('#__contentbuilderng_records'))
+                ->set($db->quoteName('published') . ' = 0')
+                ->where($db->quoteName('publish_down') . ' IS NOT NULL')
+                ->where($db->quoteName('publish_down') . ' <= ' . $db->quote($date));
+            $db->setQuery($query);
+            $db->execute();
 
             // published states END
         }

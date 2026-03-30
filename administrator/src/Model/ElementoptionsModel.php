@@ -87,7 +87,11 @@ class ElementoptionsModel extends BaseDatabaseModel
 
     private function _buildQuery()
     {
-        return 'Select * From #__contentbuilderng_elements Where id = ' . intval($this->_element_id);
+        $db = $this->getDatabase();
+        return $db->getQuery(true)
+            ->select('*')
+            ->from($db->quoteName('#__contentbuilderng_elements'))
+            ->where($db->quoteName('id') . ' = ' . (int)$this->_element_id);
     }
 
     function getData()
@@ -97,12 +101,15 @@ class ElementoptionsModel extends BaseDatabaseModel
         if ($this->_data === null) {
             if ((int) $this->_element_id < 1 && (int) $this->_id > 0) {
                 // Fallback: no explicit element selected, use the first field of the current form.
-                $this->getDatabase()->setQuery(
-                    "SELECT id FROM #__contentbuilderng_elements WHERE form_id = "
-                    . (int) $this->_id
-                    . " ORDER BY ordering, id LIMIT 1"
-                );
-                $fallbackElementId = (int) $this->getDatabase()->loadResult();
+                $db = $this->getDatabase();
+                $query = $db->getQuery(true)
+                    ->select($db->quoteName('id'))
+                    ->from($db->quoteName('#__contentbuilderng_elements'))
+                    ->where($db->quoteName('form_id') . ' = ' . (int)$this->_id)
+                    ->order($db->quoteName('ordering') . ', ' . $db->quoteName('id'))
+                    ->setLimit(1);
+                $db->setQuery($query);
+                $fallbackElementId = (int) $db->loadResult();
                 if ($fallbackElementId > 0) {
                     $this->_element_id = $fallbackElementId;
                 }
@@ -138,7 +145,12 @@ class ElementoptionsModel extends BaseDatabaseModel
     function getValidationPlugins()
     {
         $db = Factory::getContainer()->get(DatabaseInterface::class);
-        $db->setQuery("Select `element` From #__extensions Where `folder` = 'contentbuilderng_validation' And `enabled` = 1");
+        $query = $db->getQuery(true)
+            ->select($db->quoteName('element'))
+            ->from($db->quoteName('#__extensions'))
+            ->where($db->quoteName('folder') . ' = ' . $db->quote('contentbuilderng_validation'))
+            ->where($db->quoteName('enabled') . ' = 1');
+        $db->setQuery($query);
 
         $res = $db->loadColumn();
         return $res;
@@ -154,8 +166,13 @@ class ElementoptionsModel extends BaseDatabaseModel
             return array();
         }
 
-        $this->getDatabase()->setQuery("Select `type`, `reference_id` From #__contentbuilderng_forms Where id = " . intval($this->_id));
-        $formRow = $this->getDatabase()->loadAssoc();
+        $db = $this->getDatabase();
+        $query = $db->getQuery(true)
+            ->select([$db->quoteName('type'), $db->quoteName('reference_id')])
+            ->from($db->quoteName('#__contentbuilderng_forms'))
+            ->where($db->quoteName('id') . ' = ' . (int)$this->_id);
+        $db->setQuery($query);
+        $formRow = $db->loadAssoc();
 
         if (!is_array($formRow) || empty($formRow['type']) || empty($formRow['reference_id'])) {
             return array();
@@ -175,8 +192,13 @@ class ElementoptionsModel extends BaseDatabaseModel
         $input = $this->getInput();
 
         if ($input->getInt('type_change', 0)) {
-            $this->getDatabase()->setQuery("Update #__contentbuilderng_elements Set `type`=" . $this->getDatabase()->quote($input->getCmd('type_selection', '')) . " Where id = " . $this->_element_id);
-            $this->getDatabase()->execute();
+            $db = $this->getDatabase();
+            $query = $db->getQuery(true)
+                ->update($db->quoteName('#__contentbuilderng_elements'))
+                ->set($db->quoteName('type') . ' = ' . $db->quote($input->getCmd('type_selection', '')))
+                ->where($db->quoteName('id') . ' = ' . (int)$this->_element_id);
+            $db->setQuery($query);
+            $db->execute();
             return 1;
         }
         $query = '';
@@ -289,8 +311,13 @@ class ElementoptionsModel extends BaseDatabaseModel
                 break;
 
             case 'upload':
-                $this->getDatabase()->setQuery("Select upload_directory, protect_upload_directory From #__contentbuilderng_forms Where id = " . $this->_id);
-                $setup = $this->getDatabase()->loadAssoc();
+                $db = $this->getDatabase();
+                $query = $db->getQuery(true)
+                    ->select([$db->quoteName('upload_directory'), $db->quoteName('protect_upload_directory')])
+                    ->from($db->quoteName('#__contentbuilderng_forms'))
+                    ->where($db->quoteName('id') . ' = ' . (int)$this->_id);
+                $db->setQuery($query);
+                $setup = $db->loadAssoc();
 
                 // rel check for setup
 
@@ -472,8 +499,12 @@ class ElementoptionsModel extends BaseDatabaseModel
             $other .= " `custom_validation_script`=" . $this->getDatabase()->quote($custom_validation_script) . ", ";
             $other .= " `validation_message`=" . $this->getDatabase()->quote($validation_message) . ", ";
 
-            $this->getDatabase()->setQuery("Update #__contentbuilderng_elements Set $other $query Where id = " . $this->_element_id);
-            $this->getDatabase()->execute();
+            $db = $this->getDatabase();
+            // Build complete UPDATE query with QueryBuilder
+            $setClause = trim($other . $query, ', ');
+            $updateQuery = "Update " . $db->quoteName('#__contentbuilderng_elements') . " Set " . $setClause . " Where " . $db->quoteName('id') . " = " . (int)$this->_element_id;
+            $db->setQuery($updateQuery);
+            $db->execute();
             return true;
         }
         return false;
@@ -502,10 +533,12 @@ class ElementoptionsModel extends BaseDatabaseModel
 
         $value = (int) $value;
         $db = $this->getDatabase();
+        // Safely implode integer array for WHERE IN clause
+        $safePks = array_map('intval', $pks);
         $query = $db->getQuery(true)
             ->update($db->quoteName('#__contentbuilderng_elements'))
             ->set($db->quoteName('published') . ' = ' . $value)
-            ->where($db->quoteName('id') . ' IN (' . implode(',', $pks) . ')');
+            ->where($db->quoteName('id') . ' IN (' . implode(',', $safePks) . ')');
 
         $db->setQuery($query);
 
@@ -541,10 +574,12 @@ class ElementoptionsModel extends BaseDatabaseModel
         $value = (int) $value;
         $db = $this->getDatabase();
 
+        // Safely implode integer array for WHERE IN clause
+        $safePks = array_map('intval', $pks);
         $query = $db->getQuery(true)
             ->update($db->quoteName('#__contentbuilderng_elements'))
             ->set($db->quoteName($field) . ' = ' . (int) $value)
-            ->where($db->quoteName('id') . ' IN (' . implode(',', $pks) . ')');
+            ->where($db->quoteName('id') . ' IN (' . implode(',', $safePks) . ')');
 
         $db->setQuery($query);
         try {

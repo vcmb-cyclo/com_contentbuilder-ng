@@ -388,8 +388,16 @@ class EditModel extends BaseDatabaseModel
                 if ($data->type && $data->reference_id) {
 
                     // article options
-                    $this->getDatabase()->setQuery("Select content.id, content.modified_by, content.version, content.hits, content.catid From #__contentbuilderng_articles As articles, #__content As content Where (content.state = 1 Or content.state = 0) And content.id = articles.article_id And articles.form_id = " . $this->_id . " And articles.record_id = " . $this->getDatabase()->quote($this->_record_id));
-                    $article = $this->getDatabase()->loadAssoc();
+                    $db = $this->getDatabase();
+                    $query = $db->getQuery(true)
+                        ->select(['content.id', 'content.modified_by', 'content.version', 'content.hits', 'content.catid'])
+                        ->from($db->quoteName('#__contentbuilderng_articles', 'articles'))
+                        ->innerJoin($db->quoteName('#__content', 'content') . ' ON content.id = articles.article_id')
+                        ->where('(content.state = 1 OR content.state = 0)')
+                        ->where($db->quoteName('articles.form_id') . ' = ' . (int)$this->_id)
+                        ->where($db->quoteName('articles.record_id') . ' = ' . $db->quote($this->_record_id));
+                    $db->setQuery($query);
+                    $article = $db->loadAssoc();
 
                     if ($data->create_articles) {
                         Form::addFormPath(JPATH_ADMINISTRATOR . '/components/com_contentbuilderng/forms');
@@ -494,8 +502,16 @@ class EditModel extends BaseDatabaseModel
                     }
 
                     if (count($ids)) {
-                        $this->getDatabase()->setQuery("Select Distinct `label`, reference_id From #__contentbuilderng_elements Where form_id = " . intval($this->_id) . " And reference_id In (" . implode(',', $ids) . ") And published = 1 Order By ordering");
-                        $rows = $this->getDatabase()->loadAssocList();
+                        $db = $this->getDatabase();
+                        $query = $db->getQuery(true)
+                            ->select([$db->quoteName('label'), $db->quoteName('reference_id')])
+                            ->from($db->quoteName('#__contentbuilderng_elements'))
+                            ->where($db->quoteName('form_id') . ' = ' . (int)$this->_id)
+                            ->where($db->quoteName('reference_id') . ' IN (' . implode(',', $ids) . ')')
+                            ->where($db->quoteName('published') . ' = 1')
+                            ->order($db->quoteName('ordering'));
+                        $db->setQuery($query);
+                        $rows = $db->loadAssocList();
                         $ids = array();
                         foreach ($rows as $row) {
                             $ids[] = $row['reference_id'];
@@ -522,8 +538,13 @@ class EditModel extends BaseDatabaseModel
 
                         if ($data->act_as_registration) {
                             $meta = $data->form->getRecordMetadata($this->_record_id);
-                            $this->getDatabase()->setQuery("Select * From #__users Where id = " . $meta->created_id);
-                            $user = $this->getDatabase()->loadObject();
+                            $db = $this->getDatabase();
+                            $query = $db->getQuery(true)
+                                ->select('*')
+                                ->from($db->quoteName('#__users'))
+                                ->where($db->quoteName('id') . ' = ' . (int)$meta->created_id);
+                            $db->setQuery($query);
+                            $user = $db->loadObject();
                         }
 
                         $label = '';
@@ -798,8 +819,15 @@ var contentbuilderng = new function(){
                     $noneditable_fields = $this->listSupportService->getListNonEditableElements($this->_id);
                     $names = $data->form->getElementNames();
 
-                    $this->getDatabase()->setQuery("Select * From #__contentbuilderng_elements Where form_id = " . $this->_id . " And published = 1 And editable = 1");
-                    $fields = $this->getDatabase()->loadAssocList();
+                    $db = $this->getDatabase();
+                    $query = $db->getQuery(true)
+                        ->select('*')
+                        ->from($db->quoteName('#__contentbuilderng_elements'))
+                        ->where($db->quoteName('form_id') . ' = ' . (int)$this->_id)
+                        ->where($db->quoteName('published') . ' = 1')
+                        ->where($db->quoteName('editable') . ' = 1');
+                    $db->setQuery($query);
+                    $fields = $db->loadAssocList();
 
                     $the_fields = array();
                     $the_name_field = null;
@@ -1629,8 +1657,16 @@ var contentbuilderng = new function(){
                 }
                 $data->labels = array();
                 if (count($ids)) {
-                    $this->getDatabase()->setQuery("Select Distinct `label`, reference_id From #__contentbuilderng_elements Where form_id = " . intval($this->_id) . " And reference_id In (" . implode(',', $ids) . ") And published = 1 Order By ordering");
-                    $rows = $this->getDatabase()->loadAssocList();
+                    $db = $this->getDatabase();
+                    $query = $db->getQuery(true)
+                        ->select([$db->quoteName('label'), $db->quoteName('reference_id')])
+                        ->from($db->quoteName('#__contentbuilderng_elements'))
+                        ->where($db->quoteName('form_id') . ' = ' . (int)$this->_id)
+                        ->where($db->quoteName('reference_id') . ' IN (' . implode(',', $ids) . ')')
+                        ->where($db->quoteName('published') . ' = 1')
+                        ->order($db->quoteName('ordering'));
+                    $db->setQuery($query);
+                    $rows = $db->loadAssocList();
                     $ids = array();
                     foreach ($rows as $row) {
                         $ids[] = $row['reference_id'];
@@ -1958,7 +1994,17 @@ var contentbuilderng = new function(){
                 $pw = $crypt;
             }
 
-            $db->setQuery("Update #__users Set `name` = " . $db->quote($the_name_field) . ", `username` = " . $db->quote($the_username_field) . ", `email` = " . $db->quote($the_email_field) . " " . (!empty($pw) ? ", `password` = '$pw'" : '') . " Where id = " . intval($user_id));
+            $db = $this->getDatabase();
+            $query = $db->getQuery(true)
+                ->update($db->quoteName('#__users'))
+                ->set($db->quoteName('name') . ' = ' . $db->quote($the_name_field))
+                ->set($db->quoteName('username') . ' = ' . $db->quote($the_username_field))
+                ->set($db->quoteName('email') . ' = ' . $db->quote($the_email_field));
+            if (!empty($pw)) {
+                $query->set($db->quoteName('password') . ' = ' . $db->quote($pw));
+            }
+            $query->where($db->quoteName('id') . ' = ' . (int)$user_id);
+            $db->setQuery($query);
             $db->execute();
 
             return $user_id;
@@ -2310,11 +2356,22 @@ var contentbuilderng = new function(){
                                     ]);
                                     $dispatcher->dispatch('onContentAfterDelete', $event);
                                 }
-                                $this->getDatabase()->setQuery("Delete From #__assets Where `name` In (" . implode(',', $article_items) . ")");
-                                $this->getDatabase()->execute();
+                                $db = $this->getDatabase();
+                                // Safe implode of quoted article asset names
+                                $assetNames = array_map(function($item) use ($db) { return $db->quote($item); }, $article_items);
+                                $query = $db->getQuery(true)
+                                    ->delete($db->quoteName('#__assets'))
+                                    ->where($db->quoteName('name') . ' IN (' . implode(',', $assetNames) . ')');
+                                $db->setQuery($query);
+                                $db->execute();
 
-                                $this->getDatabase()->setQuery("Delete From #__workflow_associations Where item_id In (" . implode(',', $article_ids) . ")");
-                                $this->getDatabase()->execute();
+                                // Safe implode of integer article IDs
+                                $safeArticleIds = array_map('intval', $article_ids);
+                                $query = $db->getQuery(true)
+                                    ->delete($db->quoteName('#__workflow_associations'))
+                                    ->where($db->quoteName('item_id') . ' IN (' . implode(',', $safeArticleIds) . ')');
+                                $db->setQuery($query);
+                                $db->execute();
 
                             }
                         }
