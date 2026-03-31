@@ -196,13 +196,16 @@ class ListModel extends BaseListModel
             $item = $menu->getActive();
             if (is_object($item)) {
                 $resolvedMenuParams = $menu->getParams((int) $item->id);
-                if ($item->getParams()->get('show_page_heading', null) !== null) {
-                    $this->_show_page_heading = MenuParamHelper::resolvePageHeadingToggle(
-                        $item->getParams()->get('show_page_heading', null),
-                        $resolvedMenuParams?->get('show_page_heading', null),
-                        $this->_show_page_heading ? 1 : 0
-                    );
-                }
+                $rawShowPageHeading = $item->getParams()->get('show_page_heading', null);
+                $resolvedShowPageHeading = Factory::getApplication()->getParams()->get(
+                    'show_page_heading',
+                    $resolvedMenuParams?->get('show_page_heading', null)
+                );
+                $this->_show_page_heading = MenuParamHelper::resolvePageHeadingToggle(
+                    $rawShowPageHeading ?? '',
+                    $resolvedShowPageHeading,
+                    $this->_show_page_heading ? 1 : 0
+                );
                 if ($item->getParams()->get('page_title', null) !== null) {
                     $this->_page_title = $item->getParams()->get('page_title', null);
                 }
