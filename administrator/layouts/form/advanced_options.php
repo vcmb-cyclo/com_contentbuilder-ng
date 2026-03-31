@@ -175,7 +175,6 @@ if (!is_callable($renderCheckbox)) {
                                 </span>
                             </label>
                         </div>
-                        <div class="w-100"></div>
                         <div>
                             <input type="hidden" name="jform[button_bar_sticky]" value="0" />
                             <?php echo $renderCheckbox('jform[button_bar_sticky]', 'button_bar_sticky', (bool) ($item->button_bar_sticky ?? false)); ?>
