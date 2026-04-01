@@ -20,15 +20,76 @@ $renderCheckbox = $displayData['renderCheckbox'] ?? null;
 if (!is_callable($renderCheckbox)) {
     $renderCheckbox = static fn (): string => '';
 }
+
+$renderDirectionButtonGroup = static function (string $name, string $selected): string {
+    $selected = strtolower($selected) === 'asc' ? 'asc' : 'desc';
+
+    return '<div class="btn-group btn-group-sm" role="group" aria-label="' . htmlspecialchars(Text::_('COM_CONTENTBUILDERNG_INITIAL_SORT_ORDER'), ENT_QUOTES, 'UTF-8') . '">'
+        . '<input class="btn-check" type="radio" name="' . htmlspecialchars($name, ENT_QUOTES, 'UTF-8') . '" id="initial_order_dir_asc" value="asc"' . ($selected === 'asc' ? ' checked="checked"' : '') . ' />'
+        . '<label class="btn btn-outline-secondary" for="initial_order_dir_asc">' . Text::_('COM_CONTENTBUILDERNG_INITIAL_SORT_ORDER_ASC') . '</label>'
+        . '<input class="btn-check" type="radio" name="' . htmlspecialchars($name, ENT_QUOTES, 'UTF-8') . '" id="initial_order_dir_desc" value="desc"' . ($selected === 'desc' ? ' checked="checked"' : '') . ' />'
+        . '<label class="btn btn-outline-secondary" for="initial_order_dir_desc">' . Text::_('COM_CONTENTBUILDERNG_INITIAL_SORT_ORDER_DESC') . '</label>'
+        . '</div>';
+};
+
+$advancedDefaults = [
+    'show_id_column' => 1,
+    'select_column' => 1,
+    'list_state' => 0,
+    'list_publish' => 0,
+    'list_language' => 0,
+    'list_article' => 0,
+    'list_author' => 0,
+    'list_last_modification' => 0,
+    'metadata' => 0,
+    'edit_button' => 0,
+    'new_button' => 0,
+    'export_xls' => 1,
+    'print_button' => 0,
+    'show_back_button' => 1,
+    'button_bar_sticky' => 0,
+    'use_view_name_as_title' => 0,
+    'list_header_sticky' => 0,
+    'show_preview_link' => 0,
+    'cb_filter_in_title' => 0,
+    'cb_prefix_in_title' => 0,
+    'show_filter' => 1,
+    'show_records_per_page' => 1,
+    'published_only' => 0,
+    'allow_external_filter' => 0,
+    'filter_exact_match' => 1,
+    'initial_sort_order' => '',
+    'initial_sort_order2' => '-1',
+    'initial_sort_order3' => '-1',
+    'initial_order_dir' => 'desc',
+    'list_rating' => 0,
+    'rating_slots' => '5',
+    'cb_show_author' => 1,
+    'save_button_title' => '',
+    'apply_button_title' => '',
+];
 ?>
 <div class="bg-body-tertiary p-3" id="advancedOptions">
-
     <fieldset id="cb-form-advanced-show" aria-labelledby="cb-form-advanced-show-title">
         <legend>
-            <h3 id="cb-form-advanced-show-title" class="editlinktip hasTip"
-                title="<?php echo Text::_('COM_CONTENTBUILDERNG_SHOW_COLUMNS_TIP'); ?>">
-                <?php echo Text::_('COM_CONTENTBUILDERNG_SHOW'); ?>
-            </h3>
+            <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+                <h3 id="cb-form-advanced-show-title" class="editlinktip hasTip mb-0"
+                    title="<?php echo Text::_('COM_CONTENTBUILDERNG_SHOW_COLUMNS_TIP'); ?>">
+                    <?php echo Text::_('COM_CONTENTBUILDERNG_SHOW'); ?>
+                </h3>
+                <button
+                    type="button"
+                    class="btn btn-secondary"
+                    id="cb-reset-advanced-options"
+                    title="<?php echo Text::_('COM_CONTENTBUILDERNG_RESET_MENU_OPTIONS_TOOLTIP'); ?>"
+                    aria-label="<?php echo Text::_('COM_CONTENTBUILDERNG_RESET_MENU_OPTIONS_TOOLTIP'); ?>"
+                    data-defaults="<?php echo htmlspecialchars(json_encode($advancedDefaults, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES), ENT_QUOTES, 'UTF-8'); ?>"
+                    data-confirm="<?php echo htmlspecialchars(Text::_('COM_CONTENTBUILDERNG_RESET_MENU_OPTIONS_CONFIRM'), ENT_QUOTES, 'UTF-8'); ?>"
+                >
+                    <span class="fa-solid fa-rotate-left" aria-hidden="true"></span>
+                    <?php echo Text::_('COM_CONTENTBUILDERNG_RESET'); ?>
+                </button>
+            </div>
         </legend>
 
 
@@ -381,17 +442,9 @@ if (!is_callable($renderCheckbox)) {
                             </option>
                         <?php endforeach; ?>
                     </select>
-                    <div></div>
-                    <input class="form-check-input" type="radio" name="jform[initial_order_dir]"
-                        id="initial_order_dir" value="asc" <?php echo ($item->initial_order_dir ?? '') === 'asc' ? ' checked="checked"' : ''; ?> />
-                    <label for="initial_order_dir">
-                        <?php echo Text::_('COM_CONTENTBUILDERNG_INITIAL_SORT_ORDER_ASC'); ?>
-                    </label>
-                    <input class="form-check-input" type="radio" name="jform[initial_order_dir]"
-                        id="initial_order_dir_desc" value="desc" <?php echo ($item->initial_order_dir ?? '') === 'desc' ? ' checked="checked"' : ''; ?> />
-                    <label for="initial_order_dir_desc">
-                        <?php echo Text::_('COM_CONTENTBUILDERNG_INITIAL_SORT_ORDER_DESC'); ?>
-                    </label>
+                    <div class="pt-2">
+                        <?php echo $renderDirectionButtonGroup('jform[initial_order_dir]', (string) ($item->initial_order_dir ?? 'desc')); ?>
+                    </div>
                 </div>
             </fieldset>
         </div>
@@ -470,3 +523,85 @@ if (!is_callable($renderCheckbox)) {
     </fieldset>
 
 </div>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var button = document.getElementById('cb-reset-advanced-options');
+
+    if (!button) {
+        return;
+    }
+
+    var defaults = {};
+
+    try {
+        defaults = JSON.parse(button.getAttribute('data-defaults') || '{}');
+    } catch (error) {
+        defaults = {};
+    }
+
+    var setCheckbox = function (name, checked) {
+        var field = document.querySelector('input[type="checkbox"][name="jform[' + name + ']"]');
+
+        if (!field) {
+            return;
+        }
+
+        field.checked = checked;
+        field.dispatchEvent(new Event('change', { bubbles: true }));
+    };
+
+    var setRadio = function (name, value) {
+        var selector = 'input[type="radio"][name="jform[' + name + ']"][value="' + String(value) + '"]';
+        var field = document.querySelector(selector);
+
+        if (!field) {
+            return;
+        }
+
+        field.checked = true;
+        field.dispatchEvent(new Event('change', { bubbles: true }));
+    };
+
+    var setValue = function (name, value) {
+        var field = document.querySelector('[name="jform[' + name + ']"]');
+
+        if (!field) {
+            return;
+        }
+
+        field.value = value;
+        field.dispatchEvent(new Event('change', { bubbles: true }));
+    };
+
+    button.addEventListener('click', function () {
+        var confirmMessage = button.getAttribute('data-confirm') || '';
+
+        if (confirmMessage && !window.confirm(confirmMessage)) {
+            return;
+        }
+
+        Object.keys(defaults).forEach(function (name) {
+            var value = defaults[name];
+
+            switch (name) {
+                case 'initial_order_dir':
+                    setRadio(name, value);
+                    break;
+
+                case 'initial_sort_order':
+                case 'initial_sort_order2':
+                case 'initial_sort_order3':
+                case 'rating_slots':
+                case 'save_button_title':
+                case 'apply_button_title':
+                    setValue(name, value);
+                    break;
+
+                default:
+                    setCheckbox(name, Number(value) === 1);
+                    break;
+            }
+        });
+    });
+});
+</script>
