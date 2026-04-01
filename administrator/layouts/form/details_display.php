@@ -49,6 +49,25 @@ $renderInlineBooleanControl = static function (
         . '</div>';
 };
 
+$detailsDefaults = [
+    'cb_show_details_top_bar' => 1,
+    'cb_show_details_bottom_bar' => 0,
+    'create_articles' => '0',
+    'delete_articles' => '1',
+    'title_field' => '0',
+    'default_category' => '0',
+    'default_lang_code' => '*',
+    'article_record_impact_language' => '0',
+    'default_lang_code_ignore' => '0',
+    'default_publish_up_days' => '0',
+    'default_publish_down_days' => '0',
+    'article_record_impact_publish' => '0',
+    'default_access' => '0',
+    'default_featured' => '0',
+    'auto_publish' => 0,
+    'protect_upload_directory' => 1,
+];
+
 $prepareExamplesText = <<<'TXT'
 // Ici, vous pouvez modifier les libellés et les valeurs de chaque élément avant le rendu du template d'édition.
 
@@ -69,9 +88,23 @@ $items["COUNT"]["value"] = (is_numeric((string) $items["COUNT"]["value"]) && (fl
 $items["DATE_LABEL"]["label"] = (string) $items["DATE_LABEL"]["label"] . " (" . date("Y-m-d") . ")";
 TXT;
 ?>
-<h3 id="cb-form-details-display" class="mb-3">
-    <?php echo Text::_('COM_CONTENTBUILDERNG_TAB_DETAILS_DISPLAY'); ?>
-</h3>
+<div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-3">
+    <h3 id="cb-form-details-display" class="mb-0">
+        <?php echo Text::_('COM_CONTENTBUILDERNG_TAB_DETAILS_DISPLAY'); ?>
+    </h3>
+    <button
+        type="button"
+        class="btn btn-secondary"
+        id="cb-reset-details-display"
+        title="<?php echo Text::_('COM_CONTENTBUILDERNG_RESET_MENU_OPTIONS_TOOLTIP'); ?>"
+        aria-label="<?php echo Text::_('COM_CONTENTBUILDERNG_RESET_MENU_OPTIONS_TOOLTIP'); ?>"
+        data-defaults="<?php echo htmlspecialchars(json_encode($detailsDefaults, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES), ENT_QUOTES, 'UTF-8'); ?>"
+        data-confirm="<?php echo htmlspecialchars(Text::_('COM_CONTENTBUILDERNG_RESET_MENU_OPTIONS_CONFIRM'), ENT_QUOTES, 'UTF-8'); ?>"
+    >
+        <span class="fa-solid fa-rotate-left" aria-hidden="true"></span>
+        <?php echo Text::_('COM_CONTENTBUILDERNG_RESET'); ?>
+    </button>
+</div>
 <p class="text-muted mb-3">
     <?php echo Text::_('COM_CONTENTBUILDERNG_TAB_DETAILS_DISPLAY_INTRO'); ?>
 </p>
@@ -338,3 +371,93 @@ echo LayoutHelper::render(
     JPATH_COMPONENT_ADMINISTRATOR . '/layouts'
 );
 ?>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var button = document.getElementById('cb-reset-details-display');
+
+    if (!button) {
+        return;
+    }
+
+    var defaults = {};
+
+    try {
+        defaults = JSON.parse(button.getAttribute('data-defaults') || '{}');
+    } catch (error) {
+        defaults = {};
+    }
+
+    var setCheckbox = function (name, checked) {
+        var field = document.querySelector('input[type="checkbox"][name="jform[' + name + ']"]');
+
+        if (!field) {
+            return;
+        }
+
+        field.checked = checked;
+        field.dispatchEvent(new Event('change', { bubbles: true }));
+    };
+
+    var setRadio = function (name, value) {
+        var field = document.querySelector('input[type="radio"][name="jform[' + name + ']"][value="' + String(value) + '"]');
+
+        if (!field) {
+            return;
+        }
+
+        field.checked = true;
+        field.dispatchEvent(new Event('change', { bubbles: true }));
+    };
+
+    var setValue = function (name, value) {
+        var fields = document.querySelectorAll('[name="jform[' + name + ']"], [name="jform[sectioncategories]"]');
+
+        fields.forEach(function (field) {
+            if (name === 'default_category' && field.name !== 'jform[sectioncategories]') {
+                return;
+            }
+
+            if (name !== 'default_category' && field.name === 'jform[sectioncategories]') {
+                return;
+            }
+
+            field.value = value;
+            field.dispatchEvent(new Event('change', { bubbles: true }));
+        });
+    };
+
+    button.addEventListener('click', function () {
+        var confirmMessage = button.getAttribute('data-confirm') || '';
+
+        if (confirmMessage && !window.confirm(confirmMessage)) {
+            return;
+        }
+
+        Object.keys(defaults).forEach(function (name) {
+            var value = defaults[name];
+
+            switch (name) {
+                case 'cb_show_details_top_bar':
+                case 'cb_show_details_bottom_bar':
+                case 'auto_publish':
+                case 'protect_upload_directory':
+                    setCheckbox(name, Number(value) === 1);
+                    break;
+
+                case 'create_articles':
+                case 'delete_articles':
+                case 'article_record_impact_language':
+                case 'default_lang_code_ignore':
+                case 'article_record_impact_publish':
+                case 'default_featured':
+                    setRadio(name, value);
+                    break;
+
+                default:
+                    setValue(name, value);
+                    break;
+            }
+        });
+    });
+});
+</script>

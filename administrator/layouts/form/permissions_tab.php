@@ -54,110 +54,104 @@ $permSectionTitle = static function (string $labelKey, string $iconClass, ?strin
 };
 
 $activePermTab = $session ? $session->get('slideStartOffset', 'permtab1', 'com_contentbuilderng') : 'permtab1';
+$frontendTabLabel = '<span class="editlinktip hasTip" title="' . htmlspecialchars(Text::_('COM_CONTENTBUILDERNG_PERM_OWN_TIP'), ENT_QUOTES, 'UTF-8') . '">'
+    . '<span class="fa-solid fa-globe me-1" aria-hidden="true"></span>'
+    . htmlspecialchars(Text::_('COM_CONTENTBUILDERNG_DISPLAY_FRONTEND'), ENT_QUOTES, 'UTF-8')
+    . '</span>';
+$groupHeaderLabel = '<span class="editlinktip hasTip" title="' . htmlspecialchars(Text::_('COM_CONTENTBUILDERNG_PERM_GROUP_TIP'), ENT_QUOTES, 'UTF-8') . '">'
+    . '<span class="fa-solid fa-users me-1" aria-hidden="true"></span>'
+    . htmlspecialchars(Text::_('COM_CONTENTBUILDERNG_PERM_GROUP'), ENT_QUOTES, 'UTF-8')
+    . '</span>';
+
 echo HTMLHelper::_('uitab.startTabSet', 'perm-pane', ['active' => $activePermTab]);
-echo HTMLHelper::_('uitab.addTab', 'perm-pane', 'permtab1', Text::_('COM_CONTENTBUILDERNG_DISPLAY_FRONTEND'));
+echo HTMLHelper::_('uitab.addTab', 'perm-pane', 'permtab1', $frontendTabLabel);
 ?>
-<table id="cb-form-permissions-frontend" class="table table-striped">
-    <tr class="row0">
-        <td class="key text-end" style="width: 20%;">
-            <label for="own_only_fe">
-                <span class="editlinktip hasTip"
-                    title="<?php echo Text::_('COM_CONTENTBUILDERNG_PERM_OWN_OWNLY_TIP'); ?>">
-                    <?php echo Text::_('COM_CONTENTBUILDERNG_PERM_OWN_OWNLY'); ?>
-                </span>:
-            </label>
-        </td>
-        <td>
-            <input type="hidden" name="jform[own_only_fe]" value="0" />
-            <?php echo is_callable($renderCheckbox) ? $renderCheckbox('jform[own_only_fe]', 'own_only_fe', (bool) ($item->own_only_fe ?? false)) : ''; ?>
-        </td>
-    </tr>
-    <tr class="row0">
-        <td class="key text-end" style="width: 20%;">
-            <label for="limited_article_options_fe">
-                <span class="editlinktip hasTip"
-                    title="<?php echo Text::_('COM_CONTENTBUILDERNG_PERM_LIMITED_ARTICLE_OPTIONS_TIP'); ?>">
-                    <?php echo Text::_('COM_CONTENTBUILDERNG_PERM_LIMITED_ARTICLE_OPTIONS'); ?>
-                </span>:
-            </label>
-        </td>
-        <td>
-            <input type="hidden" name="jform[limited_article_options_fe]" value="0" />
-            <?php echo is_callable($renderCheckbox) ? $renderCheckbox('jform[limited_article_options_fe]', 'limited_article_options_fe', (bool) ($item->limited_article_options_fe ?? false)) : ''; ?>
-        </td>
-    </tr>
-    <tr class="row0">
-        <td class="key text-end" style="width: 20%;">
-            <label>
-                <span class="editlinktip hasTip"
-                    title="<?php echo Text::_('COM_CONTENTBUILDERNG_PERM_OWN_TIP'); ?>">
-                    <?php echo Text::_('COM_CONTENTBUILDERNG_PERM_OWN'); ?>
-                </span>:
-            </label>
-        </td>
-        <td>
-            <?php foreach ($permissionColumns as $permissionColumn) : ?>
-                <?php
-                $permKey = $permissionColumn['key'];
-                $permId = 'own_fe_' . $permKey;
-                $permName = 'jform[own_fe][' . $permKey . ']';
-                $isChecked = !empty($item->config['own_fe'][$permKey]);
-                ?>
-                <?php echo is_callable($renderCheckbox) ? $renderCheckbox($permName, $permId, $isChecked) : ''; ?>
-                <label class="form-check-label me-2" for="<?php echo $permId; ?>">
-                    <?php
-                    echo is_callable($permHeaderLabel)
-                        ? $permHeaderLabel($permissionColumn['label'], $permissionColumn['tip'])
-                        : Text::_($permissionColumn['label']);
-                    ?>
+<div class="mb-3">
+    <section id="cb-form-permissions-frontend" class="cb-perm-users-card">
+        <div class="cb-perm-users-fields">
+            <div class="cb-perm-users-field cb-perm-users-field-wide">
+                <?php echo $permOptionLabel('own_only_fe', 'JOPTIONS'); ?>
+                <div class="d-flex flex-nowrap align-items-center gap-4">
+                    <div class="cb-perm-verify-toggle">
+                        <input type="hidden" name="jform[own_only_fe]" value="0" />
+                        <?php echo is_callable($renderCheckbox) ? $renderCheckbox('jform[own_only_fe]', 'own_only_fe', (bool) ($item->own_only_fe ?? false)) : ''; ?>
+                        <label class="form-check-label" for="own_only_fe">
+                            <span class="editlinktip hasTip" title="<?php echo Text::_('COM_CONTENTBUILDERNG_PERM_OWN_OWNLY_TIP'); ?>">
+                                <?php echo Text::_('COM_CONTENTBUILDERNG_PERM_OWN_OWNLY'); ?>
+                            </span>
+                        </label>
+                    </div>
+                    <div class="cb-perm-verify-toggle">
+                        <input type="hidden" name="jform[limited_article_options_fe]" value="0" />
+                        <?php echo is_callable($renderCheckbox) ? $renderCheckbox('jform[limited_article_options_fe]', 'limited_article_options_fe', (bool) ($item->limited_article_options_fe ?? false)) : ''; ?>
+                        <label class="form-check-label" for="limited_article_options_fe">
+                            <span class="editlinktip hasTip" title="<?php echo Text::_('COM_CONTENTBUILDERNG_PERM_LIMITED_ARTICLE_OPTIONS_TIP'); ?>">
+                                <?php echo Text::_('COM_CONTENTBUILDERNG_PERM_LIMITED_ARTICLE_OPTIONS'); ?>
+                            </span>
+                        </label>
+                    </div>
+                    <div class="cb-perm-verify-toggle">
+                        <input type="hidden" name="jform[show_all_languages_fe]" value="0" />
+                        <?php echo is_callable($renderCheckbox) ? $renderCheckbox('jform[show_all_languages_fe]', 'show_all_languages_fe', (bool) ($item->show_all_languages_fe ?? false)) : ''; ?>
+                        <label class="form-check-label" for="show_all_languages_fe">
+                            <span class="editlinktip hasTip" title="<?php echo Text::_('COM_CONTENTBUILDERNG_PERM_SHOW_ALL_LANGUAGES_TIP'); ?>">
+                                <?php echo Text::_('COM_CONTENTBUILDERNG_PERM_SHOW_ALL_LANGUAGES'); ?>
+                            </span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div class="cb-perm-users-field cb-perm-users-field-wide">
+                <label class="form-label mb-2" for="own_fe_new">
+                    <span class="editlinktip hasTip" title="<?php echo Text::_('COM_CONTENTBUILDERNG_PERM_OWN_TIP'); ?>">
+                        <?php echo Text::_('COM_CONTENTBUILDERNG_PERM_OWN'); ?>
+                    </span>
                 </label>
-            <?php endforeach; ?>
-        </td>
-    </tr>
-    <tr class="row0">
-        <td class="key text-end" style="width: 20%;">
-            <label for="show_all_languages_fe">
-                <span class="editlinktip hasTip"
-                    title="<?php echo Text::_('COM_CONTENTBUILDERNG_PERM_SHOW_ALL_LANGUAGES_TIP'); ?>">
-                    <?php echo Text::_('COM_CONTENTBUILDERNG_PERM_SHOW_ALL_LANGUAGES'); ?>
-                </span>:
-            </label>
-        </td>
-        <td>
-            <input type="hidden" name="jform[show_all_languages_fe]" value="0" />
-            <?php echo is_callable($renderCheckbox) ? $renderCheckbox('jform[show_all_languages_fe]', 'show_all_languages_fe', (bool) ($item->show_all_languages_fe ?? false)) : ''; ?>
-        </td>
-    </tr>
-    <?php if (!empty($item->edit_by_type)) : ?>
-        <tr class="row0">
-            <td class="key text-end" style="width: 20%;">
-                <label for="force_login">
-                    <?php echo Text::_('COM_CONTENTBUILDERNG_PERM_FORCE_LOGIN'); ?>
-                </label>
-            </td>
-            <td>
-                <input type="hidden" name="jform[force_login]" value="0" />
-                <?php echo is_callable($renderCheckbox) ? $renderCheckbox('jform[force_login]', 'force_login', (bool) ($item->force_login ?? false)) : ''; ?>
-            </td>
-        </tr>
-        <tr class="row0">
-            <td class="key text-end" style="width: 20%;">
-                <label for="force_url">
-                    <?php echo Text::_('COM_CONTENTBUILDERNG_PERM_FORCE_URL'); ?>
-                </label>
-            </td>
-            <td>
-                <input style="width: 100%;" id="force_url" name="jform[force_url]" type="text"
-                    value="<?php echo htmlentities($item->force_url ?? '', ENT_QUOTES, 'UTF-8'); ?>" />
-            </td>
-        </tr>
-    <?php endif; ?>
-</table>
-<table id="cb-form-permissions-frontend-groups" class="table table-striped">
+                <div class="d-flex flex-wrap align-items-center gap-3 w-100">
+                    <?php foreach ($permissionColumns as $permissionColumn) : ?>
+                        <?php
+                        $permKey = $permissionColumn['key'];
+                        $permId = 'own_fe_' . $permKey;
+                        $permName = 'jform[own_fe][' . $permKey . ']';
+                        $isChecked = !empty($item->config['own_fe'][$permKey]);
+                        ?>
+                        <div class="form-check mb-0">
+                            <?php echo is_callable($renderCheckbox) ? $renderCheckbox($permName, $permId, $isChecked) : ''; ?>
+                            <label class="form-check-label" for="<?php echo $permId; ?>">
+                                <?php
+                                echo is_callable($permHeaderLabel)
+                                    ? $permHeaderLabel($permissionColumn['label'], $permissionColumn['tip'])
+                                    : Text::_($permissionColumn['label']);
+                                ?>
+                            </label>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+            <?php if (!empty($item->edit_by_type)) : ?>
+                <div class="cb-perm-users-field">
+                    <input type="hidden" name="jform[force_login]" value="0" />
+                    <div class="cb-perm-verify-toggle">
+                        <?php echo is_callable($renderCheckbox) ? $renderCheckbox('jform[force_login]', 'force_login', (bool) ($item->force_login ?? false)) : ''; ?>
+                        <?php echo $permOptionLabel('force_login', 'COM_CONTENTBUILDERNG_PERM_FORCE_LOGIN', 'COM_CONTENTBUILDERNG_PERM_FORCE_LOGIN_TIP'); ?>
+                    </div>
+                </div>
+                <div class="cb-perm-users-field cb-perm-users-field-grow">
+                    <?php echo $permOptionLabel('force_url', 'COM_CONTENTBUILDERNG_PERM_FORCE_URL', 'COM_CONTENTBUILDERNG_PERM_FORCE_URL_TIP'); ?>
+                    <input class="form-control form-control-sm" id="force_url" name="jform[force_url]" type="text"
+                        value="<?php echo htmlentities($item->force_url ?? '', ENT_QUOTES, 'UTF-8'); ?>" />
+                </div>
+            <?php endif; ?>
+        </div>
+    </section>
+</div>
+<div class="cb-perm-users-card mb-3">
+    <div class="table-responsive">
+<table id="cb-form-permissions-frontend-groups" class="table table-striped align-middle mb-0">
     <thead>
         <tr>
             <th>
-                <?php echo is_callable($permHeaderLabel) ? $permHeaderLabel('COM_CONTENTBUILDERNG_PERM_GROUP', 'COM_CONTENTBUILDERNG_PERM_GROUP_TIP') : Text::_('COM_CONTENTBUILDERNG_PERM_GROUP'); ?>
+                <?php echo $groupHeaderLabel; ?>
             </th>
             <?php foreach ($permissionColumns as $permissionColumn) : ?>
                 <th>
@@ -256,6 +250,8 @@ echo HTMLHelper::_('uitab.addTab', 'perm-pane', 'permtab1', Text::_('COM_CONTENT
         </tr>
     <?php endforeach; ?>
 </table>
+</div>
+</div>
 <?php
 echo HTMLHelper::_('uitab.endTab');
 echo HTMLHelper::_('uitab.addTab', 'perm-pane', 'permtab2', Text::_('COM_CONTENTBUILDERNG_EMAIL_USERS'));
