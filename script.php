@@ -1137,13 +1137,16 @@ class com_contentbuilderngInstallerScript
             'com_contentbuilderng.ini',
             'com_contentbuilderng.menu.ini',
             'com_contentbuilderng.sys.ini',
-            '*.com_contentbuilder_ng.ini',
-            '*.com_contentbuilder_ng.menu.ini',
-            '*.com_contentbuilder_ng.sys.ini',
-            'com_contentbuilder_ng.ini',
-            'com_contentbuilder_ng.menu.ini',
-            'com_contentbuilder_ng.sys.ini',
         ];
+        $legacyBases = ['com_contentbuilder', 'com_contentbuilder-ng', 'com_contentbuilder_ng'];
+        $legacySuffixes = ['.ini', '.menu.ini', '.sys.ini'];
+
+        foreach ($legacyBases as $legacyBase) {
+            foreach ($legacySuffixes as $legacySuffix) {
+                $patterns[] = '*.' . $legacyBase . $legacySuffix;
+                $patterns[] = $legacyBase . $legacySuffix;
+            }
+        }
 
         $basePaths = [
             JPATH_ADMINISTRATOR . '/language',
