@@ -2337,6 +2337,27 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
         return editorBindings + fieldBindings;
     }
 
+    function cbNeutralizeHiddenHeaderDropdown() {
+        var headerMore = document.getElementById('header-more-items');
+
+        if (!headerMore || !headerMore.classList.contains('d-none')) {
+            return;
+        }
+
+        var toggle = headerMore.querySelector('.header-more-btn[data-bs-toggle="dropdown"]');
+        if (toggle) {
+            toggle.removeAttribute('data-bs-toggle');
+            toggle.classList.remove('dropdown-toggle');
+            toggle.setAttribute('aria-hidden', 'true');
+            toggle.tabIndex = -1;
+        }
+
+        var menu = headerMore.querySelector('.dropdown-menu');
+        if (menu) {
+            menu.classList.remove('dropdown-menu');
+        }
+    }
+
     function cbGetSaveButtons() {
         var tasks = ['form.apply', 'form.save', 'form.save2new'];
         var hostIds = ['save-group-children-apply', 'save-group-children-save', 'save-group-children-save2new'];
@@ -2501,6 +2522,8 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
     }
 
     function cbInitDirtyTracking() {
+        cbNeutralizeHiddenHeaderDropdown();
+
         var form = document.getElementById('adminForm') || document.adminForm;
         if (!form || cbDirtyTrackingInitialized) {
             return;

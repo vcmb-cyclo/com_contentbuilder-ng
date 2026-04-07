@@ -123,7 +123,7 @@ SELECT
                 <span style="float: right; text-align: right;"><a
                         href="<?php echo Route::_('index.php?option=com_contentbuilderng&view=export&id=' . Factory::getApplication()->input->getInt('id', 0) . '&type=xls&format=raw&tmpl=component'); ?>">
                         <div class="cbXlsExportButton"
-                            style="background-image: url(../components/com_contentbuilderng/images/xls.png); background-repeat: no-repeat; width: 16px; height: 16px;"
+                            style="background-image: url(<?php echo Uri::root(true); ?>/media/com_contentbuilderng/images/xls.png); background-repeat: no-repeat; width: 16px; height: 16px;"
                             alt="Export"></div>
                     </a></span>
                 <?php
@@ -517,7 +517,7 @@ SELECT
                     <td>
                         <a href="#"
                             onclick="contentbuilderng_related_item(<?php echo $row->colRecord; ?>);contentbuilderng_close_parent_modal();return false;"><img
-                                src="../components/com_contentbuilderng/images/plus.png" border="0" width="18"
+                                src="<?php echo \Joomla\CMS\Uri\Uri::root(); ?>media/com_contentbuilderng/images/plus.png" border="0" width="18"
                                 height="18" /></a>
                     </td>
 

@@ -92,10 +92,16 @@ final class RatingHelper
         if ($rating_allowed && !$scriptRendered) {
             $scriptRendered = true;
             $csrfToken = Session::getFormToken();
+            $voteSingular = Text::_('COM_CONTENTBUILDERNG_VOTES_SINGULAR');
+            $votePlural = Text::_('COM_CONTENTBUILDERNG_VOTES_PLURAL');
             ?>
             <script>
             (function(){
                 var cbLastId = null;
+                var cbVoteLabels = {
+                    singular: <?php echo json_encode($voteSingular); ?>,
+                    plural: <?php echo json_encode($votePlural); ?>
+                };
                 function cbFadeOut(el){
                     if(!el){return;}
                     window.setTimeout(function(){ el.style.display = "none"; }, 1800);
@@ -130,6 +136,16 @@ final class RatingHelper
                     var tokenParam = <?php echo json_encode($csrfToken . '=1'); ?>;
                     var separator = url.indexOf("?") === -1 ? "?" : "&";
                     var requestUrl = url + separator + tokenParam;
+                    var urlObject = null;
+                    var clickedRate = 0;
+                    var recordId = "";
+
+                    try {
+                        urlObject = new URL(url, window.location.href);
+                        clickedRate = Number(urlObject.searchParams.get("rate") || 0);
+                        recordId = String(urlObject.searchParams.get("record_id") || "");
+                    } catch (error) {}
+
                     fetch(requestUrl, {
                         method: "POST",
                         credentials: "same-origin",
@@ -149,6 +165,50 @@ final class RatingHelper
                             }
                             if(!response.ok){
                                 throw payload;
+                            }
+                            if (clickedRate > 0 && recordId !== "") {
+                                var stars = document.getElementById("cbVotingStars" + recordId);
+                                var starWidth = String(clickedRate * 20) + "px";
+                                if (stars) {
+                                    stars.style.width = starWidth;
+                                }
+
+                                document.querySelectorAll('[id^="cbVotingStarButton_"]').forEach(function(el) {
+                                    if (el && typeof el.getAttribute === "function" && String(el.getAttribute("onclick") || "").indexOf("cbRatingMsg" + recordId) !== -1) {
+                                        el.setAttribute("onmouseout", 'document.getElementById("cbVotingStars' + recordId + '").style.width=' + JSON.stringify(starWidth) + ';');
+                                    }
+                                });
+
+                                var votingWrapper = stars ? stars.parentElement : null;
+                                if (votingWrapper) {
+                                    votingWrapper.querySelectorAll(".cbVotingStarButton").forEach(function(el) {
+                                        el.setAttribute("onmouseout", 'document.getElementById("cbVotingStars' + recordId + '").style.width=' + JSON.stringify(starWidth) + ';');
+                                    });
+                                }
+
+                                var counter = document.getElementById(lastId + "Counter");
+                                var voteCount = counter && !isNaN(Number(counter.textContent))
+                                    ? Number(counter.textContent)
+                                    : 0;
+                                voteCount += 1;
+
+                                if (counter) {
+                                    counter.textContent = String(voteCount);
+                                }
+
+                                var votesContainers = document.querySelectorAll("#cbVotingStars" + recordId + ", #" + lastId + "Counter");
+                                var scope = null;
+                                if (votesContainers.length > 0) {
+                                    scope = votesContainers[0].closest(".cbVotingDisplay, .cbRating, .cbRatingUpDown");
+                                }
+                                if (!scope && counter) {
+                                    scope = counter.closest(".cbVotingDisplay, .cbRating, .cbRatingUpDown");
+                                }
+                                if (scope) {
+                                    scope.querySelectorAll(".cbRatingVotes").forEach(function(el) {
+                                        el.textContent = voteCount + " " + (voteCount === 1 ? cbVoteLabels.singular : cbVoteLabels.plural);
+                                    });
+                                }
                             }
                             cbRetrieveRatingResults(payload, lastId);
                         });

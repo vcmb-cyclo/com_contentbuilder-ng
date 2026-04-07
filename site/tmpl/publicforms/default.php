@@ -213,7 +213,7 @@ if ($this->page_heading) {
 
                     <td class="align-top">
                         <img width="16" height="16" alt=""
-                            src="<?php echo $this->perms[$row->id]['view'] ? Uri::root(true) . '/components/com_contentbuilderng/assets/images/tick.png' : Uri::root(true) . '/components/com_contentbuilderng/assets/images/untick.png'; ?>" />
+                            src="<?php echo $this->perms[$row->id]['view'] ? Uri::root(true) . '/media/com_contentbuilderng/images/tick.png' : Uri::root(true) . '/media/com_contentbuilderng/images/untick.png'; ?>" />
                     </td>
 
                     <?php
@@ -226,7 +226,7 @@ if ($this->page_heading) {
 
                     <td class="align-top">
                         <img width="16" height="16" alt=""
-                            src="<?php echo $this->perms[$row->id]['new'] ? Uri::root(true) . '/components/com_contentbuilderng/assets/images/tick.png' : Uri::root(true) . '/components/com_contentbuilderng/assets/images/untick.png'; ?>" />
+                            src="<?php echo $this->perms[$row->id]['new'] ? Uri::root(true) . '/media/com_contentbuilderng/images/tick.png' : Uri::root(true) . '/media/com_contentbuilderng/images/untick.png'; ?>" />
                     </td>
 
                     <?php
@@ -239,7 +239,7 @@ if ($this->page_heading) {
 
                     <td class="align-top">
                         <img width="16" height="16" alt=""
-                            src="<?php echo $this->perms[$row->id]['edit'] ? Uri::root(true) . '/components/com_contentbuilderng/assets/images/tick.png' : Uri::root(true) . '/components/com_contentbuilderng/assets/images/untick.png'; ?>" />
+                            src="<?php echo $this->perms[$row->id]['edit'] ? Uri::root(true) . '/media/com_contentbuilderng/images/tick.png' : Uri::root(true) . '/media/com_contentbuilderng/images/untick.png'; ?>" />
                     </td>
 
                     <?php

@@ -907,13 +907,11 @@ class TemplateRenderService
                     break;
                 case 'captcha':
                     $theItem = '<div class="cbFormField cbCaptchaField">';
-                    $captchaUrl = $app->isClient('site')
-                        ? Uri::root(true) . '/components/com_contentbuilderng/images/securimage/securimage_show.php'
-                        : Uri::root(true) . '/administrator/components/com_contentbuilderng/assets/images/securimage_show.php';
+                    $captchaUrl = Uri::root(true) . '/media/com_contentbuilderng/images/securimage/securimage_show.php';
                     $theItem .= '<img width="250" height="80" id="cbCaptcha" alt="captcha" src="' . $captchaUrl . '?rand=' . rand(0, getrandmax()) . '"/>';
                     $theItem .= '<div>';
                     $theItem .= '<input class="form-control form-control-sm mt-1" autocomplete="off" id="cb_' . $item['id'] . '" name="cb_' . $item['id'] . '" type="text" maxlength="12" />';
-                    $theItem .= '<img style="cursor: pointer; padding-left: 7px;" onclick="document.getElementById(\'cbCaptcha\').src = \'' . $captchaUrl . '?\' + Math.random(); blur(); return false" border="0" alt="refresh" src="' . Uri::root(true) . '/components/com_contentbuilderng/images/securimage/refresh-captcha.png"/>';
+                    $theItem .= '<img style="cursor: pointer; padding-left: 7px;" onclick="document.getElementById(\'cbCaptcha\').src = \'' . $captchaUrl . '?\' + Math.random(); blur(); return false" border="0" alt="refresh" src="' . Uri::root(true) . '/media/com_contentbuilderng/images/securimage/refresh-captcha.png"/>';
                     $theItem .= '</div></div>';
                     break;
                 case 'calendar':
@@ -978,7 +976,7 @@ class TemplateRenderService
             if ($theItem !== '' || $replaceTokens) {
                 $tip = 'hasTip';
                 $tipPrefix = htmlentities($item['label'], ENT_QUOTES, 'UTF-8') . '::';
-                $template = str_replace('{' . $key . ':label}', '<label ' . ($elementHint ? 'class="editlinktip ' . $tip . '" title="' . $tipPrefix . $elementHint . '" ' : '') . 'for="cb_' . $item['id'] . '">' . $item['label'] . $asterisk . ($elementHint ? ' <img style="cursor: pointer;" src="' . Uri::root(true) . '/components/com_contentbuilderng/images/icon_info.png" border="0"/>' : '') . '</label>', $template);
+                $template = str_replace('{' . $key . ':label}', '<label ' . ($elementHint ? 'class="editlinktip ' . $tip . '" title="' . $tipPrefix . $elementHint . '" ' : '') . 'for="cb_' . $item['id'] . '">' . $item['label'] . $asterisk . ($elementHint ? ' <img style="cursor: pointer;" src="' . Uri::root(true) . '/media/com_contentbuilderng/images/icon_info.png" border="0"/>' : '') . '</label>', $template);
                 $template = str_replace('{' . $key . ':item}', $theItem, $template);
             }
         }

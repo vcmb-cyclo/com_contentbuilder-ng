@@ -72,11 +72,11 @@ echo HTMLHelper::_('uitab.addTab', 'perm-pane', 'permtab1', $frontendTabLabel);
     <section id="cb-form-permissions-frontend" class="cb-perm-users-card">
         <div class="cb-perm-users-fields">
             <div class="cb-perm-users-field cb-perm-users-field-wide">
-                <label class="form-label mb-2" for="own_only_fe">
+                <h4 class="h6 text-body-secondary mb-2">
                     <span class="editlinktip hasTip" title="<?php echo htmlspecialchars(Text::_('COM_CONTENTBUILDERNG_PERM_FRONTEND_OPTIONS_TIP'), ENT_QUOTES, 'UTF-8'); ?>">
                         <?php echo Text::_('JOPTIONS'); ?>
                     </span>
-                </label>
+                </h4>
                 <div class="d-flex flex-nowrap align-items-center gap-4">
                     <div class="cb-perm-verify-toggle">
                         <input type="hidden" name="jform[own_only_fe]" value="0" />
@@ -108,11 +108,11 @@ echo HTMLHelper::_('uitab.addTab', 'perm-pane', 'permtab1', $frontendTabLabel);
                 </div>
             </div>
             <div class="cb-perm-users-field cb-perm-users-field-wide">
-                <label class="form-label mb-2" for="own_fe_new">
+                <h4 class="h6 text-body-secondary mb-2">
                     <span class="editlinktip hasTip" title="<?php echo Text::_('COM_CONTENTBUILDERNG_PERM_OWN_TIP'); ?>">
                         <?php echo Text::_('COM_CONTENTBUILDERNG_PERM_OWN'); ?>
                     </span>
-                </label>
+                </h4>
                 <div class="d-flex flex-wrap align-items-center gap-3 w-100">
                     <?php foreach ($permissionColumns as $permissionColumn) : ?>
                         <?php
