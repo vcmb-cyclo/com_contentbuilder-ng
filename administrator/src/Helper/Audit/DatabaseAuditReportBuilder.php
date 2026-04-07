@@ -35,6 +35,7 @@ final class DatabaseAuditReportBuilder
      *   menu_view_issues:array<int,array<string,mixed>>,
      *   frontend_permission_issues:array<int,array<string,mixed>>,
      *   element_reference_issues:array<int,array<string,mixed>>,
+     *   invalid_datetime_sort_issues:array<int,array<string,mixed>>,
      *   cb_tables:array<string,mixed>,
      *   errors:array<int,string>
      * } $data
@@ -59,6 +60,7 @@ final class DatabaseAuditReportBuilder
         $menuViewIssues = (array) ($data['menu_view_issues'] ?? []);
         $frontendPermissionIssues = (array) ($data['frontend_permission_issues'] ?? []);
         $elementReferenceIssues = (array) ($data['element_reference_issues'] ?? []);
+        $invalidDatetimeSortIssues = (array) ($data['invalid_datetime_sort_issues'] ?? []);
         $cbTableStats = (array) ($data['cb_tables'] ?? []);
         $errors = (array) ($data['errors'] ?? []);
 
@@ -106,6 +108,14 @@ final class DatabaseAuditReportBuilder
         }
 
         $mixedCollationIssueGroups = count($mixedTableCollations) > 1 ? 1 : 0;
+        $invalidDatetimeSortRows = 0;
+        foreach ($invalidDatetimeSortIssues as $invalidDatetimeSortIssue) {
+            if (!is_array($invalidDatetimeSortIssue)) {
+                continue;
+            }
+
+            $invalidDatetimeSortRows += (int) ($invalidDatetimeSortIssue['invalid_count'] ?? 0);
+        }
 
         $issuesTotal = count($duplicateIndexes)
             + count($historicalTables)
@@ -120,7 +130,8 @@ final class DatabaseAuditReportBuilder
             + count($bfFieldSyncIssues)
             + count($menuViewIssues)
             + count($frontendPermissionIssues)
-            + count($elementReferenceIssues);
+            + count($elementReferenceIssues)
+            + count($invalidDatetimeSortIssues);
 
         return [
             'generated_at' => Factory::getDate()->toSql(),
@@ -145,6 +156,7 @@ final class DatabaseAuditReportBuilder
             'menu_view_issues' => $menuViewIssues,
             'frontend_permission_issues' => $frontendPermissionIssues,
             'element_reference_issues' => $elementReferenceIssues,
+            'invalid_datetime_sort_issues' => $invalidDatetimeSortIssues,
             'cb_tables' => $cbTableStats,
             'summary' => [
                 'duplicate_index_groups' => count($duplicateIndexes),
@@ -167,6 +179,8 @@ final class DatabaseAuditReportBuilder
                 'menu_view_issues' => count($menuViewIssues),
                 'frontend_permission_issues' => count($frontendPermissionIssues),
                 'element_reference_issues' => count($elementReferenceIssues),
+                'invalid_datetime_sort_issues' => count($invalidDatetimeSortIssues),
+                'invalid_datetime_sort_rows' => $invalidDatetimeSortRows,
                 'issues_total' => $issuesTotal,
             ],
             'errors' => $errors,

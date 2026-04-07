@@ -19,6 +19,7 @@ use CB\Component\Contentbuilderng\Administrator\Helper\Audit\ElementReferenceAud
 use CB\Component\Contentbuilderng\Administrator\Helper\Audit\EncodingAuditHelper;
 use CB\Component\Contentbuilderng\Administrator\Helper\Audit\FrontendPermissionAuditHelper;
 use CB\Component\Contentbuilderng\Administrator\Helper\Audit\HistoricalAssetAuditHelper;
+use CB\Component\Contentbuilderng\Administrator\Helper\Audit\InvalidDatetimeSortAuditHelper;
 use CB\Component\Contentbuilderng\Administrator\Helper\Audit\MenuViewAuditHelper;
 use CB\Component\Contentbuilderng\Administrator\Helper\FormDisplayColumnsHelper;
 use Joomla\CMS\Factory;
@@ -132,6 +133,19 @@ final class DatabaseAuditHelper
      *     duplicate_reference_ids:array<int,array{reference_id:string,count:int,labels:array<int,string>}>,
      *     orphan_reference_ids:array<int,array{reference_id:string,label:string}>
      *   }>,
+     *   invalid_datetime_sort_issues:array<int,array{
+     *     form_id:int,
+     *     form_name:string,
+     *     storage_id:int,
+     *     storage_name:string,
+     *     table:string,
+     *     element_id:int,
+     *     element_label:string,
+     *     reference_id:int,
+     *     column:string,
+     *     invalid_count:int,
+     *     sample_values:array<int,string>
+     *   }>,
      *   cb_tables:array{
      *     summary:array{
      *       tables_total:int,
@@ -176,6 +190,8 @@ final class DatabaseAuditHelper
      *     menu_view_issues:int,
      *     frontend_permission_issues:int,
      *     element_reference_issues:int,
+     *     invalid_datetime_sort_issues:int,
+     *     invalid_datetime_sort_rows:int,
      *     issues_total:int
      *   },
      *   errors:array<int,string>
@@ -225,6 +241,8 @@ final class DatabaseAuditHelper
         $errors = array_merge($errors, $permissionErrors);
         [$elementReferenceIssues, $elementReferenceErrors] = ElementReferenceAuditHelper::inspect($db);
         $errors = array_merge($errors, $elementReferenceErrors);
+        [$invalidDatetimeSortIssues, $invalidDatetimeSortErrors] = InvalidDatetimeSortAuditHelper::inspect($db);
+        $errors = array_merge($errors, $invalidDatetimeSortErrors);
 
         return DatabaseAuditReportBuilder::build([
             'tables' => $tables,
@@ -245,6 +263,7 @@ final class DatabaseAuditHelper
             'menu_view_issues' => $menuViewIssues,
             'frontend_permission_issues' => $frontendPermissionIssues,
             'element_reference_issues' => $elementReferenceIssues,
+            'invalid_datetime_sort_issues' => $invalidDatetimeSortIssues,
             'cb_tables' => $cbTableStats,
             'errors' => $errors,
         ], $toAlias);

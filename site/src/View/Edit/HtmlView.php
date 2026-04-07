@@ -64,6 +64,16 @@ class HtmlView extends BaseHtmlView
     public int $cb_show_bottom_bar = 0;
     public int $cb_filter_in_title = 0;
     public int $cb_prefix_in_title = 0;
+    public int $list_state = 0;
+    public array $states = [];
+    public array $state_ids = [];
+    public array $state_titles = [];
+    public array $state_colors = [];
+    public int $list_rating = 0;
+    public int $rating_slots = 0;
+    public float $rating = 0.0;
+    public int $rating_count = 0;
+    public int $rating_sum = 0;
 
     protected $state;
     protected $item;
@@ -607,7 +617,9 @@ CSS;
                     'save_button_title', 'id', 'article_options', 'article_settings',
                     'limited_options', 'show_id_column', 'toc', 'tpl',
                     'cb_show_author', 'cb_show_top_bar', 'cb_show_bottom_bar',
-                    'cb_filter_in_title', 'cb_prefix_in_title',
+                    'cb_filter_in_title', 'cb_prefix_in_title', 'list_state',
+                    'states', 'state_ids', 'state_titles', 'state_colors',
+                    'list_rating', 'rating_slots', 'rating', 'rating_count', 'rating_sum',
                 ];
 
                 foreach ($props as $prop) {

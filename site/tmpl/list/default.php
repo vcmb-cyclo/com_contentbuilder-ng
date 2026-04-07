@@ -16,6 +16,7 @@ use Joomla\CMS\Application\SiteApplication;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Router\Route;
 use Joomla\CMS\HTML\HTMLHelper;
+use Joomla\CMS\Session\Session;
 use Joomla\CMS\Uri\Uri;
 use CB\Component\Contentbuilderng\Administrator\Helper\ContentbuilderngHelper;
 use CB\Component\Contentbuilderng\Administrator\Helper\RatingHelper;
@@ -245,6 +246,7 @@ if ($isAdminPreview) {
 
 $document = $app->getDocument();
 $wa = $document->getWebAssetManager();
+$ratingCsrfToken = Session::getFormToken();
 
 // Charge le manifeste joomla.asset.json du composant
 $wa->getRegistry()->addExtensionRegistryFile('com_contentbuilderng');
@@ -944,6 +946,71 @@ CSS
 
 		Joomla.submitform(task || '', form);
 	};
+
+	<?php if ($rating_allowed && !empty($this->list_rating)) : ?>
+	window.cbRate = function(url, lastId) {
+		var tokenParam = <?php echo json_encode($ratingCsrfToken . '=1'); ?>;
+		var separator = url.indexOf('?') === -1 ? '?' : '&';
+		var requestUrl = url + separator + tokenParam;
+
+		fetch(requestUrl, {
+			method: 'POST',
+			credentials: 'same-origin',
+			headers: {
+				'X-Requested-With': 'XMLHttpRequest',
+				'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+			},
+			body: tokenParam
+		})
+			.then(function(response) {
+				return response.text().then(function(text) {
+					var payload = null;
+
+					try {
+						payload = JSON.parse(text);
+					} catch (error) {
+						payload = {success: false, message: text || 'Rating error'};
+					}
+
+					var result = payload && typeof payload.success !== 'undefined'
+						? (payload.success ? (payload.data || {}) : {code: 1, msg: payload.message || ''})
+						: payload;
+					var messageBox = document.getElementById(lastId);
+
+					if (messageBox) {
+						messageBox.style.display = 'block';
+						messageBox.textContent = (result && result.msg) ? result.msg : '';
+						window.setTimeout(function() {
+							messageBox.style.display = 'none';
+						}, 1800);
+					}
+
+					if (result && result.code === 0) {
+						var counter = document.getElementById(lastId + 'Counter');
+						if (counter && !isNaN(Number(counter.textContent))) {
+							counter.textContent = String(Number(counter.textContent) + 1);
+						}
+					}
+
+					if (!response.ok) {
+						throw new Error((result && result.msg) ? result.msg : 'Rating error');
+					}
+				});
+			})
+			.catch(function(error) {
+				var messageBox = document.getElementById(lastId);
+				if (messageBox) {
+					messageBox.style.display = 'block';
+					messageBox.textContent = error && error.message ? error.message : 'Rating error';
+					window.setTimeout(function() {
+						messageBox.style.display = 'none';
+					}, 1800);
+				}
+			});
+
+		return false;
+	};
+	<?php endif; ?>
 
 	function contentbuilderng_selectedCount(form) {
 		if (!form) return 0;

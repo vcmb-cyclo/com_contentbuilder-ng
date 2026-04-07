@@ -20,6 +20,7 @@ use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\MVC\Model\ListModel;
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
 use CB\Component\Contentbuilderng\Administrator\Helper\ContentbuilderngHelper;
+use CB\Component\Contentbuilderng\Administrator\Service\ListSupportService;
 use CB\Component\Contentbuilderng\Administrator\Service\RuntimeUtilityService;
 use CB\Component\Contentbuilderng\Administrator\Service\TemplateRenderService;
 use CB\Component\Contentbuilderng\Administrator\Service\PermissionService;
@@ -31,6 +32,7 @@ class DetailsModel extends ListModel
 {
     private readonly TemplateRenderService $templateRenderService;
     private readonly RuntimeUtilityService $runtimeUtilityService;
+    private readonly ListSupportService $listSupportService;
     private $_record_id = 0;
 
     private $frontend = false;
@@ -64,6 +66,7 @@ class DetailsModel extends ListModel
         $this->app = $app;
         $this->templateRenderService = new TemplateRenderService();
         $this->runtimeUtilityService = new RuntimeUtilityService();
+        $this->listSupportService = new ListSupportService();
         $option = 'com_contentbuilderng';
         $this->frontend = $app->isClient('site');
         $this->directStorageId = max(0, $app->input->getInt('storage_id', 0));
@@ -187,6 +190,70 @@ class DetailsModel extends ListModel
     private function getMenuToggle(string $key, int $default = 0): int
     {
         return MenuParamHelper::resolveInputOrMenuToggle($this->app, $key, $default);
+    }
+
+    private function appendListStateData(object $data): object
+    {
+        $data->list_state = (int) ($data->list_state ?? 0);
+        $data->states = [];
+        $data->state_ids = [];
+        $data->state_titles = [];
+        $data->state_colors = [];
+
+        if ($data->list_state !== 1 || (int) $this->_id <= 0 || (int) $this->_record_id <= 0) {
+            return $data;
+        }
+
+        $data->states = $this->listSupportService->getListStates((int) $this->_id);
+        $recordItems = [(object) ['colRecord' => (int) $this->_record_id]];
+        $data->state_ids = $this->listSupportService->getStateIds($recordItems, (int) $this->_id);
+        $data->state_titles = $this->listSupportService->getStateTitles($recordItems, (int) $this->_id);
+        $data->state_colors = $this->listSupportService->getStateColors($recordItems, (int) $this->_id);
+
+        return $data;
+    }
+
+    private function appendRatingData(object $data): object
+    {
+        $data->list_rating = (int) ($data->list_rating ?? 0);
+        $data->rating_slots = (int) ($data->rating_slots ?? 0);
+        $data->rating = 0.0;
+        $data->rating_count = 0;
+        $data->rating_sum = 0;
+
+        if ($data->list_rating !== 1 || (int) $this->_id <= 0 || (int) $this->_record_id <= 0) {
+            return $data;
+        }
+
+        $db = $this->getDatabase();
+        $query = $db->getQuery(true)
+            ->select([
+                $db->quoteName('rating_count'),
+                $db->quoteName('rating_sum'),
+            ])
+            ->from($db->quoteName('#__contentbuilderng_records'))
+            ->where($db->quoteName('record_id') . ' = ' . $db->quote((string) $this->_record_id));
+
+        if (isset($data->type) && (string) $data->type !== '') {
+            $query->where($db->quoteName('type') . ' = ' . $db->quote((string) $data->type));
+        }
+
+        if (isset($data->reference_id) && (string) $data->reference_id !== '') {
+            $query->where($db->quoteName('reference_id') . ' = ' . $db->quote((string) $data->reference_id));
+        }
+
+        $db->setQuery($query, 0, 1);
+        $ratingRow = $db->loadAssoc();
+
+        if (!$ratingRow) {
+            return $data;
+        }
+
+        $data->rating_count = (int) ($ratingRow['rating_count'] ?? 0);
+        $data->rating_sum = (int) ($ratingRow['rating_sum'] ?? 0);
+        $data->rating = $data->rating_count > 0 ? ($data->rating_sum / $data->rating_count) : 0.0;
+
+        return $data;
     }
 
     private function loadDirectStorageDefinition(): object
@@ -608,7 +675,8 @@ class DetailsModel extends ListModel
                         throw new \Exception(Text::_('COM_CONTENTBUILDERNG_RECORD_NOT_FOUND'), 404);
                     }
                 }
-                return $data;
+                $data = $this->appendListStateData($data);
+                return $this->appendRatingData($data);
             }
         }
         return null;

@@ -62,6 +62,7 @@ $bfFieldSyncIssues = (array) ($auditReport['bf_view_field_sync_issues'] ?? []);
 $menuViewIssues = (array) ($auditReport['menu_view_issues'] ?? []);
 $frontendPermissionIssues = (array) ($auditReport['frontend_permission_issues'] ?? []);
 $elementReferenceIssues = (array) ($auditReport['element_reference_issues'] ?? []);
+$invalidDatetimeSortIssues = (array) ($auditReport['invalid_datetime_sort_issues'] ?? []);
 $encodingTargetCharset = (string) ($auditSummary['encoding_target_charset'] ?? 'utf8mb4');
 $encodingTargetCollation = (string) ($auditSummary['encoding_target_collation'] ?? 'utf8mb4_0900_ai_ci');
 $missingAuditColumnsTotal = (int) ($auditSummary['missing_audit_columns_total'] ?? 0);
@@ -274,6 +275,18 @@ $hasBfFieldSyncIssues = $bfFieldSyncViews > 0 || $bfFieldSyncMissingTotal > 0 ||
 $hasMenuViewIssues = (int) ($auditSummary['menu_view_issues'] ?? count($menuViewIssues)) > 0;
 $hasFrontendPermissionIssues = (int) ($auditSummary['frontend_permission_issues'] ?? count($frontendPermissionIssues)) > 0;
 $hasElementReferenceIssues = (int) ($auditSummary['element_reference_issues'] ?? count($elementReferenceIssues)) > 0;
+$invalidDatetimeSortIssueCount = (int) ($auditSummary['invalid_datetime_sort_issues'] ?? count($invalidDatetimeSortIssues));
+$invalidDatetimeSortRowCount = (int) ($auditSummary['invalid_datetime_sort_rows'] ?? 0);
+if ($invalidDatetimeSortRowCount === 0 && $invalidDatetimeSortIssues !== []) {
+    foreach ($invalidDatetimeSortIssues as $invalidDatetimeSortIssue) {
+        if (!is_array($invalidDatetimeSortIssue)) {
+            continue;
+        }
+
+        $invalidDatetimeSortRowCount += (int) ($invalidDatetimeSortIssue['invalid_count'] ?? 0);
+    }
+}
+$hasInvalidDatetimeSortIssues = $invalidDatetimeSortIssueCount > 0 || $invalidDatetimeSortRowCount > 0;
 $formatBytes = static function (int $bytes): string {
     if ($bytes <= 0) {
         return '0 B';
@@ -342,21 +355,23 @@ $auditSectionNumbers = [
     'audit_columns_total' => 11,
     'form_audit_columns' => 12,
     'form_audit_columns_total' => 13,
-    'plugin_duplicates' => 14,
-    'plugin_duplicate_rows' => 15,
-    'bf_field_sync' => 16,
-    'bf_field_sync_missing' => 17,
-    'bf_field_sync_orphan' => 18,
-    'menu_view_consistency' => 19,
-    'frontend_permission_consistency' => 20,
-    'element_reference_consistency' => 21,
-    'cb_table_stats' => 22,
-    'cb_tables_total' => 23,
-    'cb_ng_tables_expected' => 24,
-    'cb_ng_tables_missing' => 25,
-    'cb_storage_tables' => 26,
-    'cb_estimated_rows' => 27,
-    'cb_estimated_size' => 28,
+    'invalid_datetime_sort' => 14,
+    'invalid_datetime_sort_rows' => 15,
+    'plugin_duplicates' => 16,
+    'plugin_duplicate_rows' => 17,
+    'bf_field_sync' => 18,
+    'bf_field_sync_missing' => 19,
+    'bf_field_sync_orphan' => 20,
+    'menu_view_consistency' => 21,
+    'frontend_permission_consistency' => 22,
+    'element_reference_consistency' => 23,
+    'cb_table_stats' => 24,
+    'cb_tables_total' => 25,
+    'cb_ng_tables_expected' => 26,
+    'cb_ng_tables_missing' => 27,
+    'cb_storage_tables' => 28,
+    'cb_estimated_rows' => 29,
+    'cb_estimated_size' => 30,
 ];
 $getAuditSectionNumber = static function (string $sectionId) use ($auditSectionNumbers): int {
     return (int) ($auditSectionNumbers[$sectionId] ?? 0);
@@ -1112,6 +1127,16 @@ $renderNumberedAuditTitle = static function (string $sectionId, string $label, b
                         <th scope="row"><?php echo $renderAuditSummaryLink('form_audit_columns', Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_MISSING_FORM_AUDIT_COLUMNS_TOTAL')); ?></th>
                         <td><?php echo $missingFormAuditColumnsTotal; ?></td>
                     </tr>
+                    <tr class="<?php echo $hasInvalidDatetimeSortIssues ? 'table-warning' : ''; ?>">
+                        <td class="text-muted text-end pe-2"><?php echo $auditSummaryRowNumber('invalid_datetime_sort'); ?></td>
+                        <th scope="row"><?php echo $renderAuditSummaryLink('invalid_datetime_sort', Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_INVALID_DATETIME_SORT')); ?></th>
+                        <td><?php echo $invalidDatetimeSortIssueCount; ?></td>
+                    </tr>
+                    <tr class="<?php echo $hasInvalidDatetimeSortIssues ? 'table-warning' : ''; ?>">
+                        <td class="text-muted text-end pe-2"><?php echo $auditSummaryRowNumber('invalid_datetime_sort_rows'); ?></td>
+                        <th scope="row"><?php echo $renderAuditSummaryLink('invalid_datetime_sort', Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_INVALID_DATETIME_SORT_ROWS')); ?></th>
+                        <td><?php echo $invalidDatetimeSortRowCount; ?></td>
+                    </tr>
                     <tr class="<?php echo $hasPluginDuplicateIssues ? 'table-warning' : ''; ?>">
                         <td class="text-muted text-end pe-2"><?php echo $auditSummaryRowNumber('plugin_duplicates'); ?></td>
                         <th scope="row"><?php echo $renderAuditSummaryLink('plugin_duplicates', Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_PLUGIN_DUPLICATE_GROUPS')); ?></th>
@@ -1433,6 +1458,64 @@ $renderNumberedAuditTitle = static function (string $sectionId, string $label, b
                                     <td><?php echo $missingFormAuditColumnRowNumber++; ?></td>
                                     <td><?php echo htmlspecialchars((string) ($missingFormAuditColumn['table'] ?? '#__contentbuilderng_forms'), ENT_QUOTES, 'UTF-8'); ?></td>
                                     <td><?php echo htmlspecialchars(implode(', ', $missingColumns), ENT_QUOTES, 'UTF-8'); ?></td>
+                                </tr>
+                            <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                <?php endif; ?>
+            </div>
+
+            <div id="<?php echo htmlspecialchars($getAuditSectionHeadingId('invalid_datetime_sort'), ENT_QUOTES, 'UTF-8'); ?>" class="cb-audit-section-block" style="order: 13;">
+                <h4 class="h6 mt-3<?php echo $hasInvalidDatetimeSortIssues ? ' text-warning' : ''; ?>"><?php echo $renderNumberedAuditTitle('invalid_datetime_sort', Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_INVALID_DATETIME_SORT'), $hasInvalidDatetimeSortIssues); ?></h4>
+                <?php if (empty($invalidDatetimeSortIssues)) : ?>
+                    <div class="alert cb-audit-ok-alert">
+                        <span class="cb-audit-section-title">
+                            <span class="cb-audit-ok-check icon-check-circle" aria-hidden="true"></span>
+                            <span><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_INVALID_DATETIME_SORT_OK'); ?></span>
+                        </span>
+                    </div>
+                <?php else : ?>
+                    <div class="table-responsive">
+                        <table id="cb-audit-invalid-datetime-sort-table" class="table table-sm table-striped align-middle">
+                            <thead>
+                            <tr>
+                                <th scope="col"><?php echo $auditRowNumberLabel; ?></th>
+                                <th scope="col"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_FORM'); ?></th>
+                                <th scope="col"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_STORAGE'); ?></th>
+                                <th scope="col"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_TABLE'); ?></th>
+                                <th scope="col"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_ELEMENT'); ?></th>
+                                <th scope="col"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_COLUMN'); ?></th>
+                                <th scope="col"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_COUNT'); ?></th>
+                                <th scope="col"><?php echo Text::_('COM_CONTENTBUILDERNG_ABOUT_AUDIT_SAMPLE_VALUES'); ?></th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <?php $invalidDatetimeSortRowNumber = 1; ?>
+                            <?php foreach ($invalidDatetimeSortIssues as $invalidDatetimeSortIssue) : ?>
+                                <?php
+                                $sampleValues = array_values(array_filter(array_map(
+                                    static fn($value): string => trim((string) $value),
+                                    (array) ($invalidDatetimeSortIssue['sample_values'] ?? [])
+                                )));
+                                $formLabel = trim((string) ($invalidDatetimeSortIssue['form_name'] ?? ''));
+                                if ($formLabel === '') {
+                                    $formLabel = '#' . (int) ($invalidDatetimeSortIssue['form_id'] ?? 0);
+                                }
+                                $elementLabel = trim((string) ($invalidDatetimeSortIssue['element_label'] ?? ''));
+                                if ($elementLabel === '') {
+                                    $elementLabel = '#' . (int) ($invalidDatetimeSortIssue['element_id'] ?? 0);
+                                }
+                                ?>
+                                <tr>
+                                    <td><?php echo $invalidDatetimeSortRowNumber++; ?></td>
+                                    <td><?php echo htmlspecialchars($formLabel, ENT_QUOTES, 'UTF-8'); ?></td>
+                                    <td><?php echo htmlspecialchars((string) ($invalidDatetimeSortIssue['storage_name'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></td>
+                                    <td><?php echo htmlspecialchars((string) ($invalidDatetimeSortIssue['table'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></td>
+                                    <td><?php echo htmlspecialchars($elementLabel, ENT_QUOTES, 'UTF-8'); ?></td>
+                                    <td><?php echo htmlspecialchars((string) ($invalidDatetimeSortIssue['column'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></td>
+                                    <td><?php echo (int) ($invalidDatetimeSortIssue['invalid_count'] ?? 0); ?></td>
+                                    <td><?php echo htmlspecialchars($sampleValues === [] ? '-' : implode(', ', $sampleValues), ENT_QUOTES, 'UTF-8'); ?></td>
                                 </tr>
                             <?php endforeach; ?>
                             </tbody>

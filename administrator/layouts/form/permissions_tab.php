@@ -58,6 +58,8 @@ $frontendTabLabel = '<span class="editlinktip hasTip" title="' . htmlspecialchar
     . '<span class="fa-solid fa-globe me-1" aria-hidden="true"></span>'
     . htmlspecialchars(Text::_('COM_CONTENTBUILDERNG_DISPLAY_FRONTEND'), ENT_QUOTES, 'UTF-8')
     . '</span>';
+$usersTabLabel = '<span class="fa-solid fa-user me-1" aria-hidden="true"></span>'
+    . htmlspecialchars(Text::_('COM_CONTENTBUILDERNG_EMAIL_USERS'), ENT_QUOTES, 'UTF-8');
 $groupHeaderLabel = '<span class="editlinktip hasTip" title="' . htmlspecialchars(Text::_('COM_CONTENTBUILDERNG_PERM_GROUP_TIP'), ENT_QUOTES, 'UTF-8') . '">'
     . '<span class="fa-solid fa-users me-1" aria-hidden="true"></span>'
     . htmlspecialchars(Text::_('COM_CONTENTBUILDERNG_PERM_GROUP'), ENT_QUOTES, 'UTF-8')
@@ -70,7 +72,11 @@ echo HTMLHelper::_('uitab.addTab', 'perm-pane', 'permtab1', $frontendTabLabel);
     <section id="cb-form-permissions-frontend" class="cb-perm-users-card">
         <div class="cb-perm-users-fields">
             <div class="cb-perm-users-field cb-perm-users-field-wide">
-                <?php echo $permOptionLabel('own_only_fe', 'JOPTIONS'); ?>
+                <label class="form-label mb-2" for="own_only_fe">
+                    <span class="editlinktip hasTip" title="<?php echo htmlspecialchars(Text::_('COM_CONTENTBUILDERNG_PERM_FRONTEND_OPTIONS_TIP'), ENT_QUOTES, 'UTF-8'); ?>">
+                        <?php echo Text::_('JOPTIONS'); ?>
+                    </span>
+                </label>
                 <div class="d-flex flex-nowrap align-items-center gap-4">
                     <div class="cb-perm-verify-toggle">
                         <input type="hidden" name="jform[own_only_fe]" value="0" />
@@ -254,7 +260,7 @@ echo HTMLHelper::_('uitab.addTab', 'perm-pane', 'permtab1', $frontendTabLabel);
 </div>
 <?php
 echo HTMLHelper::_('uitab.endTab');
-echo HTMLHelper::_('uitab.addTab', 'perm-pane', 'permtab2', Text::_('COM_CONTENTBUILDERNG_EMAIL_USERS'));
+echo HTMLHelper::_('uitab.addTab', 'perm-pane', 'permtab2', $usersTabLabel);
 ?>
 <div class="cb-perm-users-grid">
     <section id="cb-form-permissions-users" class="cb-perm-users-card">

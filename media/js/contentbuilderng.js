@@ -50,3 +50,6 @@ function cbRate(url, lastId){
         _.X(url,cbRetrieveRatingResults);
     }
 }
+
+window.cbRetrieveRatingResults = cbRetrieveRatingResults;
+window.cbRate = cbRate;

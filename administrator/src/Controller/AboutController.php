@@ -2709,6 +2709,7 @@ final class AboutController extends BaseController
         $menuViewIssues = (array) ($report['menu_view_issues'] ?? []);
         $frontendPermissionIssues = (array) ($report['frontend_permission_issues'] ?? []);
         $elementReferenceIssues = (array) ($report['element_reference_issues'] ?? []);
+        $invalidDatetimeSortIssues = (array) ($report['invalid_datetime_sort_issues'] ?? []);
         $summaryLines = [
             'scanned_tables: ' . (int) ($report['scanned_tables'] ?? 0),
             'issues_total: ' . (int) ($summary['issues_total'] ?? 0),
@@ -2726,6 +2727,8 @@ final class AboutController extends BaseController
             'menu_view_issues: ' . (int) ($summary['menu_view_issues'] ?? 0),
             'frontend_permission_issues: ' . (int) ($summary['frontend_permission_issues'] ?? 0),
             'element_reference_issues: ' . (int) ($summary['element_reference_issues'] ?? 0),
+            'invalid_datetime_sort_issues: ' . (int) ($summary['invalid_datetime_sort_issues'] ?? 0),
+            'invalid_datetime_sort_rows: ' . (int) ($summary['invalid_datetime_sort_rows'] ?? 0),
         ];
 
         $this->logStructuredReport(
@@ -2835,6 +2838,24 @@ final class AboutController extends BaseController
                 (int) ($issue['storage_id'] ?? 0),
                 (string) ($issue['storage_name'] ?? ''),
                 implode(', ', array_values((array) ($issue['missing'] ?? [])))
+            );
+        });
+
+        $this->logStructuredSection('Database audit invalid DATETIME sort casts', $invalidDatetimeSortIssues, static function (array $issue, int $index): ?string {
+            $formId = (int) ($issue['form_id'] ?? 0);
+            if ($formId <= 0) {
+                return null;
+            }
+
+            return sprintf(
+                '%d. form_id=%d form_name=%s storage_id=%d table=%s column=%s invalid_count=%d',
+                $index + 1,
+                $formId,
+                (string) ($issue['form_name'] ?? ''),
+                (int) ($issue['storage_id'] ?? 0),
+                (string) ($issue['table'] ?? ''),
+                (string) ($issue['column'] ?? ''),
+                (int) ($issue['invalid_count'] ?? 0)
             );
         });
 

@@ -41,6 +41,16 @@ class HtmlView extends BaseHtmlView
     public int $show_back_button = 1;
     public int $cb_filter_in_title = 0;
     public int $cb_prefix_in_title = 0;
+    public int $list_state = 0;
+    public array $states = [];
+    public array $state_ids = [];
+    public array $state_titles = [];
+    public array $state_colors = [];
+    public int $list_rating = 0;
+    public int $rating_slots = 0;
+    public float $rating = 0.0;
+    public int $rating_count = 0;
+    public int $rating_sum = 0;
 
     private function resolveSiblingRecordIdsByRecordId(object $subject, int $currentRecordId): array
     {
@@ -468,6 +478,16 @@ CSS;
 		$this->cb_filter_in_title = (int) ($subject->cb_filter_in_title ?? 0);
 		$this->cb_prefix_in_title = (int) ($subject->cb_prefix_in_title ?? 0);
 		$this->show_id_column = (int) ($subject->show_id_column ?? 0);
+		$this->list_state = (int) ($subject->list_state ?? 0);
+		$this->states = (array) ($subject->states ?? []);
+		$this->state_ids = (array) ($subject->state_ids ?? []);
+		$this->state_titles = (array) ($subject->state_titles ?? []);
+		$this->state_colors = (array) ($subject->state_colors ?? []);
+		$this->list_rating = (int) ($subject->list_rating ?? 0);
+		$this->rating_slots = (int) ($subject->rating_slots ?? 0);
+		$this->rating = (float) ($subject->rating ?? 0);
+		$this->rating_count = (int) ($subject->rating_count ?? 0);
+		$this->rating_sum = (int) ($subject->rating_sum ?? 0);
 		$this->direct_storage_mode = (int) ($subject->direct_storage_mode ?? 0);
 		$this->direct_storage_id = (int) ($subject->direct_storage_id ?? 0);
 		$this->direct_storage_unpublished = (int) ($subject->direct_storage_unpublished ?? 0);

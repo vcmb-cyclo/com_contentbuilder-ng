@@ -18,6 +18,9 @@ $listStatesActionPlugins = is_array($displayData['listStatesActionPlugins'] ?? n
 $listStates = is_array($item->list_states ?? null) ? $item->list_states : [];
 ?>
 <h3 id="cb-form-list-states" class="mb-3"><?php echo Text::_('COM_CONTENTBUILDERNG_LIST_STATES'); ?></h3>
+<p class="text-muted mb-3">
+    <?php echo Text::_('COM_CONTENTBUILDERNG_LIST_STATES_INTRO'); ?>
+</p>
 <table id="cb-form-list-states-table" class="table table-striped">
     <thead>
         <tr>

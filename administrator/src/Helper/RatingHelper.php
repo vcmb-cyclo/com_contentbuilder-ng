@@ -14,6 +14,7 @@ namespace CB\Component\Contentbuilderng\Administrator\Helper;
 
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
+use Joomla\CMS\Session\Session;
 use Joomla\CMS\Uri\Uri;
 
 final class RatingHelper
@@ -21,10 +22,12 @@ final class RatingHelper
     public static function getRating($form_id, $record_id, $colRating, $rating_slots, $lang, $rating_allowed, $rating_count, $rating_sum)
     {
         static $cssLoaded;
+        static $scriptRendered;
         /** @var \Joomla\CMS\Application\CMSWebApplicationInterface $app */
         $app = Factory::getApplication();
 
         if (!$cssLoaded) {
+            $mediaRoot = Uri::root(true) . '/media/com_contentbuilderng/images';
             $app->getDocument()->getWebAssetManager()->addInlineStyle('.cbVotingDisplay, .cbVotingStarButtonWrapper {
 	height: 20px;
 	width: 100px;
@@ -32,13 +35,17 @@ final class RatingHelper
 
 .cbVotingStarButtonWrapper {
 	position: absolute;
-	z-index: 100;	
+	z-index: 100;
+	top: 0;
+	left: 0;
 }
 
 .cbVotingDisplay {
-	background-image: url(' . Uri::root(true) . '/components/com_contentbuilderng/assets/images/bg_votingStarOff.png);
+	position: relative;
+	background-image: url(' . $mediaRoot . '/bg_votingStarOff.png);
 	background-repeat: repeat-x;
-        height: auto;
+        min-height: 20px;
+        display: inline-block;
 }
 
 .cbVotingStars {
@@ -46,7 +53,7 @@ final class RatingHelper
 	float: left;
 	height: 20px;
 	overflow: hidden;
-	background-image: url(' . Uri::root(true) . '/components/com_contentbuilderng/assets/images/bg_votingStarOn.png);
+	background-image: url(' . $mediaRoot . '/bg_votingStarOn.png);
 	background-repeat: repeat-x;
 }
 
@@ -67,14 +74,14 @@ final class RatingHelper
 .cbRatingImage2{
     width: 30px;
     height: 30px;
-    background-image: url(' . Uri::root(true) . '/components/com_contentbuilderng/assets/images/thumbs_down.png);
+    background-image: url(' . $mediaRoot . '/thumbs_down.png);
     background-repeat: no-repeat;
 }
 
 .cbRatingImage{ 
     width: 30px;
     height: 30px;
-    background-image: url(' . Uri::root(true) . '/components/com_contentbuilderng/assets/images/thumbs_up.png);
+    background-image: url(' . $mediaRoot . '/thumbs_up.png);
     background-repeat: no-repeat;
 }');
 
@@ -82,6 +89,79 @@ final class RatingHelper
         }
 
         ob_start();
+        if ($rating_allowed && !$scriptRendered) {
+            $scriptRendered = true;
+            $csrfToken = Session::getFormToken();
+            ?>
+            <script>
+            (function(){
+                var cbLastId = null;
+                function cbFadeOut(el){
+                    if(!el){return;}
+                    window.setTimeout(function(){ el.style.display = "none"; }, 1800);
+                }
+                function cbRetrieveRatingResults(payload, lastId){
+                    var result = payload;
+                    if(result && typeof result.success !== "undefined"){
+                        result = result.success ? (result.data || {}) : {code:1,msg:result.message || ""};
+                    }
+                    var box = document.getElementById(lastId);
+                    if(!box || !result){
+                        cbLastId = null;
+                        return;
+                    }
+                    box.style.display = "block";
+                    box.textContent = result.msg || "";
+                    if(result.code === 0){
+                        var counter = document.getElementById(lastId + "Counter");
+                        if(counter && !isNaN(Number(counter.textContent))){
+                            counter.textContent = String(Number(counter.textContent) + 1);
+                        }
+                    }
+                    cbFadeOut(box);
+                    cbLastId = null;
+                }
+                window.cbRetrieveRatingResults = cbRetrieveRatingResults;
+                window.cbRate = function(url, lastId){
+                    if(cbLastId !== null){
+                        return false;
+                    }
+                    cbLastId = lastId;
+                    var tokenParam = <?php echo json_encode($csrfToken . '=1'); ?>;
+                    var separator = url.indexOf("?") === -1 ? "?" : "&";
+                    var requestUrl = url + separator + tokenParam;
+                    fetch(requestUrl, {
+                        method: "POST",
+                        credentials: "same-origin",
+                        headers: {
+                            "X-Requested-With": "XMLHttpRequest",
+                            "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8"
+                        },
+                        body: tokenParam
+                    })
+                    .then(function(response){
+                        return response.text().then(function(text){
+                            var payload = null;
+                            try {
+                                payload = JSON.parse(text);
+                            } catch (error) {
+                                payload = {success:false,message:text || "Rating error"};
+                            }
+                            if(!response.ok){
+                                throw payload;
+                            }
+                            cbRetrieveRatingResults(payload, lastId);
+                        });
+                    })
+                    .catch(function(error){
+                        cbRetrieveRatingResults(error && typeof error === "object" ? error : {success:false,message:"Rating error"}, lastId);
+                    });
+                    return false;
+                };
+            })();
+            </script>
+            <?php
+        }
         if ($rating_count) {
             $percentage2 = round(($colRating / 5) * 100, 2);
             $percentage3 = 100 - $percentage2;

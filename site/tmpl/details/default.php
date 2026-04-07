@@ -18,6 +18,7 @@ use Joomla\CMS\Layout\LayoutHelper;
 use Joomla\CMS\Router\Route;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Uri\Uri;
+use CB\Component\Contentbuilderng\Administrator\Helper\RatingHelper;
 use CB\Component\Contentbuilderng\Administrator\Service\PermissionService;
 use CB\Component\Contentbuilderng\Site\Helper\NavigationLinkHelper;
 use CB\Component\Contentbuilderng\Site\Helper\MenuParamHelper;
@@ -25,9 +26,26 @@ use CB\Component\Contentbuilderng\Site\Helper\PreviewLinkHelper;
 
 $frontend = Factory::getApplication()->isClient('site');
 $permissionService = new PermissionService();
+$getStateBadgeStyle = static function ($recordId, array $stateColors): string {
+    $color = strtoupper(trim((string) ($stateColors[$recordId] ?? '')));
+    $color = ltrim($color, '#');
+
+    if ($color === '' || !preg_match('/^[0-9A-F]{6}$/', $color)) {
+        return '';
+    }
+
+    $r = hexdec(substr($color, 0, 2));
+    $g = hexdec(substr($color, 2, 2));
+    $b = hexdec(substr($color, 4, 2));
+    $brightness = (($r * 299) + ($g * 587) + ($b * 114)) / 1000;
+    $textColor = $brightness >= 150 ? '#16324F' : '#FFFFFF';
+
+    return 'background-color:#' . $color . ';color:' . $textColor . ';';
+};
 
 $edit_allowed = $frontend ? $permissionService->authorizeFe('edit') : $permissionService->authorize('edit');
 $delete_allowed = $frontend ? $permissionService->authorizeFe('delete') : $permissionService->authorize('delete');
+$rating_allowed = $frontend ? $permissionService->authorizeFe('rating') : $permissionService->authorize('rating');
 $view_allowed = $frontend ? $permissionService->authorizeFe('view') : $permissionService->authorize('view');
 $input = Factory::getApplication()->input;
 $runtimeApp = Factory::getApplication();
@@ -75,6 +93,11 @@ if ($previewActorLabel === '' && $previewActorId > 0) {
 $showPreviewSessionBadge = $isAdminPreview && $currentSessionLabel !== '' && $currentSessionLabel !== $previewActorLabel;
 $showTopBar = $detailsTopBarToggle === 1;
 $directStorageUnpublished = !empty($this->direct_storage_unpublished);
+$recordId = (string) $input->getCmd('record_id', 0);
+$showStateDisplay = (int) ($this->list_state ?? 0) === 1 && $recordId !== '' && $recordId !== '0';
+$showRatingDisplay = (int) ($this->list_rating ?? 0) === 1 && (int) ($this->rating_slots ?? 0) > 0 && $recordId !== '' && $recordId !== '0';
+$currentStateTitle = trim((string) (($this->state_titles ?? [])[$recordId] ?? ''));
+$currentStateBadgeStyle = $getStateBadgeStyle($recordId, (array) ($this->state_colors ?? []));
 $adminReturnContext = trim((string) $input->getCmd('cb_admin_return', ''));
 $adminReturnUrl = Uri::root() . 'administrator/index.php?option=com_contentbuilderng&task=form.edit&id=' . (int) $input->getInt('id', 0);
 if ($directStorageMode && $directStorageId > 0) {
@@ -476,6 +499,24 @@ CSS
     <div class="cbDetailsBody">
         <?php echo $this->event->beforeDisplayContent; ?>
         <?php echo $this->toc ?>
+        <?php if ($showStateDisplay) : ?>
+            <div class="cbDetailState mb-3">
+                <div class="form-label fw-semibold mb-1"><?php echo Text::_('COM_CONTENTBUILDERNG_EDIT_STATE'); ?></div>
+                <?php if ($currentStateTitle !== '') : ?>
+                    <span class="badge rounded-pill" style="<?php echo htmlspecialchars($currentStateBadgeStyle, ENT_QUOTES, 'UTF-8'); ?>">
+                        <?php echo htmlspecialchars($currentStateTitle, ENT_QUOTES, 'UTF-8'); ?>
+                    </span>
+                <?php else : ?>
+                    <span class="text-muted"><?php echo Text::_('COM_CONTENTBUILDERNG_NOT_AVAILABLE'); ?></span>
+                <?php endif; ?>
+            </div>
+        <?php endif; ?>
+        <?php if ($showRatingDisplay) : ?>
+            <div class="cbDetailRating mb-3">
+                <div class="form-label fw-semibold mb-1"><?php echo Text::_('COM_CONTENTBUILDERNG_PERM_RATING'); ?></div>
+                <?php echo RatingHelper::getRating((int) $input->getInt('id', 0), (int) $recordId, (float) ($this->rating ?? 0), (int) ($this->rating_slots ?? 0), $input->getCmd('lang', ''), $rating_allowed, (int) ($this->rating_count ?? 0), (int) ($this->rating_sum ?? 0)); ?>
+            </div>
+        <?php endif; ?>
         <?php echo $this->tpl ?>
         <?php echo $this->event->afterDisplayContent; ?>
     </div>

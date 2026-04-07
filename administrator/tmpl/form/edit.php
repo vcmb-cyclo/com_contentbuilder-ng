@@ -2948,6 +2948,9 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
         <h3 id="cb-form-list-intro-text" class="mb-3">
             <?php echo Text::_('COM_CONTENTBUILDERNG_LIST_INTRO_MODE_TITLE'); ?>
         </h3>
+        <p class="text-muted mb-3">
+            <?php echo Text::_('COM_CONTENTBUILDERNG_LIST_INTRO_MODE_INTRO'); ?>
+        </p>
         <?php
         echo $this->form->renderField('intro_text');
         echo HTMLHelper::_('uitab.endTab');

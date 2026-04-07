@@ -15,6 +15,7 @@ class ListSupportService
 
         if ($recordIds === []) {
             return [
+                'state_ids' => [],
                 'state_colors' => [],
                 'state_titles' => [],
                 'published_items' => [],
@@ -25,6 +26,7 @@ class ListSupportService
         $db = Factory::getContainer()->get(DatabaseInterface::class);
         $quotedIds = array_map([$db, 'quote'], $recordIds);
         $meta = [
+            'state_ids' => [],
             'state_colors' => [],
             'state_titles' => [],
             'published_items' => [],
@@ -32,7 +34,7 @@ class ListSupportService
         ];
 
         $db->setQuery(
-            'Select states.color, states.title, records.record_id'
+            'Select states.id As state_id, states.color, states.title, records.record_id'
             . ' From #__contentbuilderng_list_records As records'
             . ' Inner Join #__contentbuilderng_list_states As states On states.id = records.state_id'
             . ' Where states.published = 1'
@@ -42,6 +44,7 @@ class ListSupportService
         );
 
         foreach ((array) $db->loadAssocList() as $row) {
+            $meta['state_ids'][$row['record_id']] = (int) $row['state_id'];
             $meta['state_colors'][$row['record_id']] = $row['color'];
             $meta['state_titles'][$row['record_id']] = $row['title'];
         }
@@ -144,6 +147,35 @@ class ListSupportService
         $out = [];
         foreach ((array) $db->loadAssocList() as $row) {
             $out[$row['record_id']] = $row['color'];
+        }
+
+        return $out;
+    }
+
+    public function getStateIds(array $items, int $formId): array
+    {
+        $recordIds = $this->collectRecordIds($items);
+
+        if ($recordIds === []) {
+            return [];
+        }
+
+        $db = Factory::getContainer()->get(DatabaseInterface::class);
+        $quotedIds = array_map([$db, 'quote'], $recordIds);
+
+        $db->setQuery(
+            'Select states.id As state_id, records.record_id'
+            . ' From #__contentbuilderng_list_states As states, #__contentbuilderng_list_records As records'
+            . ' Where states.published = 1'
+            . ' And states.id = records.state_id'
+            . ' And records.record_id In (' . implode(',', $quotedIds) . ')'
+            . ' And records.form_id = ' . (int) $formId
+            . ' And states.form_id = ' . (int) $formId
+        );
+
+        $out = [];
+        foreach ((array) $db->loadAssocList() as $row) {
+            $out[$row['record_id']] = (int) $row['state_id'];
         }
 
         return $out;

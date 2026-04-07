@@ -18,6 +18,7 @@ use Joomla\CMS\Layout\LayoutHelper;
 use Joomla\CMS\Router\Route;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Uri\Uri;
+use CB\Component\Contentbuilderng\Administrator\Helper\RatingHelper;
 use CB\Component\Contentbuilderng\Administrator\Service\PermissionService;
 use CB\Component\Contentbuilderng\Site\Helper\NavigationLinkHelper;
 use CB\Component\Contentbuilderng\Site\Helper\MenuParamHelper;
@@ -30,9 +31,27 @@ $permissionService = new PermissionService();
 $new_allowed = $frontend ? $permissionService->authorizeFe('new') : $permissionService->authorize('new');
 $edit_allowed = $frontend ? $permissionService->authorizeFe('edit') : $permissionService->authorize('edit');
 $delete_allowed = $frontend ? $permissionService->authorizeFe('delete') : $permissionService->authorize('delete');
+$state_allowed = $frontend ? $permissionService->authorizeFe('state') : $permissionService->authorize('state');
+$rating_allowed = $frontend ? $permissionService->authorizeFe('rating') : $permissionService->authorize('rating');
 $view_allowed = $frontend ? $permissionService->authorizeFe('view') : $permissionService->authorize('view');
 $fullarticle_allowed = $frontend ? $permissionService->authorizeFe('fullarticle') : $permissionService->authorize('fullarticle');
 $isAdminPreview = $app->input->getBool('cb_preview_ok', false);
+$getStateBadgeStyle = static function ($recordId, array $stateColors): string {
+    $color = strtoupper(trim((string) ($stateColors[$recordId] ?? '')));
+    $color = ltrim($color, '#');
+
+    if ($color === '' || !preg_match('/^[0-9A-F]{6}$/', $color)) {
+        return '';
+    }
+
+    $r = hexdec(substr($color, 0, 2));
+    $g = hexdec(substr($color, 2, 2));
+    $b = hexdec(substr($color, 4, 2));
+    $brightness = (($r * 299) + ($g * 587) + ($b * 114)) / 1000;
+    $textColor = $brightness >= 150 ? '#16324F' : '#FFFFFF';
+
+    return 'background-color:#' . $color . ';color:' . $textColor . ';';
+};
 
 $input = $app->input;
 $safeReturn = NavigationLinkHelper::encodeInternalReturn((string) $input->getString('return', ''));
@@ -163,6 +182,12 @@ $hasRecord = !in_array((string) $recordId, ['', '0'], true);
 $currentRecordLabel = trim((string) $recordId);
 $showCurrentRecordLabel = !in_array($currentRecordLabel, ['', '0'], true);
 $showCurrentRecordLabel = $showCurrentRecordLabel && (int) ($this->show_id_column ?? 0) === 1;
+$stateOptions = (array) ($this->states ?? []);
+$currentStateId = (int) (($this->state_ids ?? [])[$recordId] ?? 0);
+$currentStateTitle = trim((string) (($this->state_titles ?? [])[$recordId] ?? ''));
+$currentStateBadgeStyle = $getStateBadgeStyle((string) $recordId, (array) ($this->state_colors ?? []));
+$showStateControl = (int) ($this->list_state ?? 0) === 1 && count($stateOptions) > 0 && $hasRecord;
+$showRatingControl = (int) ($this->list_rating ?? 0) === 1 && (int) ($this->rating_slots ?? 0) > 0 && $hasRecord;
 $backHref = ($backToList || !$hasRecord) ? $listHref : $detailsHref;
 $showBack = $this->back_button && !$hasReturn;
 $prevRecordId = property_exists($this, 'prev_record_id') ? (int) $this->prev_record_id : 0;
@@ -265,6 +290,69 @@ if ($showAuditTrail && ($createdTrailText !== '' || $modifiedTrailText !== '')) 
     $auditTrailHtml = ob_get_clean();
 }
 
+$stateControlHtml = '';
+if ($showStateControl) {
+    ob_start();
+    ?>
+    <div class="cbEditStateControl mb-3">
+        <label class="form-label fw-semibold" for="cb-edit-state-select-<?php echo (int) $this->id; ?>">
+            <?php echo Text::_('COM_CONTENTBUILDERNG_EDIT_STATE'); ?>
+        </label>
+        <?php if ($state_allowed) : ?>
+            <div class="cbEditStateControlRow">
+                <select
+                    id="cb-edit-state-select-<?php echo (int) $this->id; ?>"
+                    class="form-select"
+                    name="list_state"
+                    data-record-id="<?php echo (int) $recordId; ?>"
+                    data-original-value="<?php echo (int) $currentStateId; ?>"
+                    onchange="contentbuilderng_edit_state_single(this);">
+                    <option value="0"></option>
+                    <?php foreach ($stateOptions as $state) : ?>
+                        <option
+                            value="<?php echo (int) ($state['id'] ?? 0); ?>"
+                            data-state-title="<?php echo htmlspecialchars((string) ($state['title'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>"
+                            data-state-color="<?php echo htmlspecialchars((string) ($state['color'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>"
+                            <?php echo (int) ($state['id'] ?? 0) === $currentStateId ? ' selected="selected"' : ''; ?>>
+                            <?php echo htmlspecialchars((string) ($state['title'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+                <span
+                    id="cb-edit-state-badge-<?php echo (int) $this->id; ?>"
+                    class="badge rounded-pill cbEditStateBadge"
+                    style="<?php echo htmlspecialchars($currentStateBadgeStyle, ENT_QUOTES, 'UTF-8'); ?>">
+                    <?php echo htmlspecialchars($currentStateTitle, ENT_QUOTES, 'UTF-8'); ?>
+                </span>
+            </div>
+        <?php else : ?>
+            <div class="pt-1">
+                <?php if ($currentStateTitle !== '') : ?>
+                    <span class="badge rounded-pill" style="<?php echo htmlspecialchars($currentStateBadgeStyle, ENT_QUOTES, 'UTF-8'); ?>">
+                        <?php echo htmlspecialchars($currentStateTitle, ENT_QUOTES, 'UTF-8'); ?>
+                    </span>
+                <?php else : ?>
+                    <span class="text-muted"><?php echo Text::_('COM_CONTENTBUILDERNG_NOT_AVAILABLE'); ?></span>
+                <?php endif; ?>
+            </div>
+        <?php endif; ?>
+    </div>
+    <?php
+    $stateControlHtml = ob_get_clean();
+}
+
+$ratingControlHtml = '';
+if ($showRatingControl) {
+    ob_start();
+    ?>
+    <div class="cbEditRatingControl mb-3">
+        <div class="form-label fw-semibold"><?php echo Text::_('COM_CONTENTBUILDERNG_PERM_RATING'); ?></div>
+        <?php echo RatingHelper::getRating($id, (int) $recordId, (float) ($this->rating ?? 0), (int) ($this->rating_slots ?? 0), $input->getCmd('lang', ''), $rating_allowed, (int) ($this->rating_count ?? 0), (int) ($this->rating_sum ?? 0)); ?>
+    </div>
+    <?php
+    $ratingControlHtml = ob_get_clean();
+}
+
 if ($showColumnHeader) {
     $columnHeaderHtml = '<div class="cbColumnHeader d-none d-md-grid" aria-hidden="true">'
         . '<div class="cbColumnHeaderLabel">' . Text::_('COM_CONTENTBUILDERNG_COLUMN_HEADER_FIELD') . '</div>'
@@ -306,6 +394,20 @@ $wa->addInlineStyle(
     background:rgba(255,255,255,.62);
     outline:none;
 }
+.cbEditStateControlRow{
+    display:flex;
+    flex-wrap:wrap;
+    align-items:center;
+    gap:.75rem;
+}
+.cbEditStateControlRow .form-select{
+    width:auto;
+    min-width:14rem;
+    max-width:22rem;
+}
+.cbEditStateBadge:empty{
+    display:none;
+}
 @media (prefers-color-scheme: dark){
     .cb-preview-config-help{
         color:#f5d38f;
@@ -315,6 +417,15 @@ $wa->addInlineStyle(
     .cb-preview-config-help:focus{
         color:#ffe8b3;
         background:rgba(255,255,255,.14);
+    }
+}
+@media (max-width:575.98px){
+    .cbEditStateControlRow{
+        align-items:stretch;
+    }
+    .cbEditStateControlRow .form-select{
+        width:100%;
+        max-width:none;
     }
 }
 CSS
@@ -567,6 +678,82 @@ CSS
         document.addEventListener("DOMContentLoaded", cbAttachEditNavigationWarning);
     } else {
         cbAttachEditNavigationWarning();
+    }
+
+    function contentbuilderng_edit_state_single(select) {
+        var form = document.getElementById("adminForm");
+        if (!form || !select) {
+            return;
+        }
+
+        var recordId = String(select.getAttribute("data-record-id") || "");
+        if (recordId === "" || recordId === "0") {
+            return;
+        }
+
+        var formData = new FormData(form);
+        formData.set("task", "edit.state");
+        formData.set("cb_ajax", "1");
+        formData.set("list_state", String(select.value || "0"));
+        formData.delete("cid[]");
+        formData.append("cid[]", recordId);
+        formData.set("boxchecked", "1");
+
+        var originalValue = String(select.getAttribute("data-original-value") || "");
+        var badge = document.getElementById("cb-edit-state-badge-<?php echo (int) $this->id; ?>");
+        select.disabled = true;
+
+        fetch(form.getAttribute("action") || window.location.href, {
+            method: "POST",
+            body: formData,
+            credentials: "same-origin",
+            headers: {
+                "X-Requested-With": "XMLHttpRequest"
+            }
+        })
+            .then(function(response) {
+                return response.text().then(function(text) {
+                    var payload = null;
+
+                    try {
+                        payload = JSON.parse(text);
+                    } catch (error) {
+                        payload = null;
+                    }
+
+                    if (!response.ok || !payload || payload.success !== true) {
+                        throw new Error(payload && payload.message ? payload.message : <?php echo json_encode(Text::_('COM_CONTENTBUILDERNG_ERROR')); ?>);
+                    }
+
+                    select.setAttribute("data-original-value", String(select.value || "0"));
+                    if (badge) {
+                        var selectedOption = select.options[select.selectedIndex] || null;
+                        var stateTitle = selectedOption ? String(selectedOption.getAttribute("data-state-title") || "") : "";
+                        var stateColor = selectedOption ? String(selectedOption.getAttribute("data-state-color") || "") : "";
+                        badge.textContent = stateTitle;
+                        badge.style.cssText = "";
+
+                        if (/^[0-9a-f]{6}$/i.test(stateColor)) {
+                            var color = stateColor.replace(/^#/, "");
+                            var r = parseInt(color.substring(0, 2), 16);
+                            var g = parseInt(color.substring(2, 4), 16);
+                            var b = parseInt(color.substring(4, 6), 16);
+                            var brightness = ((r * 299) + (g * 587) + (b * 114)) / 1000;
+                            var textColor = brightness >= 150 ? "#16324F" : "#FFFFFF";
+                            badge.style.backgroundColor = "#" + color;
+                            badge.style.color = textColor;
+                        }
+                    }
+                    cbInitialEditFormState = cbCaptureEditFormState(form);
+                });
+            })
+            .catch(function(error) {
+                select.value = originalValue;
+                window.alert(error && error.message ? error.message : <?php echo json_encode(Text::_('COM_CONTENTBUILDERNG_ERROR')); ?>);
+            })
+            .finally(function() {
+                select.disabled = false;
+            });
     }
 </script>
 <div class="cbEditableWrapper" id="cbEditableWrapper<?php echo $this->id; ?>">
@@ -847,6 +1034,8 @@ CSS
             ?>
             <?php echo $this->event->beforeDisplayContent; ?>
             <?php echo $this->toc ?>
+            <?php echo $stateControlHtml; ?>
+            <?php echo $ratingControlHtml; ?>
             <div class="cbEditableBody">
                 <?php echo $columnHeaderHtml; ?>
                 <?php echo $this->tpl ?>
@@ -891,6 +1080,8 @@ CSS
             </form>
             <?php echo $this->event->beforeDisplayContent; ?>
             <?php echo $this->toc ?>
+            <?php echo $stateControlHtml; ?>
+            <?php echo $ratingControlHtml; ?>
             <div class="cbEditableBody">
                 <?php echo $columnHeaderHtml; ?>
                 <?php echo $this->tpl ?>
@@ -912,6 +1103,8 @@ CSS
             <form class="form-horizontal" name="adminForm" id="adminForm" onsubmit="return false;" action="<?php echo Route::_('index.php?option=com_contentbuilderng&task=edit.display' . (Factory::getApplication()->input->get('layout', '', 'string') != '' ? '&layout=' . Factory::getApplication()->input->get('layout', '', 'string') : '') . '&id=' . Factory::getApplication()->input->getInt('id', 0) . '&record_id=' . Factory::getApplication()->input->getCmd('record_id',  '') . (Factory::getApplication()->input->get('tmpl', '', 'string') != '' ? '&tmpl=' . Factory::getApplication()->input->get('tmpl', '', 'string') : '') . '&Itemid=' . Factory::getApplication()->input->getInt('Itemid', 0) . ($listQuery !== '' ? '&' . $listQuery : '')); ?>" method="post" enctype="multipart/form-data">
                 <?php echo $this->event->beforeDisplayContent; ?>
                 <?php echo $this->toc ?>
+                <?php echo $stateControlHtml; ?>
+                <?php echo $ratingControlHtml; ?>
                 <div class="cbEditableBody">
                     <?php echo $columnHeaderHtml; ?>
                     <?php echo $this->tpl ?>

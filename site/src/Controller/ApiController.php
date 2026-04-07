@@ -87,6 +87,12 @@ class ApiController extends BaseController
 
             (new PermissionService())->setPermissions($formId, $recordId, $this->frontend ? '_fe' : '');
             if (!$this->can('api')) {
+                $action = trim((string) $this->input->getCmd('action', ''));
+
+                if ($action === 'rating') {
+                    throw new \RuntimeException(Text::_('COM_CONTENTBUILDERNG_RATING_NOT_ALLOWED'), 403);
+                }
+
                 throw new \RuntimeException(Text::_('COM_CONTENTBUILDERNG_PERMISSIONS_API_NOT_ALLOWED'), 403);
             }
 
