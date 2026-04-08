@@ -523,7 +523,6 @@ final class SchemaService
         foreach ($storages as $storage) {
             $processed++;
             $storageId = (int) ($storage['id'] ?? 0);
-            $storageTitle = trim((string) ($storage['name'] ?? ''));
             $name = strtolower(trim((string) ($storage['name'] ?? '')));
 
             if ($storageId < 1 || $name === '' || !preg_match('/^[a-z0-9_]+$/', $name)) {
@@ -540,11 +539,7 @@ final class SchemaService
 
                 if (strpos($message, "doesn't exist") !== false || strpos($message, 'does not exist') !== false) {
                     $storageUrl = Route::_('index.php?option=com_contentbuilderng&view=storage&layout=edit&id=' . $storageId, false);
-                    $storageLabel = 'Storage ID ' . $storageId;
-                    if ($storageTitle !== '') {
-                        $storageLabel .= ', ' . $storageTitle;
-                    }
-                    $storageLink = '<a href="' . htmlspecialchars($storageUrl, ENT_QUOTES, 'UTF-8') . '">' . htmlspecialchars($storageLabel, ENT_QUOTES, 'UTF-8') . '</a>';
+                    $storageLink = '<a href="' . htmlspecialchars($storageUrl, ENT_QUOTES, 'UTF-8') . '">storage ' . $storageId . '</a>';
                     $this->log("[INFO] Data table {$tableAlias} ({$storageLink}) is missing; skipping.", Log::INFO);
                 } else {
                     $this->log("[WARNING] Could not inspect data table {$tableAlias} (storage {$storageId}): " . $e->getMessage(), Log::WARNING);
