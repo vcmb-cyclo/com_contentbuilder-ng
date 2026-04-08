@@ -589,6 +589,33 @@ $wa->addInlineStyle(
 	font-size:.78rem;
 	font-weight:600;
 }
+.cb-list-template-cards .cb-list-card-badge-select{
+	width:auto;
+	min-width:0;
+	max-width:100%;
+	appearance:none;
+	-webkit-appearance:none;
+	-moz-appearance:none;
+	padding-top:.28rem;
+	padding-bottom:.28rem;
+	padding-left:.55rem;
+	padding-right:1.85rem;
+	border-radius:999px;
+	border-color:transparent!important;
+	box-shadow:none!important;
+	background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='none' stroke='%23111827' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.8' d='m3.5 6 4.5 4.5L12.5 6'/%3E%3C/svg%3E")!important;
+	background-repeat:no-repeat!important;
+	background-position:right .55rem center!important;
+	background-size:14px 10px!important;
+	background-clip:padding-box!important;
+	font-size:.78rem;
+	font-weight:600;
+	line-height:1.2;
+}
+.cb-list-template-cards .cb-list-card-badge-select:focus{
+	border-color:transparent!important;
+	box-shadow:0 0 0 .18rem rgba(13,110,253,.14)!important;
+}
 .cb-list-template-cards .cb-list-card-body{
 	display:grid;
 	gap:.85rem;
@@ -1154,6 +1181,11 @@ CSS
 
 		stateSelects.forEach(function(select) {
 			select.value = stateId === '0' ? '' : stateId;
+			if (badgeStyle !== '') {
+				select.setAttribute('style', badgeStyle);
+			} else {
+				select.removeAttribute('style');
+			}
 		});
 
 		stateCells.forEach(function(stateCell) {
@@ -1987,13 +2019,42 @@ by this block. -->
 							<div class="cb-list-card-meta">
 								<span class="cb-list-card-badge">#<?php echo (int) $row->colRecord; ?></span>
 								<?php if ($this->list_state && ($hasStateControl || $hasStaticStateBadge)) : ?>
-									<span
-										class="cb-list-card-badge"
-										data-cb-state-badge
-										data-record-id="<?php echo (int) $row->colRecord; ?>"
-										<?php echo $stateBadgeStyle !== '' ? ' style="' . htmlspecialchars($stateBadgeStyle, ENT_QUOTES, 'UTF-8') . '"' : ''; ?>
-										<?php echo (isset($this->state_titles[$row->colRecord]) && $this->state_titles[$row->colRecord] !== '') ? '' : ' hidden'; ?>
-									><?php echo isset($this->state_titles[$row->colRecord]) ? htmlspecialchars($this->state_titles[$row->colRecord], ENT_QUOTES, 'UTF-8') : ''; ?></span>
+									<?php if ($hasStateControl && !$isTilesVariant) : ?>
+										<?php $currentStateTitle = $this->state_titles[$row->colRecord] ?? ''; ?>
+										<?php $currentStateId = ''; ?>
+										<?php foreach ($this->states as $state) : ?>
+											<?php if ($currentStateTitle === (string) $state['title']) { $currentStateId = (string) (int) $state['id']; break; } ?>
+										<?php endforeach; ?>
+										<select
+											class="form-select form-select-sm cb-list-card-badge-select"
+											onchange="contentbuilderng_state_single(this, this.value, <?php echo (int) $row->colRecord; ?>);"
+											title="<?php echo Text::_('COM_CONTENTBUILDERNG_EDIT_STATE'); ?>"
+											data-cb-state-select
+											data-record-id="<?php echo (int) $row->colRecord; ?>"
+											data-original-value="<?php echo htmlspecialchars($currentStateId, ENT_QUOTES, 'UTF-8'); ?>"
+											<?php echo $stateBadgeStyle !== '' ? ' style="' . htmlspecialchars($stateBadgeStyle, ENT_QUOTES, 'UTF-8') . '"' : ''; ?>
+										>
+											<option value="" data-state-title="" data-state-color="" <?php echo $currentStateTitle === '' ? 'selected' : ''; ?>>-</option>
+											<?php foreach ($this->states as $state) : ?>
+												<option
+													value="<?php echo (int) $state['id']; ?>"
+													data-state-title="<?php echo htmlspecialchars((string) $state['title'], ENT_QUOTES, 'UTF-8'); ?>"
+													data-state-color="<?php echo htmlspecialchars((string) ($state['color'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>"
+													<?php echo $currentStateTitle === $state['title'] ? 'selected' : ''; ?>
+												>
+													<?php echo htmlentities($state['title'], ENT_QUOTES, 'UTF-8'); ?>
+												</option>
+											<?php endforeach; ?>
+										</select>
+									<?php else : ?>
+										<span
+											class="cb-list-card-badge"
+											data-cb-state-badge
+											data-record-id="<?php echo (int) $row->colRecord; ?>"
+											<?php echo $stateBadgeStyle !== '' ? ' style="' . htmlspecialchars($stateBadgeStyle, ENT_QUOTES, 'UTF-8') . '"' : ''; ?>
+											<?php echo (isset($this->state_titles[$row->colRecord]) && $this->state_titles[$row->colRecord] !== '') ? '' : ' hidden'; ?>
+										><?php echo isset($this->state_titles[$row->colRecord]) ? htmlspecialchars($this->state_titles[$row->colRecord], ENT_QUOTES, 'UTF-8') : ''; ?></span>
+									<?php endif; ?>
 								<?php endif; ?>
 								<?php if ($this->list_language) : ?>
 									<span class="cb-list-card-badge"><?php echo htmlspecialchars((string) (isset($this->lang_codes[$row->colRecord]) && $this->lang_codes[$row->colRecord] ? $this->lang_codes[$row->colRecord] : '*'), ENT_QUOTES, 'UTF-8'); ?></span>
@@ -2060,31 +2121,9 @@ by this block. -->
 									<span></span>
 								<?php endif; ?>
 
-								<?php if ($this->list_state && !$isTilesVariant) : ?>
+								<?php if ($this->list_state && !$isTilesVariant && !$hasStateControl) : ?>
 									<div class="cb-list-card-state">
-										<?php if ($hasStateControl) : ?>
-											<?php $currentStateTitle = $this->state_titles[$row->colRecord] ?? ''; ?>
-											<select
-												class="form-select form-select-sm"
-												onchange="contentbuilderng_state_single(this, this.value, <?php echo (int) $row->colRecord; ?>);"
-												title="<?php echo Text::_('COM_CONTENTBUILDERNG_EDIT_STATE'); ?>"
-												data-cb-state-select
-												data-record-id="<?php echo (int) $row->colRecord; ?>"
-												data-original-value="<?php echo htmlspecialchars($currentStateTitle === '' ? '' : (string) array_search($currentStateTitle, array_column($this->states, 'title', 'id'), true), ENT_QUOTES, 'UTF-8'); ?>"
-											>
-											<option value="" data-state-title="" data-state-color="" <?php echo $currentStateTitle === '' ? 'selected' : ''; ?>>-</option>
-											<?php foreach ($this->states as $state) : ?>
-												<option
-													value="<?php echo (int) $state['id']; ?>"
-													data-state-title="<?php echo htmlspecialchars((string) $state['title'], ENT_QUOTES, 'UTF-8'); ?>"
-													data-state-color="<?php echo htmlspecialchars((string) ($state['color'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>"
-													<?php echo $currentStateTitle === $state['title'] ? 'selected' : ''; ?>
-												>
-													<?php echo htmlentities($state['title'], ENT_QUOTES, 'UTF-8'); ?>
-												</option>
-											<?php endforeach; ?>
-										</select>
-										<?php elseif ($hasStaticStateBadge) : ?>
+										<?php if ($hasStaticStateBadge) : ?>
 											<span class="cb-list-card-badge" data-cb-state-badge data-record-id="<?php echo (int) $row->colRecord; ?>"<?php echo $stateBadgeStyle !== '' ? ' style="' . htmlspecialchars($stateBadgeStyle, ENT_QUOTES, 'UTF-8') . '"' : ''; ?>><?php echo htmlspecialchars((string) $this->state_titles[$row->colRecord], ENT_QUOTES, 'UTF-8'); ?></span>
 										<?php endif; ?>
 									</div>
