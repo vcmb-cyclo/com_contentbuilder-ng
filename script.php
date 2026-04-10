@@ -96,6 +96,7 @@ class com_contentbuilderngInstallerScript
     private array $libraryUpdateHighlights = [];
     private array $preUpdatePhpLibraries = [];
     private ?string $incomingPackageSourceRoot = null;
+    private const UNKNOWN_INSTALLED_VERSION = 'not installed';
     private InstallerService $installerService;
     private MigrationService $migrationService;
     private PluginInstallerService $pluginInstallerService;
@@ -152,7 +153,7 @@ class com_contentbuilderngInstallerScript
 
             $type = strtolower((string) $type);
             $incomingVersion = $this->getIncomingPackageVersion($parent);
-            $currentVersion  = $this->safe(fn() => $this->getCurrentInstalledVersion(), '0.0.0');
+            $currentVersion  = $this->safe(fn() => $this->getCurrentInstalledVersion(), self::UNKNOWN_INSTALLED_VERSION);
 
             $this->log(
                 '[OK] Preflight: action <strong>' . htmlspecialchars(strtoupper($type), ENT_QUOTES, 'UTF-8') . '</strong>'
@@ -530,7 +531,23 @@ class com_contentbuilderngInstallerScript
     private function loadComponentLanguage(): void
     {
         try {
-            Factory::getApplication()->getLanguage()->load('com_contentbuilderng', JPATH_ADMINISTRATOR);
+            $language = Factory::getApplication()->getLanguage();
+            $basePaths = [JPATH_ADMINISTRATOR];
+
+            if (is_dir(__DIR__ . '/administrator/languages')) {
+                $basePaths[] = __DIR__ . '/administrator';
+            }
+
+            if (is_dir(__DIR__ . '/languages')) {
+                $basePaths[] = __DIR__;
+            }
+
+            $basePaths = array_values(array_unique($basePaths));
+
+            foreach ($basePaths as $basePath) {
+                $language->load('com_contentbuilderng', $basePath, null, true, true);
+                $language->load('com_contentbuilderng.sys', $basePath, null, true, true);
+            }
         } catch (\Throwable) {
             // Installer output falls back to raw keys if language loading fails.
         }
@@ -1067,15 +1084,17 @@ class com_contentbuilderngInstallerScript
 
         $manifest = (string) $db->loadResult();
         if ($manifest === '') {
-            return '0.0.0';
+            return self::UNKNOWN_INSTALLED_VERSION;
         }
 
         $decoded = json_decode($manifest, true);
         if (!is_array($decoded)) {
-            return '0.0.0';
+            return self::UNKNOWN_INSTALLED_VERSION;
         }
 
-        return (string) ($decoded['version'] ?? '0.0.0');
+        $version = trim((string) ($decoded['version'] ?? ''));
+
+        return $version !== '' ? $version : self::UNKNOWN_INSTALLED_VERSION;
     }
 
     private function getIncomingPackageVersion($parent): string
