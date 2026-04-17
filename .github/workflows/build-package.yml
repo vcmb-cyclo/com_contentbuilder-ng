@@ -32,6 +32,11 @@ jobs:
           version="$(grep -oPm1 '(?<=<version>)[^<]+' com_contentbuilderng.xml)"
           echo "version=$version" >> "$GITHUB_OUTPUT"
 
+      - name: Set package creation date
+        run: |
+          creation_date="$(TZ=Europe/Paris date +%F)"
+          perl -0pi -e "s#<creationDate>.*?</creationDate>#<creationDate>${creation_date}</creationDate>#" com_contentbuilderng.xml
+
       - name: Assemble distribution
         run: |
           mkdir -p build/package
