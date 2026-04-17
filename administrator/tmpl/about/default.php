@@ -20,12 +20,37 @@ use Joomla\CMS\Factory;
 
 $versionValue = (string) ($this->componentVersion ?: Text::_('COM_CONTENTBUILDERNG_NOT_AVAILABLE'));
 $creationDateValue = (string) ($this->componentCreationDate ?: Text::_('COM_CONTENTBUILDERNG_NOT_AVAILABLE'));
+$buildTimestampValue = trim((string) ($this->componentBuildTimestamp ?? ''));
 $authorValue = (string) ($this->componentAuthor ?: Text::_('COM_CONTENTBUILDERNG_NOT_AVAILABLE'));
 $copyrightValue = (string) ($this->componentCopyright ?: Text::_('COM_CONTENTBUILDERNG_NOT_AVAILABLE'));
 $licenseValue = trim((string) $this->componentLicense);
+$buildTypeValue = strtolower(trim((string) ($this->componentBuildType ?? '')));
+$isProductionBuild = $buildTypeValue === 'production';
+$buildTypeLabel = $isProductionBuild
+    ? Text::_('COM_CONTENTBUILDERNG_PRODUCTION_BUILD_LABEL')
+    : Text::_('COM_CONTENTBUILDERNG_DEV_BUILD_LABEL');
 $genericLicenseValues = ['gpl', 'gnu/gpl', 'gnu/gpl v2 or later'];
 if ($licenseValue === '' || in_array(strtolower($licenseValue), $genericLicenseValues, true)) {
     $licenseValue = Text::_('COM_CONTENTBUILDERNG_LICENSE_FALLBACK');
+}
+$formatBuildTimestamp = static function (string $timestamp): string {
+    if (trim($timestamp) === '') {
+        return '';
+    }
+
+    try {
+        $timezoneName = (string) Factory::getApplication()->get('offset', 'UTC');
+        $timezone = new \DateTimeZone($timezoneName !== '' ? $timezoneName : 'UTC');
+        $date = new \DateTimeImmutable($timestamp, new \DateTimeZone('UTC'));
+
+        return $date->setTimezone($timezone)->format('Y-m-d H:i:s T');
+    } catch (\Throwable) {
+        return '';
+    }
+};
+$buildTimestampDisplay = $isProductionBuild ? $formatBuildTimestamp($buildTimestampValue) : '';
+if ($buildTimestampDisplay !== '') {
+    $creationDateValue = $buildTimestampDisplay;
 }
 $licenseUrl = 'https://www.gnu.org/licenses/gpl-2.0.html';
 $tooltipAudit = Text::_('COM_CONTENTBUILDERNG_ABOUT_TOOLTIP_AUDIT');
@@ -484,6 +509,14 @@ $renderNumberedAuditTitle = static function (string $sectionId, string $label, b
         letter-spacing: .04em;
         text-transform: uppercase;
         padding: .35rem .65rem;
+    }
+    .cb-about-version-badge--production {
+        background-color: var(--bs-success-bg-subtle, #e7f6ed);
+        color: var(--bs-success-text-emphasis, #198754);
+    }
+    .cb-about-version-badge--dev {
+        background-color: var(--bs-warning-bg-subtle, #fff6d6);
+        color: var(--bs-warning-text-emphasis, #a87400);
     }
     .cb-about-version-tile {
         position: relative;
@@ -2234,11 +2267,14 @@ $renderNumberedAuditTitle = static function (string $sectionId, string $label, b
     <div class="card-body p-3 p-lg-4">
         <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3 cb-about-version-header">
             <h3 class="h5 mb-0 cb-about-version-title"><?php echo Text::_('COM_CONTENTBUILDERNG_VERSION_INFORMATION'); ?></h3>
-            <span class="cb-about-version-badge">ContentBuilder NG</span>
+            <span class="d-flex flex-wrap gap-2">
+                <span class="cb-about-version-badge">ContentBuilder NG</span>
+                <span class="cb-about-version-badge <?php echo $isProductionBuild ? 'cb-about-version-badge--production' : 'cb-about-version-badge--dev'; ?>"><?php echo $buildTypeLabel; ?></span>
+            </span>
         </div>
 
         <div class="row g-3">
-            <div class="col-12 col-md-6 col-lg-1">
+            <div class="col-12 col-md-6 col-lg-3">
                 <div class="cb-about-version-tile cb-about-version-tile--version">
                     <span class="cb-about-version-icon" aria-hidden="true">VER</span>
                     <p class="cb-about-version-label"><?php echo Text::_('COM_CONTENTBUILDERNG_JS_LIBRARY_VERSION'); ?></p>
@@ -2261,7 +2297,7 @@ $renderNumberedAuditTitle = static function (string $sectionId, string $label, b
                     <p class="cb-about-version-value"><?php echo htmlspecialchars($copyrightValue, ENT_QUOTES, 'UTF-8'); ?></p>
                 </div>
             </div>
-            <div class="col-12 col-md-12 col-lg-5">
+            <div class="col-12 col-md-12 col-lg-3">
                 <div class="cb-about-version-tile cb-about-version-tile--license">
                     <span class="cb-about-version-icon" aria-hidden="true">GPL</span>
                     <p class="cb-about-version-label"><?php echo Text::_('COM_CONTENTBUILDERNG_LICENSE_LABEL'); ?></p>

@@ -27,6 +27,8 @@ class HtmlView extends BaseHtmlView
     protected string $componentAuthor = '';
     protected string $componentCopyright = '';
     protected string $componentLicense = '';
+    protected string $componentBuildType = '';
+    protected string $componentBuildTimestamp = '';
     protected array $phpLibraries = [];
     protected array $javascriptLibraries = [];
     protected array $auditReport = [];
@@ -132,6 +134,8 @@ class HtmlView extends BaseHtmlView
         $this->componentAuthor = (string) ($versionInformation['author'] ?? '');
         $this->componentCopyright = (string) ($versionInformation['copyright'] ?? '');
         $this->componentLicense = (string) ($versionInformation['license'] ?? '');
+        $this->componentBuildType = (string) ($versionInformation['buildType'] ?? '');
+        $this->componentBuildTimestamp = (string) ($versionInformation['buildTimestamp'] ?? '');
         $this->phpLibraries = $this->getInstalledPhpLibraries();
         $this->javascriptLibraries = $this->getInstalledJavascriptLibraries();
         $auditReport = $app->getUserState('com_contentbuilderng.about.audit', []);
@@ -158,6 +162,8 @@ class HtmlView extends BaseHtmlView
             'author' => '',
             'copyright' => '',
             'license' => '',
+            'buildType' => '',
+            'buildTimestamp' => '',
         ];
 
         try {
@@ -180,6 +186,8 @@ class HtmlView extends BaseHtmlView
                     $versionInformation['author'] = (string) ($manifestData['author'] ?? '');
                     $versionInformation['copyright'] = (string) ($manifestData['copyright'] ?? '');
                     $versionInformation['license'] = (string) ($manifestData['license'] ?? '');
+                    $versionInformation['buildType'] = (string) ($manifestData['buildType'] ?? '');
+                    $versionInformation['buildTimestamp'] = (string) ($manifestData['buildTimestamp'] ?? '');
                 }
             }
         } catch (\Throwable $e) {
@@ -188,7 +196,7 @@ class HtmlView extends BaseHtmlView
 
         $needsManifestFallback = false;
 
-        foreach (['version', 'creationDate', 'author', 'copyright', 'license'] as $key) {
+        foreach (['version', 'creationDate', 'author', 'copyright', 'license', 'buildType', 'buildTimestamp'] as $key) {
             if (trim((string) ($versionInformation[$key] ?? '')) === '') {
                 $needsManifestFallback = true;
                 break;
@@ -214,6 +222,8 @@ class HtmlView extends BaseHtmlView
                 'author' => (string) ($manifest->author ?? ''),
                 'copyright' => (string) ($manifest->copyright ?? ''),
                 'license' => (string) ($manifest->license ?? ''),
+                'buildType' => (string) ($manifest->buildType ?? ''),
+                'buildTimestamp' => (string) ($manifest->buildTimestamp ?? ''),
             ];
 
             foreach ($manifestValues as $key => $value) {

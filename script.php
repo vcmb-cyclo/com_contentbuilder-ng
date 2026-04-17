@@ -154,6 +154,9 @@ class com_contentbuilderngInstallerScript
 
             $type = strtolower((string) $type);
             $incomingVersion = $this->getIncomingPackageVersion($parent);
+            $incomingBuildType = $this->getIncomingPackageBuildType($parent);
+            $incomingBuildTypeLabel = $this->getBuildTypeLabel($incomingBuildType);
+            $incomingBuildTimestamp = $this->formatPackageBuildTimestamp($this->getIncomingPackageBuildTimestamp($parent));
             $currentVersion  = $this->safe(fn() => $this->getCurrentInstalledVersion(), self::UNKNOWN_INSTALLED_VERSION);
 
             $this->log(
@@ -162,6 +165,12 @@ class com_contentbuilderngInstallerScript
                     . ' -> <strong>' . htmlspecialchars((string) $incomingVersion, ENT_QUOTES, 'UTF-8') . '</strong>',
                 Log::INFO
             );
+            if ($type !== 'uninstall') {
+                $this->log(
+                    '[INFO] ' . $this->formatIncomingBuildTypeMessage($incomingBuildTypeLabel, $incomingBuildTimestamp),
+                    Log::INFO
+                );
+            }
 
             if ($type !== 'uninstall') {
                 $context = 'preflight:' . $type;
@@ -1156,6 +1165,96 @@ class com_contentbuilderngInstallerScript
             // ignore
         }
         return 'unknown';
+    }
+
+    private function getIncomingPackageBuildType($parent): string
+    {
+        try {
+            if (is_object($parent) && method_exists($parent, 'getManifest')) {
+                $manifest = $parent->getManifest();
+                if ($manifest instanceof \SimpleXMLElement) {
+                    $buildType = strtolower(trim((string) ($manifest->buildType ?? '')));
+
+                    if ($buildType === 'production') {
+                        return 'production';
+                    }
+                }
+            }
+        } catch (\Throwable) {
+            // ignore
+        }
+
+        return 'dev';
+    }
+
+    private function getIncomingPackageBuildTimestamp($parent): string
+    {
+        try {
+            if (is_object($parent) && method_exists($parent, 'getManifest')) {
+                $manifest = $parent->getManifest();
+                if ($manifest instanceof \SimpleXMLElement) {
+                    return trim((string) ($manifest->buildTimestamp ?? ''));
+                }
+            }
+        } catch (\Throwable) {
+            // ignore
+        }
+
+        return '';
+    }
+
+    private function getBuildTypeLabel(string $buildType): string
+    {
+        $isProduction = strtolower(trim($buildType)) === 'production';
+        $key = $isProduction
+            ? 'COM_CONTENTBUILDERNG_PRODUCTION_BUILD_LABEL'
+            : 'COM_CONTENTBUILDERNG_DEV_BUILD_LABEL';
+        $label = Text::_($key);
+
+        if ($label === $key || trim($label) === '') {
+            return $isProduction ? 'Production build' : 'Development build';
+        }
+
+        return $label;
+    }
+
+    private function formatPackageBuildTimestamp(string $timestamp): string
+    {
+        if (trim($timestamp) === '') {
+            return '';
+        }
+
+        try {
+            $timezone = new \DateTimeZone($this->resolveJoomlaTimezoneName());
+            $date = new \DateTimeImmutable($timestamp, new \DateTimeZone('UTC'));
+
+            return $date->setTimezone($timezone)->format('Y-m-d H:i:s T');
+        } catch (\Throwable) {
+            return '';
+        }
+    }
+
+    private function formatIncomingBuildTypeMessage(string $label, string $buildTimestamp): string
+    {
+        $hasBuildTimestamp = trim($buildTimestamp) !== '';
+        $templateKey = $hasBuildTimestamp
+            ? 'COM_CONTENTBUILDERNG_INSTALLATION_BUILD_TYPE_WITH_DATE'
+            : 'COM_CONTENTBUILDERNG_INSTALLATION_BUILD_TYPE';
+        $template = Text::_($templateKey);
+
+        if ($template === $templateKey || trim($template) === '') {
+            $template = $hasBuildTimestamp
+                ? 'Package build type: %1$s. Built on: %2$s.'
+                : 'Package build type: %s.';
+        }
+
+        $safeLabel = '<strong>' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '</strong>';
+
+        if (!$hasBuildTimestamp) {
+            return sprintf($template, $safeLabel);
+        }
+
+        return sprintf($template, $safeLabel, '<strong>' . htmlspecialchars($buildTimestamp, ENT_QUOTES, 'UTF-8') . '</strong>');
     }
 
     // ---------------------------------------------------------------------
