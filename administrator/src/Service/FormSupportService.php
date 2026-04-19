@@ -112,7 +112,7 @@ class FormSupportService
 
                 $insertQuery = $db->getQuery(true)
                     ->insert($db->quoteName('#__contentbuilderng_elements'))
-                    ->columns($db->quoteName(['label', 'form_id', 'reference_id', 'type', 'options', 'list_include', 'ordering']))
+                    ->columns($db->quoteName(['label', 'form_id', 'reference_id', 'type', 'options', 'list_include', 'search_include', 'ordering']))
                     ->values(implode(',', [
                         $db->quote($title),
                         $db->quote($formId),
@@ -120,6 +120,7 @@ class FormSupportService
                         $db->quote('text'),
                         $db->quote(PackedDataHelper::encodePackedData($options)),
                         1,
+                        0,
                         (int) ($ordering ?: 0),
                     ]));
                 $db->setQuery($insertQuery);

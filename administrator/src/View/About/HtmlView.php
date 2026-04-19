@@ -357,6 +357,10 @@ class HtmlView extends BaseHtmlView
                             continue;
                         }
 
+                        if (!empty($packageData['dev_requirement'])) {
+                            continue;
+                        }
+
                         $libraries[] = [
                             'name' => (string) $packageName,
                             'version' => (string) ($packageData['pretty_version'] ?? $packageData['version'] ?? ''),
@@ -387,6 +391,10 @@ class HtmlView extends BaseHtmlView
                             $packageName = (string) ($package['name'] ?? '');
 
                             if ($packageName === '') {
+                                continue;
+                            }
+
+                            if (!empty($package['dev_requirement'])) {
                                 continue;
                             }
 
@@ -426,7 +434,6 @@ class HtmlView extends BaseHtmlView
 
         $libraries = [];
         $runtimePackages = $lockData['packages'] ?? [];
-        $devPackages = $lockData['packages-dev'] ?? [];
 
         if (is_array($runtimePackages)) {
             foreach ($runtimePackages as $package) {
@@ -444,26 +451,6 @@ class HtmlView extends BaseHtmlView
                     'name' => $packageName,
                     'version' => (string) ($package['version'] ?? ''),
                     'is_dev' => false,
-                ];
-            }
-        }
-
-        if (is_array($devPackages)) {
-            foreach ($devPackages as $package) {
-                if (!is_array($package)) {
-                    continue;
-                }
-
-                $packageName = (string) ($package['name'] ?? '');
-
-                if ($packageName === '') {
-                    continue;
-                }
-
-                $libraries[] = [
-                    'name' => $packageName,
-                    'version' => (string) ($package['version'] ?? ''),
-                    'is_dev' => true,
                 ];
             }
         }
@@ -504,7 +491,6 @@ class HtmlView extends BaseHtmlView
         }
 
         $this->mergeRequirementSet($libraries, $indexed, $composerData['require'] ?? [], false);
-        $this->mergeRequirementSet($libraries, $indexed, $composerData['require-dev'] ?? [], true);
     }
 
     private function mergeRequirementSet(array &$libraries, array &$indexed, mixed $requirements, bool $isDev): void

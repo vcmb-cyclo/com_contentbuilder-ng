@@ -56,7 +56,7 @@ class ElementoptionsTable extends Table
 
     public $list_include = 1;
 
-    public $search_include = null;
+    public $search_include = 0;
 
     /**
      * @var int

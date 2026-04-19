@@ -90,7 +90,7 @@ CREATE TABLE IF NOT EXISTS `#__contentbuilderng_elements`
     `search_include` tinyint
 (
     1
-) NOT NULL DEFAULT '1',
+) NOT NULL DEFAULT '0',
     `item_wrapper` text CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci,
     `wordwrap` int NOT NULL DEFAULT '0',
     `linkable` tinyint

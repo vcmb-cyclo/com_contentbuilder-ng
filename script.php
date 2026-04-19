@@ -316,6 +316,7 @@ class com_contentbuilderngInstallerScript
                 $this->ensureFormsFilterExactMatchDefault();
                 $this->ensureElementsLinkableDefault();
                 $this->ensureElementsListIncludeDefault();
+                $this->ensureElementsSearchIncludeDefault();
 
                 // Normalize menu links and titles
                 $this->updateMenuLinks('contentbuilder', 'com_contentbuilderng');
@@ -818,6 +819,11 @@ class com_contentbuilderngInstallerScript
     private function ensureElementsListIncludeDefault(): void
     {
         $this->schemaService->ensureElementsListIncludeDefault();
+    }
+
+    private function ensureElementsSearchIncludeDefault(): void
+    {
+        $this->schemaService->ensureElementsSearchIncludeDefault();
     }
 
     private function buildMenuLinkOptionWhereClauses(DatabaseInterface $db, string $option): array

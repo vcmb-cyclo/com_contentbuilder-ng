@@ -213,6 +213,34 @@ final class SchemaService
         }
     }
 
+    public function ensureElementsSearchIncludeDefault(): void
+    {
+        $db = $this->db();
+
+        try {
+            $cols = $db->getTableColumns('#__contentbuilderng_elements', false);
+
+            if (!is_array($cols) || !array_key_exists('search_include', $cols)) {
+                return;
+            }
+        } catch (\Throwable $e) {
+            $this->log('[WARNING] Could not inspect #__contentbuilderng_elements columns: ' . $e->getMessage(), Log::WARNING);
+
+            return;
+        }
+
+        try {
+            $db->setQuery(
+                'ALTER TABLE ' . $db->quoteName('#__contentbuilderng_elements')
+                . ' MODIFY ' . $db->quoteName('search_include') . " TINYINT(1) NOT NULL DEFAULT '0'"
+            );
+            $db->execute();
+            $this->log('[OK] Ensured #__contentbuilderng_elements.search_include default is 0.');
+        } catch (\Throwable $e) {
+            $this->log('[WARNING] Failed to set #__contentbuilderng_elements.search_include default: ' . $e->getMessage(), Log::WARNING);
+        }
+    }
+
     public function normalizeStoragesOrdering(): void
     {
         $db = $this->db();
