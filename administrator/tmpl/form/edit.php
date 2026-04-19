@@ -355,6 +355,7 @@ $permissionColumns = [
     ['key' => 'language', 'label' => 'COM_CONTENTBUILDERNG_PERM_CHANGE_LANGUAGE', 'tip' => 'COM_CONTENTBUILDERNG_PERM_CHANGE_LANGUAGE_TIP'],
     ['key' => 'rating', 'label' => 'COM_CONTENTBUILDERNG_PERM_RATING', 'tip' => 'COM_CONTENTBUILDERNG_PERM_RATING_TIP'],
     ['key' => 'api', 'label' => 'COM_CONTENTBUILDERNG_PERM_API', 'tip' => 'COM_CONTENTBUILDERNG_PERM_API_TIP'],
+    ['key' => 'stats', 'label' => 'COM_CONTENTBUILDERNG_PERM_STATS', 'tip' => 'COM_CONTENTBUILDERNG_PERM_STATS_TIP'],
 ];
 
 $defaultCheckedForNewPermissions = ['listaccess' => true, 'view' => true, 'new' => true];

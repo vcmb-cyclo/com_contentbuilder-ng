@@ -63,7 +63,7 @@ final class FrontendPermissionAuditHelper
         }
 
         $guestGroups = self::getEffectiveGroupIdsForUser(0, $db);
-        $actions = ['listaccess', 'view', 'new', 'edit', 'delete', 'state', 'publish', 'language', 'rating', 'api'];
+        $actions = ['listaccess', 'view', 'new', 'edit', 'delete', 'state', 'publish', 'language', 'rating', 'api', 'stats'];
 
         foreach ($forms as $form) {
             $formId = (int) ($form['id'] ?? 0);

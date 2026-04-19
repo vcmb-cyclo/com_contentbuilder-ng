@@ -117,6 +117,9 @@ echo HTMLHelper::_('uitab.addTab', 'perm-pane', 'permtab1', $frontendTabLabel);
                     <?php foreach ($permissionColumns as $permissionColumn) : ?>
                         <?php
                         $permKey = $permissionColumn['key'];
+                        if ($permKey === 'stats') {
+                            continue;
+                        }
                         $permId = 'own_fe_' . $permKey;
                         $permName = 'jform[own_fe][' . $permKey . ']';
                         $isChecked = !empty($item->config['own_fe'][$permKey]);

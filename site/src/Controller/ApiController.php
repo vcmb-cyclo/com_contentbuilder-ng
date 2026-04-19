@@ -148,8 +148,8 @@ class ApiController extends BaseController
 
     private function getStatsPayload(int $formId): array
     {
-        if (!$this->can('listaccess')) {
-            throw new \RuntimeException(Text::_('COM_CONTENTBUILDERNG_PERMISSIONS_VIEW_NOT_ALLOWED'), 403);
+        if (!$this->can('stats')) {
+            throw new \RuntimeException(Text::_('COM_CONTENTBUILDERNG_PERMISSIONS_STATS_NOT_ALLOWED'), 403);
         }
 
         $db = Factory::getContainer()->get(DatabaseInterface::class);

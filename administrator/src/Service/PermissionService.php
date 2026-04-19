@@ -217,7 +217,7 @@ class PermissionService
         $groups = $this->getEffectiveGroupIds();
 
         foreach ($groups as $group) {
-            foreach (['view', 'new', 'edit', 'delete', 'state', 'publish', 'fullarticle', 'language', 'rating', 'api', 'listaccess'] as $action) {
+            foreach (['view', 'new', 'edit', 'delete', 'state', 'publish', 'fullarticle', 'language', 'rating', 'api', 'stats', 'listaccess'] as $action) {
                 if (isset($config['permissions' . $suffix][$group][$action]) && $config['permissions' . $suffix][$group][$action]) {
                     $permissions[$group] ??= [];
                     $permissions[$group][$action] = true;
@@ -407,6 +407,7 @@ class PermissionService
                 'new' => true,
                 'edit' => true,
                 'listaccess' => true,
+                'stats' => true,
             ];
         }
 

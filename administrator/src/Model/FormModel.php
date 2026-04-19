@@ -1106,6 +1106,10 @@ class FormModel extends AdminModel
             'rating',
             'api'
         ];
+        $permissionKeys = [
+            ...$ownKeys,
+            'stats',
+        ];
         $own    = (array) ($jform['own'] ?? []);
         $own_fe = (array) ($jform['own_fe'] ?? []);
 
@@ -1131,7 +1135,7 @@ class FormModel extends AdminModel
             $config['permissions'][$gid] = [];
             $config['permissions_fe'][$gid] = [];
 
-            foreach ($ownKeys as $k) {
+            foreach ($permissionKeys as $k) {
                 $config['permissions'][$gid][$k] =
                     !empty($perms[$gid][$k]) ? true : false;
 

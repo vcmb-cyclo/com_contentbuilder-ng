@@ -83,6 +83,8 @@ Form statistics:
 index.php?option=com_contentbuilderng&task=api.display&format=json&action=stats&id=25
 ```
 
+Requires the `API` and `Stats` permissions for the selected view.
+
 Response format:
 
 ```json
