@@ -17,6 +17,7 @@ use Joomla\CMS\Factory;
 use Joomla\Database\DatabaseInterface;
 use Joomla\Filesystem\File;
 use CB\Component\Contentbuilderng\Administrator\Helper\PackedDataHelper;
+use CB\Component\Contentbuilderng\Administrator\Helper\PhpTemplateHelper;
 
 class contentbuilderng_com_contentbuilderng
 {
@@ -870,59 +871,9 @@ class contentbuilderng_com_contentbuilderng
         return array();
     }
 
-    public static function execPhp($result)
+    public static function execPhp($result): string
     {
-        $value = $result;
-        if (strpos(trim($result), '<?php') === 0) {
-
-            $code = trim($result);
-
-            if (function_exists('mb_strlen')) {
-                $p1 = 0;
-                $l = mb_strlen($code);
-                $c = '';
-                $n = 0;
-                while ($p1 < $l) {
-                    $p2 = mb_strpos($code, '<?php', $p1);
-                    if ($p2 === false)
-                        $p2 = $l;
-                    $c .= mb_substr($code, $p1, $p2 - $p1);
-                    $p1 = $p2;
-                    if ($p1 < $l) {
-                        $p1 += 5;
-                        $p2 = mb_strpos($code, '?>', $p1);
-                        if ($p2 === false)
-                            $p2 = $l;
-                        $n++;
-                        $c .= eval (mb_substr($code, $p1, $p2 - $p1));
-                        $p1 = $p2 + 2;
-                    } // if
-                } // while
-            } else {
-                $p1 = 0;
-                $l = strlen($code);
-                $c = '';
-                $n = 0;
-                while ($p1 < $l) {
-                    $p2 = strpos($code, '<?php', $p1);
-                    if ($p2 === false)
-                        $p2 = $l;
-                    $c .= substr($code, $p1, $p2 - $p1);
-                    $p1 = $p2;
-                    if ($p1 < $l) {
-                        $p1 += 5;
-                        $p2 = strpos($code, '?>', $p1);
-                        if ($p2 === false)
-                            $p2 = $l;
-                        $n++;
-                        $c .= eval (substr($code, $p1, $p2 - $p1));
-                        $p1 = $p2 + 2;
-                    } // if
-                } // while
-            }
-        }
-
-        return $value;
+        return PhpTemplateHelper::evaluate((string) $result);
     }
 
     public function saveRecordUserData($record_id, $user_id, $fullname, $username)

@@ -593,9 +593,9 @@ $renderNumberedAuditTitle = static function (string $sectionId, string $label, b
     .cb-about-version-value {
         margin: 0;
         color: var(--bs-emphasis-color);
-        font-size: 1.22rem;
+        font-size: .98rem;
         font-weight: 700;
-        line-height: 1.25;
+        line-height: 1.3;
         word-break: break-word;
     }
     .cb-about-version-link {
