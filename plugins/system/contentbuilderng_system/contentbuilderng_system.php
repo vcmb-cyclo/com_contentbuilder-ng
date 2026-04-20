@@ -387,6 +387,8 @@ class plgSystemContentbuilderng_system extends CMSPlugin implements SubscriberIn
                     }
                 }
             }
+
+            $this->createMissingArticles();
         }
 
         if ($isSyncMutationRequest) {
@@ -545,117 +547,119 @@ class plgSystemContentbuilderng_system extends CMSPlugin implements SubscriberIn
             );
             $db->execute();
 
-            $pluginParams = $this->params;
+            $this->createMissingArticles();
+        }
+    }
 
-            $syncQuery = $db->getQuery(true)
-                ->select([
-                    $db->quoteName('form.id', 'form_id'),
-                    $db->quoteName('form.act_as_registration'),
-                    $db->quoteName('form.default_category'),
-                    $db->quoteName('form.registration_name_field'),
-                    $db->quoteName('form.registration_username_field'),
-                    $db->quoteName('form.registration_email_field'),
-                    $db->quoteName('form.registration_email_repeat_field'),
-                    $db->quoteName('form.last_update'),
-                    $db->quoteName('article.article_id'),
-                    $db->quoteName('form.title_field'),
-                    $db->quoteName('form.create_articles'),
-                    $db->quoteName('form.name'),
-                    $db->quoteName('form.use_view_name_as_title'),
-                    $db->quoteName('form.protect_upload_directory'),
-                    $db->quoteName('form.reference_id'),
-                    $db->quoteName('records.record_id'),
-                    $db->quoteName('form.type'),
-                    $db->quoteName('form.published_only'),
-                    $db->quoteName('form.own_only'),
-                    $db->quoteName('form.own_only_fe'),
-                    $db->quoteName('records.last_update', 'record_last_update'),
-                    $db->quoteName('article.last_update', 'article_last_update'),
-                ])
-                ->from($db->quoteName('#__contentbuilderng_records', 'records'))
-                ->join('LEFT', $db->quoteName('#__contentbuilderng_forms', 'form') . ' ON (' . $db->quoteName('form.type') . ' = ' . $db->quoteName('records.type') . ' AND ' . $db->quoteName('form.reference_id') . ' = ' . $db->quoteName('records.reference_id') . ')')
-                ->join('LEFT', $db->quoteName('#__contentbuilderng_articles', 'article') . ' ON (' . $db->quoteName('form.type') . ' = ' . $db->quoteName('records.type') . ' AND ' . $db->quoteName('form.reference_id') . ' = ' . $db->quoteName('records.reference_id') . ' AND ' . $db->quoteName('article.form_id') . ' = ' . $db->quoteName('form.id') . ' AND ' . $db->quoteName('article.record_id') . ' = ' . $db->quoteName('records.record_id') . ')')
-                ->join('LEFT', $db->quoteName('#__content', 'content') . ' ON (' . $db->quoteName('form.type') . ' = ' . $db->quoteName('records.type') . ' AND ' . $db->quoteName('form.reference_id') . ' = ' . $db->quoteName('records.reference_id') . ' AND ' . $db->quoteName('article.article_id') . ' = ' . $db->quoteName('content.id') . ' AND ' . $db->quoteName('article.form_id') . ' = ' . $db->quoteName('form.id') . ' AND ' . $db->quoteName('article.record_id') . ' = ' . $db->quoteName('records.record_id') . ')')
-                ->where([
-                    $db->quoteName('form.published') . ' = 1',
-                    $db->quoteName('form.create_articles') . ' = 1',
-                    $db->quoteName('form.type') . ' = ' . $db->quoteName('records.type'),
-                    $db->quoteName('form.reference_id') . ' = ' . $db->quoteName('records.reference_id'),
-                    '((' . $db->quoteName('article.form_id') . ' = ' . $db->quoteName('form.id')
-                        . ' AND ' . $db->quoteName('article.record_id') . ' = ' . $db->quoteName('records.record_id')
-                        . ' AND ' . $db->quoteName('article.article_id') . ' = ' . $db->quoteName('content.id')
-                        . ' AND (' . $db->quoteName('content.state') . ' = 1 OR ' . $db->quoteName('content.state') . ' = 0)'
-                        . ' AND (' . $db->quoteName('form.last_update') . ' > ' . $db->quoteName('article.last_update')
-                        . ' OR ' . $db->quoteName('records.last_update') . ' > ' . $db->quoteName('article.last_update') . ')'
-                        . ') OR ('
-                        . $db->quoteName('form.id') . ' IS NOT NULL AND ' . $db->quoteName('records.id') . ' IS NOT NULL AND ' . $db->quoteName('content.id') . ' IS NULL AND ' . $db->quoteName('article.id') . ' IS NULL'
-                        . '))',
-                ])
-                ->setLimit((int) $pluginParams->def('limit_per_turn', 50));
-            $this->db->setQuery($syncQuery);
-            $list = $this->db->loadAssocList();
+    private function createMissingArticles(): void
+    {
+        $db = $this->db;
+        $pluginParams = $this->params;
 
-            if (isset($list[0])) {
-                $lang = $this->app->getLanguage();
-                $lang->load('com_contentbuilderng', JPATH_ADMINISTRATOR);
+        $syncQuery = $db->getQuery(true)
+            ->select([
+                $db->quoteName('form.id', 'form_id'),
+                $db->quoteName('form.act_as_registration'),
+                $db->quoteName('form.default_category'),
+                $db->quoteName('form.registration_name_field'),
+                $db->quoteName('form.registration_username_field'),
+                $db->quoteName('form.registration_email_field'),
+                $db->quoteName('form.registration_email_repeat_field'),
+                $db->quoteName('form.last_update'),
+                $db->quoteName('article.article_id'),
+                $db->quoteName('form.title_field'),
+                $db->quoteName('form.create_articles'),
+                $db->quoteName('form.name'),
+                $db->quoteName('form.use_view_name_as_title'),
+                $db->quoteName('form.protect_upload_directory'),
+                $db->quoteName('form.reference_id'),
+                $db->quoteName('records.record_id'),
+                $db->quoteName('form.type'),
+                $db->quoteName('form.published_only'),
+                $db->quoteName('form.own_only'),
+                $db->quoteName('form.own_only_fe'),
+                $db->quoteName('records.last_update', 'record_last_update'),
+                $db->quoteName('article.last_update', 'article_last_update'),
+            ])
+            ->from($db->quoteName('#__contentbuilderng_records', 'records'))
+            ->join('LEFT', $db->quoteName('#__contentbuilderng_forms', 'form') . ' ON (' . $db->quoteName('form.type') . ' = ' . $db->quoteName('records.type') . ' AND ' . $db->quoteName('form.reference_id') . ' = ' . $db->quoteName('records.reference_id') . ')')
+            ->join('LEFT', $db->quoteName('#__contentbuilderng_articles', 'article') . ' ON (' . $db->quoteName('form.type') . ' = ' . $db->quoteName('records.type') . ' AND ' . $db->quoteName('form.reference_id') . ' = ' . $db->quoteName('records.reference_id') . ' AND ' . $db->quoteName('article.form_id') . ' = ' . $db->quoteName('form.id') . ' AND ' . $db->quoteName('article.record_id') . ' = ' . $db->quoteName('records.record_id') . ')')
+            ->join('LEFT', $db->quoteName('#__content', 'content') . ' ON (' . $db->quoteName('form.type') . ' = ' . $db->quoteName('records.type') . ' AND ' . $db->quoteName('form.reference_id') . ' = ' . $db->quoteName('records.reference_id') . ' AND ' . $db->quoteName('article.article_id') . ' = ' . $db->quoteName('content.id') . ' AND ' . $db->quoteName('article.form_id') . ' = ' . $db->quoteName('form.id') . ' AND ' . $db->quoteName('article.record_id') . ' = ' . $db->quoteName('records.record_id') . ')')
+            ->where([
+                $db->quoteName('form.published') . ' = 1',
+                $db->quoteName('form.create_articles') . ' = 1',
+                $db->quoteName('form.type') . ' = ' . $db->quoteName('records.type'),
+                $db->quoteName('form.reference_id') . ' = ' . $db->quoteName('records.reference_id'),
+                '((' . $db->quoteName('article.form_id') . ' = ' . $db->quoteName('form.id')
+                    . ' AND ' . $db->quoteName('article.record_id') . ' = ' . $db->quoteName('records.record_id')
+                    . ' AND ' . $db->quoteName('article.article_id') . ' = ' . $db->quoteName('content.id')
+                    . ' AND (' . $db->quoteName('content.state') . ' = 1 OR ' . $db->quoteName('content.state') . ' = 0)'
+                    . ' AND (' . $db->quoteName('form.last_update') . ' > ' . $db->quoteName('article.last_update')
+                    . ' OR ' . $db->quoteName('records.last_update') . ' > ' . $db->quoteName('article.last_update') . ')'
+                    . ') OR ('
+                    . $db->quoteName('form.id') . ' IS NOT NULL AND ' . $db->quoteName('records.id') . ' IS NOT NULL AND ' . $db->quoteName('content.id') . ' IS NULL AND ' . $db->quoteName('article.id') . ' IS NULL'
+                    . '))',
+            ])
+            ->setLimit((int) $pluginParams->def('limit_per_turn', 50));
+        $this->db->setQuery($syncQuery);
+        $list = $this->db->loadAssocList();
+
+        if (isset($list[0])) {
+            $lang = $this->app->getLanguage();
+            $lang->load('com_contentbuilderng', JPATH_ADMINISTRATOR);
+        }
+
+        $now = Factory::getDate()->toSql();
+
+        foreach ($list as $data) {
+            if (!is_array($data) || !$data['create_articles']) {
+                continue;
             }
 
-            $now = Factory::getDate()->toSql();
+            $form = FormSourceFactory::getForm($data['type'], $data['reference_id']);
+            if (!$form || !$form->exists) {
+                continue;
+            }
 
-            foreach ($list as $data) {
+            $data['labels'] = $form->getElementLabels();
+            $ids = array();
+            foreach ($data['labels'] as $reference_id => $label) {
+                $ids[] = $this->db->Quote($reference_id);
+            }
 
-                if (is_array($data)) {
-
-                    $form = FormSourceFactory::getForm($data['type'], $data['reference_id']);
-                    if (!$form || !$form->exists) {
-                        return;
-                    }
-
-                    // creating the article
-                    if ($data['create_articles']) {
-
-                        $data['labels'] = $form->getElementLabels();
-                        $ids = array();
-                        foreach ($data['labels'] as $reference_id => $label) {
-                            $ids[] = $this->db->Quote($reference_id);
-                        }
-
-                        if (count($ids)) {
-                            $elementsQuery = $this->db->getQuery(true)
-                                ->select('DISTINCT ' . $this->db->quoteName('label') . ', ' . $this->db->quoteName('reference_id'))
-                                ->from($this->db->quoteName('#__contentbuilderng_elements'))
-                                ->where([
-                                    $this->db->quoteName('form_id') . ' = ' . (int) $data['form_id'],
-                                    $this->db->quoteName('reference_id') . ' IN (' . implode(',', $ids) . ')',
-                                    $this->db->quoteName('published') . ' = 1',
-                                ])
-                                ->order($this->db->quoteName('ordering'));
-                            $this->db->setQuery($elementsQuery);
-                            $rows = $this->db->loadAssocList();
-                            $ids = array();
-                            foreach ($rows as $row) {
-                                $ids[] = $row['reference_id'];
-                            }
-                        }
-
-                        $data['items'] = $form->getRecord($data['record_id'], false, -1, true);
-
-                        $article_id = (new ArticleService())->createArticle($data['form_id'], $data['record_id'], $data['items'], $ids, $data['title_field'], $form->getRecordMetadata($data['record_id']), array(), false, 1, $data['default_category']);
-
-                        if ($article_id) {
-                            $updateArticleQuery = $this->db->getQuery(true)
-                                ->update($this->db->quoteName('#__contentbuilderng_articles'))
-                                ->set($this->db->quoteName('last_update') . ' = ' . $this->db->quote($now))
-                                ->where([
-                                    $this->db->quoteName('article_id') . ' = ' . $this->db->quote($article_id),
-                                    $this->db->quoteName('record_id') . ' = ' . $this->db->quote($data['record_id']),
-                                    $this->db->quoteName('form_id') . ' = ' . $this->db->quote($data['form_id']),
-                                ]);
-                            $this->db->setQuery($updateArticleQuery);
-                            $this->db->execute();
-                        }
-                    }
+            if (count($ids)) {
+                $elementsQuery = $this->db->getQuery(true)
+                    ->select('DISTINCT ' . $this->db->quoteName('label') . ', ' . $this->db->quoteName('reference_id'))
+                    ->from($this->db->quoteName('#__contentbuilderng_elements'))
+                    ->where([
+                        $this->db->quoteName('form_id') . ' = ' . (int) $data['form_id'],
+                        $this->db->quoteName('reference_id') . ' IN (' . implode(',', $ids) . ')',
+                        $this->db->quoteName('published') . ' = 1',
+                    ])
+                    ->order($this->db->quoteName('ordering'));
+                $this->db->setQuery($elementsQuery);
+                $rows = $this->db->loadAssocList();
+                $ids = array();
+                foreach ($rows as $row) {
+                    $ids[] = $row['reference_id'];
                 }
+            }
+
+            $data['items'] = $form->getRecord($data['record_id'], false, -1, true);
+
+            $article_id = (new ArticleService())->createArticle($data['form_id'], $data['record_id'], $data['items'], $ids, $data['title_field'], $form->getRecordMetadata($data['record_id']), array(), false, 1, $data['default_category']);
+
+            if ($article_id) {
+                $updateArticleQuery = $this->db->getQuery(true)
+                    ->update($this->db->quoteName('#__contentbuilderng_articles'))
+                    ->set($this->db->quoteName('last_update') . ' = ' . $this->db->quote($now))
+                    ->where([
+                        $this->db->quoteName('article_id') . ' = ' . $this->db->quote($article_id),
+                        $this->db->quoteName('record_id') . ' = ' . $this->db->quote($data['record_id']),
+                        $this->db->quoteName('form_id') . ' = ' . $this->db->quote($data['form_id']),
+                    ]);
+                $this->db->setQuery($updateArticleQuery);
+                $this->db->execute();
             }
         }
     }
