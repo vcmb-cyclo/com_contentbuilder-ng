@@ -58,7 +58,6 @@ $articleDefaults = [
     'article_record_impact_publish' => '0',
     'default_access' => '0',
     'default_featured' => '0',
-    'auto_publish' => 0,
     'protect_upload_directory' => 1,
 ];
 ?>
@@ -251,17 +250,6 @@ $articleDefaults = [
                     );
                     ?>
                 </div>
-                <div class="col-12 col-md-4" id="cb-form-details-auto-publish-field-group">
-                    <input type="hidden" name="jform[auto_publish]" id="cb-form-details-auto-publish-hidden" value="0" />
-                    <div class="form-check mb-0 ps-0 d-flex align-items-center">
-                        <span class="editlinktip hasTip" title="<?php echo htmlspecialchars(Text::_('COM_CONTENTBUILDERNG_AUTO_PUBLISH_TIP'), ENT_QUOTES, 'UTF-8'); ?>">
-                            <?php echo is_callable($renderCheckbox) ? $renderCheckbox('jform[auto_publish]', 'auto_publish', (int) $item->auto_publish === 1) : ''; ?>
-                        </span>
-                        <label class="form-check-label" for="auto_publish">
-                            <?php echo Text::_('COM_CONTENTBUILDERNG_AUTO_PUBLISH'); ?>
-                        </label>
-                    </div>
-                </div>
                 <?php if (!empty($item->edit_by_type) && $isBreezingFormsType) : ?>
                     <div class="col-12 col-md-6" id="cb-form-details-protect-upload-directory-field-group">
                         <input type="hidden" name="jform[protect_upload_directory]" id="cb-form-details-protect-upload-directory-hidden" value="0" />
@@ -399,7 +387,6 @@ document.addEventListener('DOMContentLoaded', function () {
             var value = defaults[name];
 
             switch (name) {
-                case 'auto_publish':
                 case 'protect_upload_directory':
                     setCheckbox(name, Number(value) === 1);
                     break;

@@ -2834,13 +2834,30 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
                                         return;
                                     }
 
+                                    var isBreezingFormsType = function(value) {
+                                        return value === 'com_breezingforms' || value === 'com_breezingforms_ng';
+                                    };
+
                                     var updateTypeTitle = function() {
                                         var option = typeSelect.options[typeSelect.selectedIndex];
                                         typeSelect.title = option ? (option.getAttribute('data-full') || option.value || '') : '';
                                     };
 
+                                    var syncAutoPublishDefault = function() {
+                                        var field = document.querySelector('input[type="checkbox"][name="jform[auto_publish]"]');
+
+                                        if (!field) {
+                                            return;
+                                        }
+
+                                        field.checked = isBreezingFormsType(typeSelect.value || '');
+                                        field.dispatchEvent(new Event('change', { bubbles: true }));
+                                    };
+
                                     typeSelect.addEventListener('change', updateTypeTitle);
+                                    typeSelect.addEventListener('change', syncAutoPublishDefault);
                                     updateTypeTitle();
+                                    document.addEventListener('DOMContentLoaded', syncAutoPublishDefault);
                                 })();
                             </script>
 

@@ -34,6 +34,7 @@ $renderDirectionButtonGroup = static function (string $name, string $selected): 
 
 $advancedDefaults = [
     'show_id_column' => 1,
+    'auto_publish' => 0,
     'select_column' => 1,
     'list_state' => 0,
     'list_publish' => 0,
@@ -71,12 +72,11 @@ $advancedDefaults = [
 ];
 ?>
 <div class="bg-body-tertiary p-3" id="advancedOptions">
-    <fieldset id="cb-form-advanced-show" aria-labelledby="cb-form-advanced-show-title">
+    <fieldset id="cb-form-advanced-publish" aria-labelledby="cb-form-advanced-publish-title">
         <legend>
             <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
-                <h3 id="cb-form-advanced-show-title" class="editlinktip hasTip mb-0"
-                    title="<?php echo Text::_('COM_CONTENTBUILDERNG_SHOW_COLUMNS_TIP'); ?>">
-                    <?php echo Text::_('COM_CONTENTBUILDERNG_SHOW'); ?>
+                <h3 id="cb-form-advanced-publish-title" class="mb-0">
+                    <?php echo Text::_('COM_CONTENTBUILDERNG_PUBLISH'); ?>
                 </h3>
                 <button
                     type="button"
@@ -91,6 +91,53 @@ $advancedDefaults = [
                     <?php echo Text::_('COM_CONTENTBUILDERNG_RESET'); ?>
                 </button>
             </div>
+        </legend>
+        <div class="row gx-3 gy-1 mt-0 align-items-stretch mb-3">
+            <div class="col-12 col-xl-3 d-flex">
+                <div class="border rounded bg-body p-3 d-flex flex-column flex-grow-1">
+                    <h4 class="h6 text-body-secondary mb-2">
+                        <?php echo Text::_('COM_CONTENTBUILDERNG_RECORD_PUBLISH_OPTIONS'); ?>
+                    </h4>
+                    <div class="d-flex flex-wrap align-items-center gap-3">
+                        <div>
+                            <input type="hidden" name="jform[auto_publish]" id="cb-form-advanced-auto-publish-hidden" value="0" />
+                            <?php echo $renderCheckbox('jform[auto_publish]', 'auto_publish', (int) ($item->auto_publish ?? 0) === 1); ?>
+                            <label class="form-check-label" for="auto_publish">
+                                <span class="editlinktip hasTip" title="<?php echo htmlspecialchars(Text::_('COM_CONTENTBUILDERNG_AUTO_PUBLISH_TIP'), ENT_QUOTES, 'UTF-8'); ?>">
+                                    <?php echo Text::_('COM_CONTENTBUILDERNG_AUTO_PUBLISH'); ?>
+                                </span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-12 col-xl-3 d-flex">
+                <div class="border rounded bg-body p-3 d-flex flex-column flex-grow-1">
+                    <h4 class="h6 text-body-secondary mb-2">
+                        <?php echo Text::_('COM_CONTENTBUILDERNG_DISPLAY_OPTIONS'); ?>
+                    </h4>
+                    <div class="d-flex flex-wrap align-items-center gap-3">
+                        <div>
+                            <input type="hidden" name="jform[published_only]" value="0" />
+                            <?php echo $renderCheckbox('jform[published_only]', 'published_only', (bool) ($item->published_only ?? false)); ?>
+                            <label class="form-check-label" for="published_only">
+                                <span class="editlinktip hasTip" title="<?php echo Text::_('COM_CONTENTBUILDERNG_PUBLISHED_ONLY_TIP'); ?>">
+                                    <?php echo Text::_('COM_CONTENTBUILDERNG_PUBLISHED_ONLY'); ?>
+                                </span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </fieldset>
+
+    <fieldset id="cb-form-advanced-show" aria-labelledby="cb-form-advanced-show-title">
+        <legend>
+            <h3 id="cb-form-advanced-show-title" class="editlinktip hasTip mb-0"
+                title="<?php echo Text::_('COM_CONTENTBUILDERNG_SHOW_COLUMNS_TIP'); ?>">
+                <?php echo Text::_('COM_CONTENTBUILDERNG_SHOW'); ?>
+            </h3>
         </legend>
 
 
@@ -345,15 +392,6 @@ $advancedDefaults = [
                                 step="1"
                                 value="<?php echo max(1, (int) ($item->initial_list_limit ?? 25)); ?>"
                             />
-                        </div>
-                        <div>
-                            <input type="hidden" name="jform[published_only]" value="0" />
-                            <?php echo $renderCheckbox('jform[published_only]', 'published_only', (bool) ($item->published_only ?? false)); ?>
-                            <label class="form-check-label" for="published_only">
-                                <span class="editlinktip hasTip" title="<?php echo Text::_('COM_CONTENTBUILDERNG_PUBLISHED_ONLY_TIP'); ?>">
-                                    <?php echo Text::_('COM_CONTENTBUILDERNG_PUBLISHED_ONLY'); ?>
-                                </span>
-                            </label>
                         </div>
                         <div>
                             <input type="hidden" name="jform[allow_external_filter]" value="0" />
