@@ -354,6 +354,7 @@ namespace Joomla\CMS\MVC\Model {
 namespace {
     require_once \dirname(__DIR__) . '/src/Model/StorageModel.php';
     require_once \dirname(__DIR__) . '/src/Model/VerifyModel.php';
+    require_once \dirname(__DIR__) . '/src/Service/ApiPermissionRequirementService.php';
     require_once \dirname(__DIR__) . '/src/Service/PermissionService.php';
     require_once \dirname(__DIR__) . '/src/Helper/FormDisplayColumnsHelper.php';
 }

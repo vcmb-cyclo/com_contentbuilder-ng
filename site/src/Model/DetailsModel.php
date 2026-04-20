@@ -399,7 +399,7 @@ class DetailsModel extends ListModel
                     $data->form = \CB\Component\Contentbuilderng\Administrator\Helper\FormSourceFactory::getForm($data->type, $data->reference_id);
                     $isAdminPreview = $app->input->getBool('cb_preview_ok', false);
                     if ($isAdminPreview && method_exists($data->form, 'synchRecords')) {
-                        $data->form->synchRecords();
+                        $data->form->synchRecords((int) $this->_id);
                     }
 
                     $data->labels = $data->form->getElementLabels();

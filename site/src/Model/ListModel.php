@@ -723,7 +723,7 @@ class ListModel extends BaseListModel
                     $isAdminPreview = $app->input->getBool('cb_preview_ok', false);
                     $data->preview_no_list_fields = false;
                     if ($isAdminPreview && method_exists($data->form, 'synchRecords')) {
-                        $data->form->synchRecords();
+                        $data->form->synchRecords((int) $this->_id);
                     }
                     $prefixInTitle = $this->getMenuToggle('cb_prefix_in_title', (int) ($data->cb_prefix_in_title ?? 0));
                     $filterInTitle = $this->getMenuToggle('cb_filter_in_title', (int) ($data->cb_filter_in_title ?? 0));

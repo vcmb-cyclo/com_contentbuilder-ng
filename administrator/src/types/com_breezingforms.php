@@ -125,7 +125,7 @@ class contentbuilderng_com_breezingforms
         }
     }
 
-    public function synchRecords()
+    public function synchRecords(?int $contentbuilderngFormId = null)
     {
 
         if (!is_object($this->properties)) return;
@@ -133,7 +133,10 @@ class contentbuilderng_com_breezingforms
         $db = Factory::getContainer()->get(DatabaseInterface::class);
         $formId = (int) $this->properties->id;
         $syncQuery = $db->getQuery(true)
-            ->select($db->quoteName('r.id'))
+            ->select([
+                $db->quoteName('r.id', 'record_id'),
+                'MAX(' . $db->quoteName('f.auto_publish') . ') AS ' . $db->quoteName('auto_publish'),
+            ])
             ->from($db->quoteName('#__facileforms_records', 'r'))
             ->join('INNER', $db->quoteName('#__contentbuilderng_forms', 'f') . ' ON ' . $db->quoteName('f.reference_id') . ' = ' . $db->quoteName('r.form'))
             ->join('LEFT', $db->quoteName('#__contentbuilderng_records', 'cr') . ' ON ('
@@ -144,29 +147,41 @@ class contentbuilderng_com_breezingforms
             ->where($db->quoteName('f.type') . ' = ' . $db->quote('com_breezingforms'))
             ->where($db->quoteName('f.reference_id') . ' = ' . $formId)
             ->where($db->quoteName('r.form') . ' = ' . $db->quoteName('f.reference_id'))
-            ->where($db->quoteName('cr.record_id') . ' IS NULL');
+            ->where($db->quoteName('cr.record_id') . ' IS NULL')
+            ->group($db->quoteName('r.id'));
+
+        if ($contentbuilderngFormId !== null && $contentbuilderngFormId > 0) {
+            $syncQuery->where($db->quoteName('f.id') . ' = ' . (int) $contentbuilderngFormId);
+        }
+
         $db->setQuery($syncQuery);
 
-        $reference_ids = $db->loadColumn();
+        $records = $db->loadAssocList() ?: [];
 
-        if (is_array($reference_ids)) {
-            foreach ($reference_ids as $reference_id) {
+        if ($records) {
+            foreach ($records as $record) {
+                $reference_id = (int) ($record['record_id'] ?? 0);
+                if ($reference_id < 1) {
+                    continue;
+                }
+
                 $checkQuery = $db->getQuery(true)
                     ->select($db->quoteName('id'))
                     ->from($db->quoteName('#__contentbuilderng_records'))
                     ->where($db->quoteName('type') . ' = ' . $db->quote('com_breezingforms'))
                     ->where($db->quoteName('reference_id') . ' = ' . $formId)
-                    ->where($db->quoteName('record_id') . ' = ' . (int) $reference_id);
+                    ->where($db->quoteName('record_id') . ' = ' . $reference_id);
                 $db->setQuery($checkQuery);
                 $res = $db->loadResult();
                 if (!$res) {
                     $insertQuery = $db->getQuery(true)
                         ->insert($db->quoteName('#__contentbuilderng_records'))
-                        ->columns($db->quoteName(['type', 'record_id', 'reference_id']))
+                        ->columns($db->quoteName(['type', 'record_id', 'reference_id', 'published']))
                         ->values(implode(',', [
                             $db->quote('com_breezingforms'),
-                            (int) $reference_id,
+                            $reference_id,
                             $formId,
+                            !empty($record['auto_publish']) ? 1 : 0,
                         ]));
                     $db->setQuery($insertQuery);
                     $db->execute();

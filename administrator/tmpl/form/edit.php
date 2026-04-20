@@ -21,6 +21,7 @@ use Joomla\CMS\Uri\Uri;
 use CB\Component\Contentbuilderng\Administrator\Helper\FormSourceFactory;
 use CB\Component\Contentbuilderng\Administrator\Helper\PackedDataHelper;
 use CB\Component\Contentbuilderng\Administrator\Service\TextUtilityService;
+use CB\Component\Contentbuilderng\Site\Helper\PreviewLinkHelper;
 
 
 /** @var AdministratorApplication $app */
@@ -164,19 +165,14 @@ $apiPreviewQuery = '';
 $apiPreviewUntil = time() + 600;
 $apiPreviewActorId = (int) ($app->getIdentity()->id ?? 0);
 $apiPreviewActorName = trim((string) ($app->getIdentity()->name ?? ''));
+$apiPreviewUserId = (int) ($app->getIdentity()->id ?? 0);
 if ($apiPreviewActorName === '') {
     $apiPreviewActorName = trim((string) ($app->getIdentity()->username ?? ''));
 }
-if ($apiPreviewActorName !== '') {
-    $apiPreviewPayload = $formId . '|' . $apiPreviewUntil . '|' . $apiPreviewActorId . '|' . $apiPreviewActorName;
+if ($apiPreviewActorName !== '' && $apiPreviewUserId > 0) {
+    $apiPreviewPayload = PreviewLinkHelper::buildPayload((string) $formId, $apiPreviewUntil, $apiPreviewActorId, $apiPreviewActorName, $apiPreviewUserId);
     $apiPreviewSig = hash_hmac('sha256', $apiPreviewPayload, (string) $app->get('secret'));
-    if ($apiPreviewSig !== '') {
-        $apiPreviewQuery = '&cb_preview=1'
-            . '&cb_preview_until=' . $apiPreviewUntil
-            . '&cb_preview_actor_id=' . $apiPreviewActorId
-            . '&cb_preview_actor_name=' . rawurlencode($apiPreviewActorName)
-            . '&cb_preview_sig=' . $apiPreviewSig;
-    }
+    $apiPreviewQuery = PreviewLinkHelper::buildQuery($apiPreviewUntil, $apiPreviewActorId, $apiPreviewActorName, $apiPreviewUserId, $apiPreviewSig);
 }
 $apiExampleRecordId = 123;
 $apiExampleFields = [

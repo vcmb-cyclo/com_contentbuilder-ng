@@ -61,7 +61,7 @@ class contentbuilderng_com_contentbuilderng
         }
     }
 
-    public function synchRecords()
+    public function synchRecords(?int $contentbuilderngFormId = null)
     {
         if (!is_object($this->properties))
             return;

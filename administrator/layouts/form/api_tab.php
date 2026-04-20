@@ -10,6 +10,7 @@
 
 \defined('_JEXEC') or die;
 
+use CB\Component\Contentbuilderng\Administrator\Service\ApiPermissionRequirementService;
 use Joomla\CMS\Language\Text;
 
 $apiExampleDetailUrl = (string) ($displayData['apiExampleDetailUrl'] ?? '');
@@ -22,6 +23,29 @@ $apiExampleListDisplayUrl = (string) ($displayData['apiExampleListDisplayUrl'] ?
 $apiExampleStatsDisplayUrl = (string) ($displayData['apiExampleStatsDisplayUrl'] ?? '');
 $apiExampleVerboseDisplayUrl = (string) ($displayData['apiExampleVerboseDisplayUrl'] ?? '');
 $apiExamplePayloadJson = (string) ($displayData['apiExamplePayloadJson'] ?? '');
+$apiPermissionRequirements = new ApiPermissionRequirementService();
+$permissionLabelKeys = [
+    'api' => 'COM_CONTENTBUILDERNG_PERM_API',
+    'view' => 'COM_CONTENTBUILDERNG_PERM_VIEW',
+    'listaccess' => 'COM_CONTENTBUILDERNG_PERM_LIST_ACCESS',
+    'edit' => 'COM_CONTENTBUILDERNG_PERM_EDIT',
+    'rating' => 'COM_CONTENTBUILDERNG_PERM_RATING',
+    'stats' => 'COM_CONTENTBUILDERNG_PERM_STATS',
+];
+$renderPermissions = static function (array $permissions) use ($permissionLabelKeys): string {
+    $items = [];
+
+    foreach ($permissions as $permission) {
+        $labelKey = $permissionLabelKeys[$permission] ?? '';
+        if ($labelKey === '') {
+            continue;
+        }
+
+        $items[] = '<span class="badge bg-secondary">' . htmlspecialchars(Text::_($labelKey), ENT_QUOTES, 'UTF-8') . '</span>';
+    }
+
+    return implode(' <span class="text-muted">+</span> ', $items);
+};
 ?>
 <h3 id="cb-form-api" class="mb-3"><?php echo Text::_('COM_CONTENTBUILDERNG_API_TAB_TITLE'); ?></h3>
 <p class="text-muted mb-3">
@@ -35,6 +59,7 @@ $apiExamplePayloadJson = (string) ($displayData['apiExamplePayloadJson'] ?? '');
         <th style="width:180px;"><?php echo Text::_('COM_CONTENTBUILDERNG_API_METHOD'); ?></th>
         <th><?php echo Text::_('COM_CONTENTBUILDERNG_API_ENDPOINT'); ?></th>
         <th><?php echo Text::_('COM_CONTENTBUILDERNG_API_DESCRIPTION'); ?></th>
+        <th style="width:220px;"><?php echo Text::_('COM_CONTENTBUILDERNG_API_PERMISSIONS'); ?></th>
     </tr>
     <tr>
         <td><code>GET</code></td>
@@ -44,6 +69,7 @@ $apiExamplePayloadJson = (string) ($displayData['apiExamplePayloadJson'] ?? '');
             </a>
         </td>
         <td><?php echo Text::_('COM_CONTENTBUILDERNG_API_GET_DETAIL_DESC'); ?></td>
+        <td><?php echo $renderPermissions($apiPermissionRequirements->getRequiredPermissions('GET', '', 1)); ?></td>
     </tr>
     <tr>
         <td><code>GET</code></td>
@@ -53,6 +79,7 @@ $apiExamplePayloadJson = (string) ($displayData['apiExamplePayloadJson'] ?? '');
             </a>
         </td>
         <td><?php echo Text::_('COM_CONTENTBUILDERNG_API_GET_LIST_DESC'); ?></td>
+        <td><?php echo $renderPermissions($apiPermissionRequirements->getRequiredPermissions('GET', '', 0)); ?></td>
     </tr>
     <tr>
         <td><code>GET</code></td>
@@ -62,6 +89,7 @@ $apiExamplePayloadJson = (string) ($displayData['apiExamplePayloadJson'] ?? '');
             </a>
         </td>
         <td><?php echo Text::_('COM_CONTENTBUILDERNG_API_GET_STATS_DESC'); ?></td>
+        <td><?php echo $renderPermissions($apiPermissionRequirements->getRequiredPermissions('GET', 'stats', 0)); ?></td>
     </tr>
     <tr>
         <td><code>PUT</code> / <code>PATCH</code> / <code>POST</code></td>
@@ -71,6 +99,7 @@ $apiExamplePayloadJson = (string) ($displayData['apiExamplePayloadJson'] ?? '');
             </a>
         </td>
         <td><?php echo Text::_('COM_CONTENTBUILDERNG_API_UPDATE_DESC'); ?></td>
+        <td><?php echo $renderPermissions($apiPermissionRequirements->getRequiredPermissions('PUT', '', 1)); ?></td>
     </tr>
 </table>
 <div class="alert alert-secondary py-2 mb-3">
