@@ -395,4 +395,5 @@ namespace {
     require_once \dirname(__DIR__) . '/src/Helper/FormDisplayColumnsHelper.php';
     require_once \dirname(__DIR__) . '/src/Service/ConfigExportService.php';
     require_once \dirname(__DIR__) . '/src/Service/ConfigImportService.php';
+    require_once \dirname(__DIR__) . '/src/Helper/PhpTemplateHelper.php';
 }
