@@ -2431,7 +2431,7 @@ $renderNumberedAuditTitle = static function (string $sectionId, string $label, b
                         aria-expanded="false"
                         aria-controls="cb-about-php-libraries-collapse"
                     >
-                        <?php echo (int) $phpLibrariesCount . ' ' . Text::_('COM_CONTENTBUILDERNG_PHP_LIBRARIES'); ?>
+                        <?php echo Text::sprintf($phpLibrariesCount === 1 ? 'COM_CONTENTBUILDERNG_PHP_LIBRARY_COUNT' : 'COM_CONTENTBUILDERNG_PHP_LIBRARIES_COUNT', (int) $phpLibrariesCount); ?>
                     </button>
                 </h3>
                 <div
@@ -2488,7 +2488,7 @@ $renderNumberedAuditTitle = static function (string $sectionId, string $label, b
                         aria-expanded="false"
                         aria-controls="cb-about-js-libraries-collapse"
                     >
-                        <?php echo (int) $javascriptLibrariesCount . ' ' . Text::_('COM_CONTENTBUILDERNG_JS_LIBRARIES'); ?>
+                        <?php echo Text::sprintf($javascriptLibrariesCount === 1 ? 'COM_CONTENTBUILDERNG_JS_LIBRARY_COUNT' : 'COM_CONTENTBUILDERNG_JS_LIBRARIES_COUNT', (int) $javascriptLibrariesCount); ?>
                     </button>
                 </h3>
                 <div
