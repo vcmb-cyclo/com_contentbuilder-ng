@@ -27,6 +27,11 @@ final class ConfigImportServiceTest extends TestCase
     // Fixtures
     // -------------------------------------------------------------------------
 
+    /**
+     * Minimal but realistic export payload: 2 forms, 3 elements, 1 list state,
+     * 2 storages, 3 storage fields, and storage content with 2 entries.
+     * IDs are intentionally non-sequential to catch off-by-one assumptions.
+     */
     private function buildPayload(): array
     {
         return [
@@ -95,6 +100,9 @@ final class ConfigImportServiceTest extends TestCase
 
     // -------------------------------------------------------------------------
     // Forms filtering
+    // Filtering by name restricts the forms rows, then cascades to all
+    // form-dependent sections (elements, list_states, resource_access) using
+    // the resolved form IDs — never the original payload IDs.
     // -------------------------------------------------------------------------
 
     public function testFilterByFormNameKeepsMatchingFormRows(): void
@@ -106,6 +114,7 @@ final class ConfigImportServiceTest extends TestCase
         self::assertSame('contact', $rows[0]['name']);
     }
 
+    // row_count must stay in sync with the actual filtered rows array.
     public function testFilterByFormNameExcludesNonMatchingRows(): void
     {
         $result = $this->service->filterPayload($this->buildPayload(), ['forms'], ['contact'], []);
@@ -117,6 +126,7 @@ final class ConfigImportServiceTest extends TestCase
         }
     }
 
+    // Elements are linked by form_id; only the 2 elements of form 1 should survive.
     public function testFilterByFormCascadesToElements(): void
     {
         $result = $this->service->filterPayload($this->buildPayload(), ['forms'], ['contact'], []);
@@ -128,6 +138,7 @@ final class ConfigImportServiceTest extends TestCase
         }
     }
 
+    // list_states are also form-dependent; filtering by 'survey' must keep its state.
     public function testFilterByFormCascadesToListStates(): void
     {
         $result = $this->service->filterPayload($this->buildPayload(), ['forms'], ['survey'], []);
@@ -137,18 +148,22 @@ final class ConfigImportServiceTest extends TestCase
         self::assertSame(2, $rows[0]['form_id']);
     }
 
+    // The payload's filters.form_ids must be updated to reflect the filtered selection
+    // so the importer knows which IDs to remap during apply.
     public function testFilterByFormUpdatesFormIdsInFilters(): void
     {
         $result = $this->service->filterPayload($this->buildPayload(), ['forms'], ['contact'], []);
         self::assertSame([1], $result['filters']['form_ids']);
     }
 
+    // Empty name list means "no sub-selection" → all forms pass through unchanged.
     public function testNoFormNamesSkipsFormFiltering(): void
     {
         $result = $this->service->filterPayload($this->buildPayload(), ['forms'], [], []);
         self::assertCount(2, $result['data']['forms']['rows']);
     }
 
+    // Providing names without selecting the 'forms' section must be a no-op.
     public function testFormSectionNotSelectedSkipsFormFiltering(): void
     {
         $result = $this->service->filterPayload($this->buildPayload(), [], ['contact'], []);
@@ -157,6 +172,9 @@ final class ConfigImportServiceTest extends TestCase
 
     // -------------------------------------------------------------------------
     // Storages filtering
+    // Same cascade pattern as forms: storage rows → storage_fields → storage_content.
+    // Storage content has an extra dimension: it is opt-in via $selectedStorageContentNames,
+    // so it can be excluded even when a storage itself is included.
     // -------------------------------------------------------------------------
 
     public function testFilterByStorageNameKeepsMatchingStorageRows(): void
@@ -168,6 +186,7 @@ final class ConfigImportServiceTest extends TestCase
         self::assertSame('orders', $rows[0]['name']);
     }
 
+    // storage_fields are linked by storage_id; only the 2 fields of storage 10 survive.
     public function testFilterByStorageCascadesToStorageFields(): void
     {
         $result = $this->service->filterPayload($this->buildPayload(), ['storages'], [], ['orders']);
@@ -179,18 +198,22 @@ final class ConfigImportServiceTest extends TestCase
         }
     }
 
+    // filters.storage_ids must reflect the filtered selection for the importer's remap step.
     public function testFilterByStorageUpdatesStorageIdsInFilters(): void
     {
         $result = $this->service->filterPayload($this->buildPayload(), ['storages'], [], ['feedback']);
         self::assertSame([20], $result['filters']['storage_ids']);
     }
 
+    // Storage content is always excluded when no storage content names are provided,
+    // even if the storage itself was selected. This is the default "structure only" import.
     public function testStorageContentExcludedWhenNoStorageContentNamesGiven(): void
     {
         $result = $this->service->filterPayload($this->buildPayload(), ['storages'], [], ['orders']);
         self::assertSame([], $result['data']['storage_content']['storages']);
     }
 
+    // When content names are explicitly provided, only the matching entries are kept.
     public function testStorageContentFilteredByNameWhenProvided(): void
     {
         $result = $this->service->filterPayload($this->buildPayload(), ['storages'], [], ['orders', 'feedback'], ['feedback']);
@@ -200,6 +223,7 @@ final class ConfigImportServiceTest extends TestCase
         self::assertSame('feedback', $storages[0]['storage_name']);
     }
 
+    // row_count on storage_content is the sum of individual entry row_counts, not a flat count.
     public function testStorageContentRowCountIsRecomputedAfterFilter(): void
     {
         $result = $this->service->filterPayload($this->buildPayload(), ['storages'], [], ['orders', 'feedback'], ['feedback']);
@@ -207,9 +231,10 @@ final class ConfigImportServiceTest extends TestCase
     }
 
     // -------------------------------------------------------------------------
-    // No-op cases
+    // No-op / defensive cases
     // -------------------------------------------------------------------------
 
+    // A payload with no data sections must not crash — e.g. a partial or legacy export.
     public function testEmptyPayloadDataReturnsSafely(): void
     {
         $payload = ['filters' => [], 'data' => []];
@@ -217,6 +242,7 @@ final class ConfigImportServiceTest extends TestCase
         self::assertSame([], $result['data']);
     }
 
+    // When no sections are selected the payload passes through entirely unmodified.
     public function testPayloadReturnedUnmodifiedWhenNoSectionsSelected(): void
     {
         $payload = $this->buildPayload();

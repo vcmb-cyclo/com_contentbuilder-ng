@@ -500,7 +500,7 @@ class ArticleService
                 $db->setQuery(
                     'Insert Into ' . $db->quoteName('#__assets')
                     . ' (' . $db->quoteName('rules') . ',' . $db->quoteName('name') . ',' . $db->quoteName('title') . ',' . $db->quoteName('parent_id') . ',' . $db->quoteName('level') . ',' . $db->quoteName('lft') . ',' . $db->quoteName('rgt') . ')'
-                    . ' Values ({}'
+                    . ' Values (' . $db->quote('{}')
                     . ',' . $db->quote('com_content.article.' . (int) $article)
                     . ',' . $db->quote($label)
                     . ',' . (int) $parentId
@@ -529,12 +529,16 @@ class ArticleService
                     ->where($db->quoteName('id') . ' = ' . (int)$article);
                 $db->setQuery($query);
                 $db->execute();
-                $query = $db->getQuery(true)
-                    ->insert($db->quoteName('#__workflow_associations'))
-                    ->columns([$db->quoteName('item_id'), $db->quoteName('stage_id'), $db->quoteName('extension')])
-                    ->values((int)$article . ', 1, ' . $db->quote('com_content.article'));
-                $db->setQuery($query);
-                $db->execute();
+                $stageId = $this->loadDefaultWorkflowStageId($db);
+
+                if ($stageId > 0) {
+                    $query = $db->getQuery(true)
+                        ->insert($db->quoteName('#__workflow_associations'))
+                        ->columns([$db->quoteName('item_id'), $db->quoteName('stage_id'), $db->quoteName('extension')])
+                        ->values((int) $article . ', ' . $stageId . ', ' . $db->quote('com_content.article'));
+                    $db->setQuery($query);
+                    $db->execute();
+                }
             }
         } else {
             $___datenow = Factory::getDate()->toSql();
@@ -593,7 +597,7 @@ class ArticleService
                     $db->setQuery(
                         'Insert Into ' . $db->quoteName('#__assets')
                         . ' (' . $db->quoteName('rules') . ',' . $db->quoteName('name') . ',' . $db->quoteName('title') . ',' . $db->quoteName('parent_id') . ',' . $db->quoteName('level') . ',' . $db->quoteName('lft') . ',' . $db->quoteName('rgt') . ')'
-                        . ' Values ({}'
+                        . ' Values (' . $db->quote('{}')
                         . ',' . $db->quote('com_content.article.' . (int) $article)
                         . ',' . $db->quote($label)
                         . ',' . (int) $parentId
@@ -712,5 +716,38 @@ class ArticleService
             $cacheOptions['defaultgroup'] = $group;
             $cacheFactory->createCacheController('callback', $cacheOptions)->clean();
         }
+    }
+
+    private function loadDefaultWorkflowStageId(DatabaseInterface $db): int
+    {
+        $query = $db->getQuery(true)
+            ->select($db->quoteName('stage.id'))
+            ->from($db->quoteName('#__workflow_stages', 'stage'))
+            ->join('INNER', $db->quoteName('#__workflows', 'workflow') . ' ON ' . $db->quoteName('workflow.id') . ' = ' . $db->quoteName('stage.workflow_id'))
+            ->where($db->quoteName('workflow.extension') . ' = ' . $db->quote('com_content.article'))
+            ->where($db->quoteName('workflow.published') . ' = 1')
+            ->where($db->quoteName('stage.published') . ' = 1')
+            ->where($db->quoteName('stage.default') . ' = 1')
+            ->order($db->quoteName('stage.id') . ' ASC')
+            ->setLimit(1);
+        $db->setQuery($query);
+        $stageId = (int) $db->loadResult();
+
+        if ($stageId > 0) {
+            return $stageId;
+        }
+
+        $query = $db->getQuery(true)
+            ->select($db->quoteName('stage.id'))
+            ->from($db->quoteName('#__workflow_stages', 'stage'))
+            ->join('INNER', $db->quoteName('#__workflows', 'workflow') . ' ON ' . $db->quoteName('workflow.id') . ' = ' . $db->quoteName('stage.workflow_id'))
+            ->where($db->quoteName('workflow.extension') . ' = ' . $db->quote('com_content.article'))
+            ->where($db->quoteName('workflow.published') . ' = 1')
+            ->where($db->quoteName('stage.published') . ' = 1')
+            ->order($db->quoteName('stage.id') . ' ASC')
+            ->setLimit(1);
+        $db->setQuery($query);
+
+        return (int) $db->loadResult();
     }
 }

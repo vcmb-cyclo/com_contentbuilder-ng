@@ -25,14 +25,20 @@ final class ConfigExportServiceTest extends TestCase
     }
 
     /**
+     * A section is "effective" only when it is explicitly selected AND has at least one
+     * matching ID. A section with no IDs is silently dropped — the controller would have
+     * nothing to export and must not produce an empty export file.
+     *
      * @return array<string,array{0:list<string>,1:list<int>,2:list<int>,3:list<string>}>
      */
     public static function effectiveSectionsProvider(): array
     {
         return [
+            // Basic inclusion: a known section paired with at least one ID is kept.
             'forms with ids is effective' => [
                 ['forms'], [10, 20], [], ['forms'],
             ],
+            // No IDs → nothing to export → section is dropped.
             'forms without ids is excluded' => [
                 ['forms'], [], [], [],
             ],
@@ -42,9 +48,11 @@ final class ConfigExportServiceTest extends TestCase
             'storages without ids is excluded' => [
                 ['storages'], [], [], [],
             ],
+            // Both sections present with IDs → both survive.
             'both sections with ids both effective' => [
                 ['forms', 'storages'], [1], [2], ['forms', 'storages'],
             ],
+            // Mixed: only the section that has IDs is kept.
             'only forms has ids, storages excluded' => [
                 ['forms', 'storages'], [1], [], ['forms'],
             ],
@@ -54,9 +62,11 @@ final class ConfigExportServiceTest extends TestCase
             'empty selection returns empty' => [
                 [], [], [], [],
             ],
+            // Unrecognised section keys are silently ignored (not in ROOT_SECTIONS).
             'unknown section is ignored' => [
                 ['unknown'], [1], [2], [],
             ],
+            // Duplicate section keys must not produce duplicate entries in the result.
             'duplicates are collapsed' => [
                 ['forms', 'forms'], [1], [], ['forms'],
             ],

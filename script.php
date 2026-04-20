@@ -170,6 +170,9 @@ class com_contentbuilderngInstallerScript
                     '[INFO] ' . $this->formatIncomingBuildTypeMessage($incomingBuildTypeLabel, $incomingBuildTimestamp),
                     Log::INFO
                 );
+                if (!$this->checkInstalledFilePermissionsBeforeCopy()) {
+                    return false;
+                }
             }
 
             if ($type !== 'uninstall') {
@@ -474,6 +477,121 @@ class com_contentbuilderngInstallerScript
         }
 
         return true;
+    }
+
+    private function checkInstalledFilePermissionsBeforeCopy(): bool
+    {
+        $paths = $this->getInstalledWritableCheckPaths();
+        $blocked = [];
+
+        foreach ($paths as $path) {
+            if (!file_exists($path)) {
+                continue;
+            }
+
+            $blocked = array_merge($blocked, $this->collectNonWritablePaths($path, 25 - count($blocked)));
+
+            if (count($blocked) >= 25) {
+                break;
+            }
+        }
+
+        if ($blocked === []) {
+            $this->log('[OK] Existing ContentBuilder NG files are writable for this update.');
+            return true;
+        }
+
+        $sample = array_slice($blocked, 0, 10);
+        $lines = array_map(
+            static fn(string $path): string => '<li><code>' . htmlspecialchars($path, ENT_QUOTES, 'UTF-8') . '</code></li>',
+            $sample
+        );
+        $remaining = max(0, count($blocked) - count($sample));
+        if ($remaining > 0) {
+            $lines[] = '<li>... +' . $remaining . ' more</li>';
+        }
+
+        $message = '[ERROR] ContentBuilder NG update cannot copy files because some installed files or directories are not writable by Joomla.'
+            . '<br>Fix ownership/permissions before reinstalling. On the standard Docker container, run:'
+            . '<br><code>docker exec joomla6-joomla-1 chown -R www-data:www-data /var/www/html/administrator/components/com_contentbuilderng /var/www/html/components/com_contentbuilderng /var/www/html/media/com_contentbuilderng /var/www/html/plugins/system/contentbuilderng_system /var/www/html/plugins/content/contentbuilderng_verify /var/www/html/plugins/content/contentbuilderng_permission_observer /var/www/html/plugins/content/contentbuilderng_image_scale /var/www/html/plugins/content/contentbuilderng_download /var/www/html/plugins/content/contentbuilderng_rating /var/www/html/plugins/contentbuilderng_listaction /var/www/html/plugins/contentbuilderng_validation /var/www/html/plugins/contentbuilderng_themes /var/www/html/plugins/contentbuilderng_submit /var/www/html/plugins/contentbuilderng_verify</code>'
+            . '<br>Examples of blocked paths:<ul>' . implode('', $lines) . '</ul>';
+
+        $this->log($message, Log::ERROR);
+        return false;
+    }
+
+    private function getInstalledWritableCheckPaths(): array
+    {
+        return [
+            JPATH_ADMINISTRATOR . '/components/com_contentbuilderng',
+            JPATH_ROOT . '/components/com_contentbuilderng',
+            JPATH_ROOT . '/media/com_contentbuilderng',
+            JPATH_ROOT . '/plugins/system/contentbuilderng_system',
+            JPATH_ROOT . '/plugins/content/contentbuilderng_verify',
+            JPATH_ROOT . '/plugins/content/contentbuilderng_permission_observer',
+            JPATH_ROOT . '/plugins/content/contentbuilderng_image_scale',
+            JPATH_ROOT . '/plugins/content/contentbuilderng_download',
+            JPATH_ROOT . '/plugins/content/contentbuilderng_rating',
+            JPATH_ROOT . '/plugins/contentbuilderng_listaction',
+            JPATH_ROOT . '/plugins/contentbuilderng_validation',
+            JPATH_ROOT . '/plugins/contentbuilderng_themes',
+            JPATH_ROOT . '/plugins/contentbuilderng_submit',
+            JPATH_ROOT . '/plugins/contentbuilderng_verify',
+            JPATH_ADMINISTRATOR . '/language/en-GB/en-GB.com_contentbuilderng.ini',
+            JPATH_ADMINISTRATOR . '/language/en-GB/en-GB.com_contentbuilderng.menu.ini',
+            JPATH_ADMINISTRATOR . '/language/en-GB/en-GB.com_contentbuilderng.sys.ini',
+            JPATH_ADMINISTRATOR . '/language/de-DE/de-DE.com_contentbuilderng.ini',
+            JPATH_ADMINISTRATOR . '/language/de-DE/de-DE.com_contentbuilderng.menu.ini',
+            JPATH_ADMINISTRATOR . '/language/de-DE/de-DE.com_contentbuilderng.sys.ini',
+            JPATH_ADMINISTRATOR . '/language/fr-FR/fr-FR.com_contentbuilderng.ini',
+            JPATH_ADMINISTRATOR . '/language/fr-FR/fr-FR.com_contentbuilderng.menu.ini',
+            JPATH_ADMINISTRATOR . '/language/fr-FR/fr-FR.com_contentbuilderng.sys.ini',
+            JPATH_ROOT . '/language/en-GB/en-GB.com_contentbuilderng.ini',
+            JPATH_ROOT . '/language/de-DE/de-DE.com_contentbuilderng.ini',
+            JPATH_ROOT . '/language/fr-FR/fr-FR.com_contentbuilderng.ini',
+        ];
+    }
+
+    private function collectNonWritablePaths(string $path, int $limit): array
+    {
+        if ($limit <= 0) {
+            return [];
+        }
+
+        if (!is_writable($path)) {
+            return [$path];
+        }
+
+        if (!is_dir($path)) {
+            return [];
+        }
+
+        $blocked = [];
+
+        try {
+            $iterator = new \RecursiveIteratorIterator(
+                new \RecursiveDirectoryIterator($path, \FilesystemIterator::SKIP_DOTS),
+                \RecursiveIteratorIterator::SELF_FIRST
+            );
+
+            foreach ($iterator as $item) {
+                $itemPath = $item instanceof \SplFileInfo ? $item->getPathname() : (string) $item;
+
+                if ($itemPath !== '' && !is_writable($itemPath)) {
+                    $blocked[] = $itemPath;
+
+                    if (count($blocked) >= $limit) {
+                        break;
+                    }
+                }
+            }
+        } catch (\Throwable $e) {
+            if (!is_readable($path)) {
+                $blocked[] = $path;
+            }
+        }
+
+        return $blocked;
     }
 
     // ---------------------------------------------------------------------

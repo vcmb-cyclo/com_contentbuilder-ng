@@ -332,7 +332,17 @@ class RepairWorkflowService
             if ($formId <= 0) {
                 return null;
             }
-            return sprintf('%d. form_id=%d form_name=%s default_category_id=%d default_category_valid=%d invalid_article_count=%d', $index + 1, $formId, (string) ($issue['form_name'] ?? ''), (int) ($issue['default_category_id'] ?? 0), !empty($issue['default_category_valid']) ? 1 : 0, (int) ($issue['invalid_article_count'] ?? 0));
+            return sprintf(
+                '%d. form_id=%d form_name=%s default_category_id=%d default_category_valid=%d invalid_categories=%d missing_assets=%d missing_workflows=%d',
+                $index + 1,
+                $formId,
+                (string) ($issue['form_name'] ?? ''),
+                (int) ($issue['default_category_id'] ?? 0),
+                !empty($issue['default_category_valid']) ? 1 : 0,
+                (int) ($issue['invalid_category_count'] ?? 0),
+                (int) ($issue['missing_asset_count'] ?? 0),
+                (int) ($issue['missing_workflow_count'] ?? 0)
+            );
         });
     }
 
@@ -994,7 +1004,9 @@ class RepairWorkflowService
                 . ' category ' . (int) ($form['from_category_id'] ?? 0)
                 . ' -> ' . (int) ($form['to_category_id'] ?? 0)
                 . ', form_updated=' . (!empty($form['form_updated']) ? 'yes' : 'no')
-                . ', articles_updated=' . (int) ($form['articles_updated'] ?? 0);
+                . ', articles_updated=' . (int) ($form['articles_updated'] ?? 0)
+                . ', assets_updated=' . (int) ($form['assets_updated'] ?? 0)
+                . ', workflows_updated=' . (int) ($form['workflows_updated'] ?? 0);
             $error = trim((string) ($form['error'] ?? ''));
             if ($error !== '') {
                 $line .= ', error=' . $error;
@@ -1019,6 +1031,8 @@ class RepairWorkflowService
                 (int) ($summary['unchanged'] ?? 0),
                 (int) ($summary['forms_updated'] ?? 0),
                 (int) ($summary['articles_updated'] ?? 0),
+                (int) ($summary['assets_updated'] ?? 0),
+                (int) ($summary['workflows_updated'] ?? 0),
                 (int) ($summary['errors'] ?? 0)
             ),
             'lines' => $lines,
