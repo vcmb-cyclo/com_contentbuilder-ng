@@ -810,8 +810,8 @@ class FormModel extends AdminModel
         $query->from('#__categories AS a');
         $query->join('LEFT', '`#__categories` AS b ON a.lft > b.lft AND a.rgt < b.rgt');
 
-        // Filter by the type
-        $query->where('(a.extension = ' . $db->quote('com_content') . ' OR a.parent_id = 0)');
+        // Article creation requires a real com_content category, not the system root.
+        $query->where('a.extension = ' . $db->quote('com_content'));
 
         $query->where('a.published IN (0,1)');
         $query->group('a.id');

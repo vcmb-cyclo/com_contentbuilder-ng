@@ -238,10 +238,12 @@ class ArticleService
         $language = $form['default_lang_code_ignore'] ? $ignoreLangCode : $form['default_lang_code'];
         $access = $form['default_access'];
         $ordering = 0;
+        $categoryId = (int) $form['default_category'];
 
         if ($full) {
             $alias = $config['alias'] ?? $alias;
             $form['default_category'] = $config['catid'] ?? $form['default_category'];
+            $categoryId = (int) $form['default_category'];
             $access = $config['access'] ?? $access;
             $featured = $config['featured'] ?? 0;
             $language = $config['language'] ?? $language;
@@ -375,6 +377,18 @@ class ArticleService
             $dispatcher->dispatch('onContentBeforeSave', $event);
         }
 
+        $query = $db->getQuery(true)
+            ->select($db->quoteName('id'))
+            ->from($db->quoteName('#__categories'))
+            ->where($db->quoteName('id') . ' = ' . $categoryId)
+            ->where($db->quoteName('extension') . ' = ' . $db->quote('com_content'))
+            ->where($db->quoteName('published') . ' IN (0, 1)');
+        $db->setQuery($query);
+
+        if (!$db->loadResult()) {
+            return 0;
+        }
+
         $createdBy = $createdBy ?: $metadata->created_id;
         $created = $createdArticle ?: ($metadata->created ?: Factory::getDate()->toSql());
 
@@ -425,7 +439,7 @@ class ArticleService
                     $db->quote($introtext),
                     $db->quote($fulltext),
                     $db->quote($state),
-                    (int) $form['default_category'],
+                    $categoryId,
                     $db->quote($created),
                     (int) $insertCreatedBy,
                     $db->quote($created),
@@ -477,7 +491,7 @@ class ArticleService
             $query = $db->getQuery(true)
                 ->select('*')
                 ->from($db->quoteName('#__assets'))
-                ->where($db->quoteName('name') . ' = ' . $db->quote('com_content.category.' . (int) $form['default_category']));
+                ->where($db->quoteName('name') . ' = ' . $db->quote('com_content.category.' . $categoryId));
             $db->setQuery($query);
             $parentAsset = $db->loadAssoc();
 
@@ -541,7 +555,7 @@ class ArticleService
                     ->set($db->quoteName('introtext') . ' = ' . $db->quote($introMarker . $introtext))
                     ->set($db->quoteName('fulltext') . ' = ' . $db->quote($fulltext . $introMarker))
                     ->set($db->quoteName('state') . ' = ' . $db->quote($state))
-                    ->set($db->quoteName('catid') . ' = ' . (int) $form['default_category'])
+                    ->set($db->quoteName('catid') . ' = ' . $categoryId)
                     ->set($db->quoteName('modified') . ' = ' . $db->quote($modified))
                     ->set($db->quoteName('modified_by') . ' = ' . (int) $updateModifiedBy)
                     ->set($db->quoteName('attribs') . ' = ' . $db->quote($attribs !== '' ? $attribs : $defaultAttribs))
@@ -565,7 +579,7 @@ class ArticleService
                 $query = $db->getQuery(true)
                     ->select('*')
                     ->from($db->quoteName('#__assets'))
-                    ->where($db->quoteName('name') . ' = ' . $db->quote('com_content.category.' . (int) $form['default_category']));
+                    ->where($db->quoteName('name') . ' = ' . $db->quote('com_content.category.' . $categoryId));
                 $db->setQuery($query);
                 $parentAsset = $db->loadAssoc();
 
@@ -618,6 +632,7 @@ class ArticleService
                     ->set($db->quoteName('introtext') . ' = ' . $db->quote($introMarker . $introtext))
                     ->set($db->quoteName('fulltext') . ' = ' . $db->quote($fulltext . $introMarker))
                     ->set($db->quoteName('state') . ' = ' . $db->quote($state))
+                    ->set($db->quoteName('catid') . ' = ' . $categoryId)
                     ->set($db->quoteName('modified') . ' = ' . $db->quote($modified))
                     ->set($db->quoteName('modified_by') . ' = ' . (int) $updateModifiedBy)
                     ->set($db->quoteName('version') . ' = ' . $db->quoteName('version') . '+1')
