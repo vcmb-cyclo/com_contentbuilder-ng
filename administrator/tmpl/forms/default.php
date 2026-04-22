@@ -17,9 +17,8 @@ use Joomla\CMS\Router\Route;
 use Joomla\CMS\HTML\HTMLHelper;
 use CB\Component\Contentbuilderng\Administrator\Helper\ContentbuilderngHelper;
 
-// Charge les scripts Joomla nécessaires (checkAll, submit, etc.)
-HTMLHelper::_('behavior.core');
-HTMLHelper::_('behavior.multiselect');
+$app = Factory::getApplication();
+$app->getDocument()->getWebAssetManager()->useScript('core');
 
 // Sécurité: valeurs par défaut
 $order     = $this->lists['order'] ?? 'a.ordering';
@@ -32,7 +31,6 @@ $saveOrder = ($order === 'a.ordering' && $orderDir === 'asc');
 $n = is_countable($this->items) ? count($this->items) : 0;
 
 // Keep start synced with model state, then fallback to request.
-$app = Factory::getApplication();
 $list = (array) $app->getInput()->get('list', [], 'array');
 $listStart = (int) ($this->pagination->start ?? ($this->lists['list.start'] ?? 0));
 if ($listStart < 0) {
@@ -47,21 +45,11 @@ $limitValue = (int) ($this->state->get('list.limit', (int) ($this->pagination->l
 
 $limitOptions = [];
 for ($i = 5; $i <= 30; $i += 5) {
-    $limitOptions[] = HTMLHelper::_('select.option', (string) $i);
+    $limitOptions[(string) $i] = (string) $i;
 }
-$limitOptions[] = HTMLHelper::_('select.option', '50', Text::_('J50'));
-$limitOptions[] = HTMLHelper::_('select.option', '100', Text::_('J100'));
-$limitOptions[] = HTMLHelper::_('select.option', '0', Text::_('JALL'));
-
-$limitSelect = HTMLHelper::_(
-    'select.genericlist',
-    $limitOptions,
-    'list[limit]',
-    'class="form-select js-select-submit-on-change active" id="list_limit" onchange="document.adminForm.submit();"',
-    'value',
-    'text',
-    $limitValue
-);
+$limitOptions['50'] = Text::_('J50');
+$limitOptions['100'] = Text::_('J100');
+$limitOptions['0'] = Text::_('JALL');
 
 $filterSearch = (string) ($this->lists['filter_search'] ?? '');
 $filterStateRaw = strtoupper((string) ($this->lists['filter_state'] ?? ''));
@@ -234,7 +222,7 @@ updateClearButtonState();
                         <?php echo HTMLHelper::_('searchtools.sort', 'COM_CONTENTBUILDERNG_ID', 'a.id', $orderDir, $order); ?>
                     </th>
                     <th width="20">
-                        <?php echo HTMLHelper::_('grid.checkall'); ?>
+                        <input class="form-check-input" type="checkbox" name="checkall-toggle" value="" onclick="Joomla.checkAll(this);" aria-label="<?php echo htmlspecialchars(Text::_('JGLOBAL_CHECK_ALL'), ENT_QUOTES, 'UTF-8'); ?>">
                     </th>
                     <th width="60" class="text-center">
                         <span
@@ -275,7 +263,7 @@ updateClearButtonState();
                 $n = count($this->items);
                 for ($i = 0; $i < $n; $i++) {
                     $row = $this->items[$i];
-                    $checked = HTMLHelper::_('grid.id', $i, $row->id);
+                    $checked = '<input class="form-check-input" type="checkbox" id="cb' . (int) $i . '" name="cid[]" value="' . (int) $row->id . '" onclick="Joomla.isChecked(this.checked);">';
                     $link = Route::_('index.php?option=com_contentbuilderng&task=form.edit&id=' . $row->id);
                     $published = ContentbuilderngHelper::listPublish('forms', $row, $i);
                 ?>
@@ -374,7 +362,15 @@ updateClearButtonState();
                     <div class="d-flex flex-wrap align-items-center gap-2">
                     <?php echo $this->pagination->getPagesCounter(); ?>
                     <span><?php echo Text::_('COM_CONTENTBUILDERNG_DISPLAY_NUM'); ?></span>
-                    <span class="d-inline-block"><?php echo $limitSelect; ?></span>
+                    <span class="d-inline-block">
+                        <select name="list[limit]" class="form-select js-select-submit-on-change active" id="list_limit" onchange="document.adminForm.submit();">
+                            <?php foreach ($limitOptions as $value => $label) : ?>
+                                <option value="<?php echo htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8'); ?>"<?php echo ((string) $value === (string) $limitValue) ? ' selected' : ''; ?>>
+                                    <?php echo htmlspecialchars((string) $label, ENT_QUOTES, 'UTF-8'); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </span>
                     <span><?php echo Text::_('COM_CONTENTBUILDERNG_OF'); ?></span>
                     <span><?php echo (int) ($this->pagination->total ?? 0); ?></span>
                     </div>

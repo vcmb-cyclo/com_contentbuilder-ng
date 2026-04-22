@@ -337,7 +337,7 @@ Label 3;value3</textarea>
                 <thead>
                     <tr>
                         <th width="20">
-                            <?php echo HTMLHelper::_('grid.checkall'); ?>
+                            <input class="form-check-input" type="checkbox" name="checkall-toggle" value="" onclick="Joomla.checkAll(this);" aria-label="<?php echo htmlspecialchars(Text::_('JGLOBAL_CHECK_ALL'), ENT_QUOTES, 'UTF-8'); ?>">
                         </th>
                         <th>
                             <?php echo is_callable($sortLink) ? $sortLink(Text::_('COM_CONTENTBUILDERNG_NAME'), 'name') : Text::_('COM_CONTENTBUILDERNG_NAME'); ?>
@@ -363,7 +363,7 @@ Label 3;value3</textarea>
                     $title = htmlspecialchars((string) ($row->title ?? ''), ENT_QUOTES, 'UTF-8');
                     $groupDefinition = htmlspecialchars((string) ($row->group_definition ?? ''), ENT_QUOTES, 'UTF-8');
                     $isGroup = !empty($row->is_group);
-                    $checked = HTMLHelper::_('grid.id', $i, $id);
+                    $checked = '<input class="form-check-input" type="checkbox" id="cb-storage-field-' . (int) $i . '" name="cid[]" value="' . $id . '" onclick="Joomla.isChecked(this.checked);">';
                     $published = ContentbuilderngHelper::listPublish('storage', $row, $i);
                 ?>
                     <tr class="row<?php echo $i % 2; ?>" data-cb-row-id="<?php echo $id; ?>">

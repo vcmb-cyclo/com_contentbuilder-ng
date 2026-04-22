@@ -14,11 +14,10 @@
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Router\Route;
 use Joomla\CMS\HTML\HTMLHelper;
+use Joomla\CMS\Factory;
 use CB\Component\Contentbuilderng\Administrator\Helper\ContentbuilderngHelper;
 
-// Charge les scripts Joomla nécessaires (checkAll, submit, etc.)
-HTMLHelper::_('behavior.core');
-HTMLHelper::_('behavior.multiselect');
+Factory::getApplication()->getDocument()->getWebAssetManager()->useScript('core');
 
 // Sécurité: valeurs par défaut
 $listOrder = (string) $this->state->get('list.ordering', 'a.ordering');
@@ -33,21 +32,11 @@ $listStart = (int) $this->state->get('list.start', 0);
 
 $limitOptions = [];
 for ($i = 5; $i <= 30; $i += 5) {
-    $limitOptions[] = HTMLHelper::_('select.option', (string) $i);
+    $limitOptions[(string) $i] = (string) $i;
 }
-$limitOptions[] = HTMLHelper::_('select.option', '50', Text::_('J50'));
-$limitOptions[] = HTMLHelper::_('select.option', '100', Text::_('J100'));
-$limitOptions[] = HTMLHelper::_('select.option', '0', Text::_('JALL'));
-
-$limitSelect = HTMLHelper::_(
-    'select.genericlist',
-    $limitOptions,
-    'list[limit]',
-    'class="form-select js-select-submit-on-change active" id="list_limit" onchange="document.adminForm.submit();"',
-    'value',
-    'text',
-    $limitValue
-);
+$limitOptions['50'] = Text::_('J50');
+$limitOptions['100'] = Text::_('J100');
+$limitOptions['0'] = Text::_('JALL');
 
 $filterSearch = (string) $this->state->get('filter.search', '');
 $filterStateRaw = strtoupper((string) $this->state->get('filter.state', ''));
@@ -196,7 +185,7 @@ updateClearButtonState();
                     </th>
 
                     <th class="w-1 text-center">
-                        <?php echo HTMLHelper::_('grid.checkall'); ?>
+                        <input class="form-check-input" type="checkbox" name="checkall-toggle" value="" onclick="Joomla.checkAll(this);" aria-label="<?php echo htmlspecialchars(Text::_('JGLOBAL_CHECK_ALL'), ENT_QUOTES, 'UTF-8'); ?>">
                     </th>
 
                     <th width="60" class="text-center">
@@ -260,7 +249,7 @@ updateClearButtonState();
                         // ⚠️ Vérifie ta convention : task=storage.edit (singulier) ou storages.edit (pluriel)
                         $link = Route::_('index.php?option=com_contentbuilderng&task=storage.edit&id=' . $id);
 
-                        $checked   = HTMLHelper::_('grid.id', $i, $id);
+                        $checked = '<input class="form-check-input" type="checkbox" id="cb' . (int) $i . '" name="cid[]" value="' . $id . '" onclick="Joomla.isChecked(this.checked);">';
                         $published = ContentbuilderngHelper::listPublish('storages', $row, $i);
                         $previewUrl = (string) ($previewLinks[$id] ?? '');
 
@@ -318,7 +307,15 @@ updateClearButtonState();
                             <div class="d-flex flex-wrap align-items-center gap-2">
                                 <?php echo $this->pagination->getPagesCounter(); ?>
                                 <span><?php echo Text::_('COM_CONTENTBUILDERNG_DISPLAY_NUM'); ?></span>
-                                <span class="d-inline-block"><?php echo $limitSelect; ?></span>
+                                <span class="d-inline-block">
+                                    <select name="list[limit]" class="form-select js-select-submit-on-change active" id="list_limit" onchange="document.adminForm.submit();">
+                                        <?php foreach ($limitOptions as $value => $label) : ?>
+                                            <option value="<?php echo htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8'); ?>"<?php echo ((string) $value === (string) $limitValue) ? ' selected' : ''; ?>>
+                                                <?php echo htmlspecialchars((string) $label, ENT_QUOTES, 'UTF-8'); ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </span>
                                 <span><?php echo Text::_('COM_CONTENTBUILDERNG_OF'); ?></span>
                                 <span><?php echo (int) ($this->pagination->total ?? 0); ?></span>
                             </div>

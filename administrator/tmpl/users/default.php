@@ -19,14 +19,16 @@ use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Factory;
 use CB\Component\Contentbuilderng\Administrator\Helper\ContentbuilderngHelper;
 
-HTMLHelper::_('behavior.multiselect');
+$app = Factory::getApplication();
+$app->getDocument()->getWebAssetManager()->useScript('core');
 
 $ordering  = (string) $this->state->get('list.ordering', 'u.id');
 $direction = strtolower((string) $this->state->get('list.direction', 'asc'));
 $direction = ($direction === 'desc') ? 'desc' : 'asc';
 $search    = $this->state->get('filter.search');
-$formId    = (int) Factory::getApplication()->getInput()->getInt('form_id', 0);
-$tmpl      = Factory::getApplication()->getInput()->getWord('tmpl', '');
+$input     = $app->getInput();
+$formId    = (int) $input->getInt('form_id', 0);
+$tmpl      = $input->getWord('tmpl', '');
 
 $sortLink = function (string $label, string $field) use ($ordering, $direction, $formId, $tmpl): string {
     $isActive = ($ordering === $field);
@@ -116,7 +118,7 @@ $sortLink = function (string $label, string $field) use ($ordering, $direction, 
                         <?php echo $sortLink('ID', 'u.id'); ?>
                     </th>
                     <th width="20">
-                        <?php echo HTMLHelper::_('grid.checkall'); ?>
+                        <input class="form-check-input" type="checkbox" name="checkall-toggle" value="" onclick="Joomla.checkAll(this);" aria-label="<?php echo htmlspecialchars(Text::_('JGLOBAL_CHECK_ALL'), ENT_QUOTES, 'UTF-8'); ?>">
                     </th>
                     <th>
                         <?php echo $sortLink('Name', 'u.name'); ?>
@@ -141,8 +143,8 @@ $sortLink = function (string $label, string $field) use ($ordering, $direction, 
 
             <tbody>
                 <?php foreach ($this->items as $i => $item):
-                    $checked = HTMLHelper::_('grid.id', $i, $item->id);
-                    $link = Route::_('index.php?option=com_contentbuilderng&task=user.edit&form_id=' . (int) Factory::getApplication()->getInput()->getInt('form_id', 0) . '&joomla_userid=' . (int) $item->id);
+                    $checked = '<input class="form-check-input" type="checkbox" id="cb' . (int) $i . '" name="cid[]" value="' . (int) $item->id . '" onclick="Joomla.isChecked(this.checked);">';
+                    $link = Route::_('index.php?option=com_contentbuilderng&task=user.edit&form_id=' . $formId . '&joomla_userid=' . (int) $item->id);
                     if ($item->published === null) {
                         $item->published = 1;
                     }

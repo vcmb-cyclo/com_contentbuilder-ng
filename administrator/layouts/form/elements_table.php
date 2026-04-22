@@ -29,7 +29,7 @@ $isModifiedElementSettings = $displayData['isModifiedElementSettings'] ?? null;
                 <?php echo is_callable($sortLink) ? $sortLink(Text::_('COM_CONTENTBUILDERNG_ID'), 'id') : Text::_('COM_CONTENTBUILDERNG_ID'); ?>
             </th>
             <th id="cb-form-view-elements-heading-checkall" width="20">
-                <?php echo HTMLHelper::_('grid.checkall'); ?>
+                <input class="form-check-input" type="checkbox" name="checkall-toggle" value="" onclick="Joomla.checkAll(this);" aria-label="<?php echo htmlspecialchars(Text::_('JGLOBAL_CHECK_ALL'), ENT_QUOTES, 'UTF-8'); ?>">
             </th>
             <th id="cb-form-view-elements-heading-label">
                 <span class="editlinktip hasTip"
@@ -90,7 +90,7 @@ $isModifiedElementSettings = $displayData['isModifiedElementSettings'] ?? null;
         $n = count($elements);
         for ($i = 0; $i < $n; $i++) {
             $row = $elements[$i];
-            $checked = HTMLHelper::_('grid.id', $i, $row->id);
+            $checked = '<input class="form-check-input" type="checkbox" id="cb-element-' . (int) $i . '" name="cid[]" value="' . (int) $row->id . '" onclick="Joomla.isChecked(this.checked);">';
             $published = ContentbuilderngHelper::listPublish('form', $row, $i);
             $listInclude = ContentbuilderngHelper::listIncludeInList('form', $row, $i);
             $searchInclude = ContentbuilderngHelper::listIncludeInSearch('form', $row, $i);
