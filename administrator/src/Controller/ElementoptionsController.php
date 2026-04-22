@@ -49,7 +49,7 @@ class ElementoptionsController extends AdminController
         $id = $model->store();
 
         if ($id) {
-            $msg = Text::_('COM_CONTENTBUILDERNG_SAVE');
+            $msg = Text::_('COM_CONTENTBUILDERNG_SAVED');
         } else {
             $msg = Text::_('COM_CONTENTBUILDERNG_ERROR');
         }

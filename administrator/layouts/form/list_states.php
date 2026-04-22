@@ -21,7 +21,8 @@ $listStates = is_array($item->list_states ?? null) ? $item->list_states : [];
 <p class="text-muted mb-3">
     <?php echo Text::_('COM_CONTENTBUILDERNG_LIST_STATES_INTRO'); ?>
 </p>
-<table id="cb-form-list-states-table" class="table table-striped">
+<div class="table-responsive mb-3">
+<table id="cb-form-list-states-table" class="table table-striped" style="min-width: 680px;">
     <thead>
         <tr>
             <th>
@@ -110,3 +111,4 @@ $listStates = is_array($item->list_states ?? null) ? $item->list_states : [];
     }
     ?>
 </table>
+</div>

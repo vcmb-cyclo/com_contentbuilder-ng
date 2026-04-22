@@ -116,7 +116,7 @@ class ApiController extends BaseController
 
                 $updatedRecordId = $this->updateRecord($formId, $recordId);
                 $this->sendJson([
-                    'message' => Text::_('COM_CONTENTBUILDERNG_SAVE'),
+                    'message' => Text::_('COM_CONTENTBUILDERNG_SAVED'),
                     'record_id' => $updatedRecordId,
                     'detail' => $this->getDetailPayload($formId, $updatedRecordId),
                 ]);

@@ -368,7 +368,7 @@ class StorageController extends BaseFormController
 
         $message = trim((string) ($this->message ?? ''));
         if ($message === '') {
-            $message = Text::_('COM_CONTENTBUILDERNG_SAVE');
+            $message = Text::_('COM_CONTENTBUILDERNG_SAVED');
         }
         $this->setRedirect($link, $message);
         return true;

@@ -77,6 +77,13 @@ $wa->addInlineStyle(
         . '.cb-perm-inherited .form-check-input{background-color:#dce2e8;border-color:#b8c2cc}'
         . '.cb-perm-inherited .form-check-input:not(:checked){box-shadow:none}'
         . '.cb-perm-inherited .form-check-input:indeterminate{background-color:#c8d1db!important;border-color:#9eacba!important;background-image:url("data:image/svg+xml,%3csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 20 20%27%3e%3cpath fill=%27none%27 stroke=%27%23ffffff%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27 stroke-width=%273%27 d=%27M5 10.5l3 3 7-7%27/%3e%3c/svg%3e")!important;background-size:1rem 1rem!important}'
+        . '#cb-form-permissions-frontend-groups{width:auto;min-width:780px}'
+        . '#cb-form-permissions-frontend-groups th:first-child,#cb-form-permissions-frontend-groups td:first-child{min-width:210px;max-width:280px;white-space:normal}'
+        . '#cb-form-permissions-frontend-groups th:not(:first-child),#cb-form-permissions-frontend-groups td:not(:first-child){width:48px;min-width:48px;text-align:center;padding:.45rem .35rem}'
+        . '#cb-form-permissions-frontend-groups thead th:not(:first-child){height:8.25rem;vertical-align:bottom}'
+        . '#cb-form-permissions-frontend-groups thead th:not(:first-child) .cb-perm-header-tip{display:inline-flex;align-items:center;writing-mode:vertical-rl;transform:rotate(180deg);white-space:nowrap;font-size:.75rem;line-height:1.1}'
+        . '#cb-form-permissions-frontend-groups .form-check{display:inline-flex;margin:0;min-height:0}'
+        . '#cb-form-permissions-frontend-groups .form-check-input{margin:0}'
         . '.cb-perm-users-grid{display:grid;grid-template-columns:minmax(280px,340px) minmax(0,1fr);gap:1rem;align-items:start}'
         . '.cb-perm-users-card{border:1px solid var(--bs-border-color);border-radius:10px;background:var(--bs-body-bg);padding:.65rem 1rem .9rem}'
         . '.cb-perm-users-card-wide{grid-column:1 / -1}'
@@ -347,11 +354,11 @@ $permissionColumns = [
     ['key' => 'delete', 'label' => 'COM_CONTENTBUILDERNG_PERM_DELETE', 'tip' => 'COM_CONTENTBUILDERNG_PERM_DELETE_TIP'],
     ['key' => 'state', 'label' => 'COM_CONTENTBUILDERNG_PERM_STATE', 'tip' => 'COM_CONTENTBUILDERNG_PERM_STATE_TIP'],
     ['key' => 'publish', 'label' => 'COM_CONTENTBUILDERNG_PUBLISH', 'tip' => 'COM_CONTENTBUILDERNG_PUBLISH_TIP'],
+    ['key' => 'api', 'label' => 'COM_CONTENTBUILDERNG_PERM_API', 'tip' => 'COM_CONTENTBUILDERNG_PERM_API_TIP'],
+    ['key' => 'stats', 'label' => 'COM_CONTENTBUILDERNG_PERM_STATS', 'tip' => 'COM_CONTENTBUILDERNG_PERM_STATS_TIP'],
     ['key' => 'fullarticle', 'label' => 'COM_CONTENTBUILDERNG_PERM_FULL_ARTICLE', 'tip' => 'COM_CONTENTBUILDERNG_PERM_FULL_ARTICLE_TIP'],
     ['key' => 'language', 'label' => 'COM_CONTENTBUILDERNG_PERM_CHANGE_LANGUAGE', 'tip' => 'COM_CONTENTBUILDERNG_PERM_CHANGE_LANGUAGE_TIP'],
     ['key' => 'rating', 'label' => 'COM_CONTENTBUILDERNG_PERM_RATING', 'tip' => 'COM_CONTENTBUILDERNG_PERM_RATING_TIP'],
-    ['key' => 'api', 'label' => 'COM_CONTENTBUILDERNG_PERM_API', 'tip' => 'COM_CONTENTBUILDERNG_PERM_API_TIP'],
-    ['key' => 'stats', 'label' => 'COM_CONTENTBUILDERNG_PERM_STATS', 'tip' => 'COM_CONTENTBUILDERNG_PERM_STATS_TIP'],
 ];
 
 $defaultCheckedForNewPermissions = ['listaccess' => true, 'view' => true, 'new' => true];

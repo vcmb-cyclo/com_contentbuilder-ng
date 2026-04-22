@@ -90,7 +90,7 @@ class UsersController extends BaseController
             $model->setListVerifiedView();
 
             if ($this->isAjaxCall()) {
-                $this->respondAjax(true, Text::_('COM_CONTENTBUILDERNG_SAVE'));
+                $this->respondAjax(true, Text::_('COM_CONTENTBUILDERNG_SAVED'));
                 return;
             }
         } catch (\Throwable $e) {
@@ -110,7 +110,7 @@ class UsersController extends BaseController
             $model->setListNotVerifiedView();
 
             if ($this->isAjaxCall()) {
-                $this->respondAjax(true, Text::_('COM_CONTENTBUILDERNG_SAVE'));
+                $this->respondAjax(true, Text::_('COM_CONTENTBUILDERNG_SAVED'));
                 return;
             }
         } catch (\Throwable $e) {
@@ -130,7 +130,7 @@ class UsersController extends BaseController
             $model->setListVerifiedNew();
 
             if ($this->isAjaxCall()) {
-                $this->respondAjax(true, Text::_('COM_CONTENTBUILDERNG_SAVE'));
+                $this->respondAjax(true, Text::_('COM_CONTENTBUILDERNG_SAVED'));
                 return;
             }
         } catch (\Throwable $e) {
@@ -150,7 +150,7 @@ class UsersController extends BaseController
             $model->setListNotVerifiedNew();
 
             if ($this->isAjaxCall()) {
-                $this->respondAjax(true, Text::_('COM_CONTENTBUILDERNG_SAVE'));
+                $this->respondAjax(true, Text::_('COM_CONTENTBUILDERNG_SAVED'));
                 return;
             }
         } catch (\Throwable $e) {
@@ -170,7 +170,7 @@ class UsersController extends BaseController
             $model->setListVerifiedEdit();
 
             if ($this->isAjaxCall()) {
-                $this->respondAjax(true, Text::_('COM_CONTENTBUILDERNG_SAVE'));
+                $this->respondAjax(true, Text::_('COM_CONTENTBUILDERNG_SAVED'));
                 return;
             }
         } catch (\Throwable $e) {
@@ -190,7 +190,7 @@ class UsersController extends BaseController
             $model->setListNotVerifiedEdit();
 
             if ($this->isAjaxCall()) {
-                $this->respondAjax(true, Text::_('COM_CONTENTBUILDERNG_SAVE'));
+                $this->respondAjax(true, Text::_('COM_CONTENTBUILDERNG_SAVED'));
                 return;
             }
         } catch (\Throwable $e) {

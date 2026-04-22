@@ -22,7 +22,8 @@ $sortLink = $displayData['sortLink'] ?? null;
 $textUtilityService = $displayData['textUtilityService'] ?? null;
 $isModifiedElementSettings = $displayData['isModifiedElementSettings'] ?? null;
 ?>
-<table class="table table-striped cb-elements-table">
+<div class="table-responsive mb-3">
+<table class="table table-striped cb-elements-table" style="min-width: 980px;">
     <thead>
         <tr>
             <th id="cb-form-view-elements-heading-id" width="5">
@@ -231,3 +232,4 @@ $isModifiedElementSettings = $displayData['isModifiedElementSettings'] ?? null;
         </tr>
     </tfoot>
 </table>
+</div>
