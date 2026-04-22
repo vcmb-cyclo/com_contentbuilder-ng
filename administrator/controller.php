@@ -28,7 +28,7 @@ class ContentbuilderController extends BaseController
         parent::display();
 
         $app = Factory::getApplication();
-        if ($app->input->get('market', '', 'string') === 'true') {
+        if ($app->getInput()->get('market', '', 'string') === 'true') {
             $app->redirect('https://breezingforms-ng.vcmb.fr');
         }
     }

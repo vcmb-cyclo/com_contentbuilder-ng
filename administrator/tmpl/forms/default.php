@@ -33,15 +33,15 @@ $n = is_countable($this->items) ? count($this->items) : 0;
 
 // Keep start synced with model state, then fallback to request.
 $app = Factory::getApplication();
-$list = (array) $app->input->get('list', [], 'array');
+$list = (array) $app->getInput()->get('list', [], 'array');
 $listStart = (int) ($this->pagination->start ?? ($this->lists['list.start'] ?? 0));
 if ($listStart < 0) {
     $listStart = 0;
 }
 if (isset($list['start'])) {
     $listStart = (int) $list['start'];
-} elseif ($app->input->get('limitstart', null, 'raw') !== null) {
-    $listStart = (int) $app->input->getInt('limitstart', 0);
+} elseif ($app->getInput()->get('limitstart', null, 'raw') !== null) {
+    $listStart = (int) $app->getInput()->getInt('limitstart', 0);
 }
 $limitValue = (int) ($this->state->get('list.limit', (int) ($this->pagination->limit ?? 0)));
 

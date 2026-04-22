@@ -121,7 +121,7 @@ SELECT
             if ($this->export_xls):
                 ?>
                 <span style="float: right; text-align: right;"><a
-                        href="<?php echo Route::_('index.php?option=com_contentbuilderng&view=export&id=' . Factory::getApplication()->input->getInt('id', 0) . '&type=xls&format=raw&tmpl=component'); ?>">
+                        href="<?php echo Route::_('index.php?option=com_contentbuilderng&view=export&id=' . Factory::getApplication()->getInput()->getInt('id', 0) . '&type=xls&format=raw&tmpl=component'); ?>">
                         <div class="cbXlsExportButton"
                             style="background-image: url(<?php echo Uri::root(true); ?>/media/com_contentbuilderng/images/xls.png); background-repeat: no-repeat; width: 16px; height: 16px;"
                             alt="Export"></div>
@@ -143,7 +143,7 @@ SELECT
                     if ($new_allowed) {
                         ?>
                         <a class="btn btn-sm btn-primary cbButton cbNewButton"
-                            href="<?php echo Route::_('index.php?option=com_contentbuilderng&task=edit.display&backtolist=1&id=' . Factory::getApplication()->input->getInt('id', 0) . (Factory::getApplication()->input->get('tmpl', '', 'string') != '' ? '&tmpl=' . Factory::getApplication()->input->get('tmpl', '', 'string') : '') . (Factory::getApplication()->input->get('layout', '', 'string') != '' ? '&layout=' . Factory::getApplication()->input->get('layout', '', 'string') : '') . '&record_id=&limitstart=' . Factory::getApplication()->input->getInt('limitstart', 0) . '&filter_order=' . Factory::getApplication()->input->getCmd('filter_order')); ?>">
+                            href="<?php echo Route::_('index.php?option=com_contentbuilderng&task=edit.display&backtolist=1&id=' . Factory::getApplication()->getInput()->getInt('id', 0) . (Factory::getApplication()->getInput()->get('tmpl', '', 'string') != '' ? '&tmpl=' . Factory::getApplication()->getInput()->get('tmpl', '', 'string') : '') . (Factory::getApplication()->getInput()->get('layout', '', 'string') != '' ? '&layout=' . Factory::getApplication()->getInput()->get('layout', '', 'string') : '') . '&record_id=&limitstart=' . Factory::getApplication()->getInput()->getInt('limitstart', 0) . '&filter_order=' . Factory::getApplication()->getInput()->getCmd('filter_order')); ?>">
                             <?php echo Text::_('COM_CONTENTBUILDERNG_NEW'); ?>
                         </a>
                         <?php
@@ -347,10 +347,10 @@ SELECT
                 ? ' <span class="ms-1 fa-solid fa-sort fa-solid fa-sort-up" aria-hidden="true"></span>'
                 : ' <span class="ms-1 fa-solid fa-sort fa-solid fa-sort-down" aria-hidden="true"></span>';
         };
-        $formId = (int) ($this->form_id ?? Factory::getApplication()->input->getInt('id', 0));
-        $itemId = (int) Factory::getApplication()->input->getInt('Itemid', 0);
-        $tmpl = (string) Factory::getApplication()->input->get('tmpl', '', 'string');
-        $layout = (string) Factory::getApplication()->input->get('layout', '', 'string');
+        $formId = (int) ($this->form_id ?? Factory::getApplication()->getInput()->getInt('id', 0));
+        $itemId = (int) Factory::getApplication()->getInput()->getInt('Itemid', 0);
+        $tmpl = (string) Factory::getApplication()->getInput()->get('tmpl', '', 'string');
+        $layout = (string) Factory::getApplication()->getInput()->get('layout', '', 'string');
         $tmplParam = $tmpl !== '' ? '&tmpl=' . $tmpl : '';
         $layoutParam = $layout !== '' ? '&layout=' . $layout : '';
         $itemIdParam = $itemId ? '&Itemid=' . $itemId : '';
@@ -476,10 +476,10 @@ SELECT
             $n = count($this->items);
             for ($i = 0; $i < $n; $i++) {
                 $row = $this->items[$i];
-                $link = Route::_('index.php?option=com_contentbuilderng&layout=select&&task=details.display&id=' . $this->form_id . '&record_id=' . $row->colRecord . '&Itemid=' . Factory::getApplication()->input->getInt('Itemid', 0) . (Factory::getApplication()->input->get('tmpl', '', 'string') != '' ? '&tmpl=' . Factory::getApplication()->input->get('tmpl', '', 'string') : '') . (Factory::getApplication()->input->get('layout', '', 'string') != '' ? '&layout=' . Factory::getApplication()->input->get('layout', '', 'string') : '') . '&limitstart=' . Factory::getApplication()->input->getInt('limitstart', 0) . '&filter_order=' . Factory::getApplication()->input->getCmd('filter_order'));
-                $edit_link = Route::_('index.php?option=com_contentbuilderng&layout=select&task=edit.display&backtolist=1&id=' . $this->form_id . '&record_id=' . $row->colRecord . '&Itemid=' . Factory::getApplication()->input->getInt('Itemid', 0) . (Factory::getApplication()->input->get('tmpl', '', 'string') != '' ? '&tmpl=' . Factory::getApplication()->input->get('tmpl', '', 'string') : '') . (Factory::getApplication()->input->get('layout', '', 'string') != '' ? '&layout=' . Factory::getApplication()->input->get('layout', '', 'string') : '') . '&limitstart=' . Factory::getApplication()->input->getInt('limitstart', 0) . '&filter_order=' . Factory::getApplication()->input->getCmd('filter_order'));
-                $publish_link = Route::_('index.php?option=com_contentbuilderng&layout=select&task=edit.display&task=edit.publish&backtolist=1&id=' . $this->form_id . '&list_publish=1&cid[]=' . $row->colRecord . '&Itemid=' . Factory::getApplication()->input->getInt('Itemid', 0) . (Factory::getApplication()->input->get('tmpl', '', 'string') != '' ? '&tmpl=' . Factory::getApplication()->input->get('tmpl', '', 'string') : '') . (Factory::getApplication()->input->get('layout', '', 'string') != '' ? '&layout=' . Factory::getApplication()->input->get('layout', '', 'string') : '') . '&limitstart=' . Factory::getApplication()->input->getInt('limitstart', 0) . '&filter_order=' . Factory::getApplication()->input->getCmd('filter_order'));
-                $unpublish_link = Route::_('index.php?option=com_contentbuilderng&layout=select&task=edit.display&task=edit.publish&backtolist=1&id=' . $this->form_id . '&list_publish=0&cid[]=' . $row->colRecord . '&Itemid=' . Factory::getApplication()->input->getInt('Itemid', 0) . (Factory::getApplication()->input->get('tmpl', '', 'string') != '' ? '&tmpl=' . Factory::getApplication()->input->get('tmpl', '', 'string') : '') . (Factory::getApplication()->input->get('layout', '', 'string') != '' ? '&layout=' . Factory::getApplication()->input->get('layout', '', 'string') : '') . '&limitstart=' . Factory::getApplication()->input->getInt('limitstart', 0) . '&filter_order=' . Factory::getApplication()->input->getCmd('filter_order'));
+                $link = Route::_('index.php?option=com_contentbuilderng&layout=select&&task=details.display&id=' . $this->form_id . '&record_id=' . $row->colRecord . '&Itemid=' . Factory::getApplication()->getInput()->getInt('Itemid', 0) . (Factory::getApplication()->getInput()->get('tmpl', '', 'string') != '' ? '&tmpl=' . Factory::getApplication()->getInput()->get('tmpl', '', 'string') : '') . (Factory::getApplication()->getInput()->get('layout', '', 'string') != '' ? '&layout=' . Factory::getApplication()->getInput()->get('layout', '', 'string') : '') . '&limitstart=' . Factory::getApplication()->getInput()->getInt('limitstart', 0) . '&filter_order=' . Factory::getApplication()->getInput()->getCmd('filter_order'));
+                $edit_link = Route::_('index.php?option=com_contentbuilderng&layout=select&task=edit.display&backtolist=1&id=' . $this->form_id . '&record_id=' . $row->colRecord . '&Itemid=' . Factory::getApplication()->getInput()->getInt('Itemid', 0) . (Factory::getApplication()->getInput()->get('tmpl', '', 'string') != '' ? '&tmpl=' . Factory::getApplication()->getInput()->get('tmpl', '', 'string') : '') . (Factory::getApplication()->getInput()->get('layout', '', 'string') != '' ? '&layout=' . Factory::getApplication()->getInput()->get('layout', '', 'string') : '') . '&limitstart=' . Factory::getApplication()->getInput()->getInt('limitstart', 0) . '&filter_order=' . Factory::getApplication()->getInput()->getCmd('filter_order'));
+                $publish_link = Route::_('index.php?option=com_contentbuilderng&layout=select&task=edit.display&task=edit.publish&backtolist=1&id=' . $this->form_id . '&list_publish=1&cid[]=' . $row->colRecord . '&Itemid=' . Factory::getApplication()->getInput()->getInt('Itemid', 0) . (Factory::getApplication()->getInput()->get('tmpl', '', 'string') != '' ? '&tmpl=' . Factory::getApplication()->getInput()->get('tmpl', '', 'string') : '') . (Factory::getApplication()->getInput()->get('layout', '', 'string') != '' ? '&layout=' . Factory::getApplication()->getInput()->get('layout', '', 'string') : '') . '&limitstart=' . Factory::getApplication()->getInput()->getInt('limitstart', 0) . '&filter_order=' . Factory::getApplication()->getInput()->getCmd('filter_order'));
+                $unpublish_link = Route::_('index.php?option=com_contentbuilderng&layout=select&task=edit.display&task=edit.publish&backtolist=1&id=' . $this->form_id . '&list_publish=0&cid[]=' . $row->colRecord . '&Itemid=' . Factory::getApplication()->getInput()->getInt('Itemid', 0) . (Factory::getApplication()->getInput()->get('tmpl', '', 'string') != '' ? '&tmpl=' . Factory::getApplication()->getInput()->get('tmpl', '', 'string') : '') . (Factory::getApplication()->getInput()->get('layout', '', 'string') != '' ? '&layout=' . Factory::getApplication()->getInput()->get('layout', '', 'string') : '') . '&limitstart=' . Factory::getApplication()->getInput()->getInt('limitstart', 0) . '&filter_order=' . Factory::getApplication()->getInput()->getCmd('filter_order'));
                 $select = HTMLHelper::_('grid.id', $i, (int) $row->colRecord);
                 ?>
                 <tr class="<?php echo"row$k"; ?>">
@@ -606,7 +606,7 @@ SELECT
                         ?>
                         <td>
                             <?php
-                            echo RatingHelper::getRating(Factory::getApplication()->input->getInt('id', 0), $row->colRecord, $row->colRating, $this->rating_slots, Factory::getApplication()->input->getCmd('lang', ''), $rating_allowed, $row->colRatingCount, $row->colRatingSum);
+                            echo RatingHelper::getRating(Factory::getApplication()->getInput()->getInt('id', 0), $row->colRecord, $row->colRating, $this->rating_slots, Factory::getApplication()->getInput()->getCmd('lang', ''), $rating_allowed, $row->colRatingCount, $row->colRatingSum);
                             ?>
                         </td>
                         <?php
@@ -658,9 +658,9 @@ SELECT
         </table>
     </div>
     <?php
-    if (Factory::getApplication()->input->get('tmpl', '', 'string') != '') {
+    if (Factory::getApplication()->getInput()->get('tmpl', '', 'string') != '') {
         ?>
-        <input type="hidden" name="tmpl" value="<?php echo Factory::getApplication()->input->get('tmpl', '', 'string'); ?>" />
+        <input type="hidden" name="tmpl" value="<?php echo Factory::getApplication()->getInput()->get('tmpl', '', 'string'); ?>" />
         <?php
     }
     ?>
@@ -669,9 +669,9 @@ SELECT
     <input type="hidden" name="boxchecked" value="0" />
     <input type="hidden" name="view" id="view" value="list" />
     <input type="hidden" name="layout" id="view" value="select" />
-    <input type="hidden" name="Itemid" value="<?php echo Factory::getApplication()->input->getInt('Itemid', 0); ?>" />
+    <input type="hidden" name="Itemid" value="<?php echo Factory::getApplication()->getInput()->getInt('Itemid', 0); ?>" />
     <input type="hidden" name="limitstart" value="" />
-    <input type="hidden" name="id" value="<?php echo Factory::getApplication()->input->getInt('id', 0) ?>" />
+    <input type="hidden" name="id" value="<?php echo Factory::getApplication()->getInput()->getInt('id', 0) ?>" />
     <input type="hidden" name="filter_order" value="<?php echo $this->lists['order']; ?>" />
     <input type="hidden" name="filter_order_Dir" value="<?php echo $this->lists['order_Dir']; ?>" />
     <?php echo HTMLHelper::_('form.token'); ?>

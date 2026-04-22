@@ -42,7 +42,7 @@ $storageTitle = trim((string) ($this->item->title ?? ''));
 $dataTableName = $storageName !== '' ? $storageName : '-';
 $createdBy = trim((string) ($this->item->created_by ?? ''));
 $modifiedBy = trim((string) ($this->item->modified_by ?? ''));
-$requestedTab = trim((string) $app->input->getCmd('tabStartOffset', ''));
+$requestedTab = trim((string) $app->getInput()->getCmd('tabStartOffset', ''));
 $activeTab = preg_match('/^tab\d+$/', $requestedTab) ? $requestedTab : 'tab0';
 $isPublished = ((int) ($this->item->published ?? 0) === 1);
 $publishedIconClass = $isPublished ? 'fa-solid fa-check text-success' : 'fa-solid fa-circle-xmark text-danger';
@@ -705,7 +705,7 @@ echo HTMLHelper::_('uitab.endTabSet');
     <input type="hidden" name="list[ordering]" value="<?php echo htmlspecialchars($listOrder, ENT_QUOTES, 'UTF-8'); ?>" />
     <input type="hidden" name="list[direction]" value="<?php echo htmlspecialchars($listDirn, ENT_QUOTES, 'UTF-8'); ?>" />
     <input type="hidden" id="list_fullordering" name="list[fullordering]" value="<?php echo htmlspecialchars($fullOrdering, ENT_QUOTES, 'UTF-8'); ?>" />
-    <input type="hidden" name="limitstart" value="<?php echo (int) Factory::getApplication()->input->getInt('limitstart', 0); ?>" />
+    <input type="hidden" name="limitstart" value="<?php echo (int) Factory::getApplication()->getInput()->getInt('limitstart', 0); ?>" />
     <input type="hidden" name="boxchecked" value="0" />
     <input type="hidden" name="tabStartOffset" value="<?php echo htmlspecialchars($activeTab, ENT_QUOTES, 'UTF-8'); ?>" />
     <?php echo HTMLHelper::_('form.token'); ?>

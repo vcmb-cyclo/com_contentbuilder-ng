@@ -83,7 +83,7 @@ class PermissionService
         $app = $this->getApp();
         $session = $app->getSession();
         $key = 'com_contentbuilderng.permissions' . $suffix;
-        $isAdminPreview = $this->isSignedAdminPreviewRequest((int) $formId) || $app->input->getBool('cb_preview_ok', false);
+        $isAdminPreview = $this->isSignedAdminPreviewRequest((int) $formId) || $app->getInput()->getBool('cb_preview_ok', false);
         $formPublishedClause = $isAdminPreview ? '' : ' And published = 1';
 
         $session->remove($key);
@@ -417,7 +417,7 @@ class PermissionService
     private function isSignedAdminPreviewRequest(int $formId): bool
     {
         $app = $this->getApp();
-        $input = $app->input;
+        $input = $app->getInput();
 
         if ($formId < 1 || !$input->getBool('cb_preview', false)) {
             return false;

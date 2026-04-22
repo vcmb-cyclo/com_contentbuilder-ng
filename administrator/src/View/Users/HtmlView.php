@@ -42,7 +42,7 @@ class HtmlView extends BaseHtmlView
         $this->state      = $model->getState();
 
         // Toolbar
-        $formId = Factory::getApplication()->input->getInt('form_id', 0);
+        $formId = Factory::getApplication()->getInput()->getInt('form_id', 0);
         $title = Text::_('COM_CONTENTBUILDERNG') . ' / ';
 
         if ($formId > 0) {

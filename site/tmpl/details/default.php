@@ -47,7 +47,7 @@ $edit_allowed = $frontend ? $permissionService->authorizeFe('edit') : $permissio
 $delete_allowed = $frontend ? $permissionService->authorizeFe('delete') : $permissionService->authorize('delete');
 $rating_allowed = $frontend ? $permissionService->authorizeFe('rating') : $permissionService->authorize('rating');
 $view_allowed = $frontend ? $permissionService->authorizeFe('view') : $permissionService->authorize('view');
-$input = Factory::getApplication()->input;
+$input = Factory::getApplication()->getInput();
 $runtimeApp = Factory::getApplication();
 $detailsTopBarToggle = MenuParamHelper::resolveInputOrMenuToggle($runtimeApp, 'cb_show_details_top_bar', (int) ($this->cb_show_details_top_bar ?? 1));
 $detailsBackButtonToggle = MenuParamHelper::resolveInputOrMenuToggle($runtimeApp, 'cb_show_details_back_button', (int) ($this->show_back_button ?? 1), 'show_back_button');
@@ -270,7 +270,7 @@ CSS
     function contentbuilderng_delete() {
         var confirmed = confirm('<?php echo Text::_('COM_CONTENTBUILDERNG_CONFIRM_DELETE_MESSAGE'); ?>');
         if (confirmed) {
-            location.href = '<?php echo Uri::root() . ltrim(Route::_('index.php?option=com_contentbuilderng&title=' . Factory::getApplication()->input->get('title', '', 'string') . (Factory::getApplication()->input->get('tmpl', '', 'string') != '' ? '&tmpl=' . Factory::getApplication()->input->get('tmpl', '', 'string') : '') . (Factory::getApplication()->input->get('layout', '', 'string') != '' ? '&layout=' . Factory::getApplication()->input->get('layout', '', 'string') : '') . '&task=edit.delete&id=' . Factory::getApplication()->input->getInt('id', 0) . '&cid[]=' . Factory::getApplication()->input->getCmd('record_id', 0) . '&Itemid=' . Factory::getApplication()->input->getInt('Itemid', 0) . ($listQuery !== '' ? '&' . $listQuery : ''), false), '/'); ?>';
+            location.href = '<?php echo Uri::root() . ltrim(Route::_('index.php?option=com_contentbuilderng&title=' . Factory::getApplication()->getInput()->get('title', '', 'string') . (Factory::getApplication()->getInput()->get('tmpl', '', 'string') != '' ? '&tmpl=' . Factory::getApplication()->getInput()->get('tmpl', '', 'string') : '') . (Factory::getApplication()->getInput()->get('layout', '', 'string') != '' ? '&layout=' . Factory::getApplication()->getInput()->get('layout', '', 'string') : '') . '&task=edit.delete&id=' . Factory::getApplication()->getInput()->getInt('id', 0) . '&cid[]=' . Factory::getApplication()->getInput()->getCmd('record_id', 0) . '&Itemid=' . Factory::getApplication()->getInput()->getInt('Itemid', 0) . ($listQuery !== '' ? '&' . $listQuery : ''), false), '/'); ?>';
         }
     }
     //
@@ -346,11 +346,11 @@ CSS
         $directStorageMode ? 'storage_id' : 'id' => $directStorageMode ? $directStorageId : $input->getInt('id', 0),
         'Itemid' => $input->getInt('Itemid', 0),
     ];
-    $detailsTmpl = Factory::getApplication()->input->get('tmpl', '', 'string');
+    $detailsTmpl = Factory::getApplication()->getInput()->get('tmpl', '', 'string');
     if ($detailsTmpl !== '') {
         $detailsBaseParams['tmpl'] = $detailsTmpl;
     }
-    $detailsLayout = Factory::getApplication()->input->get('layout', '', 'string');
+    $detailsLayout = Factory::getApplication()->getInput()->get('layout', '', 'string');
     if ($detailsLayout !== '') {
         $detailsBaseParams['layout'] = $detailsLayout;
     }
@@ -451,7 +451,7 @@ CSS
 
     <?php if ($edit_allowed) : ?>
         <a class="btn btn-sm btn-primary cbButton cbEditButton"
-            href="<?php echo Route::_('index.php?option=com_contentbuilderng&task=edit.display&id=' . Factory::getApplication()->input->getInt('id', 0) . '&record_id=' . Factory::getApplication()->input->getCmd('record_id', 0) . (Factory::getApplication()->input->get('tmpl', '', 'string') != '' ? '&tmpl=' . Factory::getApplication()->input->get('tmpl', '', 'string') : '') . '&Itemid=' . Factory::getApplication()->input->getInt('Itemid', 0) . (Factory::getApplication()->input->get('layout', '', 'string') != '' ? '&layout=' . Factory::getApplication()->input->get('layout', '', 'string') : '') . ($listQuery !== '' ? '&' . $listQuery : '') . $previewQuery); ?>"
+            href="<?php echo Route::_('index.php?option=com_contentbuilderng&task=edit.display&id=' . Factory::getApplication()->getInput()->getInt('id', 0) . '&record_id=' . Factory::getApplication()->getInput()->getCmd('record_id', 0) . (Factory::getApplication()->getInput()->get('tmpl', '', 'string') != '' ? '&tmpl=' . Factory::getApplication()->getInput()->get('tmpl', '', 'string') : '') . '&Itemid=' . Factory::getApplication()->getInput()->getInt('Itemid', 0) . (Factory::getApplication()->getInput()->get('layout', '', 'string') != '' ? '&layout=' . Factory::getApplication()->getInput()->get('layout', '', 'string') : '') . ($listQuery !== '' ? '&' . $listQuery : '') . $previewQuery); ?>"
             title="<?php echo htmlspecialchars(Text::_('COM_CONTENTBUILDERNG_DETAILS_EDIT_TOOLTIP'), ENT_QUOTES, 'UTF-8'); ?>">
             <span class="fa-solid fa-pen me-1" aria-hidden="true"></span>
             <?php echo Text::_('COM_CONTENTBUILDERNG_EDIT'); ?>

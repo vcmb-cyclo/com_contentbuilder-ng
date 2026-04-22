@@ -60,13 +60,13 @@ class StoragesModel extends ListModel
         parent::populateState($ordering, $direction);
 
         // Joomla 6 admin lists post list[limit]; also accept the flat limit field.
-        $list = $app->input->get('list', [], 'array');
+        $list = $app->getInput()->get('list', [], 'array');
         if (is_array($list) && array_key_exists('limit', $list)) {
             $limit = (int) $list['limit'];
             $this->setState('list.limit', $limit);
             $app->setUserState($this->context . '.list.limit', $limit);
-        } elseif ($app->input->get('limit', null, 'raw') !== null) {
-            $limit = (int) $app->input->get('limit', 0, 'int');
+        } elseif ($app->getInput()->get('limit', null, 'raw') !== null) {
+            $limit = (int) $app->getInput()->get('limit', 0, 'int');
             $this->setState('list.limit', $limit);
             $app->setUserState($this->context . '.list.limit', $limit);
         }
@@ -178,7 +178,7 @@ class StoragesModel extends ListModel
     /*
     function setPublished()
     {
-        $cids = Factory::getApplication()->input->get('cid', [], 'array');
+        $cids = Factory::getApplication()->getInput()->get('cid', [], 'array');
         ArrayHelper::toInteger($cids);
         $this->getDatabase()->setQuery(' Update #__contentbuilderng_storages ' .
             '  Set published = 1 Where id In ( ' . implode(',', $cids) . ')');
@@ -188,7 +188,7 @@ class StoragesModel extends ListModel
 
     function setUnpublished()
     {
-        $cids = Factory::getApplication()->input->get('cid', [], 'array');
+        $cids = Factory::getApplication()->getInput()->get('cid', [], 'array');
         ArrayHelper::toInteger($cids);
         $this->getDatabase()->setQuery(' Update #__contentbuilderng_storages ' .
             '  Set published = 0 Where id In ( ' . implode(',', $cids) . ')');
@@ -250,14 +250,14 @@ class StoragesModel extends ListModel
 
     function saveOrder()
     {
-        $items = Factory::getApplication()->input->post->get('cid', [], 'array');
+        $items = Factory::getApplication()->getInput()->post->get('cid', [], 'array');
         ArrayHelper::toInteger($items);
 
         $total = count($items);
         $row = $this->getTable('Storage');
         $groupings = array();
 
-        $order = Factory::getApplication()->input->post->get('order', [], 'array');
+        $order = Factory::getApplication()->getInput()->post->get('order', [], 'array');
         ArrayHelper::toInteger($order);
 
         // update ordering values

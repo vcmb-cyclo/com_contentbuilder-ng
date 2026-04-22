@@ -268,7 +268,7 @@ class FormModel extends AdminModel
         // 2) ID depuis l'URL (standard Joomla en admin)
         /** @var CMSApplication $app */
         $app   = $this->getApp();
-        $input = $app->input;
+        $input = $app->getInput();
         $formId = $input->getInt('id', 0);
 
         // 3) Fallback si on arrive via POST (save/apply etc.)
@@ -885,7 +885,7 @@ class FormModel extends AdminModel
     public function save($data): bool
     {
         $app   = $this->getApp();
-        $input = $app->input;
+        $input = $app->getInput();
         $db    = $this->getDatabase();
         $formSupportService = new FormSupportService(new PathService());
         $pathService = new PathService();

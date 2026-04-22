@@ -1066,7 +1066,7 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
     function listItemTask(id, task) {
 
         var f = document.adminForm;
-        f.limitstart.value = <?php echo Factory::getApplication()->input->getInt('limitstart', 0) ?>;
+        f.limitstart.value = <?php echo Factory::getApplication()->getInput()->getInt('limitstart', 0) ?>;
         cb = eval('f.' + id);
 
         if (cb) {
@@ -2712,7 +2712,7 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
         <?php
         $advancedOptionsContent = '';
         // Démarrer les onglets
-        $activeViewTab = trim((string) $app->input->getCmd('tab', ''));
+        $activeViewTab = trim((string) $app->getInput()->getCmd('tab', ''));
         $allowedViewTabs = ['tab0', 'tab1', 'tab2', 'tab3', 'tab5', 'tab6', 'tab7', 'tab8', 'tab9', 'tab10'];
         if (!in_array($activeViewTab, $allowedViewTabs, true)) {
             $activeViewTab = 'tab0';
@@ -3160,7 +3160,7 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
     <input type="hidden" name="id" value="<?php echo (int) $this->item->id; ?>" />
     <input type="hidden" name="jform[id]" value="<?php echo (int) $this->item->id; ?>" />
     <input type="hidden" name="task" value="form.display" />
-    <input type="hidden" name="limitstart" value="<?php echo (int) Factory::getApplication()->input->getInt('limitstart', 0); ?>" />
+    <input type="hidden" name="limitstart" value="<?php echo (int) Factory::getApplication()->getInput()->getInt('limitstart', 0); ?>" />
     <input type="hidden" name="jform[ordering]" value="<?php echo $this->item->ordering; ?>" />
     <input type="hidden" name="jform[published]" value="<?php echo $this->item->published; ?>" />
     <input type="hidden" name="filter_order" value="<?php echo htmlspecialchars($listOrder, ENT_QUOTES, 'UTF-8'); ?>" />

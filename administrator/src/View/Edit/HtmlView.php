@@ -293,8 +293,8 @@ class HtmlView extends BaseHtmlView
 			$registry->loadString($table->attribs ?? '');
 
 			// seems to be a joomla bug. if sef urls is enabled, "start" is used for paging in articles, else "limitstart" will be used
-			$limitstart = Factory::getApplication()->input->getInt('limitstart', 0);
-			$start = Factory::getApplication()->input->getInt('start', 0);
+			$limitstart = Factory::getApplication()->getInput()->getInt('limitstart', 0);
+			$start = Factory::getApplication()->getInput()->getInt('start', 0);
 			$page = $limitstart ? $limitstart : $start;
 			$hasBfShortcode = $this->hasBreezingFormsPlaceholder((string) ($table->text ?? ''));
 
@@ -362,7 +362,7 @@ class HtmlView extends BaseHtmlView
 							}
 						}
 					}
-					$subject->template = str_replace($match, Route::_('index.php?option=com_contentbuilderng&view=details&id=' . Factory::getApplication()->input->getInt('id') . '&record_id=' . Factory::getApplication()->input->getCmd('record_id', '') . '&Itemid=' . Factory::getApplication()->input->getInt('Itemid', 0) . $sub), $subject->template);
+					$subject->template = str_replace($match, Route::_('index.php?option=com_contentbuilderng&view=details&id=' . Factory::getApplication()->getInput()->getInt('id') . '&record_id=' . Factory::getApplication()->getInput()->getCmd('record_id', '') . '&Itemid=' . Factory::getApplication()->getInput()->getInt('Itemid', 0) . $sub), $subject->template);
 				}
 			}
 
@@ -384,7 +384,7 @@ class HtmlView extends BaseHtmlView
 							}
 						}
 					}
-					$table->toc = str_replace($match, Route::_('index.php?option=com_contentbuilderng&view=details&id=' . Factory::getApplication()->input->getInt('id') . '&record_id=' . Factory::getApplication()->input->getCmd('record_id', '') . '&Itemid=' . Factory::getApplication()->input->getInt('Itemid', 0) . $sub), $table->toc);
+					$table->toc = str_replace($match, Route::_('index.php?option=com_contentbuilderng&view=details&id=' . Factory::getApplication()->getInput()->getInt('id') . '&record_id=' . Factory::getApplication()->getInput()->getCmd('record_id', '') . '&Itemid=' . Factory::getApplication()->getInput()->getInt('Itemid', 0) . $sub), $table->toc);
 				}
 			}
 

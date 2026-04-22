@@ -14,7 +14,6 @@ namespace CB\Component\Contentbuilderng\Site\Field;
 
 use Joomla\CMS\Factory;
 use Joomla\CMS\Form\FormField;
-use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\Database\DatabaseInterface;
 
@@ -117,15 +116,20 @@ class FormsField extends FormField
             ];
         }
 
-        $select = HTMLHelper::_(
-            'select.genericlist',
-            $status,
-            $this->name,
-            'onchange="if(typeof contentbuilderng_setFormId != \'undefined\') { contentbuilderng_setFormId(this.options[this.selectedIndex].value); }" class="' . $class . '"',
-            'id',
-            'name',
-            $this->value
-        );
+        $select = '<select id="' . htmlspecialchars($this->id, ENT_QUOTES, 'UTF-8') . '"'
+            . ' name="' . htmlspecialchars($this->name, ENT_QUOTES, 'UTF-8') . '"'
+            . ' onchange="if(typeof contentbuilderng_setFormId != \'undefined\') { contentbuilderng_setFormId(this.options[this.selectedIndex].value); }"'
+            . ' class="' . htmlspecialchars($class, ENT_QUOTES, 'UTF-8') . '">';
+
+        foreach ($status as $form) {
+            $value = (string) ($form->id ?? '');
+            $selected = $value === (string) $this->value ? ' selected="selected"' : '';
+            $select .= '<option value="' . htmlspecialchars($value, ENT_QUOTES, 'UTF-8') . '"' . $selected . '>'
+                . htmlspecialchars((string) ($form->name ?? ''), ENT_QUOTES, 'UTF-8')
+                . '</option>';
+        }
+
+        $select .= '</select>';
 
         $yesLabel = Text::_('COM_CONTENTBUILDERNG_YES');
         $noLabel = Text::_('COM_CONTENTBUILDERNG_NO');

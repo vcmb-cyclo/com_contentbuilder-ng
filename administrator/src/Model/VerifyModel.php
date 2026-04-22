@@ -37,7 +37,7 @@ class VerifyModel extends BaseDatabaseModel
 
     private function getInput(): Input
     {
-        return $this->app->input;
+        return $this->app->getInput();
     }
 
     private function decodePackedQueryString(string $encoded): array

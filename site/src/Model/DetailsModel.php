@@ -69,10 +69,10 @@ class DetailsModel extends ListModel
         $this->listSupportService = new ListSupportService();
         $option = 'com_contentbuilderng';
         $this->frontend = $app->isClient('site');
-        $this->directStorageId = max(0, $app->input->getInt('storage_id', 0));
+        $this->directStorageId = max(0, $app->getInput()->getInt('storage_id', 0));
 
         // ATTTENTION: ALSO DEFINED IN DETAILS CONTROLLER!
-        if ($this->frontend && $app->input->getInt('Itemid', 0)) {
+        if ($this->frontend && $app->getInput()->getInt('Itemid', 0)) {
             $this->_menu_item = true;
 
             // try menu item
@@ -90,7 +90,7 @@ class DetailsModel extends ListModel
                 $menuRecordId = MenuParamHelper::getMenuParam($params, 'record_id', null);
 
                 if ($menuRecordId !== null) {
-                    $app->input->set('record_id', $menuRecordId);
+                    $app->getInput()->set('record_id', $menuRecordId);
                 }
 
                 if (MenuParamHelper::getMenuParam($params, 'cb_latest', null) !== null) {
@@ -113,7 +113,7 @@ class DetailsModel extends ListModel
             }
         }
 
-        $menu_filter = $app->input->get('cb_list_filterhidden', null, 'raw');
+        $menu_filter = $app->getInput()->get('cb_list_filterhidden', null, 'raw');
         if (($menu_filter === null || $menu_filter === '') && $app->isClient('site')) {
             $activeMenu = $app->getMenu()->getActive();
             if ($activeMenu) {
@@ -135,7 +135,7 @@ class DetailsModel extends ListModel
             }
         }
 
-        $menu_filter_order = $app->input->get('cb_list_orderhidden', null, 'raw');
+        $menu_filter_order = $app->getInput()->get('cb_list_orderhidden', null, 'raw');
         if (($menu_filter_order === null || $menu_filter_order === '') && $app->isClient('site')) {
             $activeMenu = $app->getMenu()->getActive();
             if ($activeMenu) {
@@ -158,7 +158,7 @@ class DetailsModel extends ListModel
 
         @natsort($this->_menu_filter_order);
 
-        $this->setIds($app->input->getInt('id', 0), $app->input->getCmd('record_id', ''));
+        $this->setIds($app->getInput()->getInt('id', 0), $app->getInput()->getCmd('record_id', ''));
     }
 
     /*
@@ -299,7 +299,7 @@ class DetailsModel extends ListModel
             return '';
         }
 
-        $isAdminPreview = $this->app->input->getBool('cb_preview_ok', false);
+        $isAdminPreview = $this->app->getInput()->getBool('cb_preview_ok', false);
         $db = $this->getDatabase();
         $query = $db->getQuery(true)
             ->select('*')
@@ -383,7 +383,7 @@ class DetailsModel extends ListModel
             }
 
             foreach ($this->_data as $data) {
-                $isAdminPreview = $app->input->getBool('cb_preview_ok', false);
+                $isAdminPreview = $app->getInput()->getBool('cb_preview_ok', false);
 
                 if (!$isAdminPreview) {
                     if (!$this->frontend) {
@@ -397,7 +397,7 @@ class DetailsModel extends ListModel
                 if ($data->type && $data->reference_id) {
 
                     $data->form = \CB\Component\Contentbuilderng\Administrator\Helper\FormSourceFactory::getForm($data->type, $data->reference_id);
-                    $isAdminPreview = $app->input->getBool('cb_preview_ok', false);
+                    $isAdminPreview = $app->getInput()->getBool('cb_preview_ok', false);
                     if ($isAdminPreview && method_exists($data->form, 'synchRecords')) {
                         $data->form->synchRecords((int) $this->_id);
                     }
@@ -454,11 +454,11 @@ class DetailsModel extends ListModel
                             $rec2 = $data->form->getRecord($rec->colRecord, false, -1, true);
 
                             $data->record_id = $rec->colRecord;
-                            $app->input->set('record_id', $data->record_id);
+                            $app->getInput()->set('record_id', $data->record_id);
                             $this->_record_id = $data->record_id;
                         } else {
-                            $app->input->set('cbIsNew', 1);
-                            (new PermissionService())->setPermissions($app->input->getInt('id', 0), 0, $this->frontend ? '_fe' : '');
+                            $app->getInput()->set('cbIsNew', 1);
+                            (new PermissionService())->setPermissions($app->getInput()->getInt('id', 0), 0, $this->frontend ? '_fe' : '');
                             $auth = $this->frontend ? (new PermissionService())->authorizeFe('new') : (new PermissionService())->authorize('new');
 
                             if ($auth) {
@@ -470,7 +470,7 @@ class DetailsModel extends ListModel
                                     'direction' => $state['direction'],
                                 ]]);
 
-                                $app->redirect(Route::_('index.php?option=com_contentbuilderng&task=edit.display&latest=1&backtolist=' . $app->input->getInt('backtolist', 0) . '&id=' . $this->_id . '&record_id=' . ($listQuery !== '' ? '' : '') . ($listQuery !== '' ? '&' . $listQuery : ''), false));
+                                $app->redirect(Route::_('index.php?option=com_contentbuilderng&task=edit.display&latest=1&backtolist=' . $app->getInput()->getInt('backtolist', 0) . '&id=' . $this->_id . '&record_id=' . ($listQuery !== '' ? '' : '') . ($listQuery !== '' ? '&' . $listQuery : ''), false));
                             } else {
                                 $app->enqueueMessage(Text::_('COM_CONTENTBUILDERNG_ADD_ENTRY_FIRST'));
                                 $app->redirect('index.php');
@@ -511,7 +511,7 @@ class DetailsModel extends ListModel
                     if (isset($rec2) && count($rec2)) {
                         $data->items = $rec2;
                     } else {
-                        $isAdminPreview = $app->input->getBool('cb_preview_ok', false);
+                        $isAdminPreview = $app->getInput()->getBool('cb_preview_ok', false);
                         $publishedOnly = $this->shouldRestrictToPublishedOnly($data, $isAdminPreview);
                         $ownerFilterUserId = $isAdminPreview
                             ? -1
@@ -710,11 +710,11 @@ class DetailsModel extends ListModel
         /** @var SiteApplication $app */
         $app = $this->app;
         $option = 'com_contentbuilderng';
-        $list = (array) $app->input->get('list', [], 'array');
+        $list = (array) $app->getInput()->get('list', [], 'array');
         $stateKeyPrefix = $this->getPaginationStateKeyPrefix();
         $limitKey = $stateKeyPrefix . '.limit';
         $startKey = $stateKeyPrefix . '.start';
-        $configuredLimit = MenuParamHelper::getConfiguredListLimit($app, (int) $app->input->getInt('id', 0));
+        $configuredLimit = MenuParamHelper::getConfiguredListLimit($app, (int) $app->getInput()->getInt('id', 0));
         $explicitLimitRequest = MenuParamHelper::hasExplicitListLimitRequest();
 
         $limit = $explicitLimitRequest && isset($list['limit']) ? (int) $list['limit'] : 0;
@@ -766,7 +766,7 @@ class DetailsModel extends ListModel
             $formId = (int) $this->getDirectStorageId();
         }
         if ($formId < 1) {
-            $formId = (int) $app->input->getInt('id', 0);
+            $formId = (int) $app->getInput()->getInt('id', 0);
         }
         if ($formId < 1 && $app->isClient('site')) {
             $menu = $app->getMenu()->getActive();
@@ -775,12 +775,12 @@ class DetailsModel extends ListModel
             }
         }
 
-        $layout = (string) $app->input->getCmd('layout', 'default');
+        $layout = (string) $app->getInput()->getCmd('layout', 'default');
         if ($layout === '') {
             $layout = 'default';
         }
 
-        $itemId = (int) $app->input->getInt('Itemid', 0);
+        $itemId = (int) $app->getInput()->getInt('Itemid', 0);
 
         $scope = $this->isDirectStorageMode() ? ('storage.' . $formId) : (string) $formId;
 
@@ -793,7 +793,7 @@ class DetailsModel extends ListModel
             return true;
         }
 
-        $isAdminPreview = $this->app->input->getBool('cb_preview_ok', false);
+        $isAdminPreview = $this->app->getInput()->getBool('cb_preview_ok', false);
         $publishedOnly = $this->shouldRestrictToPublishedOnly($data, $isAdminPreview);
         $ownerFilterUserId = $isAdminPreview
             ? -1

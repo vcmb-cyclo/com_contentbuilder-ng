@@ -238,8 +238,8 @@ class HtmlView extends BaseHtmlView
 
     private function getPackedPayloadReport(AdministratorApplication $app): array
     {
-        $source = trim((string) $app->input->get('packed_source', '', 'cmd'));
-        $recordId = $app->input->getInt('id', 0);
+        $source = trim((string) $app->getInput()->get('packed_source', '', 'cmd'));
+        $recordId = $app->getInput()->getInt('id', 0);
 
         if (!in_array($source, ['elements', 'forms'], true) || $recordId <= 0) {
             return [];

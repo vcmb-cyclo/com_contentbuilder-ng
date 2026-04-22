@@ -35,7 +35,7 @@ $state_allowed = $frontend ? $permissionService->authorizeFe('state') : $permiss
 $rating_allowed = $frontend ? $permissionService->authorizeFe('rating') : $permissionService->authorize('rating');
 $view_allowed = $frontend ? $permissionService->authorizeFe('view') : $permissionService->authorize('view');
 $fullarticle_allowed = $frontend ? $permissionService->authorizeFe('fullarticle') : $permissionService->authorize('fullarticle');
-$isAdminPreview = $app->input->getBool('cb_preview_ok', false);
+$isAdminPreview = $app->getInput()->getBool('cb_preview_ok', false);
 $getStateBadgeStyle = static function ($recordId, array $stateColors): string {
     $color = strtoupper(trim((string) ($stateColors[$recordId] ?? '')));
     $color = ltrim($color, '#');
@@ -53,7 +53,7 @@ $getStateBadgeStyle = static function ($recordId, array $stateColors): string {
     return 'background-color:#' . $color . ';color:' . $textColor . ';';
 };
 
-$input = $app->input;
+$input = $app->getInput();
 $safeReturn = NavigationLinkHelper::encodeInternalReturn((string) $input->getString('return', ''));
 $hasReturn = $safeReturn !== '';
 $topBarToggle = MenuParamHelper::resolveInputOrMenuToggle($app, 'cb_show_top_bar', (int) ($this->cb_show_top_bar ?? 1));
@@ -436,7 +436,7 @@ CSS
     function contentbuilderng_delete() {
         var confirmed = confirm('<?php echo Text::_('COM_CONTENTBUILDERNG_CONFIRM_DELETE_MESSAGE'); ?>');
         if (confirmed) {
-            location.href = '<?php echo Uri::root() . ltrim(Route::_('index.php?option=com_contentbuilderng&task=edit.delete' . (Factory::getApplication()->input->get('tmpl', '', 'string') != '' ? '&tmpl=' . Factory::getApplication()->input->get('tmpl', '', 'string') : '') . (Factory::getApplication()->input->get('layout', '', 'string') != '' ? '&layout=' . Factory::getApplication()->input->get('layout', '', 'string') : '') . '&id=' . Factory::getApplication()->input->getInt('id', 0) . '&cid[]=' . Factory::getApplication()->input->getCmd('record_id', 0) . '&Itemid=' . Factory::getApplication()->input->getInt('Itemid', 0) . ($listQuery !== '' ? '&' . $listQuery : ''), false), '/'); ?>';
+            location.href = '<?php echo Uri::root() . ltrim(Route::_('index.php?option=com_contentbuilderng&task=edit.delete' . (Factory::getApplication()->getInput()->get('tmpl', '', 'string') != '' ? '&tmpl=' . Factory::getApplication()->getInput()->get('tmpl', '', 'string') : '') . (Factory::getApplication()->getInput()->get('layout', '', 'string') != '' ? '&layout=' . Factory::getApplication()->getInput()->get('layout', '', 'string') : '') . '&id=' . Factory::getApplication()->getInput()->getInt('id', 0) . '&cid[]=' . Factory::getApplication()->getInput()->getCmd('record_id', 0) . '&Itemid=' . Factory::getApplication()->getInput()->getInt('Itemid', 0) . ($listQuery !== '' ? '&' . $listQuery : ''), false), '/'); ?>';
         }
     }
 
@@ -865,14 +865,14 @@ CSS
         <?php
         if (!$this->edit_by_type) {
         ?>
-            <form class="form-horizontal mt-5 mb-5" name="adminForm" id="adminForm" onsubmit="return false;" action="<?php echo Route::_('index.php?option=com_contentbuilderng&task=edit.display' . (Factory::getApplication()->input->get('layout', '', 'string') != '' ? '&layout=' . Factory::getApplication()->input->get('layout', '', 'string') : '') . '&id=' . Factory::getApplication()->input->getInt('id', 0) . '&record_id=' . Factory::getApplication()->input->getCmd('record_id',  '') . (Factory::getApplication()->input->get('tmpl', '', 'string') != '' ? '&tmpl=' . Factory::getApplication()->input->get('tmpl', '', 'string') : '') . '&Itemid=' . Factory::getApplication()->input->getInt('Itemid', 0) . ($listQuery !== '' ? '&' . $listQuery : '')); ?>" method="post" enctype="multipart/form-data">
+            <form class="form-horizontal mt-5 mb-5" name="adminForm" id="adminForm" onsubmit="return false;" action="<?php echo Route::_('index.php?option=com_contentbuilderng&task=edit.display' . (Factory::getApplication()->getInput()->get('layout', '', 'string') != '' ? '&layout=' . Factory::getApplication()->getInput()->get('layout', '', 'string') : '') . '&id=' . Factory::getApplication()->getInput()->getInt('id', 0) . '&record_id=' . Factory::getApplication()->getInput()->getCmd('record_id',  '') . (Factory::getApplication()->getInput()->get('tmpl', '', 'string') != '' ? '&tmpl=' . Factory::getApplication()->getInput()->get('tmpl', '', 'string') : '') . '&Itemid=' . Factory::getApplication()->getInput()->getInt('Itemid', 0) . ($listQuery !== '' ? '&' . $listQuery : '')); ?>" method="post" enctype="multipart/form-data">
             <?php
         }
             ?>
             <?php
             if ($this->edit_by_type) {
             ?>
-                <form class="mt-5 mb-5" name="adminForm" id="adminForm" onsubmit="return false;" action="<?php echo Route::_('index.php?option=com_contentbuilderng&task=edit.display' . (Factory::getApplication()->input->get('layout', '', 'string') != '' ? '&layout=' . Factory::getApplication()->input->get('layout', '', 'string') : '') . '&id=' . Factory::getApplication()->input->getInt('id', 0) . '&record_id=' . Factory::getApplication()->input->getCmd('record_id',  '') . (Factory::getApplication()->input->get('tmpl', '', 'string') != '' ? '&tmpl=' . Factory::getApplication()->input->get('tmpl', '', 'string') : '') . '&Itemid=' . Factory::getApplication()->input->getInt('Itemid', 0) . ($listQuery !== '' ? '&' . $listQuery : '')); ?>" method="post" enctype="multipart/form-data">
+                <form class="mt-5 mb-5" name="adminForm" id="adminForm" onsubmit="return false;" action="<?php echo Route::_('index.php?option=com_contentbuilderng&task=edit.display' . (Factory::getApplication()->getInput()->get('layout', '', 'string') != '' ? '&layout=' . Factory::getApplication()->getInput()->get('layout', '', 'string') : '') . '&id=' . Factory::getApplication()->getInput()->getInt('id', 0) . '&record_id=' . Factory::getApplication()->getInput()->getCmd('record_id',  '') . (Factory::getApplication()->getInput()->get('tmpl', '', 'string') != '' ? '&tmpl=' . Factory::getApplication()->getInput()->get('tmpl', '', 'string') : '') . '&Itemid=' . Factory::getApplication()->getInput()->getInt('Itemid', 0) . ($listQuery !== '' ? '&' . $listQuery : '')); ?>" method="post" enctype="multipart/form-data">
                 <?php
             }
                 ?>
@@ -1012,15 +1012,15 @@ CSS
                 </div>
                 <?php
 
-                if (Factory::getApplication()->input->get('tmpl', '', 'string') != '') {
+                if (Factory::getApplication()->getInput()->get('tmpl', '', 'string') != '') {
                 ?>
-                    <input type="hidden" name="tmpl" value="<?php echo Factory::getApplication()->input->get('tmpl', '', 'string'); ?>" />
+                    <input type="hidden" name="tmpl" value="<?php echo Factory::getApplication()->getInput()->get('tmpl', '', 'string'); ?>" />
                 <?php
                 }
                 ?>
-                <input type="hidden" name="Itemid" value="<?php echo Factory::getApplication()->input->getInt('Itemid', 0); ?>" />
+                <input type="hidden" name="Itemid" value="<?php echo Factory::getApplication()->getInput()->getInt('Itemid', 0); ?>" />
                 <input type="hidden" name="task" id="contentbuilderng_task" value="edit.save" />
-                <input type="hidden" name="backtolist" value="<?php echo Factory::getApplication()->input->getInt('backtolist', 0); ?>" />
+                <input type="hidden" name="backtolist" value="<?php echo Factory::getApplication()->getInput()->getInt('backtolist', 0); ?>" />
                 <input type="hidden" name="return" value="<?php echo htmlspecialchars($safeReturn, ENT_QUOTES, 'UTF-8'); ?>" />
                 <?php echo $listHiddenFields; ?>
                 <?php echo $previewHiddenFields; ?>
@@ -1062,17 +1062,17 @@ CSS
     } else {
         if ($this->edit_by_type) {
         ?>
-            <form class="mt-5" name="adminForm" id="adminForm" onsubmit="return false;" action="<?php echo Route::_('index.php?option=com_contentbuilderng&task=edit.display' . (Factory::getApplication()->input->get('layout', '', 'string') != '' ? '&layout=' . Factory::getApplication()->input->get('layout', '', 'string') : '') . '&id=' . Factory::getApplication()->input->getInt('id', 0) . '&record_id=' . Factory::getApplication()->input->getCmd('record_id',  '') . (Factory::getApplication()->input->get('tmpl', '', 'string') != '' ? '&tmpl=' . Factory::getApplication()->input->get('tmpl', '', 'string') : '') . '&Itemid=' . Factory::getApplication()->input->getInt('Itemid', 0) . ($listQuery !== '' ? '&' . $listQuery : '')); ?>" method="post" enctype="multipart/form-data">
+            <form class="mt-5" name="adminForm" id="adminForm" onsubmit="return false;" action="<?php echo Route::_('index.php?option=com_contentbuilderng&task=edit.display' . (Factory::getApplication()->getInput()->get('layout', '', 'string') != '' ? '&layout=' . Factory::getApplication()->getInput()->get('layout', '', 'string') : '') . '&id=' . Factory::getApplication()->getInput()->getInt('id', 0) . '&record_id=' . Factory::getApplication()->getInput()->getCmd('record_id',  '') . (Factory::getApplication()->getInput()->get('tmpl', '', 'string') != '' ? '&tmpl=' . Factory::getApplication()->getInput()->get('tmpl', '', 'string') : '') . '&Itemid=' . Factory::getApplication()->getInput()->getInt('Itemid', 0) . ($listQuery !== '' ? '&' . $listQuery : '')); ?>" method="post" enctype="multipart/form-data">
                 <?php
-                if (Factory::getApplication()->input->get('tmpl', '', 'string') != '') {
+                if (Factory::getApplication()->getInput()->get('tmpl', '', 'string') != '') {
                 ?>
-                    <input type="hidden" name="tmpl" value="<?php echo Factory::getApplication()->input->get('tmpl', '', 'string'); ?>" />
+                    <input type="hidden" name="tmpl" value="<?php echo Factory::getApplication()->getInput()->get('tmpl', '', 'string'); ?>" />
                 <?php
                 }
                 ?>
-                <input type="hidden" name="Itemid" value="<?php echo Factory::getApplication()->input->getInt('Itemid', 0); ?>" />
+                <input type="hidden" name="Itemid" value="<?php echo Factory::getApplication()->getInput()->getInt('Itemid', 0); ?>" />
                 <input type="hidden" name="task" id="contentbuilderng_task" value="edit.save" />
-                <input type="hidden" name="backtolist" value="<?php echo Factory::getApplication()->input->getInt('backtolist', 0); ?>" />
+                <input type="hidden" name="backtolist" value="<?php echo Factory::getApplication()->getInput()->getInt('backtolist', 0); ?>" />
                 <input type="hidden" name="return" value="<?php echo htmlspecialchars($safeReturn, ENT_QUOTES, 'UTF-8'); ?>" />
                 <?php echo $listHiddenFields; ?>
                 <?php echo $previewHiddenFields; ?>
@@ -1100,7 +1100,7 @@ CSS
         <?php
         } else {
         ?>
-            <form class="form-horizontal" name="adminForm" id="adminForm" onsubmit="return false;" action="<?php echo Route::_('index.php?option=com_contentbuilderng&task=edit.display' . (Factory::getApplication()->input->get('layout', '', 'string') != '' ? '&layout=' . Factory::getApplication()->input->get('layout', '', 'string') : '') . '&id=' . Factory::getApplication()->input->getInt('id', 0) . '&record_id=' . Factory::getApplication()->input->getCmd('record_id',  '') . (Factory::getApplication()->input->get('tmpl', '', 'string') != '' ? '&tmpl=' . Factory::getApplication()->input->get('tmpl', '', 'string') : '') . '&Itemid=' . Factory::getApplication()->input->getInt('Itemid', 0) . ($listQuery !== '' ? '&' . $listQuery : '')); ?>" method="post" enctype="multipart/form-data">
+            <form class="form-horizontal" name="adminForm" id="adminForm" onsubmit="return false;" action="<?php echo Route::_('index.php?option=com_contentbuilderng&task=edit.display' . (Factory::getApplication()->getInput()->get('layout', '', 'string') != '' ? '&layout=' . Factory::getApplication()->getInput()->get('layout', '', 'string') : '') . '&id=' . Factory::getApplication()->getInput()->getInt('id', 0) . '&record_id=' . Factory::getApplication()->getInput()->getCmd('record_id',  '') . (Factory::getApplication()->getInput()->get('tmpl', '', 'string') != '' ? '&tmpl=' . Factory::getApplication()->getInput()->get('tmpl', '', 'string') : '') . '&Itemid=' . Factory::getApplication()->getInput()->getInt('Itemid', 0) . ($listQuery !== '' ? '&' . $listQuery : '')); ?>" method="post" enctype="multipart/form-data">
                 <?php echo $this->event->beforeDisplayContent; ?>
                 <?php echo $this->toc ?>
                 <?php echo $stateControlHtml; ?>
@@ -1112,15 +1112,15 @@ CSS
                 <?php echo $this->event->afterDisplayContent; ?>
                 <?php echo $auditTrailHtml; ?>
                 <?php
-                if (Factory::getApplication()->input->get('tmpl', '', 'string') != '') {
+                if (Factory::getApplication()->getInput()->get('tmpl', '', 'string') != '') {
                 ?>
-                    <input type="hidden" name="tmpl" value="<?php echo Factory::getApplication()->input->get('tmpl', '', 'string'); ?>" />
+                    <input type="hidden" name="tmpl" value="<?php echo Factory::getApplication()->getInput()->get('tmpl', '', 'string'); ?>" />
                 <?php
                 }
                 ?>
-                <input type="hidden" name="Itemid" value="<?php echo Factory::getApplication()->input->getInt('Itemid', 0); ?>" />
+                <input type="hidden" name="Itemid" value="<?php echo Factory::getApplication()->getInput()->getInt('Itemid', 0); ?>" />
                 <input type="hidden" name="task" id="contentbuilderng_task" value="edit.save" />
-                <input type="hidden" name="backtolist" value="<?php echo Factory::getApplication()->input->getInt('backtolist', 0); ?>" />
+                <input type="hidden" name="backtolist" value="<?php echo Factory::getApplication()->getInput()->getInt('backtolist', 0); ?>" />
                 <input type="hidden" name="return" value="<?php echo htmlspecialchars($safeReturn, ENT_QUOTES, 'UTF-8'); ?>" />
                 <?php echo $listHiddenFields; ?>
                 <?php echo $previewHiddenFields; ?>

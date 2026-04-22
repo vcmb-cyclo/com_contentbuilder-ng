@@ -86,8 +86,8 @@ class EditModel extends BaseDatabaseModel
             return -1;
         }
 
-        if ($this->app->input->getBool('cb_preview_ok', false)) {
-            $previewActorId = (int) $this->app->input->getInt('cb_preview_actor_id', 0);
+        if ($this->app->getInput()->getBool('cb_preview_ok', false)) {
+            $previewActorId = (int) $this->app->getInput()->getInt('cb_preview_actor_id', 0);
 
             if ($previewActorId > 0) {
                 return $previewActorId;
@@ -250,7 +250,7 @@ class EditModel extends BaseDatabaseModel
         $path = str_replace(array('{CBSite}', '{cbsite}'), JPATH_SITE, $path);
 
         foreach ($names as $id => $name) {
-            $value = $this->app->input->post->get('cb_' . $id, '', 'raw');
+            $value = $this->app->getInput()->post->get('cb_' . $id, '', 'raw');
             $value = $this->toSafePathToken($value);
             $path = str_replace('{' . strtolower($name) . ':value}', $value, $path);
         }
@@ -300,11 +300,11 @@ class EditModel extends BaseDatabaseModel
         $this->templateRenderService = new TemplateRenderService();
         $option = 'com_contentbuilderng';
 
-        $this->app->input->set('cb_category_id', null);
+        $this->app->getInput()->set('cb_category_id', null);
 
         $this->frontend = $this->app->isClient('site');
 
-        if ($this->frontend && $this->app->input->getInt('Itemid', 0)) {
+        if ($this->frontend && $this->app->getInput()->getInt('Itemid', 0)) {
             $this->_menu_item = true;
 
             // try menu item
@@ -313,9 +313,9 @@ class EditModel extends BaseDatabaseModel
 
             if (is_object($item)) {
                 $params = $item->getParams();
-                $this->app->input->set('cb_category_id', (int) MenuParamHelper::getMenuParam($params, 'cb_category_id', 0));
+                $this->app->getInput()->set('cb_category_id', (int) MenuParamHelper::getMenuParam($params, 'cb_category_id', 0));
 
-                if ($this->app->input->getString('cb_controller', '') == 'edit') {
+                if ($this->app->getInput()->getString('cb_controller', '') == 'edit') {
                     $this->_show_back_button = MenuParamHelper::getResolvedMenuToggle(
                         $params,
                         'cb_show_details_back_button',
@@ -347,7 +347,7 @@ class EditModel extends BaseDatabaseModel
             }
         }
 
-        $menu_filter = $this->app->input->get('cb_list_filterhidden', null, 'raw');
+        $menu_filter = $this->app->getInput()->get('cb_list_filterhidden', null, 'raw');
         if (($menu_filter === null || $menu_filter === '') && $this->app->isClient('site')) {
             $activeMenu = $this->app->getMenu()->getActive();
             if ($activeMenu) {
@@ -369,7 +369,7 @@ class EditModel extends BaseDatabaseModel
             }
         }
 
-        $menu_filter_order = $this->app->input->get('cb_list_orderhidden', null, 'raw');
+        $menu_filter_order = $this->app->getInput()->get('cb_list_orderhidden', null, 'raw');
         if (($menu_filter_order === null || $menu_filter_order === '') && $this->app->isClient('site')) {
             $activeMenu = $this->app->getMenu()->getActive();
             if ($activeMenu) {
@@ -392,7 +392,7 @@ class EditModel extends BaseDatabaseModel
 
         @natsort($this->_menu_filter_order);
 
-        $this->setIds($this->app->input->getInt('id', 0), $this->app->input->getCmd('record_id', 0));
+        $this->setIds($this->app->getInput()->getInt('id', 0), $this->app->getInput()->getCmd('record_id', 0));
 
         if (!$this->frontend) {
             $this->app->getLanguage()->load('com_content');
@@ -420,7 +420,7 @@ class EditModel extends BaseDatabaseModel
 
     private function _buildQuery()
     {
-        $isAdminPreview = $this->app->input->getBool('cb_preview_ok', false);
+        $isAdminPreview = $this->app->getInput()->getBool('cb_preview_ok', false);
         $query = 'Select * From #__contentbuilderng_forms Where id = ' . intval($this->_id);
 
         if (!$isAdminPreview) {
@@ -446,7 +446,7 @@ class EditModel extends BaseDatabaseModel
             }
 
             foreach ($this->_data as $data) {
-                $isAdminPreview = $this->app->input->getBool('cb_preview_ok', false);
+                $isAdminPreview = $this->app->getInput()->getBool('cb_preview_ok', false);
 
                 if (!$isAdminPreview) {
                     if (!$this->frontend) {
@@ -557,7 +557,7 @@ class EditModel extends BaseDatabaseModel
                         (int) ($data->show_back_button ?? 1),
                         'show_back_button'
                     ) === 1;
-                    $data->back_button = $this->app->input->getBool('latest', 0) && !$this->app->input->getCmd('record_id', 0) ? false : $this->_show_back_button;
+                    $data->back_button = $this->app->getInput()->getBool('latest', 0) && !$this->app->getInput()->getCmd('record_id', 0) ? false : $this->_show_back_button;
                     $data->latest = $this->_latest;
                     $data->frontend = $this->frontend;
                     $data->form = FormSourceFactory::getForm($data->type, $data->reference_id);
@@ -607,7 +607,7 @@ class EditModel extends BaseDatabaseModel
                         throw new \Exception(Text::_('COM_CONTENTBUILDERNG_RECORD_NOT_FOUND'), 404);
                     }
 
-                    $isAdminPreview = $this->app->input->getBool('cb_preview_ok', false);
+                    $isAdminPreview = $this->app->getInput()->getBool('cb_preview_ok', false);
                     $publishedOnly = $this->shouldRestrictToPublishedOnly($data, $isAdminPreview);
 
                     $data->items = $data->form->getRecord(
@@ -828,7 +828,7 @@ var contentbuilderng = new function(){
             return true;
         }
 
-        $isAdminPreview = $this->app->input->getBool('cb_preview_ok', false);
+        $isAdminPreview = $this->app->getInput()->getBool('cb_preview_ok', false);
         $publishedOnly = $isAdminPreview ? false : (bool) ($data->published_only ?? false);
         $ownerFilterUserId = $this->frontend
             ? $this->getEffectiveOwnershipUserId((bool) ($data->own_only_fe ?? false))
@@ -875,7 +875,7 @@ var contentbuilderng = new function(){
         PluginHelper::importPlugin('contentbuilderng_submit');
         $session = $this->app->getSession();
         $session->clear('cb_failed_values', 'com_contentbuilderng.' . $this->_id);
-        $this->app->input->set('cb_submission_failed', 0);
+        $this->app->getInput()->set('cb_submission_failed', 0);
 
         $query = $this->_buildQuery();
         $this->_data = $this->_getList($query, 0, 1);
@@ -884,7 +884,7 @@ var contentbuilderng = new function(){
             throw new \Exception(Text::_('COM_CONTENTBUILDERNG_FORM_NOT_FOUND'), 404);
         }
 
-        $isAdminPreview = $this->app->input->getBool('cb_preview_ok', false);
+        $isAdminPreview = $this->app->getInput()->getBool('cb_preview_ok', false);
 
         foreach ($this->_data as $data) {
             if (!$isAdminPreview) {
@@ -1008,9 +1008,9 @@ var contentbuilderng = new function(){
                         }
 
                         $securimage = new \Securimage();
-                        $cap_value = $this->app->input->post->get('cb_' . $the_captcha_field['reference_id'], null, 'raw');
+                        $cap_value = $this->app->getInput()->post->get('cb_' . $the_captcha_field['reference_id'], null, 'raw');
                         if ($securimage->check($cap_value) == false) {
-                            $this->app->input->set('cb_submission_failed', 1);
+                            $this->app->getInput()->set('cb_submission_failed', 1);
                             $this->app->enqueueMessage(Text::_('COM_CONTENTBUILDERNG_CAPTCHA_FAILED'), 'error');
                         }
                         $values[$the_captcha_field['reference_id']] = $cap_value;
@@ -1021,37 +1021,37 @@ var contentbuilderng = new function(){
                     // make sure to wait for previous errors
                     if ($data->act_as_registration && $the_name_field !== null && $the_email_field !== null && $the_email_repeat_field !== null && $the_password_field !== null && $the_password_repeat_field !== null && $the_username_field !== null) {
 
-                        $pw1 = $this->app->input->post->get('cb_' . $the_password_field['reference_id'], '', 'raw');
-                        $pw2 = $this->app->input->post->get('cb_' . $the_password_repeat_field['reference_id'], '', 'raw');
-                        $email = $this->app->input->post->get('cb_' . $the_email_field['reference_id'], '', 'raw');
-                        $email2 = $this->app->input->post->get('cb_' . $the_email_repeat_field['reference_id'], '', 'raw');
-                        $name = $this->app->input->post->get('cb_' . $the_name_field['reference_id'], '', 'raw');
-                        $username = $this->app->input->post->get('cb_' . $the_username_field['reference_id'], '', 'raw');
+                        $pw1 = $this->app->getInput()->post->get('cb_' . $the_password_field['reference_id'], '', 'raw');
+                        $pw2 = $this->app->getInput()->post->get('cb_' . $the_password_repeat_field['reference_id'], '', 'raw');
+                        $email = $this->app->getInput()->post->get('cb_' . $the_email_field['reference_id'], '', 'raw');
+                        $email2 = $this->app->getInput()->post->get('cb_' . $the_email_repeat_field['reference_id'], '', 'raw');
+                        $name = $this->app->getInput()->post->get('cb_' . $the_name_field['reference_id'], '', 'raw');
+                        $username = $this->app->getInput()->post->get('cb_' . $the_username_field['reference_id'], '', 'raw');
                         $usernameLength = function_exists('mb_strlen') ? mb_strlen($username, 'UTF-8') : strlen($username);
 
-                        if (!$this->app->input->get('cb_submission_failed', 0, 'string')) {
+                        if (!$this->app->getInput()->get('cb_submission_failed', 0, 'string')) {
 
                             if (!trim($name)) {
-                                $this->app->input->set('cb_submission_failed', 1);
+                                $this->app->getInput()->set('cb_submission_failed', 1);
                                 $this->app->enqueueMessage(Text::_('COM_CONTENTBUILDERNG_NAME_EMPTY'), 'error');
                             }
 
                             if (!trim($username)) {
-                                $this->app->input->set('cb_submission_failed', 1);
+                                $this->app->getInput()->set('cb_submission_failed', 1);
                                 $this->app->enqueueMessage(Text::_('COM_CONTENTBUILDERNG_USERNAME_EMPTY'), 'error');
                             } else if (preg_match("#[<>\"'%;()&]#i", $username) || $usernameLength < 2) {
-                                $this->app->input->set('cb_submission_failed', 1);
+                                $this->app->getInput()->set('cb_submission_failed', 1);
                                 $this->app->enqueueMessage(Text::_('COM_CONTENTBUILDERNG_USERNAME_INVALID'), 'error');
                             }
 
                             if (!trim($email)) {
-                                $this->app->input->set('cb_submission_failed', 1);
+                                $this->app->getInput()->set('cb_submission_failed', 1);
                                 $this->app->enqueueMessage(Text::_('COM_CONTENTBUILDERNG_EMAIL_EMPTY'), 'error');
                             } else if (!ContentbuilderngHelper::isEmail($email)) {
-                                $this->app->input->set('cb_submission_failed', 1);
+                                $this->app->getInput()->set('cb_submission_failed', 1);
                                 $this->app->enqueueMessage(Text::_('COM_CONTENTBUILDERNG_EMAIL_INVALID'), 'error');
                             } else if ($email != $email2) {
-                                $this->app->input->set('cb_submission_failed', 1);
+                                $this->app->getInput()->set('cb_submission_failed', 1);
                                 $this->app->enqueueMessage(Text::_('COM_CONTENTBUILDERNG_EMAIL_MISMATCH'), 'error');
                             }
 
@@ -1059,52 +1059,52 @@ var contentbuilderng = new function(){
 
                                 $this->getDatabase()->setQuery("Select count(id) From #__users Where `username` = " . $this->getDatabase()->quote($username));
                                 if ($this->getDatabase()->loadResult()) {
-                                    $this->app->input->set('cb_submission_failed', 1);
+                                    $this->app->getInput()->set('cb_submission_failed', 1);
                                     $this->app->enqueueMessage(Text::_('COM_CONTENTBUILDERNG_USERNAME_NOT_AVAILABLE'), 'error');
                                 }
 
                                 $this->getDatabase()->setQuery("Select count(id) From #__users Where `email` = " . $this->getDatabase()->quote($email));
                                 if ($this->getDatabase()->loadResult()) {
-                                    $this->app->input->set('cb_submission_failed', 1);
+                                    $this->app->getInput()->set('cb_submission_failed', 1);
                                     $this->app->enqueueMessage(Text::_('COM_CONTENTBUILDERNG_EMAIL_EMPTY'), 'error');
                                 }
 
                                 if ($pw1 != $pw2) {
-                                    $this->app->input->set('cb_submission_failed', 1);
+                                    $this->app->getInput()->set('cb_submission_failed', 1);
                                     $this->app->enqueueMessage(Text::_('COM_CONTENTBUILDERNG_PASSWORD_MISMATCH'), 'error');
 
-                                    $this->app->input->set('cb_' . $the_password_field['reference_id'], '');
-                                    $this->app->input->set('cb_' . $the_password_repeat_field['reference_id'], '');
+                                    $this->app->getInput()->set('cb_' . $the_password_field['reference_id'], '');
+                                    $this->app->getInput()->set('cb_' . $the_password_repeat_field['reference_id'], '');
                                 } else if (!trim($pw1)) {
-                                    $this->app->input->set('cb_submission_failed', 1);
+                                    $this->app->getInput()->set('cb_submission_failed', 1);
                                     $this->app->enqueueMessage(Text::_('COM_CONTENTBUILDERNG_PASSWORD_EMPTY'), 'error');
 
-                                    $this->app->input->set('cb_' . $the_password_field['reference_id'], '');
-                                    $this->app->input->set('cb_' . $the_password_repeat_field['reference_id'], '');
+                                    $this->app->getInput()->set('cb_' . $the_password_field['reference_id'], '');
+                                    $this->app->getInput()->set('cb_' . $the_password_repeat_field['reference_id'], '');
                                 }
                             } else {
                                 if ($meta->created_id && $meta->created_id != (int) ($this->app->getIdentity()->id ?? 0)) {
                                     $this->getDatabase()->setQuery("Select count(id) From #__users Where id <> " . $this->getDatabase()->quote($meta->created_id) . " And `username` = " . $this->getDatabase()->quote($username));
                                     if ($this->getDatabase()->loadResult()) {
-                                        $this->app->input->set('cb_submission_failed', 1);
+                                        $this->app->getInput()->set('cb_submission_failed', 1);
                                         $this->app->enqueueMessage(Text::_('COM_CONTENTBUILDERNG_USERNAME_NOT_AVAILABLE'), 'error');
                                     }
 
                                     $this->getDatabase()->setQuery("Select count(id) From #__users Where id <> " . $this->getDatabase()->quote($meta->created_id) . " And `email` = " . $this->getDatabase()->quote($email));
                                     if ($this->getDatabase()->loadResult()) {
-                                        $this->app->input->set('cb_submission_failed', 1);
+                                        $this->app->getInput()->set('cb_submission_failed', 1);
                                         $this->app->enqueueMessage(Text::_('COM_CONTENTBUILDERNG_EMAIL_EMPTY'), 'error');
                                     }
                                 } else {
                                     $this->getDatabase()->setQuery("Select count(id) From #__users Where id <> " . $this->getDatabase()->quote((int) ($this->app->getIdentity()->id ?? 0)) . " And `username` = " . $this->getDatabase()->quote($username));
                                     if ($this->getDatabase()->loadResult()) {
-                                        $this->app->input->set('cb_submission_failed', 1);
+                                        $this->app->getInput()->set('cb_submission_failed', 1);
                                         $this->app->enqueueMessage(Text::_('COM_CONTENTBUILDERNG_USERNAME_NOT_AVAILABLE'), 'error');
                                     }
 
                                     $this->getDatabase()->setQuery("Select count(id) From #__users Where id <> " . $this->getDatabase()->quote((int) ($this->app->getIdentity()->id ?? 0)) . " And `email` = " . $this->getDatabase()->quote($email));
                                     if ($this->getDatabase()->loadResult()) {
-                                        $this->app->input->set('cb_submission_failed', 1);
+                                        $this->app->getInput()->set('cb_submission_failed', 1);
                                         $this->app->enqueueMessage(Text::_('COM_CONTENTBUILDERNG_EMAIL_EMPTY'), 'error');
                                     }
                                 }
@@ -1112,22 +1112,22 @@ var contentbuilderng = new function(){
                                 if (trim($pw1) != '' || trim($pw2) != '') {
 
                                     if ($pw1 != $pw2) {
-                                        $this->app->input->set('cb_submission_failed', 1);
+                                        $this->app->getInput()->set('cb_submission_failed', 1);
                                         $this->app->enqueueMessage(Text::_('COM_CONTENTBUILDERNG_PASSWORD_MISMATCH'), 'error');
 
-                                        $this->app->input->set('cb_' . $the_password_field['reference_id'], '');
-                                        $this->app->input->set('cb_' . $the_password_repeat_field['reference_id'], '');
+                                        $this->app->getInput()->set('cb_' . $the_password_field['reference_id'], '');
+                                        $this->app->getInput()->set('cb_' . $the_password_repeat_field['reference_id'], '');
                                     } else if (!trim($pw1)) {
-                                        $this->app->input->set('cb_submission_failed', 1);
+                                        $this->app->getInput()->set('cb_submission_failed', 1);
                                         $this->app->enqueueMessage(Text::_('COM_CONTENTBUILDERNG_PASSWORD_EMPTY'), 'error');
 
-                                        $this->app->input->set('cb_' . $the_password_field['reference_id'], '');
-                                        $this->app->input->set('cb_' . $the_password_repeat_field['reference_id'], '');
+                                        $this->app->getInput()->set('cb_' . $the_password_field['reference_id'], '');
+                                        $this->app->getInput()->set('cb_' . $the_password_repeat_field['reference_id'], '');
                                     }
                                 }
                             }
 
-                            if (!$this->app->input->get('cb_submission_failed', 0, 'string')) {
+                            if (!$this->app->getInput()->get('cb_submission_failed', 0, 'string')) {
 
                                 //$noneditable_fields[] = $the_name_field['reference_id'];
                                 $noneditable_fields[] = $the_password_field['reference_id'];
@@ -1157,7 +1157,7 @@ var contentbuilderng = new function(){
 
                     $form_elements_objects = array();
 
-                    $isAdminPreview = $this->app->input->getBool('cb_preview_ok', false);
+                    $isAdminPreview = $this->app->getInput()->getBool('cb_preview_ok', false);
                     $publishedOnly = $this->shouldRestrictToPublishedOnly($data, $isAdminPreview);
 
                     $_items = $data->form->getRecord(
@@ -1174,17 +1174,17 @@ var contentbuilderng = new function(){
                             $value = '';
                             $isGroupField = $data->form->isGroup($id);
                             if ($isGroupField) {
-                                $groupValue = $this->app->input->post->get('cb_' . $id, [], 'array');
+                                $groupValue = $this->app->getInput()->post->get('cb_' . $id, [], 'array');
                                 if (!is_array($groupValue)) {
                                     $groupValue = array($groupValue);
                                 }
                                 $value = array_values(array_filter($groupValue, static fn($v) => $v !== null && $v !== '' && $v !== 'cbGroupMark'));
                             } elseif (isset($the_fields[$id]['options']->allow_raw) && $the_fields[$id]['options']->allow_raw) {
-                                $value = $this->app->input->post->get('cb_' . $id, '', 'raw');
+                                $value = $this->app->getInput()->post->get('cb_' . $id, '', 'raw');
                             } else if (isset($the_fields[$id]['options']->allow_html) && $the_fields[$id]['options']->allow_html) {
-                                $value = $this->app->input->post->get('cb_' . $id, '', 'html');
+                                $value = $this->app->getInput()->post->get('cb_' . $id, '', 'html');
                             } else {
-                                $value = $this->app->input->post->get('cb_' . $id, '', 'raw');
+                                $value = $this->app->getInput()->post->get('cb_' . $id, '', 'raw');
                             }
                             if (!$isGroupField && isset($the_fields[$id]['options']->transfer_format)) {
                                 $value = ContentbuilderngHelper::convertDate($value, $the_fields[$id]['options']->format, $the_fields[$id]['options']->transfer_format);
@@ -1204,7 +1204,7 @@ var contentbuilderng = new function(){
                                 if ($id == $the_upload_fields[$id]['reference_id']) {
 
                                     // delete if triggered
-                                    if ($this->app->input->getInt('cb_delete_' . $id, 0) == 1 && isset($the_upload_fields[$id]['validations']) && $the_upload_fields[$id]['validations'] == '') {
+                                    if ($this->app->getInput()->getInt('cb_delete_' . $id, 0) == 1 && isset($the_upload_fields[$id]['validations']) && $the_upload_fields[$id]['validations'] == '') {
                                         if (count($_items)) {
                                             foreach ($_items as $_item) {
                                                 if ($_item->recElementId == $the_upload_fields[$id]['reference_id']) {
@@ -1224,7 +1224,7 @@ var contentbuilderng = new function(){
                                         }
                                     }
 
-                                    $file = $this->app->input->files->get('cb_' . $id, null, 'array');
+                                    $file = $this->app->getInput()->files->get('cb_' . $id, null, 'array');
 
                                     if (trim(File::makeSafe($file['name'])) != '' && $file['size'] > 0) {
 
@@ -1361,7 +1361,7 @@ var contentbuilderng = new function(){
                                         }
 
                                         if ($dest == '' || $uploaded !== true) {
-                                            $this->app->input->set('cb_submission_failed', 1);
+                                            $this->app->getInput()->set('cb_submission_failed', 1);
                                             $this->app->enqueueMessage($msg . ' (' . $infile . ')', 'error');
                                             $the_upload_fields[$id]['value'] = '';
                                         } else {
@@ -1376,10 +1376,10 @@ var contentbuilderng = new function(){
                                     }
 
                                     if (trim($the_upload_fields[$id]['custom_validation_script'])) {
-                                        $msg = self::customValidate(trim($the_upload_fields[$id]['custom_validation_script']), $the_upload_fields[$id], array_merge($the_upload_fields, $the_fields, $the_html_fields), $this->app->input->getCmd('record_id', 0), $data->form, isset($values[$id]) ? $values[$id] : '');
+                                        $msg = self::customValidate(trim($the_upload_fields[$id]['custom_validation_script']), $the_upload_fields[$id], array_merge($the_upload_fields, $the_fields, $the_html_fields), $this->app->getInput()->getCmd('record_id', 0), $data->form, isset($values[$id]) ? $values[$id] : '');
                                         $msg = trim($msg);
                                         if (!empty($msg)) {
-                                            $this->app->input->set('cb_submission_failed', 1);
+                                            $this->app->getInput()->set('cb_submission_failed', 1);
                                             $this->app->enqueueMessage(trim($msg), 'error');
                                         }
                                     }
@@ -1391,7 +1391,7 @@ var contentbuilderng = new function(){
                                     }
 
                                     $dispatcher = $this->app->getDispatcher();
-                                    $eventResult = $dispatcher->dispatch('onValidate', new \Joomla\CMS\Event\GenericEvent('onValidate', array($the_upload_fields[$id], array_merge($the_upload_fields, $the_fields, $the_html_fields), $this->app->input->getCmd('record_id', 0), $data->form, isset($values[$id]) ? $values[$id] : '')));
+                                    $eventResult = $dispatcher->dispatch('onValidate', new \Joomla\CMS\Event\GenericEvent('onValidate', array($the_upload_fields[$id], array_merge($the_upload_fields, $the_fields, $the_html_fields), $this->app->getInput()->getCmd('record_id', 0), $data->form, isset($values[$id]) ? $values[$id] : '')));
                                     $results = $eventResult->getArgument('result') ?: [];
 
                                     $all_errors = implode('', $results);
@@ -1399,7 +1399,7 @@ var contentbuilderng = new function(){
                                         if (isset($values[$id]) && ContentbuilderngHelper::is_internal_path($values[$id]) && file_exists($values[$id])) {
                                             File::delete($values[$id]);
                                         }
-                                        $this->app->input->set('cb_submission_failed', 1);
+                                        $this->app->getInput()->set('cb_submission_failed', 1);
                                         foreach ($results as $result) {
                                             $result = trim($result);
                                             if (!empty($result)) {
@@ -1425,13 +1425,13 @@ var contentbuilderng = new function(){
                                 $f = null;
 
                                 if (isset($the_html_fields[$id])) {
-                                    $value = $this->app->input->post->get('cb_' . $id, '', 'html');
+                                    $value = $this->app->getInput()->post->get('cb_' . $id, '', 'html');
                                     $f = $the_html_fields[$id];
                                     $the_html_fields[$id]['value'] = $value;
                                 }
 
                                 if (isset($the_failed_registration_fields[$id])) {
-                                    $value = $this->app->input->post->get('cb_' . $id, '', 'raw');
+                                    $value = $this->app->getInput()->post->get('cb_' . $id, '', 'raw');
                                     $f = $the_failed_registration_fields[$id];
                                     $the_failed_registration_fields[$id]['value'] = $value;
                                 }
@@ -1439,17 +1439,17 @@ var contentbuilderng = new function(){
                                 if (isset($the_fields[$id])) {
                                     $isGroupField = $data->form->isGroup($id);
                                     if ($isGroupField) {
-                                        $groupValue = $this->app->input->post->get('cb_' . $id, [], 'array');
+                                        $groupValue = $this->app->getInput()->post->get('cb_' . $id, [], 'array');
                                         if (!is_array($groupValue)) {
                                             $groupValue = array($groupValue);
                                         }
                                         $value = array_values(array_filter($groupValue, static fn($v) => $v !== null && $v !== '' && $v !== 'cbGroupMark'));
                                     } elseif (isset($the_fields[$id]['options']->allow_raw) && $the_fields[$id]['options']->allow_raw) {
-                                        $value = $this->app->input->post->get('cb_' . $id, '', 'raw');
+                                        $value = $this->app->getInput()->post->get('cb_' . $id, '', 'raw');
                                     } else if (isset($the_fields[$id]['options']->allow_html) && $the_fields[$id]['options']->allow_html) {
-                                        $value = $this->app->input->post->get('cb_' . $id, '', 'html');
+                                        $value = $this->app->getInput()->post->get('cb_' . $id, '', 'html');
                                     } else {
-                                        $value = $this->app->input->post->get('cb_' . $id, '', 'raw');
+                                        $value = $this->app->getInput()->post->get('cb_' . $id, '', 'raw');
                                     }
                                     if (!$isGroupField && isset($the_fields[$id]['options']->transfer_format)) {
                                         $value = ContentbuilderngHelper::convertDate($value, $the_fields[$id]['options']->format, $the_fields[$id]['options']->transfer_format);
@@ -1461,10 +1461,10 @@ var contentbuilderng = new function(){
                                 if ($f !== null) {
 
                                     if (trim($f['custom_validation_script'] ?? '')) {
-                                        $msg = self::customValidate(trim($f['custom_validation_script']), $f, array_merge($the_upload_fields, $the_fields, $the_html_fields), $this->app->input->getCmd('record_id', 0), $data->form, $value);
+                                        $msg = self::customValidate(trim($f['custom_validation_script']), $f, array_merge($the_upload_fields, $the_fields, $the_html_fields), $this->app->getInput()->getCmd('record_id', 0), $data->form, $value);
                                         $msg = trim($msg);
                                         if (!empty($msg)) {
-                                            $this->app->input->set('cb_submission_failed', 1);
+                                            $this->app->getInput()->set('cb_submission_failed', 1);
                                             $this->app->enqueueMessage(trim($msg), 'error');
                                         }
                                     }
@@ -1476,13 +1476,13 @@ var contentbuilderng = new function(){
                                     }
 
                                     $dispatcher = $this->app->getDispatcher();
-                                    $eventResult = $dispatcher->dispatch('onValidate', new \Joomla\CMS\Event\GenericEvent('onValidate', array($f, array_merge($the_upload_fields, $the_fields, $the_html_fields), $this->app->input->getCmd('record_id', 0), $data->form, $value)));
+                                    $eventResult = $dispatcher->dispatch('onValidate', new \Joomla\CMS\Event\GenericEvent('onValidate', array($f, array_merge($the_upload_fields, $the_fields, $the_html_fields), $this->app->getInput()->getCmd('record_id', 0), $data->form, $value)));
                                     $results = $eventResult->getArgument('result') ?: [];
 
                                     $all_errors = implode('', $results);
                                     $values[$id] = $value;
                                     if (!empty($all_errors)) {
-                                        $this->app->input->set('cb_submission_failed', 1);
+                                        $this->app->getInput()->set('cb_submission_failed', 1);
                                         foreach ($results as $result) {
                                             $result = trim($result);
                                             if (!empty($result)) {
@@ -1498,7 +1498,7 @@ var contentbuilderng = new function(){
                                             'onAfterValidationSuccess',
                                             new \Joomla\CMS\Event\GenericEvent(
                                                 'onAfterValidationSuccess',
-                                                array($f, $m = array_merge($the_upload_fields, $the_fields, $the_html_fields), $this->app->input->getCmd('record_id', 0), $data->form, $value)
+                                                array($f, $m = array_merge($the_upload_fields, $the_fields, $the_html_fields), $this->app->getInput()->getCmd('record_id', 0), $data->form, $value)
                                             )
                                         );
                                         $plugin_validations = $eventResult->getArgument('result') ?: [];
@@ -1514,14 +1514,14 @@ var contentbuilderng = new function(){
                     }
 
                     $dispatcher = $this->app->getDispatcher();
-                    $submit_before_result = $dispatcher->dispatch('onBeforeSubmit', new \Joomla\CMS\Event\GenericEvent('onBeforeSubmit', array($this->app->input->getCmd('record_id', 0), $data->form, $values)));
+                    $submit_before_result = $dispatcher->dispatch('onBeforeSubmit', new \Joomla\CMS\Event\GenericEvent('onBeforeSubmit', array($this->app->getInput()->getCmd('record_id', 0), $data->form, $values)));
 
-                    if ($this->app->input->get('cb_submission_failed', 0, 'string')) {
+                    if ($this->app->getInput()->get('cb_submission_failed', 0, 'string')) {
                         $session->set('cb_failed_values', $values, 'com_contentbuilderng.' . $this->_id);
-                        return $this->app->input->getCmd('record_id', 0);
+                        return $this->app->getInput()->getCmd('record_id', 0);
                     }
 
-                    $record_return = $data->form->saveRecord($this->app->input->getCmd('record_id', 0), $values);
+                    $record_return = $data->form->saveRecord($this->app->getInput()->getCmd('record_id', 0), $values);
 
                     foreach ($form_elements_objects as $form_elements_object) {
                         if ($form_elements_object instanceof \CBFormElementAfterValidation) {
@@ -1541,10 +1541,10 @@ var contentbuilderng = new function(){
                                 '',
                                 '',
                                 $meta->created_id,
-                                $this->app->input->post->get('cb_' . $the_name_field['reference_id'], '', 'raw'),
-                                $this->app->input->post->get('cb_' . $the_username_field['reference_id'], '', 'raw'),
-                                $this->app->input->post->get('cb_' . $the_email_field['reference_id'], '', 'raw'),
-                                $this->app->input->post->get('cb_' . $the_password_field['reference_id'], '', 'raw')
+                                $this->app->getInput()->post->get('cb_' . $the_name_field['reference_id'], '', 'raw'),
+                                $this->app->getInput()->post->get('cb_' . $the_username_field['reference_id'], '', 'raw'),
+                                $this->app->getInput()->post->get('cb_' . $the_email_field['reference_id'], '', 'raw'),
+                                $this->app->getInput()->post->get('cb_' . $the_password_field['reference_id'], '', 'raw')
                             );
 
                             if (intval($user_id) > 0) {
@@ -1554,8 +1554,8 @@ var contentbuilderng = new function(){
                                 $data->form->saveRecordUserData(
                                     $record_return,
                                     $user_id,
-                                    $this->app->input->post->get('cb_' . $the_name_field['reference_id'], '', 'raw'),
-                                    $this->app->input->post->get('cb_' . $the_username_field['reference_id'], '', 'raw')
+                                    $this->app->getInput()->post->get('cb_' . $the_name_field['reference_id'], '', 'raw'),
+                                    $this->app->getInput()->post->get('cb_' . $the_username_field['reference_id'], '', 'raw')
                                 );
                             } else {
 
@@ -1590,10 +1590,10 @@ var contentbuilderng = new function(){
                                     $verification_name,
                                     $verification_id,
                                     $meta->created_id,
-                                    $this->app->input->post->get('cb_' . $the_name_field['reference_id'], '', 'raw'),
-                                    $this->app->input->post->get('cb_' . $the_username_field['reference_id'], '', 'raw'),
-                                    $this->app->input->post->get('cb_' . $the_email_field['reference_id'], '', 'raw'),
-                                    $this->app->input->post->get('cb_' . $the_password_field['reference_id'], '', 'raw')
+                                    $this->app->getInput()->post->get('cb_' . $the_name_field['reference_id'], '', 'raw'),
+                                    $this->app->getInput()->post->get('cb_' . $the_username_field['reference_id'], '', 'raw'),
+                                    $this->app->getInput()->post->get('cb_' . $the_email_field['reference_id'], '', 'raw'),
+                                    $this->app->getInput()->post->get('cb_' . $the_password_field['reference_id'], '', 'raw')
                                 );
 
                                 if (intval($user_id) > 0) {
@@ -1603,8 +1603,8 @@ var contentbuilderng = new function(){
                                     $data->form->saveRecordUserData(
                                         $record_return,
                                         $user_id,
-                                        $this->app->input->post->get('cb_' . $the_name_field['reference_id'], '', 'raw'),
-                                        $this->app->input->post->get('cb_' . $the_username_field['reference_id'], '', 'raw')
+                                        $this->app->getInput()->post->get('cb_' . $the_name_field['reference_id'], '', 'raw'),
+                                        $this->app->getInput()->post->get('cb_' . $the_username_field['reference_id'], '', 'raw')
                                     );
                                 } else {
 
@@ -1652,17 +1652,17 @@ var contentbuilderng = new function(){
                         }
                     }
 
-                    if ($this->frontend && !$this->app->input->getCmd('record_id', 0) && $record_return && !$this->app->input->get('return', '', 'string')) {
+                    if ($this->frontend && !$this->app->getInput()->getCmd('record_id', 0) && $record_return && !$this->app->getInput()->get('return', '', 'string')) {
 
                         if ($data->force_login) {
                             if (!(int) ($this->app->getIdentity()->id ?? 0)) {
-                                $this->app->input->set('return', base64_encode(Route::_('index.php?option=com_users&view=login&Itemid=' . $this->app->input->getInt('Itemid', 0), false)));
+                                $this->app->getInput()->set('return', base64_encode(Route::_('index.php?option=com_users&view=login&Itemid=' . $this->app->getInput()->getInt('Itemid', 0), false)));
                             } else {
-                                $this->app->input->set('return', base64_encode(Route::_('index.php?option=com_users&view=profile&Itemid=' . $this->app->input->getInt('Itemid', 0), false)));
+                                $this->app->getInput()->set('return', base64_encode(Route::_('index.php?option=com_users&view=profile&Itemid=' . $this->app->getInput()->getInt('Itemid', 0), false)));
                             }
                         } else if (trim($data->force_url)) {
-                            $this->app->input->set('ContentbuilderngHelper::cbinternalCheck', 0);
-                            $this->app->input->set('return', base64_encode(trim($data->force_url)));
+                            $this->app->getInput()->set('ContentbuilderngHelper::cbinternalCheck', 0);
+                            $this->app->getInput()->set('return', base64_encode(trim($data->force_url)));
                         }
                     }
 
@@ -1671,13 +1671,13 @@ var contentbuilderng = new function(){
                         $sef = '';
                         $ignore_lang_code = '*';
                         if ($data->default_lang_code_ignore) {
-                            $this->getDatabase()->setQuery("Select lang_code From #__languages Where published = 1 And sef = " . $this->getDatabase()->quote(trim($this->app->input->getCmd('lang', ''))));
+                            $this->getDatabase()->setQuery("Select lang_code From #__languages Where published = 1 And sef = " . $this->getDatabase()->quote(trim($this->app->getInput()->getCmd('lang', ''))));
                             $ignore_lang_code = $this->getDatabase()->loadResult();
                             if (!$ignore_lang_code) {
                                 $ignore_lang_code = '*';
                             }
 
-                            $sef = trim($this->app->input->getCmd('lang', ''));
+                            $sef = trim($this->app->getInput()->getCmd('lang', ''));
                             if ($ignore_lang_code == '*') {
                                 $sef = '';
                             }
@@ -1719,10 +1719,10 @@ var contentbuilderng = new function(){
                     }
                 } else {
 
-                    $record_return = $this->app->input->getCmd('record_id', 0);
+                    $record_return = $this->app->getInput()->getCmd('record_id', 0);
                 }
 
-                $isAdminPreview = $this->app->input->getBool('cb_preview_ok', false);
+                $isAdminPreview = $this->app->getInput()->getBool('cb_preview_ok', false);
                 $publishedOnly = $this->shouldRestrictToPublishedOnly($data, $isAdminPreview);
 
                 $data->items = $data->form->getRecord(
@@ -1775,12 +1775,12 @@ var contentbuilderng = new function(){
 
                     $config = array();
                     if ($article) {
-                        $config = $this->app->input->post->get('Form', [], 'array');
+                        $config = $this->app->getInput()->post->get('Form', [], 'array');
                     }
 
                     $permissionService = new PermissionService();
                     $full = $this->frontend ? $permissionService->authorizeFe('fullarticle') : $permissionService->authorize('fullarticle');
-                    $article_id = (new ArticleService())->createArticle($this->_id, $record_return, $data->items, $ids, $data->title_field, $data->form->getRecordMetadata($record_return), $config, $full, $this->frontend ? $data->limited_article_options_fe : $data->limited_article_options, $this->app->input->get('cb_category_id', null, 'string'));
+                    $article_id = (new ArticleService())->createArticle($this->_id, $record_return, $data->items, $ids, $data->title_field, $data->form->getRecordMetadata($record_return), $config, $full, $this->frontend ? $data->limited_article_options_fe : $data->limited_article_options, $this->app->getInput()->get('cb_category_id', null, 'string'));
 
                     if (isset($form_elements_objects)) {
                         foreach ($form_elements_objects as $form_elements_object) {
@@ -1822,7 +1822,7 @@ var contentbuilderng = new function(){
                         }
                     }
 
-                    if ((!$this->app->input->getCmd('record_id', 0) && $data->email_notifications) || ($this->app->input->getCmd('record_id', 0) && $data->email_update_notifications)) {
+                    if ((!$this->app->getInput()->getCmd('record_id', 0) && $data->email_notifications) || ($this->app->getInput()->getCmd('record_id', 0) && $data->email_update_notifications)) {
                         $from = $MailFrom = (string) $this->app->get('mailfrom');
                         $fromname = (string) $this->app->get('fromname');
 
@@ -2383,7 +2383,7 @@ var contentbuilderng = new function(){
 
     function delete()
     {
-        $items = $this->app->input->get('cid', [], 'array');
+        $items = $this->app->getInput()->get('cid', [], 'array');
         if (empty($this->_data)) {
             $query = $this->_buildQuery();
             $this->_data = $this->_getList($query, 0, 1);
@@ -2481,8 +2481,8 @@ var contentbuilderng = new function(){
             return 0;
         }
 
-        $listState = $this->app->input->getInt('list_state', 0);
-        $items = $this->app->input->get('cid', [], 'array');
+        $listState = $this->app->getInput()->getInt('list_state', 0);
+        $items = $this->app->getInput()->get('cid', [], 'array');
         if (!count($items)) {
             return 0;
         }
@@ -2582,24 +2582,24 @@ var contentbuilderng = new function(){
         $reference_id = $typeref['reference_id'];
         $type = $typeref['type'];
 
-        $items = $this->app->input->get('cid', [], 'array');
+        $items = $this->app->getInput()->get('cid', [], 'array');
 
         $sef = '';
-        $this->getDatabase()->setQuery("Select sef From #__languages Where published = 1 And lang_code = " . $this->getDatabase()->quote($this->app->input->get('list_language', '*', 'string')));
+        $this->getDatabase()->setQuery("Select sef From #__languages Where published = 1 And lang_code = " . $this->getDatabase()->quote($this->app->getInput()->get('list_language', '*', 'string')));
         $sef = $this->getDatabase()->loadResult();
 
         foreach ($items as $item) {
             $this->getDatabase()->setQuery("Select id From #__contentbuilderng_records Where `type` = " . $this->getDatabase()->quote($type) . " And `reference_id` = " . $this->getDatabase()->quote($reference_id) . " And record_id = " . $this->getDatabase()->quote($item));
             $res = $this->getDatabase()->loadResult();
             if (!$res) {
-                $this->getDatabase()->setQuery("Insert Into #__contentbuilderng_records (`type`,lang_code, sef, record_id, reference_id) Values (" . $this->getDatabase()->quote($type) . "," . $this->getDatabase()->quote($this->app->input->get('list_language', '*', 'string')) . ", " . $this->getDatabase()->quote($sef) . ", " . $this->getDatabase()->quote($item) . ", " . $this->getDatabase()->quote($reference_id) . ")");
+                $this->getDatabase()->setQuery("Insert Into #__contentbuilderng_records (`type`,lang_code, sef, record_id, reference_id) Values (" . $this->getDatabase()->quote($type) . "," . $this->getDatabase()->quote($this->app->getInput()->get('list_language', '*', 'string')) . ", " . $this->getDatabase()->quote($sef) . ", " . $this->getDatabase()->quote($item) . ", " . $this->getDatabase()->quote($reference_id) . ")");
                 $this->getDatabase()->execute();
             } else {
-                $this->getDatabase()->setQuery("Update #__contentbuilderng_records Set sef = " . $this->getDatabase()->quote($sef) . ", lang_code = " . $this->getDatabase()->quote($this->app->input->get('list_language', '*', 'string')) . " Where `type` = " . $this->getDatabase()->quote($type) . " And `reference_id` = " . $this->getDatabase()->quote($reference_id) . " And record_id = " . $this->getDatabase()->quote($item));
+                $this->getDatabase()->setQuery("Update #__contentbuilderng_records Set sef = " . $this->getDatabase()->quote($sef) . ", lang_code = " . $this->getDatabase()->quote($this->app->getInput()->get('list_language', '*', 'string')) . " Where `type` = " . $this->getDatabase()->quote($type) . " And `reference_id` = " . $this->getDatabase()->quote($reference_id) . " And record_id = " . $this->getDatabase()->quote($item));
                 $this->getDatabase()->execute();
             }
 
-            $this->getDatabase()->setQuery("Update #__contentbuilderng_articles As articles, #__content As content Set content.language = " . $this->getDatabase()->quote($this->app->input->get('list_language', '*', 'string')) . " Where ( content.state = 1 Or content.state = 0 ) And content.id = articles.article_id And articles.`type` = " . intval($type) . " And articles.reference_id = " . $this->getDatabase()->quote($reference_id) . " And articles.record_id = " . $this->getDatabase()->quote($item));
+            $this->getDatabase()->setQuery("Update #__contentbuilderng_articles As articles, #__content As content Set content.language = " . $this->getDatabase()->quote($this->app->getInput()->get('list_language', '*', 'string')) . " Where ( content.state = 1 Or content.state = 0 ) And content.id = articles.article_id And articles.`type` = " . intval($type) . " And articles.reference_id = " . $this->getDatabase()->quote($reference_id) . " And articles.record_id = " . $this->getDatabase()->quote($item));
             $this->getDatabase()->execute();
         }
 
@@ -2608,7 +2608,7 @@ var contentbuilderng = new function(){
 
     function change_list_publish()
     {
-        $storageId = (int) $this->app->input->getInt('storage_id', 0);
+        $storageId = (int) $this->app->getInput()->getInt('storage_id', 0);
         $typeref = null;
 
         if ((int) $this->_id > 0) {
@@ -2628,12 +2628,12 @@ var contentbuilderng = new function(){
         $reference_id = $typeref['reference_id'];
         $type = $typeref['type'];
 
-        $items = $this->app->input->get('cid', [], 'array');
+        $items = $this->app->getInput()->get('cid', [], 'array');
         if (!count($items)) {
             return 0;
         }
 
-        $publish = $this->app->input->getInt('list_publish', 0) ? 1 : 0;
+        $publish = $this->app->getInput()->getInt('list_publish', 0) ? 1 : 0;
         $changedCount = 0;
 
         $this->getDatabase()->setQuery("SET @ids := null");
@@ -2697,7 +2697,7 @@ var contentbuilderng = new function(){
         // Trigger the onContentChangeState event.
         $dispatcher = $this->app->getDispatcher();
         $context = 'com_content.article';
-        $value = $this->app->input->getInt('list_publish', 0);
+        $value = $this->app->getInput()->getInt('list_publish', 0);
         $event = new \Joomla\CMS\Event\Model\AfterChangeStateEvent('onContentChangeState', [
             'context' => $context,
             'subject' => $affected_articles,

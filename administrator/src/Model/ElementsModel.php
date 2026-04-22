@@ -118,12 +118,12 @@ class ElementsModel extends ListModel
         // Fallback si on arrive sans id dans l'URL (cas après save)
         // 2) Sinon URL (admin)
         if (!$formId) {
-            $formId = $app->input->getInt('id', 0);
+            $formId = $app->getInput()->getInt('id', 0);
         }
 
         // 3) Sinon POST
         if (!$formId) {
-            $jform  = $app->input->post->get('jform', [], 'array');
+            $jform  = $app->getInput()->post->get('jform', [], 'array');
             $formId = (int) ($jform['id'] ?? 0);
         }
 
@@ -158,7 +158,7 @@ class ElementsModel extends ListModel
         $this->setState('list.start', $limitstart);
 
         // Tri
-        $list = (array) $app->input->get('list', [], 'array');
+        $list = (array) $app->getInput()->get('list', [], 'array');
 
         $orderCol = (string) ($list['ordering'] ?? $app->getUserState($context . '.list.ordering', 'ordering'));
         if (!in_array($orderCol, $this->filter_fields, true)) {
@@ -175,11 +175,11 @@ class ElementsModel extends ListModel
 
         // Joomla core may reset list.start to 0 when list[] exists without list[limit].
         // Re-apply an explicit effective limit/start from request values used by this screen.
-        $listInput = (array) $app->input->get('list', [], 'array');
+        $listInput = (array) $app->getInput()->get('list', [], 'array');
         if (array_key_exists('limit', $listInput)) {
             $effectiveLimit = (int) $listInput['limit'];
-        } elseif ($app->input->get('limit', null, 'raw') !== null) {
-            $effectiveLimit = (int) $app->input->getInt('limit', (int) $limit);
+        } elseif ($app->getInput()->get('limit', null, 'raw') !== null) {
+            $effectiveLimit = (int) $app->getInput()->getInt('limit', (int) $limit);
         } elseif ($enteredFromOtherView) {
             $effectiveLimit = (int) ($limit ?: $app->get('list_limit'));
         } else {
@@ -189,10 +189,10 @@ class ElementsModel extends ListModel
 
         if (array_key_exists('start', $listInput)) {
             $requestedStart = (int) $listInput['start'];
-        } elseif ($app->input->get('start', null, 'raw') !== null) {
-            $requestedStart = (int) $app->input->getInt('start', 0);
-        } elseif ($app->input->get('limitstart', null, 'raw') !== null) {
-            $requestedStart = (int) $app->input->getInt('limitstart', 0);
+        } elseif ($app->getInput()->get('start', null, 'raw') !== null) {
+            $requestedStart = (int) $app->getInput()->getInt('start', 0);
+        } elseif ($app->getInput()->get('limitstart', null, 'raw') !== null) {
+            $requestedStart = (int) $app->getInput()->getInt('limitstart', 0);
         } elseif ($enteredFromOtherView) {
             $requestedStart = 0;
         } else {

@@ -39,7 +39,7 @@ class HtmlView extends BaseHtmlView
 
         /** @var CMSApplication $app */
         $app = Factory::getApplication();
-        $app->input->set('hidemainmenu', true);
+        $app->getInput()->set('hidemainmenu', true);
 
         // JS
         /** @var \Joomla\CMS\Document\AdminDocument $document */
@@ -74,7 +74,7 @@ class HtmlView extends BaseHtmlView
         $this->item = $model->getItem();
 
         // Chargement sécurisé des éléments
-        $input = $app->input;
+        $input = $app->getInput();
         $identity = $app->getIdentity();
         $formId = (int) ($this->item->id ?? $input->getInt('id', 0));
 

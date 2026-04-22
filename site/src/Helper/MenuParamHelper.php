@@ -50,7 +50,7 @@ final class MenuParamHelper
 
     public static function getConfiguredListLimit($app, int $formId = 0): int
     {
-        $inputLimit = (int) $app->input->getInt('cb_list_limit', 0);
+        $inputLimit = (int) $app->getInput()->getInt('cb_list_limit', 0);
 
         if ($inputLimit > 0) {
             return $inputLimit;
@@ -60,7 +60,7 @@ final class MenuParamHelper
             return 0;
         }
 
-        $itemId = (int) $app->input->getInt('Itemid', 0);
+        $itemId = (int) $app->getInput()->getInt('Itemid', 0);
         $menu = $app->getMenu();
         $item = $itemId > 0 ? $menu->getItem($itemId) : $menu->getActive();
 
@@ -155,10 +155,10 @@ final class MenuParamHelper
 
     public static function resolveInputOrMenuToggle($app, string $key, int $default = 0, ?string $legacyKey = null): int
     {
-        $raw = $app->input->get($key, null, 'raw');
+        $raw = $app->getInput()->get($key, null, 'raw');
 
         if (($raw === null || $raw === '') && $legacyKey !== null) {
-            $raw = $app->input->get($legacyKey, null, 'raw');
+            $raw = $app->getInput()->get($legacyKey, null, 'raw');
         }
 
         if ($raw !== null && $raw !== '') {

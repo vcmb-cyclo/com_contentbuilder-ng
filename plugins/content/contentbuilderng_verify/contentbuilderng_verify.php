@@ -55,7 +55,7 @@ class plgContentContentbuilderng_verify extends CMSPlugin implements SubscriberI
                 }
                 $lang = strtolower(trim($keyval[0]));
                 $val = trim($keyval[1]);
-                if ($lang && $lang == strtolower(Factory::getApplication()->input->get('lang', '', 'string'))) {
+                if ($lang && $lang == strtolower(Factory::getApplication()->getInput()->get('lang', '', 'string'))) {
                     return $val;
                 }
             }

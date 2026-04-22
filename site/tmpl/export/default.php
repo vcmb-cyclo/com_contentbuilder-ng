@@ -31,7 +31,7 @@ use Joomla\CMS\Factory;
 $db = Factory::getContainer()->get(DatabaseInterface::class);
 /** @var \Joomla\CMS\Application\CMSApplication $app */
 $app = Factory::getApplication();
-$input = $app->input;
+$input = $app->getInput();
 
 // Pourcentage de mélange de la couleur d'état vers le blanc (0-100), paramétrable via la requête.
 $stateColorMixPercent = (float) $input->get('state_color_mix_percent', 75, 'float');

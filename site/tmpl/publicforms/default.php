@@ -269,7 +269,7 @@ if ($this->page_heading) {
 
     <input type="hidden" name="option" value="com_contentbuilderng" />
     <input type="hidden" name="task" value="" />
-    <input type="hidden" name="Itemid" value="<?php echo Factory::getApplication()->input->getInt('Itemid', 0); ?>" />
+    <input type="hidden" name="Itemid" value="<?php echo Factory::getApplication()->getInput()->getInt('Itemid', 0); ?>" />
     <input type="hidden" name="limitstart" value="" />
     <input type="hidden" name="boxchecked" value="0" />
     <input type="hidden" name="view" id="view" value="publicforms" />

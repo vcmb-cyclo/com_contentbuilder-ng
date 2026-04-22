@@ -46,7 +46,7 @@ class plgSystemContentbuilderng_system extends CMSPlugin implements SubscriberIn
      */
     private function isSyncMutationRequest(): bool
     {
-        $input = $this->app->input;
+        $input = $this->app->getInput();
         $option = $input->getCmd('option', '');
         $task = $input->getCmd('task', '');
         $task = strtolower($task);
@@ -144,7 +144,7 @@ class plgSystemContentbuilderng_system extends CMSPlugin implements SubscriberIn
 
         // Managing auto-groups
         $app = $this->app;
-        $option = $app->input->getCmd('option', '');
+        $option = $app->getInput()->getCmd('option', '');
         if ($option === 'com_kunena' || $option === 'com_contentbuilderng') {
 
             $pluginParams = $this->params;
@@ -320,21 +320,21 @@ class plgSystemContentbuilderng_system extends CMSPlugin implements SubscriberIn
             }
             // theme loading end
 
-            $option = $app->input->getCmd('option', '');
-            $view = $app->input->getCmd('view', '');
-            $task = $app->input->getCmd('task', '');
-            $layout = $app->input->getCmd('layout', '');
-            $id = $app->input->get('id', 0, 'string');
+            $option = $app->getInput()->getCmd('option', '');
+            $view = $app->getInput()->getCmd('view', '');
+            $task = $app->getInput()->getCmd('task', '');
+            $layout = $app->getInput()->getCmd('layout', '');
+            $id = $app->getInput()->get('id', 0, 'string');
             $id = explode(':', $id);
             $id = intval($id[0]);
-            $a_id = $app->input->get('a_id', 0, 'string');
+            $a_id = $app->getInput()->get('a_id', 0, 'string');
             $a_id = explode(':', $a_id);
             $a_id = intval($a_id[0]);
 
             $pluginParams = $this->params;
 
             // if somebody tries to submit an article through the built-in joomla content submit
-            if ($pluginParams->def('disable_new_articles', 0) && trim($app->input->getCmd('option', '')) == 'com_content' && (trim($app->input->getCmd('task', '')) == 'new' || trim($app->input->getCmd('task', '')) == 'article.add' || (trim($app->input->getCmd('view', '')) == 'article' && trim($app->input->getCmd('layout', '')) == 'form') || (trim($app->input->getCmd('view', '')) == 'form' && trim($app->input->getCmd('layout', '')) == 'edit') && $a_id <= 0)) {
+            if ($pluginParams->def('disable_new_articles', 0) && trim($app->getInput()->getCmd('option', '')) == 'com_content' && (trim($app->getInput()->getCmd('task', '')) == 'new' || trim($app->getInput()->getCmd('task', '')) == 'article.add' || (trim($app->getInput()->getCmd('view', '')) == 'article' && trim($app->getInput()->getCmd('layout', '')) == 'form') || (trim($app->getInput()->getCmd('view', '')) == 'form' && trim($app->getInput()->getCmd('layout', '')) == 'edit') && $a_id <= 0)) {
                 $this->app->getLanguage()->load('com_contentbuilderng');
                 $this->app->enqueueMessage(Text::_('COM_CONTENTBUILDERNG_PERMISSIONS_NEW_NOT_ALLOWED'), 'error');
                 $this->app->redirect('index.php');
@@ -355,7 +355,7 @@ class plgSystemContentbuilderng_system extends CMSPlugin implements SubscriberIn
                 $this->db->setQuery($redirectQuery);
                 $article = $this->db->loadAssoc();
                 if (is_array($article)) {
-                    $this->app->redirect('index.php?option=com_contentbuilderng&task=edit.display&id=' . $article['form_id'] . "&record_id=" . $article['record_id'] . "&jsback=1&Itemid=" . $app->input->getInt('Itemid', 0));
+                    $this->app->redirect('index.php?option=com_contentbuilderng&task=edit.display&id=' . $article['form_id'] . "&record_id=" . $article['record_id'] . "&jsback=1&Itemid=" . $app->getInput()->getInt('Itemid', 0));
                 }
             }
         }
@@ -417,18 +417,18 @@ class plgSystemContentbuilderng_system extends CMSPlugin implements SubscriberIn
         }
 
         // Keep logout return URLs stable when the return target points to com_contentbuilderng.
-        $enc = base64_decode($app->input->get('return', '', 'string'), true);
+        $enc = base64_decode($app->getInput()->get('return', '', 'string'), true);
         if (is_string($enc) && $enc !== '') {
             $enc = explode('?', $enc);
             count($enc) > 1 ? parse_str($enc[1], $out) : $out = array();
             if (isset($out['option']) && $out['option'] == 'com_contentbuilderng') {
                 unset($out['view']);
                 $return = http_build_query($out, '', '&');
-                $app->input->set('return', base64_encode('index.php' . ($return ? '?' : '') . $return));
+                $app->getInput()->set('return', base64_encode('index.php' . ($return ? '?' : '') . $return));
             }
         }
 
-        $option = $app->input->getCmd('option', '');
+        $option = $app->getInput()->getCmd('option', '');
 
         if ($option === 'com_content') {
 

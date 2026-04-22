@@ -132,9 +132,9 @@ function ContentbuilderngParseRoute(&$segments)
                     $vars['title'] = '';
                 }
 
-                $app->input->set('controller', $controller);
-                $app->input->set('id', $vars['id']);
-                $app->input->set('title', $vars['title']);
+                $app->getInput()->set('controller', $controller);
+                $app->getInput()->set('id', $vars['id']);
+                $app->getInput()->set('title', $vars['title']);
                 break;
 
             case 'details':
@@ -147,11 +147,11 @@ function ContentbuilderngParseRoute(&$segments)
                 $vars['title']        = isset($segments[3]) ? $segments[3] : '';
                 $vars['view']         =  'details';
 
-                $app->input->set('controller', $controller);
-                $app->input->set('id', $vars['id']);
-                $app->input->set('record_id', $vars['record_id']);
-                $app->input->set('title', $vars['title']);
-                $app->input->set('view', 'details');
+                $app->getInput()->set('controller', $controller);
+                $app->getInput()->set('id', $vars['id']);
+                $app->getInput()->set('record_id', $vars['record_id']);
+                $app->getInput()->set('title', $vars['title']);
+                $app->getInput()->set('view', 'details');
                 break;
 
             case 'edit':
@@ -164,11 +164,11 @@ function ContentbuilderngParseRoute(&$segments)
                 $vars['title']        = isset($segments[3]) ? $segments[3] : '';
                 $vars['view']         =  'edit';
 
-                $app->input->set('controller', $controller);
-                $app->input->set('id', $vars['id']);
-                $app->input->set('record_id', $vars['record_id']);
-                $app->input->set('title', $vars['title']);
-                $app->input->set('view', 'edit');
+                $app->getInput()->set('controller', $controller);
+                $app->getInput()->set('id', $vars['id']);
+                $app->getInput()->set('record_id', $vars['record_id']);
+                $app->getInput()->set('title', $vars['title']);
+                $app->getInput()->set('view', 'edit');
                 break;
         }
 

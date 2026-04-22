@@ -73,7 +73,7 @@ class HtmlView extends BaseHtmlView
             }'
         );
 
-        $this->mode = $app->input->getCmd('mode', 'export');
+        $this->mode = $app->getInput()->getCmd('mode', 'export');
         if (!in_array($this->mode, ['export', 'import'], true)) {
             $this->mode = 'export';
         }

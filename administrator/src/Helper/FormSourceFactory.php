@@ -21,7 +21,7 @@ final class FormSourceFactory
     private static function isSignedAdminPreviewRequest(int $formId): bool
     {
         $app = Factory::getApplication();
-        $input = $app->input;
+        $input = $app->getInput();
 
         if ($formId < 1 || !$input->getBool('cb_preview', false)) {
             return false;
@@ -113,8 +113,8 @@ final class FormSourceFactory
 
         $app = Factory::getApplication();
         $allowUnpublishedSource = $app->isClient('administrator')
-            || $app->input->getBool('cb_preview_ok', false)
-            || self::isSignedAdminPreviewRequest((int) $app->input->getInt('id', 0));
+            || $app->getInput()->getBool('cb_preview_ok', false)
+            || self::isSignedAdminPreviewRequest((int) $app->getInput()->getInt('id', 0));
 
         $form = new $class($referenceId);
         $exists = !property_exists($form, 'exists') || (bool) ($form->exists ?? false);

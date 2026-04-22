@@ -60,9 +60,9 @@ class StoragefieldsModel extends ListModel
         $storageId = (int) $this->storageId;
 
         if (!$storageId) {
-            $storageId = $app->input->getInt('id', 0);
+            $storageId = $app->getInput()->getInt('id', 0);
             if (!$storageId) {
-                $jform = $app->input->post->get('jform', [], 'array');
+                $jform = $app->getInput()->post->get('jform', [], 'array');
                 $storageId = (int) ($jform['id'] ?? 0);
             }
         }
@@ -82,23 +82,23 @@ class StoragefieldsModel extends ListModel
 
         // Joomla core may reset list.start to 0 when list[] exists without list[limit].
         // Re-apply a consistent pagination state for this screen.
-        $listInput = (array) $app->input->get('list', [], 'array');
+        $listInput = (array) $app->getInput()->get('list', [], 'array');
         if (array_key_exists('limit', $listInput)) {
             $effectiveLimit = (int) $listInput['limit'];
-        } elseif ($app->input->get('limit', null, 'raw') !== null) {
-            $effectiveLimit = (int) $app->input->getInt('limit', (int) $app->get('list_limit'));
+        } elseif ($app->getInput()->get('limit', null, 'raw') !== null) {
+            $effectiveLimit = (int) $app->getInput()->getInt('limit', (int) $app->get('list_limit'));
         } else {
             $effectiveLimit = (int) $app->getUserState($context . '.list.limit', (int) $app->get('list_limit'));
         }
         $effectiveLimit = max(0, $effectiveLimit);
 
         // Joomla admin pagination links set "limitstart"; prefer it over stale list[start].
-        if ($app->input->get('limitstart', null, 'raw') !== null) {
-            $requestedStart = (int) $app->input->getInt('limitstart', 0);
+        if ($app->getInput()->get('limitstart', null, 'raw') !== null) {
+            $requestedStart = (int) $app->getInput()->getInt('limitstart', 0);
         } elseif (array_key_exists('start', $listInput)) {
             $requestedStart = (int) $listInput['start'];
-        } elseif ($app->input->get('start', null, 'raw') !== null) {
-            $requestedStart = (int) $app->input->getInt('start', 0);
+        } elseif ($app->getInput()->get('start', null, 'raw') !== null) {
+            $requestedStart = (int) $app->getInput()->getInt('start', 0);
         } else {
             $requestedStart = (int) $app->getUserState($context . '.list.start', 0);
         }
@@ -146,7 +146,7 @@ class StoragefieldsModel extends ListModel
         $orderCol  = (string) $this->getState('list.ordering', '');
         $orderDirn = strtolower((string) $this->getState('list.direction', ''));
 
-        $input = Factory::getApplication()->input;
+        $input = Factory::getApplication()->getInput();
         $list = (array) $input->get('list', [], 'array');
         $requestedOrder = isset($list['ordering']) ? preg_replace('/[^a-zA-Z0-9_\\.]/', '', (string) $list['ordering']) : '';
         $requestedDir = strtolower((string) ($list['direction'] ?? ''));

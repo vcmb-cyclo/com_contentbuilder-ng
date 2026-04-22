@@ -205,7 +205,7 @@ class plgContentContentbuilderng_rating extends CMSPlugin implements SubscriberI
                         }
                     }
 
-                    $out = RatingHelper::getRating($form_id, $record_id, $rating, $rating_slots, Factory::getApplication()->input->getCmd('lang', ''), $rating_allowed, $rating_count, $rating_sum);
+                    $out = RatingHelper::getRating($form_id, $record_id, $rating, $rating_slots, Factory::getApplication()->getInput()->getCmd('lang', ''), $rating_allowed, $rating_count, $rating_sum);
 
                     $article->text = str_replace($matches[0][$i], $out, $article->text);
 

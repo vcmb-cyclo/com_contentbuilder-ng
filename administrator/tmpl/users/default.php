@@ -25,8 +25,8 @@ $ordering  = (string) $this->state->get('list.ordering', 'u.id');
 $direction = strtolower((string) $this->state->get('list.direction', 'asc'));
 $direction = ($direction === 'desc') ? 'desc' : 'asc';
 $search    = $this->state->get('filter.search');
-$formId    = (int) Factory::getApplication()->input->getInt('form_id', 0);
-$tmpl      = Factory::getApplication()->input->getWord('tmpl', '');
+$formId    = (int) Factory::getApplication()->getInput()->getInt('form_id', 0);
+$tmpl      = Factory::getApplication()->getInput()->getWord('tmpl', '');
 
 $sortLink = function (string $label, string $field) use ($ordering, $direction, $formId, $tmpl): string {
     $isActive = ($ordering === $field);
@@ -142,7 +142,7 @@ $sortLink = function (string $label, string $field) use ($ordering, $direction, 
             <tbody>
                 <?php foreach ($this->items as $i => $item):
                     $checked = HTMLHelper::_('grid.id', $i, $item->id);
-                    $link = Route::_('index.php?option=com_contentbuilderng&task=user.edit&form_id=' . (int) Factory::getApplication()->input->getInt('form_id', 0) . '&joomla_userid=' . (int) $item->id);
+                    $link = Route::_('index.php?option=com_contentbuilderng&task=user.edit&form_id=' . (int) Factory::getApplication()->getInput()->getInt('form_id', 0) . '&joomla_userid=' . (int) $item->id);
                     if ($item->published === null) {
                         $item->published = 1;
                     }

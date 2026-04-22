@@ -48,7 +48,7 @@ class ArticleService
     public function createArticle($contentbuilderngFormId, $recordId, array $record, array $elementsAllowed, $titleField = '', $metadata = null, $config = [], $full = false, $limitedOptions = true, $menuCatId = null)
     {
         $app = $this->getApp();
-        $input = $app->input;
+        $input = $app->getInput();
         $skipDetailsTemplateOnSave = $app->isClient('site') && $input->getCmd('task', '') === 'edit.save';
 
         $tz = new \DateTimeZone($app->get('offset'));

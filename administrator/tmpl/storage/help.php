@@ -12,7 +12,7 @@ use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Router\Route;
 
-$input = Factory::getApplication()->input;
+$input = Factory::getApplication()->getInput();
 $storageId = (int) $input->getInt('id', 0);
 $backToEdit = Route::_('index.php?option=com_contentbuilderng&view=storage&layout=edit&id=' . $storageId);
 $backToList = Route::_('index.php?option=com_contentbuilderng&view=storages');

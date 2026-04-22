@@ -93,12 +93,12 @@ class ListModel extends BaseListModel
             $wa->useStyle('com_contentbuilderng.system');
         }
 
-        if ($app->input->getInt('Itemid', 0)) {
+        if ($app->getInput()->getInt('Itemid', 0)) {
             $this->_menu_item = true;
         }
 
-        $id = $app->input->getInt('id', 0);
-        $this->directStorageId = max(0, $app->input->getInt('storage_id', 0));
+        $id = $app->getInput()->getInt('id', 0);
+        $this->directStorageId = max(0, $app->getInput()->getInt('storage_id', 0));
 
         if (!$id && $this->frontend) {
             $menu = $app->getMenu();
@@ -116,7 +116,7 @@ class ListModel extends BaseListModel
             throw new \Exception(Text::_('COM_CONTENTBUILDERNG_FORM_NOT_FOUND'), 404);
         }
 
-        $list = (array) $app->input->get('list', [], 'array');
+        $list = (array) $app->getInput()->get('list', [], 'array');
         $listOrdering = isset($list['ordering']) ? preg_replace('/[^A-Za-z0-9_\\.]/', '', (string) $list['ordering']) : '';
         $listDirection = isset($list['direction']) ? strtolower((string) $list['direction']) : '';
         $listFullordering = isset($list['fullordering']) ? trim((string) $list['fullordering']) : '';
@@ -150,15 +150,15 @@ class ListModel extends BaseListModel
         } else {
             $filter_order     = $listOrdering;
             $filter_order_Dir = $listDirection;
-            $filter           = $app->input->get('filter', '', 'string');
-            $filter_state     = $app->input->getInt('list_state_filter', 0);
-            $filter_publish   = $app->input->getInt('list_publish_filter', -1);
-            $filter_language  = $app->input->getCmd('list_language_filter', '');
+            $filter           = $app->getInput()->get('filter', '', 'string');
+            $filter_state     = $app->getInput()->getInt('list_state_filter', 0);
+            $filter_publish   = $app->getInput()->getInt('list_publish_filter', -1);
+            $filter_language  = $app->getInput()->getCmd('list_language_filter', '');
         }
 
         // Keep language filter state per FE screen (form/layout/menu item).
         // This avoids leaking language selection between different list screens.
-        if ($app->input->get('list_language_filter', null) === null) {
+        if ($app->getInput()->get('list_language_filter', null) === null) {
             $filter_language = (string) $app->getUserState($filterLanguageStateKey, (string) $filter_language);
         }
 
@@ -189,7 +189,7 @@ class ListModel extends BaseListModel
         $this->setState('formsd_filter_order', $filter_order);
         $this->setState('formsd_filter_order_Dir', $filter_order_Dir);
 
-        if ($this->frontend && $app->input->getInt('Itemid', 0)) {
+        if ($this->frontend && $app->getInput()->getInt('Itemid', 0)) {
 
             // try menu item
             $menu = $app->getMenu();
@@ -218,7 +218,7 @@ class ListModel extends BaseListModel
             }
         }
 
-        $menu_filter = $app->input->get('cb_list_filterhidden', null, 'raw');
+        $menu_filter = $app->getInput()->get('cb_list_filterhidden', null, 'raw');
         if (($menu_filter === null || $menu_filter === '') && $app->isClient('site')) {
             $activeMenu = $app->getMenu()->getActive();
             if ($activeMenu) {
@@ -239,7 +239,7 @@ class ListModel extends BaseListModel
             }
         }
 
-        $menu_filter_order = $app->input->get('cb_list_orderhidden', null, 'raw');
+        $menu_filter_order = $app->getInput()->get('cb_list_orderhidden', null, 'raw');
         if (($menu_filter_order === null || $menu_filter_order === '') && $app->isClient('site')) {
             $activeMenu = $app->getMenu()->getActive();
             if ($activeMenu) {
@@ -289,7 +289,7 @@ class ListModel extends BaseListModel
         $app = Factory::getApplication();
         parent::populateState($ordering, $direction);
 
-        $list = (array) $app->input->get('list', [], 'array');
+        $list = (array) $app->getInput()->get('list', [], 'array');
         $paginationStateKey = $this->getPaginationStateKeyPrefix();
         $limitKey = $paginationStateKey . '.limit';
         $startKey = $paginationStateKey . '.start';
@@ -324,11 +324,11 @@ class ListModel extends BaseListModel
 
         // ✅ RESET page si on change un filtre (ou clique Search/Reset)
         if (
-            $app->input->get('filter', null) !== null ||
-            $app->input->get('list_state_filter', null) !== null ||
-            $app->input->get('list_publish_filter', null) !== null ||
-            $app->input->get('list_language_filter', null) !== null ||
-            $app->input->getBool('filter_reset', false)
+            $app->getInput()->get('filter', null) !== null ||
+            $app->getInput()->get('list_state_filter', null) !== null ||
+            $app->getInput()->get('list_publish_filter', null) !== null ||
+            $app->getInput()->get('list_language_filter', null) !== null ||
+            $app->getInput()->getBool('filter_reset', false)
         ) {
             $start = 0;
         }
@@ -357,7 +357,7 @@ class ListModel extends BaseListModel
             $formId = (int) $this->directStorageId;
         }
         if ($formId < 1) {
-            $formId = (int) $app->input->getInt('id', 0);
+            $formId = (int) $app->getInput()->getInt('id', 0);
         }
 
         if ($formId < 1 && $app->isClient('site')) {
@@ -367,12 +367,12 @@ class ListModel extends BaseListModel
             }
         }
 
-        $layout = (string) $app->input->getCmd('layout', 'default');
+        $layout = (string) $app->getInput()->getCmd('layout', 'default');
         if ($layout === '') {
             $layout = 'default';
         }
 
-        $itemId = (int) $app->input->getInt('Itemid', 0);
+        $itemId = (int) $app->getInput()->getInt('Itemid', 0);
 
         $scope = $this->isDirectStorageMode() ? ('storage.' . $formId) : (string) $formId;
 
@@ -387,8 +387,8 @@ class ListModel extends BaseListModel
         $scope = $this->isDirectStorageMode()
             ? 'storage.' . (int) $this->directStorageId
             : 'form.' . (int) $this->_id;
-        $layout = (string) $app->input->getCmd('layout', 'default');
-        $itemId = (int) $app->input->getInt('Itemid', 0);
+        $layout = (string) $app->getInput()->getCmd('layout', 'default');
+        $itemId = (int) $app->getInput()->getInt('Itemid', 0);
 
         return $scope . '.' . $layout . '.' . $itemId;
     }
@@ -552,7 +552,7 @@ class ListModel extends BaseListModel
             'show_all_languages_fe' => 1,
         ];
 
-        $list = (array) $app->input->get('list', [], 'array');
+        $list = (array) $app->getInput()->get('list', [], 'array');
         $ordering = isset($list['ordering']) ? preg_replace('/[^A-Za-z0-9_\\.]/', '', (string) $list['ordering']) : '';
         $direction = isset($list['direction']) ? strtolower((string) $list['direction']) : '';
         if ($ordering === '' && isset($list['fullordering'])) {
@@ -645,7 +645,7 @@ class ListModel extends BaseListModel
     private function _buildQuery()
     {
         $app = $this->app;
-        $isAdminPreview = $app->input->getBool('cb_preview_ok', false);
+        $isAdminPreview = $app->getInput()->getBool('cb_preview_ok', false);
         $db = $this->getDatabase();
         $query = $db->getQuery(true)
             ->select('*')
@@ -695,7 +695,7 @@ class ListModel extends BaseListModel
                 $data->preview_no_list_fields = false;
                 $data->invalid_list_setup = false;
                 $data->list_header_sticky = (int) ($data->list_header_sticky ?? 0);
-                $isAdminPreview = $app->input->getBool('cb_preview_ok', false);
+                $isAdminPreview = $app->getInput()->getBool('cb_preview_ok', false);
 
                 if (!$isAdminPreview) {
                     if (!$this->frontend) {
@@ -704,9 +704,9 @@ class ListModel extends BaseListModel
                 }
 
                 // filter by category if requested by menu item
-                if ($app->input->getInt('cb_category_menu_filter', 0) === 1) {
-                    if ($app->input->getInt('cb_category_id', -1) > -2) {
-                        $this->setState('article_category_filter', $app->input->getInt('cb_category_id', -1));
+                if ($app->getInput()->getInt('cb_category_menu_filter', 0) === 1) {
+                    if ($app->getInput()->getInt('cb_category_id', -1) > -2) {
+                        $this->setState('article_category_filter', $app->getInput()->getInt('cb_category_id', -1));
                     } else {
                         $this->setState('article_category_filter', $data->default_category);
                     }
@@ -720,7 +720,7 @@ class ListModel extends BaseListModel
                     if (!$data->form->exists) {
                         throw new \Exception(Text::_('COM_CONTENTBUILDERNG_FORM_NOT_FOUND'), 404);
                     }
-                    $isAdminPreview = $app->input->getBool('cb_preview_ok', false);
+                    $isAdminPreview = $app->getInput()->getBool('cb_preview_ok', false);
                     $data->preview_no_list_fields = false;
                     if ($isAdminPreview && method_exists($data->form, 'synchRecords')) {
                         $data->form->synchRecords((int) $this->_id);
@@ -771,7 +771,7 @@ class ListModel extends BaseListModel
 
                     $data->labels = $data->form->getElementLabels();
 
-                    if ($app->input->getBool('filter_reset', false)) {
+                    if ($app->getInput()->getBool('filter_reset', false)) {
 
                         $app->getSession()->clear('com_contentbuilderng.filter_signal.' . $this->_id);
                         $app->getSession()->clear('com_contentbuilderng.filter.' . $this->_id);
@@ -784,7 +784,7 @@ class ListModel extends BaseListModel
                         (
                             $app->getSession()->get('com_contentbuilderng.filter_signal.' . $this->_id, false)
                             ||
-                            $app->input->getBool('contentbuilderng_filter_signal', false)
+                            $app->getInput()->getBool('contentbuilderng_filter_signal', false)
                         )
                         && $data->allow_external_filter
                     ) {
@@ -796,25 +796,25 @@ class ListModel extends BaseListModel
                         $calendar_formats = array();
 
                         // renew on request
-                        if ($app->input->getBool('contentbuilderng_filter_signal', false)) {
+                        if ($app->getInput()->getBool('contentbuilderng_filter_signal', false)) {
 
-                            if ($app->input->get('cbListFilterKeywords', '', 'string')) {
-                                $this->setState('formsd_filter', $app->input->get('cbListFilterKeywords', '', 'string'));
+                            if ($app->getInput()->get('cbListFilterKeywords', '', 'string')) {
+                                $this->setState('formsd_filter', $app->getInput()->get('cbListFilterKeywords', '', 'string'));
                             }
 
-                            if ($app->input->get('cbListFilterArticleCategories', -1, 'string') > -1) {
-                                $this->setState('article_category_filter', $app->input->getInt('cbListFilterArticleCategories', -1));
+                            if ($app->getInput()->get('cbListFilterArticleCategories', -1, 'string') > -1) {
+                                $this->setState('article_category_filter', $app->getInput()->getInt('cbListFilterArticleCategories', -1));
                             }
 
-                            $filters = $app->input->post->get('cb_filter', [], 'array');
-                            $filters_from = $app->input->post->get('cbListFilterCalendarFrom', [], 'array');
-                            $filters_to = $app->input->post->get('cbListFilterCalendarTo', [], 'array');
-                            $calendar_formats = $app->input->post->get('cb_filter_calendar_format', [], 'array');
+                            $filters = $app->getInput()->post->get('cb_filter', [], 'array');
+                            $filters_from = $app->getInput()->post->get('cbListFilterCalendarFrom', [], 'array');
+                            $filters_to = $app->getInput()->post->get('cbListFilterCalendarTo', [], 'array');
+                            $calendar_formats = $app->getInput()->post->get('cb_filter_calendar_format', [], 'array');
 
                             $app->getSession()->set('com_contentbuilderng.filter_signal.' . $this->_id, true);
                             $app->getSession()->set('com_contentbuilderng.filter.' . $this->_id, $filters);
-                            $app->getSession()->set('com_contentbuilderng.filter_keywords.' . $this->_id, $app->input->get('cbListFilterKeywords', '', 'string'));
-                            $app->getSession()->set('com_contentbuilderng.filter_article_categories.' . $this->_id, $app->input->getInt('cbListFilterArticleCategories', -1));
+                            $app->getSession()->set('com_contentbuilderng.filter_keywords.' . $this->_id, $app->getInput()->get('cbListFilterKeywords', '', 'string'));
+                            $app->getSession()->set('com_contentbuilderng.filter_article_categories.' . $this->_id, $app->getInput()->getInt('cbListFilterArticleCategories', -1));
                             $app->getSession()->set('com_contentbuilderng.calendar_filter_from.' . $this->_id, $filters_from);
                             $app->getSession()->set('com_contentbuilderng.calendar_filter_to.' . $this->_id, $filters_to);
                             $app->getSession()->set('com_contentbuilderng.calendar_formats.' . $this->_id, $calendar_formats);
@@ -1041,7 +1041,7 @@ class ListModel extends BaseListModel
                     }
 
                     // Derive ordering directly from the request to stay Joomla 6-native.
-                    $list = (array) $app->input->get('list', [], 'array');
+                    $list = (array) $app->getInput()->get('list', [], 'array');
                     $ordering = isset($list['ordering']) ? preg_replace('/[^A-Za-z0-9_\\.]/', '', (string) $list['ordering']) : '';
                     $direction = isset($list['direction']) ? strtolower((string) $list['direction']) : '';
                     if ($ordering === '' && isset($list['fullordering'])) {
@@ -1071,7 +1071,7 @@ class ListModel extends BaseListModel
                         $ordering = '';
                     }
 
-                    $isAdminPreview = $app->input->getBool('cb_preview_ok', false);
+                    $isAdminPreview = $app->getInput()->getBool('cb_preview_ok', false);
                     $publishedOnly = PublishedRecordVisibilityHelper::shouldRestrictToPublishedOnly($data, $isAdminPreview);
                     $ownerFilterUserId = $isAdminPreview
                         ? -1
@@ -1158,7 +1158,7 @@ class ListModel extends BaseListModel
 
                     // Plugin call
                     $limitstart = (int) $this->getState('list.start');
-                    $start      = $app->input->getInt('start', 0);
+                    $start      = $app->getInput()->getInt('start', 0);
                     $table = new \Joomla\CMS\Table\Content($this->getDatabase());
                     $registry = new Registry;
                     $registry->loadString($table->attribs ?? '');

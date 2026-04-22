@@ -34,7 +34,7 @@ class FormResolverService
         }
 
         $app = $this->getApp();
-        $isAdminPreview = $app->input->getBool('cb_preview_ok', false);
+        $isAdminPreview = $app->getInput()->getBool('cb_preview_ok', false);
         $isAdministrator = $app->isClient('administrator');
         $allowUnpublishedSource = $isAdminPreview || $isAdministrator;
 

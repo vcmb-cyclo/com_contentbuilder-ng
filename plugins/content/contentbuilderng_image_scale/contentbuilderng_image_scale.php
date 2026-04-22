@@ -251,7 +251,7 @@ class plgContentContentbuilderng_image_scale extends CMSPlugin implements Subscr
 
 					if ($frontend) {
 						if (!(new PermissionService())->authorizeFe('view')) {
-							if (Factory::getApplication()->input->getInt('contentbuilderng_display', 0) || ($protect && Factory::getApplication()->input->getInt('contentbuilderng_display_detail', 0))) {
+							if (Factory::getApplication()->getInput()->getInt('contentbuilderng_display', 0) || ($protect && Factory::getApplication()->getInput()->getInt('contentbuilderng_display_detail', 0))) {
 								ob_end_clean();
 								die ('No Access');
 							} else {
@@ -260,7 +260,7 @@ class plgContentContentbuilderng_image_scale extends CMSPlugin implements Subscr
 						}
 					} else {
 						if (!(new PermissionService())->authorize('view')) {
-							if (Factory::getApplication()->input->getInt('contentbuilderng_display', 0) || ($protect && Factory::getApplication()->input->getInt('contentbuilderng_display_detail', 0))) {
+							if (Factory::getApplication()->getInput()->getInt('contentbuilderng_display', 0) || ($protect && Factory::getApplication()->getInput()->getInt('contentbuilderng_display_detail', 0))) {
 								ob_end_clean();
 								die ('No Access');
 							} else {
@@ -465,9 +465,9 @@ class plgContentContentbuilderng_image_scale extends CMSPlugin implements Subscr
 													$exif_type = exif_imagetype($the_value);
 
 													// displaying the original file on request
-													if (Factory::getApplication()->input->getInt('contentbuilderng_display_detail', 0)) {
+													if (Factory::getApplication()->getInput()->getInt('contentbuilderng_display_detail', 0)) {
 
-														if (Factory::getApplication()->input->get('contentbuilderng_detail_file', '', 'REQUEST', 'STRING', CBREQUEST_ALLOWRAW, 'string') == sha1($field . $the_value)) {
+														if (Factory::getApplication()->getInput()->get('contentbuilderng_detail_file', '', 'REQUEST', 'STRING', CBREQUEST_ALLOWRAW, 'string') == sha1($field . $the_value)) {
 
 															// clean up before displaying
 															ob_end_clean();
@@ -696,9 +696,9 @@ class plgContentContentbuilderng_image_scale extends CMSPlugin implements Subscr
 														$the_image = @getimagesize($filename);
 
 														if ($the_image !== false) {
-															if (Factory::getApplication()->input->getInt('contentbuilderng_display', 0)) {
+															if (Factory::getApplication()->getInput()->getInt('contentbuilderng_display', 0)) {
 
-																if (Factory::getApplication()->input->get('contentbuilderng_field', '', 'REQUEST', 'STRING', CBREQUEST_ALLOWRAW, 'string') == sha1($field . $filename)) {
+																if (Factory::getApplication()->getInput()->get('contentbuilderng_field', '', 'REQUEST', 'STRING', CBREQUEST_ALLOWRAW, 'string') == sha1($field . $filename)) {
 
 																	// clean up before displaying
 																	ob_end_clean();
@@ -733,8 +733,8 @@ class plgContentContentbuilderng_image_scale extends CMSPlugin implements Subscr
 
 																$url = Uri::getInstance()->toString();
 																//fixing downloads on other pages than page 1
-																if (Factory::getApplication()->input->get('controller', '', 'string') == 'list') {
-																	$url = Uri::getInstance()->base() . 'index.php?option=com_contentbuilderng&amp;task=list.display&amp;id=' . intval($form_id) . '&amp;limitstart=' . Factory::getApplication()->input->getInt('limitstart', 0);
+																if (Factory::getApplication()->getInput()->get('controller', '', 'string') == 'list') {
+																	$url = Uri::getInstance()->base() . 'index.php?option=com_contentbuilderng&amp;task=list.display&amp;id=' . intval($form_id) . '&amp;limitstart=' . Factory::getApplication()->getInput()->getInt('limitstart', 0);
 																}
 
 																if (trim($open) == 'true') {

@@ -17,7 +17,7 @@ use CB\Component\Contentbuilderng\Site\Helper\MenuParamHelper;
 
 /** @var SiteApplication $app */
 $app = Factory::getApplication();
-$input = $app->input;
+$input = $app->getInput();
 $session = $app->getSession();
 $menu = $app->getMenu();
 $requestListLimitSubmitted = MenuParamHelper::hasExplicitListLimitRequest();

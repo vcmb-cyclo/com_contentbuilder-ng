@@ -82,7 +82,7 @@ class HtmlView extends BaseHtmlView
 
     private function resolveSiblingRecordIdsByRecordId(object $subject, int $currentRecordId): array
     {
-        $currentList = (array) Factory::getApplication()->input->get('list', [], 'array');
+        $currentList = (array) Factory::getApplication()->getInput()->get('list', [], 'array');
         $currentListStart = array_key_exists('start', $currentList) ? max(0, (int) $currentList['start']) : 0;
         if (
             $currentRecordId < 1
@@ -95,7 +95,7 @@ class HtmlView extends BaseHtmlView
         }
 
         $db = Factory::getContainer()->get(DatabaseInterface::class);
-        $isAdminPreview = Factory::getApplication()->input->getBool('cb_preview_ok', false);
+        $isAdminPreview = Factory::getApplication()->getInput()->getBool('cb_preview_ok', false);
 
         $baseWhere = [
             $db->quoteName('type') . ' = ' . $db->quote((string) $subject->type),
@@ -137,13 +137,13 @@ class HtmlView extends BaseHtmlView
     {
         $app = Factory::getApplication();
         $option = 'com_contentbuilderng';
-        $layout = (string) $app->input->getCmd('layout', 'default');
+        $layout = (string) $app->getInput()->getCmd('layout', 'default');
 
         if ($layout === '') {
             $layout = 'default';
         }
 
-        $itemId = (int) $app->input->getInt('Itemid', 0);
+        $itemId = (int) $app->getInput()->getInt('Itemid', 0);
         $prefix = $option . '.liststate.' . $formId . '.' . $layout . '.' . $itemId;
 
         return [
@@ -155,24 +155,24 @@ class HtmlView extends BaseHtmlView
     private function resolveSiblingRecordIds(object $subject): array
     {
         $app = Factory::getApplication();
-        $currentRecordId = (int) $app->input->getInt('record_id', 0);
+        $currentRecordId = (int) $app->getInput()->getInt('record_id', 0);
         $fallback = $this->resolveSiblingRecordIdsByRecordId($subject, $currentRecordId);
 
         if ($currentRecordId < 1) {
             return $fallback;
         }
 
-        $formId = (int) $app->input->getInt('id', 0);
+        $formId = (int) $app->getInput()->getInt('id', 0);
         $paginationKeys = $this->getListPaginationStateKeys($formId);
         $limitStateBackup = $app->getUserState($paginationKeys['limit'], null);
         $startStateBackup = $app->getUserState($paginationKeys['start'], null);
-        $originalList = (array) $app->input->get('list', [], 'array');
+        $originalList = (array) $app->getInput()->get('list', [], 'array');
         $resolvedList = NavigationLinkHelper::resolveListState(
             $app,
             $originalList,
             $formId,
-            (string) $app->input->getCmd('layout', 'default'),
-            (int) $app->input->getInt('Itemid', 0)
+            (string) $app->getInput()->getCmd('layout', 'default'),
+            (int) $app->getInput()->getInt('Itemid', 0)
         );
         $listLimit = (int) $resolvedList['limit'];
 
@@ -181,7 +181,7 @@ class HtmlView extends BaseHtmlView
             $listForNavigation = $resolvedList;
             $listForNavigation['start'] = 0;
             $listForNavigation['limit'] = 1000000;
-            $app->input->set('list', $listForNavigation);
+            $app->getInput()->set('list', $listForNavigation);
 
             $factory = $app->bootComponent('com_contentbuilderng')->getMVCFactory();
             $listModel = $factory->createModel('List', 'Site', ['ignore_request' => false]);
@@ -220,7 +220,7 @@ class HtmlView extends BaseHtmlView
         } catch (\Throwable $e) {
             return $fallback;
         } finally {
-            $app->input->set('list', $originalList);
+            $app->getInput()->set('list', $originalList);
             $app->setUserState($paginationKeys['limit'], $limitStateBackup);
             $app->setUserState($paginationKeys['start'], $startStateBackup);
         }
@@ -273,9 +273,9 @@ class HtmlView extends BaseHtmlView
 
             $replacement = Route::_(
                 'index.php?option=com_contentbuilderng&view=details&id='
-                . Factory::getApplication()->input->getInt('id')
-                . '&record_id=' . Factory::getApplication()->input->getCmd('record_id', '')
-                . '&Itemid=' . Factory::getApplication()->input->getInt('Itemid', 0)
+                . Factory::getApplication()->getInput()->getInt('id')
+                . '&record_id=' . Factory::getApplication()->getInput()->getCmd('record_id', '')
+                . '&Itemid=' . Factory::getApplication()->getInput()->getInt('Itemid', 0)
                 . $sub
             );
             $markup = str_replace($match, $replacement, $markup);
@@ -502,8 +502,8 @@ class HtmlView extends BaseHtmlView
         $registry = new Registry();
         $registry->loadString((string) ($table->attribs ?? ''));
 
-        $limitstart = Factory::getApplication()->input->getInt('limitstart', 0);
-        $start = Factory::getApplication()->input->getInt('start', 0);
+        $limitstart = Factory::getApplication()->getInput()->getInt('limitstart', 0);
+        $start = Factory::getApplication()->getInput()->getInt('start', 0);
         $page = $limitstart ? $limitstart : $start;
         $dispatcher = Factory::getApplication()->getDispatcher();
         $hasBfShortcode = $this->hasBreezingFormsPlaceholder($template);

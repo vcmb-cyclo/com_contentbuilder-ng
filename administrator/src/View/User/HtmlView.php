@@ -27,7 +27,7 @@ class HtmlView extends BaseHtmlView
         $subject = $model->getData();
         $this->subject = $subject;
         $app = Factory::getApplication();
-        $formId = $app->input->getInt('form_id', 0);
+        $formId = $app->getInput()->getInt('form_id', 0);
         $subjectLabel = trim((string) ($subject->name ?? ''));
 
         if ($subjectLabel === '') {

@@ -200,11 +200,11 @@ class DetailsController extends BaseController
     {
         $app = $this->siteApp;
         $option = 'com_contentbuilderng';
-        $list = (array) $app->input->get('list', [], 'array');
+        $list = (array) $app->getInput()->get('list', [], 'array');
         $stateKeyPrefix = $this->getPaginationStateKeyPrefix();
         $limitKey = $stateKeyPrefix . '.limit';
         $startKey = $stateKeyPrefix . '.start';
-        $configuredLimit = MenuParamHelper::getConfiguredListLimit($app, (int) $app->input->getInt('id', 0));
+        $configuredLimit = MenuParamHelper::getConfiguredListLimit($app, (int) $app->getInput()->getInt('id', 0));
         $explicitLimitRequest = MenuParamHelper::hasExplicitListLimitRequest();
 
         $limit = $explicitLimitRequest && isset($list['limit']) ? (int) $list['limit'] : 0;
@@ -250,7 +250,7 @@ class DetailsController extends BaseController
         $app = $this->siteApp;
         $option = 'com_contentbuilderng';
 
-        $formId = (int) $app->input->getInt('id', 0);
+        $formId = (int) $app->getInput()->getInt('id', 0);
         if ($formId < 1) {
             $menu = $app->getMenu()->getActive();
             if ($menu) {
@@ -258,12 +258,12 @@ class DetailsController extends BaseController
             }
         }
 
-        $layout = (string) $app->input->getCmd('layout', 'default');
+        $layout = (string) $app->getInput()->getCmd('layout', 'default');
         if ($layout === '') {
             $layout = 'default';
         }
 
-        $itemId = (int) $app->input->getInt('Itemid', 0);
+        $itemId = (int) $app->getInput()->getInt('Itemid', 0);
 
         return $option . '.liststate.' . $formId . '.' . $layout . '.' . $itemId;
     }

@@ -64,7 +64,7 @@ $getStateBadgeStyle = static function ($recordId, array $stateColors): string {
 	return 'background-color:#' . $color . ';color:' . $textColor . ';';
 };
 
-$input = $app->input;
+$input = $app->getInput();
 $requestList = (array) $input->get('list', [], 'array');
 $previewQuery = '';
 $previewEnabled = $input->getBool('cb_preview', false);
@@ -1558,7 +1558,7 @@ CSS
 Fix search, delete, pagination and 404 behavior.
 Replace line 144 of media/com_contentbuilderng/images/list/tmpl/default.php
 by this block. -->
-	<form action="<?php echo Route::_('index.php?option=com_contentbuilderng&task=list.display&' . $listTarget . $currentListLayoutQuery . '&Itemid=' . (int) Factory::getApplication()->input->getInt('Itemid', 0) . $previewQuery); ?>"
+	<form action="<?php echo Route::_('index.php?option=com_contentbuilderng&task=list.display&' . $listTarget . $currentListLayoutQuery . '&Itemid=' . (int) Factory::getApplication()->getInput()->getInt('Itemid', 0) . $previewQuery); ?>"
 		method="<?php echo $___getpost; ?>" name="adminForm" id="adminForm" class="cb-list-template-<?php echo htmlspecialchars($cbListTemplateVariant, ENT_QUOTES, 'UTF-8'); ?><?php echo !empty($this->list_header_sticky) && !$isCardsVariant && !$isTilesVariant ? ' cb-list-has-sticky-header' : ''; ?>">
 
 	<!-- 2023-12-19 END -->
@@ -1572,14 +1572,14 @@ by this block. -->
 		'option' => 'com_contentbuilderng',
 		'task' => 'edit.display',
 		'backtolist' => 1,
-		($directStorageMode ? 'storage_id' : 'id') => $directStorageMode ? $directStorageId : (int) Factory::getApplication()->input->getInt('id', 0),
-		'Itemid' => (int) Factory::getApplication()->input->getInt('Itemid', 0),
+		($directStorageMode ? 'storage_id' : 'id') => $directStorageMode ? $directStorageId : (int) Factory::getApplication()->getInput()->getInt('id', 0),
+		'Itemid' => (int) Factory::getApplication()->getInput()->getInt('Itemid', 0),
 	];
-	$listEditTmpl = (string) Factory::getApplication()->input->get('tmpl', '', 'string');
+	$listEditTmpl = (string) Factory::getApplication()->getInput()->get('tmpl', '', 'string');
 	if ($listEditTmpl !== '') {
 		$listEditBaseParams['tmpl'] = $listEditTmpl;
 	}
-	$listEditLayout = (string) Factory::getApplication()->input->get('layout', '', 'string');
+	$listEditLayout = (string) Factory::getApplication()->getInput()->get('layout', '', 'string');
 	if ($listEditLayout !== '') {
 		$listEditBaseParams['layout'] = $listEditLayout;
 	}
@@ -1595,8 +1595,8 @@ by this block. -->
 		'option' => 'com_contentbuilderng',
 		'task' => 'edit.publish',
 		'backtolist' => 1,
-		($directStorageMode ? 'storage_id' : 'id') => $directStorageMode ? $directStorageId : (int) Factory::getApplication()->input->getInt('id', 0),
-		'Itemid' => (int) Factory::getApplication()->input->getInt('Itemid', 0),
+		($directStorageMode ? 'storage_id' : 'id') => $directStorageMode ? $directStorageId : (int) Factory::getApplication()->getInput()->getInt('id', 0),
+		'Itemid' => (int) Factory::getApplication()->getInput()->getInt('Itemid', 0),
 	];
 	if ($listEditTmpl !== '') {
 		$listPublishBaseParams['tmpl'] = $listEditTmpl;
@@ -1615,14 +1615,14 @@ by this block. -->
 	$listDetailsBaseParams = [
 		'option' => 'com_contentbuilderng',
 		'task' => 'details.display',
-		($directStorageMode ? 'storage_id' : 'id') => $directStorageMode ? $directStorageId : (int) Factory::getApplication()->input->getInt('id', 0),
-		'Itemid' => (int) Factory::getApplication()->input->getInt('Itemid', 0),
+		($directStorageMode ? 'storage_id' : 'id') => $directStorageMode ? $directStorageId : (int) Factory::getApplication()->getInput()->getInt('id', 0),
+		'Itemid' => (int) Factory::getApplication()->getInput()->getInt('Itemid', 0),
 	];
-	$listTmpl = (string) Factory::getApplication()->input->get('tmpl', '', 'string');
+	$listTmpl = (string) Factory::getApplication()->getInput()->get('tmpl', '', 'string');
 	if ($listTmpl !== '') {
 		$listDetailsBaseParams['tmpl'] = $listTmpl;
 	}
-	$listLayout = (string) Factory::getApplication()->input->get('layout', '', 'string');
+	$listLayout = (string) Factory::getApplication()->getInput()->get('layout', '', 'string');
 	if ($listLayout !== '') {
 		$listDetailsBaseParams['layout'] = $listLayout;
 	}
@@ -2520,7 +2520,7 @@ by this block. -->
 					?>
 						<td class="hidden-phone">
 							<?php
-								echo RatingHelper::getRating(Factory::getApplication()->input->getInt('id', 0), $row->colRecord, $row->colRating, $this->rating_slots, Factory::getApplication()->input->getCmd('lang', ''), $rating_allowed, $row->colRatingCount, $row->colRatingSum);
+								echo RatingHelper::getRating(Factory::getApplication()->getInput()->getInt('id', 0), $row->colRecord, $row->colRating, $this->rating_slots, Factory::getApplication()->getInput()->getCmd('lang', ''), $rating_allowed, $row->colRatingCount, $row->colRatingSum);
 							?>
 						</td>
 					<?php
@@ -2578,8 +2578,8 @@ by this block. -->
 				    $params = Uri::getInstance()->getQuery(true);
 				    $params['option'] = 'com_contentbuilderng';
 				    $params['task'] = 'list.display';
-				    $params['id'] = Factory::getApplication()->input->getInt('id', 0);
-				    $params['Itemid'] = Factory::getApplication()->input->getInt('Itemid', 0);
+				    $params['id'] = Factory::getApplication()->getInput()->getInt('id', 0);
+				    $params['Itemid'] = Factory::getApplication()->getInput()->getInt('Itemid', 0);
 				    $params['list'] = [
 				        'limit' => $pagLimit,
 				        'ordering' => $this->lists['order'],
@@ -2642,9 +2642,9 @@ by this block. -->
 		</div>
 		<?php endif; ?>
 		<?php
-		if (Factory::getApplication()->input->get('tmpl', '', 'string') != '') {
+		if (Factory::getApplication()->getInput()->get('tmpl', '', 'string') != '') {
 	?>
-		<input type="hidden" name="tmpl" value="<?php echo Factory::getApplication()->input->get('tmpl', '', 'string'); ?>" />
+		<input type="hidden" name="tmpl" value="<?php echo Factory::getApplication()->getInput()->get('tmpl', '', 'string'); ?>" />
 	<?php
 	}
 		if ($previewQuery !== '') {
@@ -2657,12 +2657,12 @@ by this block. -->
 	<input type="hidden" name="task" id="task" value="" />
 	<input type="hidden" name="view" id="view" value="list" />
 	<input type="hidden" name="boxchecked" value="0" />
-	<input type="hidden" name="Itemid" value="<?php echo Factory::getApplication()->input->getInt('Itemid', 0); ?>" />
+	<input type="hidden" name="Itemid" value="<?php echo Factory::getApplication()->getInput()->getInt('Itemid', 0); ?>" />
 	<?php if ($currentListLayout !== 'default') : ?>
 	<input type="hidden" name="layout" value="<?php echo htmlspecialchars($currentListLayout, ENT_QUOTES, 'UTF-8'); ?>" />
 	<?php endif; ?>
 	<input type="hidden" name="list[start]" value="<?php echo (int) ($this->lists['liststart'] ?? 0); ?>" />
-	<input type="hidden" name="id" value="<?php echo Factory::getApplication()->input->getInt('id', 0) ?>" />
+	<input type="hidden" name="id" value="<?php echo Factory::getApplication()->getInput()->getInt('id', 0) ?>" />
 	<input type="hidden" name="list[ordering]" value="<?php echo $this->lists['order']; ?>" />
 	<input type="hidden" name="list[direction]" value="<?php echo $this->lists['order_Dir']; ?>" />
 	<input type="hidden" name="list[fullordering]" value="<?php echo trim(($this->lists['order'] ?? '') . ' ' . ($this->lists['order_Dir'] ?? '')); ?>" />

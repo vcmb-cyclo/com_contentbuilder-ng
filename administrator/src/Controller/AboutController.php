@@ -403,7 +403,7 @@ final class AboutController extends BaseController
             }
 
             $importMode = $this->getImportMode();
-            $upload = (array) $app->input->files->get('cb_config_import_file', [], 'array');
+            $upload = (array) $app->getInput()->files->get('cb_config_import_file', [], 'array');
             $tmpName = (string) ($upload['tmp_name'] ?? '');
             $errorCode = (int) ($upload['error'] ?? UPLOAD_ERR_NO_FILE);
 
@@ -550,8 +550,8 @@ final class AboutController extends BaseController
     private function buildConfigTransferRedirect(string $fallbackMode = 'export'): string
     {
         $app = $this->getApp();
-        $returnView = $app->input->getCmd('return_view', '');
-        $returnMode = $app->input->getCmd('return_mode', $fallbackMode);
+        $returnView = $app->getInput()->getCmd('return_view', '');
+        $returnMode = $app->getInput()->getCmd('return_mode', $fallbackMode);
         $returnMode = in_array($returnMode, ['export', 'import'], true) ? $returnMode : $fallbackMode;
 
         if ($returnView === 'configtransfer') {
@@ -564,7 +564,7 @@ final class AboutController extends BaseController
     private function rememberConfigTransferSelection(): void
     {
         $app = $this->getApp();
-        $postData = (array) $app->input->post->getArray();
+        $postData = (array) $app->getInput()->post->getArray();
         $previous = (array) $app->getUserState(self::CONFIG_TRANSFER_SELECTION_STATE_KEY, []);
 
         $sections = (array) ($previous['sections'] ?? []);

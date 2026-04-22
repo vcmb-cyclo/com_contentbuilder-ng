@@ -51,7 +51,7 @@ class ExportModel extends BaseDatabaseModel
         $this->frontend = $app->isClient('site');
         $option = 'com_contentbuilderng';
 
-        $id = $app->input->getInt('id', 0);
+        $id = $app->getInput()->getInt('id', 0);
 
         if (!$id && $this->frontend) {
             $menu = $app->getMenu();
@@ -79,18 +79,18 @@ class ExportModel extends BaseDatabaseModel
             $filter_publish   = $app->getUserStateFromRequest($option . 'formsd_filter_publish', 'list_publish_filter', -1, 'int');
             $filter_language  = $app->getUserStateFromRequest($option . 'formsd_filter_language', 'list_language_filter', '', 'cmd');
         } else {
-            $app->setUserState($option . 'formsd_filter_order', preg_replace('/[^A-Za-z0-9_\\.]/', '', (string) $app->input->getString('filter_order', '')));
-            $app->setUserState($option . 'formsd_filter_order_Dir', strtolower((string) $app->input->getString('filter_order_Dir', '')));
-            $app->setUserState($option . 'formsd_filter', $app->input->get('filter', '', 'string'));
-            $app->setUserState($option . 'formsd_filter_state', $app->input->getInt('list_state_filter', 0));
-            $app->setUserState($option . 'formsd_filter_publish', $app->input->getInt('list_publish_filter', -1));
-            $app->setUserState($option . 'formsd_filter_language', $app->input->getCmd('list_language_filter', ''));
-            $filter_order     = $app->input->getCmd('filter_order', '');
-            $filter_order_Dir = $app->input->getCmd('filter_order_Dir', '');
-            $filter           = $app->input->get('filter', '', 'string');
-            $filter_state     = $app->input->getInt('list_state_filter', 0);
-            $filter_publish   = $app->input->getInt('list_publish_filter', -1);
-            $filter_language  = $app->input->getCmd('list_language_filter', '');
+            $app->setUserState($option . 'formsd_filter_order', preg_replace('/[^A-Za-z0-9_\\.]/', '', (string) $app->getInput()->getString('filter_order', '')));
+            $app->setUserState($option . 'formsd_filter_order_Dir', strtolower((string) $app->getInput()->getString('filter_order_Dir', '')));
+            $app->setUserState($option . 'formsd_filter', $app->getInput()->get('filter', '', 'string'));
+            $app->setUserState($option . 'formsd_filter_state', $app->getInput()->getInt('list_state_filter', 0));
+            $app->setUserState($option . 'formsd_filter_publish', $app->getInput()->getInt('list_publish_filter', -1));
+            $app->setUserState($option . 'formsd_filter_language', $app->getInput()->getCmd('list_language_filter', ''));
+            $filter_order     = $app->getInput()->getCmd('filter_order', '');
+            $filter_order_Dir = $app->getInput()->getCmd('filter_order_Dir', '');
+            $filter           = $app->getInput()->get('filter', '', 'string');
+            $filter_state     = $app->getInput()->getInt('list_state_filter', 0);
+            $filter_publish   = $app->getInput()->getInt('list_publish_filter', -1);
+            $filter_language  = $app->getInput()->getCmd('list_language_filter', '');
         }
 
         $this->setState('formsd_filter_state', $filter_state);
@@ -100,7 +100,7 @@ class ExportModel extends BaseDatabaseModel
         $this->setState('formsd_filter_order', $filter_order);
         $this->setState('formsd_filter_order_Dir', $filter_order_Dir);
 
-        $menu_filter = $app->input->get('cb_list_filterhidden', null, 'raw');
+        $menu_filter = $app->getInput()->get('cb_list_filterhidden', null, 'raw');
         if (($menu_filter === null || $menu_filter === '') && $app->isClient('site')) {
             $activeMenu = $app->getMenu()->getActive();
             if ($activeMenu) {
@@ -121,7 +121,7 @@ class ExportModel extends BaseDatabaseModel
             }
         }
 
-        $menu_filter_order = $app->input->get('cb_list_orderhidden', null, 'raw');
+        $menu_filter_order = $app->getInput()->get('cb_list_orderhidden', null, 'raw');
         if (($menu_filter_order === null || $menu_filter_order === '') && $app->isClient('site')) {
             $activeMenu = $app->getMenu()->getActive();
             if ($activeMenu) {
@@ -366,7 +366,7 @@ class ExportModel extends BaseDatabaseModel
                         $act_as_registration[$data->registration_name_field] = 'registration_name_field';
                         $act_as_registration[$data->registration_email_field] = 'registration_email_field';
                     }
-                    $isAdminPreview = $app->input->getBool('cb_preview_ok', false);
+                    $isAdminPreview = $app->getInput()->getBool('cb_preview_ok', false);
                     $publishedOnly = PublishedRecordVisibilityHelper::shouldRestrictToPublishedOnly($data, $isAdminPreview);
                     $ownerFilterUserId = $isAdminPreview
                         ? -1

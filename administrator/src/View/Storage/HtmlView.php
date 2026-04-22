@@ -43,9 +43,9 @@ class HtmlView extends BaseHtmlView
         }
 
         $app = Factory::getApplication();
-        $input = $app->input;
+        $input = $app->getInput();
         $identity = $app->getIdentity();
-        $app->input->set('hidemainmenu', true);
+        $app->getInput()->set('hidemainmenu', true);
 
         $wa = $app->getDocument()->getWebAssetManager();
         $wa->getRegistry()->addExtensionRegistryFile('com_contentbuilderng');

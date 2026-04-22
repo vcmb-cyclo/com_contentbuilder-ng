@@ -66,7 +66,7 @@ class UsersModel extends ListModel
         $this->setState('filter.state', $state);
 
         // form_id (tu en as besoin pour le JOIN)
-        $formId = $app->input->getInt('form_id', 0);
+        $formId = $app->getInput()->getInt('form_id', 0);
         $this->setState('filter.form_id', $formId);
     }
 
@@ -149,9 +149,9 @@ class UsersModel extends ListModel
     {
         $app  = Factory::getApplication();
         $db   = $this->getDatabase();
-        $formId = (int) $app->input->getInt('form_id', 0);
+        $formId = (int) $app->getInput()->getInt('form_id', 0);
 
-        $cids = (array) $app->input->get('cid', [], 'array');
+        $cids = (array) $app->getInput()->get('cid', [], 'array');
         ArrayHelper::toInteger($cids);
         $cids = array_values(array_filter($cids));
 
@@ -190,9 +190,9 @@ class UsersModel extends ListModel
     {
         $app  = Factory::getApplication();
         $db   = $this->getDatabase();
-        $formId = (int) $app->input->getInt('form_id', 0);
+        $formId = (int) $app->getInput()->getInt('form_id', 0);
 
-        $cids = (array) $app->input->get('cid', [], 'array');
+        $cids = (array) $app->getInput()->get('cid', [], 'array');
         ArrayHelper::toInteger($cids);
         $cids = array_values(array_filter($cids));
 

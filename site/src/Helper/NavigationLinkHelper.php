@@ -121,7 +121,7 @@ final class NavigationLinkHelper
     ): array {
         $scope = $directStorageMode ? ('storage.' . max(0, $directStorageId)) : (string) max(0, $formId);
         if ($scope === '0') {
-            $scope = (string) max(0, (int) $app->input->getInt('id', 0));
+            $scope = (string) max(0, (int) $app->getInput()->getInt('id', 0));
         }
 
         if ($layout === '') {

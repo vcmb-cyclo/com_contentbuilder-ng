@@ -32,7 +32,7 @@ class contentbuilderng_com_breezingforms
     private function getEffectiveActor(): array
     {
         $app = Factory::getApplication();
-        $input = $app->input;
+        $input = $app->getInput();
         $identity = $app->getIdentity();
         $actorId = (int) ($identity->id ?? 0);
         $actorName = trim((string) ($identity->name ?? ''));
@@ -431,7 +431,7 @@ class contentbuilderng_com_breezingforms
             Where
                 r.id = " . $db->quote(intval($record_id)) . " And
                 joined_records.`type` = 'com_breezingforms'
-                " . (!$show_all_languages ? " And ( joined_records.sef = " . $db->quote(Factory::getApplication()->input->getCmd('lang', '')) . " Or joined_records.sef = '' Or joined_records.sef is Null ) " : '') . "
+                " . (!$show_all_languages ? " And ( joined_records.sef = " . $db->quote(Factory::getApplication()->getInput()->getCmd('lang', '')) . " Or joined_records.sef = '' Or joined_records.sef is Null ) " : '') . "
                 " . ($show_all_languages ? " And ( joined_records.id is Null Or joined_records.id Is Not Null ) " : '') . "
                 " . (intval($own_only) > -1 ? ' And r.user_id=' . intval($own_only) . ' ' : '') . "
                 " . ($published_only ? " And joined_records.published = 1 " : '') . "
@@ -900,7 +900,7 @@ class contentbuilderng_com_breezingforms
                 joined_records.record_id = r.id And
                 joined_records.`type` = 'com_breezingforms'
 
-                " . (!$show_all_languages ? " And ( joined_records.sef = " . $db->quote(Factory::getApplication()->input->getCmd('lang', '')) . " Or joined_records.sef = '' Or joined_records.sef is Null ) " : '') . "
+                " . (!$show_all_languages ? " And ( joined_records.sef = " . $db->quote(Factory::getApplication()->getInput()->getCmd('lang', '')) . " Or joined_records.sef = '' Or joined_records.sef is Null ) " : '') . "
                 " . ($show_all_languages ? " And ( joined_records.id is Null Or joined_records.id Is Not Null ) " : '') . "
                 " . ($lang_code !== null ? " And joined_records.lang_code = " . $db->quote($lang_code) : '') . "
                 " . (intval($own_only) > -1 ? ' And r.user_id=' . intval($own_only) . ' ' : '') . "

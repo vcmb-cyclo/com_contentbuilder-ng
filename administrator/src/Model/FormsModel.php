@@ -63,13 +63,13 @@ class FormsModel extends ListModel
         parent::populateState($ordering, $direction);
 
         // Joomla 6 admin lists post list[limit]; also accept the flat limit field.
-        $list = $app->input->get('list', [], 'array');
+        $list = $app->getInput()->get('list', [], 'array');
         if (is_array($list) && array_key_exists('limit', $list)) {
             $limit = (int) $list['limit'];
             $this->setState('list.limit', $limit);
             $app->setUserState($this->context . '.list.limit', $limit);
-        } elseif ($app->input->get('limit', null, 'raw') !== null) {
-            $limit = (int) $app->input->get('limit', 0, 'int');
+        } elseif ($app->getInput()->get('limit', null, 'raw') !== null) {
+            $limit = (int) $app->getInput()->get('limit', 0, 'int');
             $this->setState('list.limit', $limit);
             $app->setUserState($this->context . '.list.limit', $limit);
         }
@@ -81,7 +81,7 @@ class FormsModel extends ListModel
         $search = trim((string) $app->getUserStateFromRequest($this->context . '.filter.search', 'filter_search', '', 'string'));
         $this->setState('filter.search', $search);
 
-        $input = $app->input;
+        $input = $app->getInput();
         $user = $app->getIdentity();
         $profileKey = 'com_contentbuilderng.filter_tag';
 
