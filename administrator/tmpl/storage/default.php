@@ -98,7 +98,8 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
 
 $wa = $app->getDocument()->getWebAssetManager();
 $wa->addInlineStyle(
-    '.cb-storage-fields-table .cb-order-col{width:84px;min-width:84px;text-align:right;white-space:nowrap}'
+    '.cb-storage-fields-table{width:100%;min-width:620px;table-layout:auto}'
+    . '.cb-storage-fields-table .cb-order-col{width:84px;min-width:84px;text-align:right;white-space:nowrap}'
     . '.cb-storage-fields-table .cb-order-icons{display:inline-flex;justify-content:flex-end;gap:.5rem;width:100%}'
     . '.cb-storage-fields-table .cb-order-icons>span{display:inline-flex}'
     . '.cb-storage-pagination{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:.5rem}'
@@ -161,8 +162,13 @@ document.addEventListener('DOMContentLoaded', function() {
 const cbSaveAnimationDurationMs = 500;
 const cbPublishedTitle = <?php echo json_encode(Text::_('JPUBLISHED'), JSON_UNESCAPED_UNICODE); ?>;
 const cbUnpublishedTitle = <?php echo json_encode(Text::_('JUNPUBLISHED'), JSON_UNESCAPED_UNICODE); ?>;
+const cbCloseUnsavedMessage = <?php echo json_encode(Text::_('COM_CONTENTBUILDERNG_CONFIRM_CLOSE_UNSAVED'), JSON_UNESCAPED_UNICODE); ?>;
 let cbAjaxBusy = false;
 let cbSaveButtonTimer = null;
+let cbStorageDirtyState = false;
+let cbStorageDirtySnapshot = '';
+let cbStorageDirtyTrackingInitialized = false;
+let cbStorageDirtyBypassBeforeUnload = false;
 
 function cbAnimateSaveButton() {
     var selectors = [
@@ -502,7 +508,7 @@ function listItemTask(id, task) {
         cb.checked = false;
     });
 
-    var target = form.querySelector('#' + CSS.escape(id)) || form.elements[id];
+    var target = form.elements[id] || document.getElementById(id);
     if (!target) return false;
 
     target.checked = true;
@@ -537,12 +543,121 @@ function listItemTask(id, task) {
         }
     }
 
+    cbStorageBypassDirtyBeforeUnload();
     Joomla.submitform(task, form);
     return false;
 }
 
 if (typeof Joomla !== 'undefined') {
     Joomla.listItemTask = listItemTask;
+}
+
+function cbStorageShouldIgnoreDirtyField(field) {
+    if (!field || !field.name) {
+        return true;
+    }
+
+    return /^(task|boxchecked|filter_order|filter_order_Dir|list\[ordering\]|list\[direction\]|list\[fullordering\]|limitstart|tabStartOffset|cid\[\])$/.test(field.name)
+        || (field.type === 'hidden' && field.name.indexOf('jform[') !== 0);
+}
+
+function cbStorageSerializeFormState(form) {
+    var data = [];
+
+    Array.prototype.forEach.call(form.elements, function(field) {
+        if (cbStorageShouldIgnoreDirtyField(field) || field.disabled) {
+            return;
+        }
+
+        if ((field.type === 'checkbox' || field.type === 'radio') && !field.checked) {
+            return;
+        }
+
+        if (field.type === 'file') {
+            var files = Array.prototype.map.call(field.files || [], function(file) {
+                return file.name + ':' + file.size + ':' + file.lastModified;
+            });
+            data.push(field.name + '=' + files.join(','));
+            return;
+        }
+
+        data.push(field.name + '=' + String(field.value || ''));
+    });
+
+    return data.sort().join('&');
+}
+
+function cbStorageSetDirtyState(isDirty) {
+    cbStorageDirtyState = !!isDirty;
+}
+
+function cbStorageRefreshDirtyState() {
+    var form = document.getElementById('adminForm') || document.adminForm;
+    if (!form) {
+        return;
+    }
+
+    cbStorageSetDirtyState(cbStorageSerializeFormState(form) !== cbStorageDirtySnapshot);
+}
+
+function cbStorageMarkDirtySnapshot() {
+    var form = document.getElementById('adminForm') || document.adminForm;
+    if (!form) {
+        return;
+    }
+
+    cbStorageDirtySnapshot = cbStorageSerializeFormState(form);
+    cbStorageSetDirtyState(false);
+}
+
+function cbStorageBypassDirtyBeforeUnload() {
+    cbStorageDirtyBypassBeforeUnload = true;
+    cbStorageSetDirtyState(false);
+}
+
+function cbStorageSubmitbutton(task) {
+    var form = document.getElementById('adminForm') || document.adminForm;
+    if (!form) {
+        return;
+    }
+
+    if (task === 'storage.cancel') {
+        cbStorageRefreshDirtyState();
+        if (cbStorageDirtyState && !confirm(cbCloseUnsavedMessage)) {
+            return;
+        }
+    }
+
+    cbStorageBypassDirtyBeforeUnload();
+    Joomla.submitform(task, form);
+}
+
+function cbStorageInitDirtyTracking() {
+    var form = document.getElementById('adminForm') || document.adminForm;
+    if (!form || cbStorageDirtyTrackingInitialized) {
+        return;
+    }
+
+    cbStorageDirtyTrackingInitialized = true;
+    cbStorageMarkDirtySnapshot();
+
+    form.addEventListener('input', cbStorageRefreshDirtyState, true);
+    form.addEventListener('change', cbStorageRefreshDirtyState, true);
+    window.addEventListener('focus', cbStorageRefreshDirtyState);
+    document.addEventListener('visibilitychange', cbStorageRefreshDirtyState);
+
+    window.addEventListener('beforeunload', function(event) {
+        if (cbStorageDirtyBypassBeforeUnload || !cbStorageDirtyState) {
+            return;
+        }
+
+        event.preventDefault();
+        event.returnValue = '';
+    });
+}
+
+if (typeof Joomla !== 'undefined') {
+    Joomla.submitbutton = cbStorageSubmitbutton;
 }
 
 function toggleCsvUploadOptions() {
@@ -625,6 +740,7 @@ function initStorageUi() {
     var adminUi = window.ContentBuilderNgAdmin;
 
     initStorageTooltips();
+    cbStorageInitDirtyTracking();
     initStorageAjaxToggles();
     initStorageTabTooltips();
     if (adminUi && typeof adminUi.persistJoomlaTabset === 'function') {

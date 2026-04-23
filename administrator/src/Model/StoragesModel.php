@@ -250,14 +250,15 @@ class StoragesModel extends ListModel
 
     function saveOrder()
     {
-        $items = Factory::getApplication()->getInput()->post->get('cid', [], 'array');
+        $input = Factory::getApplication()->getInput();
+        $items = $input->post->get('cid', [], 'array');
         ArrayHelper::toInteger($items);
 
         $total = count($items);
         $row = $this->getTable('Storage');
         $groupings = array();
 
-        $order = Factory::getApplication()->getInput()->post->get('order', [], 'array');
+        $order = $input->post->get('order', [], 'array');
         ArrayHelper::toInteger($order);
 
         // update ordering values

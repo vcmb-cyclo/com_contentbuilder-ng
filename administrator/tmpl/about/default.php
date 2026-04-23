@@ -575,15 +575,15 @@ $renderNumberedAuditTitle = static function (string $sectionId, string $label, b
         --cb-accent-color: #d39e00;
     }
     .cb-about-version-icon {
-        width: 2rem;
-        height: 2rem;
-        border-radius: 50%;
         display: inline-flex;
         align-items: center;
         justify-content: center;
+        padding: .25rem .6rem;
+        border-radius: .4rem;
         font-size: .72rem;
         font-weight: 700;
         letter-spacing: .04em;
+        text-transform: uppercase;
         background-color: var(--bs-primary-bg-subtle, #e8f1ff);
         color: var(--bs-primary-text-emphasis, #0d6efd);
     }
@@ -2380,22 +2380,19 @@ $renderNumberedAuditTitle = static function (string $sectionId, string $label, b
         <div class="row g-3">
             <div class="col-12 col-md-6 col-lg-2">
                 <div class="cb-about-version-tile cb-about-version-tile--version">
-                    <span class="cb-about-version-icon" aria-hidden="true">VER</span>
-                    <p class="cb-about-version-label"><?php echo Text::_('COM_CONTENTBUILDERNG_JS_LIBRARY_VERSION'); ?></p>
+                    <span class="cb-about-version-icon"><?php echo Text::_('COM_CONTENTBUILDERNG_JS_LIBRARY_VERSION'); ?></span>
                     <p class="cb-about-version-value"><?php echo htmlspecialchars($versionValue, ENT_QUOTES, 'UTF-8'); ?></p>
                 </div>
             </div>
             <div class="col-12 col-md-6 col-lg-2">
                 <div class="cb-about-version-tile cb-about-version-tile--date">
-                    <span class="cb-about-version-icon" aria-hidden="true">DATE</span>
-                    <p class="cb-about-version-label"><?php echo Text::_('COM_CONTENTBUILDERNG_CREATION_DATE_LABEL'); ?></p>
+                    <span class="cb-about-version-icon"><?php echo Text::_('COM_CONTENTBUILDERNG_CREATION_DATE_LABEL'); ?></span>
                     <p class="cb-about-version-value"><?php echo htmlspecialchars($creationDateValue, ENT_QUOTES, 'UTF-8'); ?></p>
                 </div>
             </div>
             <div class="col-12 col-md-6 col-lg-4">
                 <div class="cb-about-version-tile cb-about-version-tile--author">
-                    <span class="cb-about-version-icon" aria-hidden="true">DEV</span>
-                    <p class="cb-about-version-label"><?php echo Text::_('COM_CONTENTBUILDERNG_AUTHOR'); ?></p>
+                    <span class="cb-about-version-icon"><?php echo Text::_('COM_CONTENTBUILDERNG_AUTHOR'); ?></span>
                     <p class="cb-about-version-value"><?php echo htmlspecialchars($authorValue, ENT_QUOTES, 'UTF-8'); ?></p>
                     <p class="cb-about-version-label mt-2"><?php echo Text::_('COM_CONTENTBUILDERNG_COPYRIGHT_LABEL'); ?></p>
                     <p class="cb-about-version-value"><?php echo htmlspecialchars($copyrightValue, ENT_QUOTES, 'UTF-8'); ?></p>
@@ -2403,8 +2400,7 @@ $renderNumberedAuditTitle = static function (string $sectionId, string $label, b
             </div>
             <div class="col-12 col-md-12 col-lg-4">
                 <div class="cb-about-version-tile cb-about-version-tile--license">
-                    <span class="cb-about-version-icon" aria-hidden="true">GPL</span>
-                    <p class="cb-about-version-label"><?php echo Text::_('COM_CONTENTBUILDERNG_LICENSE_LABEL'); ?></p>
+                    <span class="cb-about-version-icon"><?php echo Text::_('COM_CONTENTBUILDERNG_LICENSE_LABEL'); ?></span>
                     <p class="cb-about-version-value"><?php echo htmlspecialchars($licenseValue, ENT_QUOTES, 'UTF-8'); ?></p>
                     <a
                         class="cb-about-version-link"

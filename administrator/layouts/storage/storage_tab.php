@@ -333,7 +333,7 @@ Label 3;value3</textarea>
         </td>
 
         <td class="align-top">
-            <table class="table table-striped m-3 cb-storage-fields-table" style="min-width: 697px;">
+            <table class="table table-striped m-3 cb-storage-fields-table">
                 <thead>
                     <tr>
                         <th width="20">
@@ -363,7 +363,7 @@ Label 3;value3</textarea>
                     $title = htmlspecialchars((string) ($row->title ?? ''), ENT_QUOTES, 'UTF-8');
                     $groupDefinition = htmlspecialchars((string) ($row->group_definition ?? ''), ENT_QUOTES, 'UTF-8');
                     $isGroup = !empty($row->is_group);
-                    $checked = '<input class="form-check-input" type="checkbox" id="cb-storage-field-' . (int) $i . '" name="cid[]" value="' . $id . '" onclick="Joomla.isChecked(this.checked);">';
+                    $checked = '<input class="form-check-input" type="checkbox" id="cb' . (int) $i . '" name="cid[]" value="' . $id . '" onclick="Joomla.isChecked(this.checked);">';
                     $published = ContentbuilderngHelper::listPublish('storage', $row, $i);
                 ?>
                     <tr class="row<?php echo $i % 2; ?>" data-cb-row-id="<?php echo $id; ?>">

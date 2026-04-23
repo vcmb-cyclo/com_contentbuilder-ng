@@ -111,7 +111,7 @@ class ListController extends BaseController
 
         // Clear record context to avoid redirects back to a deleted record.
         $this->input->set('record_id', 0);
-        Factory::getApplication()->getInput()->set('record_id', 0);
+        $this->app->getInput()->set('record_id', 0);
 
         $state = $this->resolveListState();
         $previewQuery = $this->buildPreviewQuery();
@@ -185,7 +185,7 @@ class ListController extends BaseController
         }
 
         $this->input->set('cid', $selectedItems);
-        Factory::getApplication()->getInput()->set('cid', $selectedItems);
+        $this->app->getInput()->set('cid', $selectedItems);
 
         $changedCount = (int) $model->change_list_states();
         $messageKey = $changedCount === 1
@@ -264,7 +264,7 @@ class ListController extends BaseController
         }
 
         $this->input->set('cid', $selectedItems);
-        Factory::getApplication()->getInput()->set('cid', $selectedItems);
+        $this->app->getInput()->set('cid', $selectedItems);
 
         $changedCount = (int) $model->change_list_publish();
 
@@ -292,7 +292,7 @@ class ListController extends BaseController
     public function display($cachable = false, $urlparams = [])
     {
         /** @var SiteApplication $app */
-        $app   = Factory::getApplication();
+        $app = $this->app;
         $storageId = $this->input->getInt('storage_id', 0);
         $isDirectStorageMode = $storageId > 0 && $this->input->getInt('id', 0) <= 0;
 
@@ -312,15 +312,15 @@ class ListController extends BaseController
 
         // Keep both input bags aligned for downstream model/view access.
         $this->input->set('id', $formId);
-        Factory::getApplication()->getInput()->set('id', $formId);
+        $app->getInput()->set('id', $formId);
 
         if ($recordId) {
             $this->input->set('record_id', $recordId);
-            Factory::getApplication()->getInput()->set('record_id', $recordId);
+            $app->getInput()->set('record_id', $recordId);
         }
 
         // Contexte CB correct pour cette page
-        Factory::getApplication()->getInput()->set('view', 'list');
+        $app->getInput()->set('view', 'list');
 
         // Permissions
         if (!$isDirectStorageMode) {
@@ -328,7 +328,7 @@ class ListController extends BaseController
         }
         $isAdminPreview = $this->isValidAdminPreviewRequest($formId, $storageId);
         $this->input->set('cb_preview_ok', $isAdminPreview ? 1 : 0);
-        Factory::getApplication()->getInput()->set('cb_preview_ok', $isAdminPreview ? 1 : 0);
+        $app->getInput()->set('cb_preview_ok', $isAdminPreview ? 1 : 0);
         if ($isDirectStorageMode && $isAdminPreview) {
             $this->getPermissionService()->setStoragePreviewPermissions($storageId, $suffix);
         }
@@ -353,7 +353,7 @@ class ListController extends BaseController
     private function resolveListState(): array
     {
         /** @var SiteApplication $app */
-        $app = Factory::getApplication();
+        $app = $this->app;
         $option = 'com_contentbuilderng';
         $list = (array) $this->input->get('list', [], 'array');
         $stateKeyPrefix = $this->getPaginationStateKeyPrefix();
@@ -410,7 +410,7 @@ class ListController extends BaseController
     private function getConfiguredListLimit(): int
     {
         /** @var SiteApplication $app */
-        $app = Factory::getApplication();
+        $app = $this->app;
 
         return MenuParamHelper::getConfiguredListLimit($app, (int) $this->input->getInt('id', 0));
     }
@@ -418,7 +418,7 @@ class ListController extends BaseController
     private function getPaginationStateKeyPrefix(): string
     {
         /** @var SiteApplication $app */
-        $app = Factory::getApplication();
+        $app = $this->app;
         $option = 'com_contentbuilderng';
 
         $formId = (int) $this->input->getInt('id', 0);
@@ -457,7 +457,7 @@ class ListController extends BaseController
             return false;
         }
 
-        $secret = (string) Factory::getApplication()->get('secret');
+        $secret = (string) $this->app->get('secret');
         if ($secret === '') {
             return false;
         }
@@ -480,8 +480,8 @@ class ListController extends BaseController
             if (hash_equals(hash_hmac('sha256', $payload, $secret), $sig)) {
                 $this->input->set('cb_preview_actor_id', $actorId);
                 $this->input->set('cb_preview_actor_name', $actorName);
-                Factory::getApplication()->getInput()->set('cb_preview_actor_id', $actorId);
-                Factory::getApplication()->getInput()->set('cb_preview_actor_name', $actorName);
+                $this->app->getInput()->set('cb_preview_actor_id', $actorId);
+                $this->app->getInput()->set('cb_preview_actor_name', $actorName);
                 return true;
             }
         }
@@ -502,7 +502,7 @@ class ListController extends BaseController
         $sig = (string) $this->input->getString('cb_preview_sig', '');
         $noticeKey = 'com_contentbuilderng.preview_notice.' . hash('sha256', $formId . '|' . $until . '|' . $sig);
         /** @var SiteApplication $app */
-        $app = Factory::getApplication();
+        $app = $this->app;
         $session = $app->getSession();
 
         if ($session->get($noticeKey, false)) {

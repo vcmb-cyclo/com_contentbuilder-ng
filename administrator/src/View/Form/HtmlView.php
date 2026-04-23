@@ -43,7 +43,7 @@ class HtmlView extends BaseHtmlView
 
         // JS
         /** @var \Joomla\CMS\Document\AdminDocument $document */
-        $document = $app->getDocument();
+        $document = $this->getDocument();
         $wa = $document->getWebAssetManager();
         $wa->getRegistry()->addExtensionRegistryFile('com_contentbuilderng');
         $wa->useScript('com_contentbuilderng.admin-ui');
@@ -142,7 +142,7 @@ class HtmlView extends BaseHtmlView
         $toolbar = $document->getToolbar('toolbar');
 
         $statusDropdown = $toolbar->dropdownButton('form-status-group');
-        $statusDropdown->text('Actions');
+        $statusDropdown->text(Text::_('COM_CONTENTBUILDERNG_TOOLBAR_ACTIONS'));
         $statusDropdown->toggleSplit(false);
         $statusDropdown->icon('fa fa-ellipsis-h');
         $statusDropdown->buttonClass('btn btn-action');
@@ -192,7 +192,7 @@ class HtmlView extends BaseHtmlView
         $statusChildToolbar->publish('form.publish')->icon('fa-solid fa-check text-success')->listCheck(true);
         $statusChildToolbar->unpublish('form.unpublish')->icon('fa-solid fa-circle-xmark text-danger')->listCheck(true);
 
-        ToolbarHelper::cancel('form.cancel', $isNew ? 'JTOOLBAR_CLOSE' : 'JTOOLBAR_CLOSE');
+        ToolbarHelper::cancel('form.cancel', 'JTOOLBAR_CLOSE');
 
         if ($formId > 0) {
         $previewUntil = time() + 600;

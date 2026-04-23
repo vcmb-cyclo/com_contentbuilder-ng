@@ -50,10 +50,10 @@ class HtmlView extends BaseHtmlView
         ToolbarHelper::custom('forms.copy', 'copy', '', Text::_('COM_CONTENTBUILDERNG_COPY'));
         ToolbarHelper::editList('form.edit');
 
-        $toolbar = Factory::getApplication()->getDocument()->getToolbar('toolbar');
+        $toolbar = $this->getDocument()->getToolbar('toolbar');
 
         $statusDropdown = $toolbar->dropdownButton('forms-status-group');
-        $statusDropdown->text('Actions');
+        $statusDropdown->text(Text::_('COM_CONTENTBUILDERNG_TOOLBAR_ACTIONS'));
         $statusDropdown->toggleSplit(false);
         $statusDropdown->icon('fa fa-ellipsis-h');
         $statusDropdown->buttonClass('btn btn-action');

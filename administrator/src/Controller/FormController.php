@@ -111,6 +111,14 @@ class FormController extends BaseFormController
         }
     }
 
+    public function cancel($key = null): bool
+    {
+        $this->checkToken();
+        $this->setRedirect(Route::_('index.php?option=com_contentbuilderng&view=forms', false));
+
+        return true;
+    }
+
 
     /**
      * Apply : sauvegarde et reste sur l'édition
@@ -131,7 +139,7 @@ class FormController extends BaseFormController
                         'index.php?option=com_contentbuilderng&task=form.display&layout=edit&id=' . (int) $this->input->getInt('id', 0),
                         false
                     ),
-                    Text::_('JLIB_APPLICATION_ERROR_SAVE_FAILED'),
+                    Text::_('COM_CONTENTBUILDERNG_SAVE_FAILED'),
                     'error'
                 );
                 return false;
@@ -173,7 +181,7 @@ class FormController extends BaseFormController
                         'index.php?option=com_contentbuilderng&task=form.display&layout=edit&id=' . (int) $this->input->getInt('id', 0),
                         false
                     ),
-                    Text::_('JLIB_APPLICATION_ERROR_SAVE_FAILED'),
+                    Text::_('COM_CONTENTBUILDERNG_SAVE_FAILED'),
                     'error'
                 );
                 return false;
@@ -344,7 +352,7 @@ class FormController extends BaseFormController
         $model->setFormId($formId);
 
         if (!$model->saveorder($pks, $order)) {
-            $this->setMessage(Text::_('JLIB_APPLICATION_ERROR_SAVE_FAILED'), 'warning');
+            $this->setMessage(Text::_('COM_CONTENTBUILDERNG_SAVE_FAILED'), 'warning');
         } else {
             $this->setMessage(Text::_('JLIB_APPLICATION_SAVE_SUCCESS'));
         }
@@ -374,7 +382,7 @@ class FormController extends BaseFormController
         ArrayHelper::toInteger($order);
 
         if (!$elementsModel->saveorder($pks, $order)) {
-            $this->setMessage(Text::_('JLIB_APPLICATION_ERROR_SAVE_FAILED'), 'warning');
+            $this->setMessage(Text::_('COM_CONTENTBUILDERNG_SAVE_FAILED'), 'warning');
         }
     }
 
@@ -428,7 +436,7 @@ class FormController extends BaseFormController
 
         if (!$this->persistInlineElementSettings($formId)) {
             if ($this->isAjaxCall()) {
-                $this->respondAjax(false, Text::_('JLIB_APPLICATION_ERROR_SAVE_FAILED'));
+                $this->respondAjax(false, Text::_('COM_CONTENTBUILDERNG_SAVE_FAILED'));
             }
             return false;
         }
@@ -501,14 +509,14 @@ class FormController extends BaseFormController
 
             if (!$this->persistInlineElementSettings($formId)) {
                 if ($this->isAjaxCall()) {
-                    $this->respondAjax(false, Text::_('JLIB_APPLICATION_ERROR_SAVE_FAILED'));
+                    $this->respondAjax(false, Text::_('COM_CONTENTBUILDERNG_SAVE_FAILED'));
                 }
                 return false;
             }
 
             $model = $this->getElementoptionsModelForListActions();
             if (!$model->fieldUpdate($cids, $field, $value)) {
-                $error = Text::_('JLIB_APPLICATION_ERROR_SAVE_FAILED');
+                $error = Text::_('COM_CONTENTBUILDERNG_SAVE_FAILED');
                 $this->setMessage($error, 'error');
                 if ($this->isAjaxCall()) {
                     $this->respondAjax(false, $error);
@@ -560,14 +568,14 @@ class FormController extends BaseFormController
 
             if (!$this->persistInlineElementSettings($formId)) {
                 if ($this->isAjaxCall()) {
-                    $this->respondAjax(false, Text::_('JLIB_APPLICATION_ERROR_SAVE_FAILED'));
+                    $this->respondAjax(false, Text::_('COM_CONTENTBUILDERNG_SAVE_FAILED'));
                 }
                 return false;
             }
 
             $model = $this->getElementoptionsModelForListActions();
             if (!$model->publish($cids, $state)) {
-                $error = Text::_('JLIB_APPLICATION_ERROR_SAVE_FAILED');
+                $error = Text::_('COM_CONTENTBUILDERNG_SAVE_FAILED');
                 $this->setMessage($error, 'error');
                 if ($this->isAjaxCall()) {
                     $this->respondAjax(false, $error);
@@ -624,7 +632,7 @@ class FormController extends BaseFormController
             $model = $this->getFormModelForSaveActions();
             $pks = [$formId];
             if (!$model->publish($pks, (int) $state)) {
-                $error = Text::_('JLIB_APPLICATION_ERROR_SAVE_FAILED');
+                $error = Text::_('COM_CONTENTBUILDERNG_SAVE_FAILED');
                 $this->setMessage($error, 'error');
                 if ($this->isAjaxCall()) {
                     $this->respondAjax(false, $error);
@@ -692,7 +700,7 @@ class FormController extends BaseFormController
         $formModel = $this->getFormModelForSaveActions();
 
         if (!$formModel->saveElementListSettingsFromRequest($formId)) {
-            $this->setMessage(Text::_('JLIB_APPLICATION_ERROR_SAVE_FAILED'), 'error');
+            $this->setMessage(Text::_('COM_CONTENTBUILDERNG_SAVE_FAILED'), 'error');
             if (!$this->isAjaxCall()) {
                 $this->setRedirect($this->getEditRedirectUrl($formId));
             }

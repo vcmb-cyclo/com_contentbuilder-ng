@@ -54,7 +54,8 @@ class HtmlView extends BaseHtmlView
 
     private function resolveSiblingRecordIdsByRecordId(object $subject, int $currentRecordId): array
     {
-        $currentList = (array) Factory::getApplication()->getInput()->get('list', [], 'array');
+        $app = Factory::getApplication();
+        $currentList = (array) $app->getInput()->get('list', [], 'array');
         $currentListStart = array_key_exists('start', $currentList) ? max(0, (int) $currentList['start']) : 0;
         if (
             $currentRecordId < 1
@@ -67,7 +68,7 @@ class HtmlView extends BaseHtmlView
         }
 
         $db = Factory::getContainer()->get(DatabaseInterface::class);
-        $isAdminPreview = Factory::getApplication()->getInput()->getBool('cb_preview_ok', false);
+        $isAdminPreview = $app->getInput()->getBool('cb_preview_ok', false);
 
         $baseWhere = [
             $db->quoteName('type') . ' = ' . $db->quote((string) $subject->type),
@@ -263,8 +264,9 @@ CSS;
 
 	function display($tpl = null)
 	{
+        $app = Factory::getApplication();
 		// Get data from the model
-		$this->frontend = Factory::getApplication()->isClient('site');
+		$this->frontend = $app->isClient('site');
         $subject = $this->get('Data');
 
 		if (!$this->frontend) {
@@ -296,7 +298,7 @@ CSS;
 		$table = new \Joomla\CMS\Table\Content($db);
 
 		// required for pagebreak plugin
-		Factory::getApplication()->getInput()->set('view', 'article');
+		$app->getInput()->set('view', 'article');
 
 		$isNew = true;
 		if ($article > 0) {
@@ -328,7 +330,7 @@ CSS;
 
 		$table->text = "<!-- class=\"system-pagebreak\"  -->\n" . $table->text;
 
-		$dispatcher = Factory::getApplication()->getDispatcher();
+			$dispatcher = $app->getDispatcher();
 		$dispatcher->dispatch(
 			'onContentPrepare',
 			new ContentPrepareEvent('onContentPrepare', ['com_content.article', &$table, &$registry, $limitstart])
@@ -395,7 +397,7 @@ CSS;
 						}
 					}
 				}
-				$subject->template = str_replace($match, Route::_('index.php?option=com_contentbuilderng&task=details.display&id=' . Factory::getApplication()->getInput()->getInt('id') . '&record_id=' . Factory::getApplication()->getInput()->getCmd('record_id', '') . '&Itemid=' . Factory::getApplication()->getInput()->getInt('Itemid', 0) . $sub), $subject->template);
+					$subject->template = str_replace($match, Route::_('index.php?option=com_contentbuilderng&task=details.display&id=' . $app->getInput()->getInt('id') . '&record_id=' . $app->getInput()->getCmd('record_id', '') . '&Itemid=' . $app->getInput()->getInt('Itemid', 0) . $sub), $subject->template);
 			}
 		}
 
@@ -417,7 +419,7 @@ CSS;
 						}
 					}
 				}
-				$table->toc = str_replace($match, Route::_('index.php?option=com_contentbuilderng&task=details.display&id=' . Factory::getApplication()->getInput()->getInt('id') . '&record_id=' . Factory::getApplication()->getInput()->getCmd('record_id', '') . '&Itemid=' . Factory::getApplication()->getInput()->getInt('Itemid', 0) . $sub), $table->toc);
+					$table->toc = str_replace($match, Route::_('index.php?option=com_contentbuilderng&task=details.display&id=' . $app->getInput()->getInt('id') . '&record_id=' . $app->getInput()->getCmd('record_id', '') . '&Itemid=' . $app->getInput()->getInt('Itemid', 0) . $sub), $table->toc);
 			}
 		}
 

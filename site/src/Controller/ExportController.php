@@ -11,7 +11,6 @@ namespace CB\Component\Contentbuilderng\Site\Controller;
 // No direct access
 \defined( '_JEXEC' ) or die( 'Restricted access' );
 
-use Joomla\CMS\Factory;
 use Joomla\CMS\MVC\Controller\BaseController;
 use CB\Component\Contentbuilderng\Site\Helper\PreviewLinkHelper;
 
@@ -22,7 +21,7 @@ class ExportController extends BaseController
         $formId = (int) $this->input->getInt('id', 0);
         $isAdminPreview = $this->isValidAdminPreviewRequest($formId);
         $this->input->set('cb_preview_ok', $isAdminPreview ? 1 : 0);
-        Factory::getApplication()->getInput()->set('cb_preview_ok', $isAdminPreview ? 1 : 0);
+        $this->app->getInput()->set('cb_preview_ok', $isAdminPreview ? 1 : 0);
 
         $this->input->set('tmpl', $this->input->getWord('tmpl', null));
         $this->input->set('layout', $this->input->getWord('layout', null));
@@ -51,7 +50,7 @@ class ExportController extends BaseController
             return false;
         }
 
-        $secret = (string) Factory::getApplication()->get('secret');
+        $secret = (string) $this->app->get('secret');
         if ($secret === '') {
             return false;
         }
@@ -61,8 +60,8 @@ class ExportController extends BaseController
         if (hash_equals(hash_hmac('sha256', $payload, $secret), $sig)) {
             $this->input->set('cb_preview_actor_id', $actorId);
             $this->input->set('cb_preview_actor_name', $actorName);
-            Factory::getApplication()->getInput()->set('cb_preview_actor_id', $actorId);
-            Factory::getApplication()->getInput()->set('cb_preview_actor_name', $actorName);
+            $this->app->getInput()->set('cb_preview_actor_id', $actorId);
+            $this->app->getInput()->set('cb_preview_actor_name', $actorName);
             return true;
         }
 

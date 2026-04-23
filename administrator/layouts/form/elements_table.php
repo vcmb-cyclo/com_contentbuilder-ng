@@ -23,7 +23,7 @@ $textUtilityService = $displayData['textUtilityService'] ?? null;
 $isModifiedElementSettings = $displayData['isModifiedElementSettings'] ?? null;
 ?>
 <div class="table-responsive mb-3">
-<table class="table table-striped cb-elements-table" style="min-width: 980px;">
+<table class="table table-striped cb-elements-table">
     <thead>
         <tr>
             <th id="cb-form-view-elements-heading-id" width="5">
@@ -39,27 +39,27 @@ $isModifiedElementSettings = $displayData['isModifiedElementSettings'] ?? null;
                 </span>
             </th>
             <th id="cb-form-view-elements-heading-list-include">
-                <span class="editlinktip hasTip"
+                <span class="editlinktip hasTip cb-elements-heading-label"
                     title="<?php echo Text::_('COM_CONTENTBUILDERNG_LIST_INCLUDE_TIP'); ?>">
-                    <?php echo is_callable($sortLink) ? $sortLink(Text::_('COM_CONTENTBUILDERNG_LIST_INCLUDE'), 'list_include') : Text::_('COM_CONTENTBUILDERNG_LIST_INCLUDE'); ?>
+                    <?php echo is_callable($sortLink) ? $sortLink(Text::_('COM_CONTENTBUILDERNG_ELEMENT_HEADING_LIST'), 'list_include') : Text::_('COM_CONTENTBUILDERNG_ELEMENT_HEADING_LIST'); ?>
                 </span>
             </th>
             <th id="cb-form-view-elements-heading-search-include">
-                <span class="editlinktip hasTip"
+                <span class="editlinktip hasTip cb-elements-heading-label"
                     title="<?php echo Text::_('COM_CONTENTBUILDERNG_SEARCH_INCLUDE_TIP'); ?>">
-                    <?php echo is_callable($sortLink) ? $sortLink(Text::_('COM_CONTENTBUILDERNG_SEARCH_INCLUDE'), 'search_include') : Text::_('COM_CONTENTBUILDERNG_SEARCH_INCLUDE'); ?>
+                    <?php echo is_callable($sortLink) ? $sortLink(Text::_('COM_CONTENTBUILDERNG_ELEMENT_HEADING_SEARCH'), 'search_include') : Text::_('COM_CONTENTBUILDERNG_ELEMENT_HEADING_SEARCH'); ?>
                 </span>
             </th>
             <th id="cb-form-view-elements-heading-linkable">
-                <span class="editlinktip hasTip"
+                <span class="editlinktip hasTip cb-elements-heading-label"
                     title="<?php echo Text::_('COM_CONTENTBUILDERNG_LINKABLE_TIP'); ?>">
-                    <?php echo is_callable($sortLink) ? $sortLink(Text::_('COM_CONTENTBUILDERNG_LINKABLE'), 'linkable') : Text::_('COM_CONTENTBUILDERNG_LINKABLE'); ?>
+                    <?php echo is_callable($sortLink) ? $sortLink(Text::_('COM_CONTENTBUILDERNG_ELEMENT_HEADING_LINK'), 'linkable') : Text::_('COM_CONTENTBUILDERNG_ELEMENT_HEADING_LINK'); ?>
                 </span>
             </th>
             <th id="cb-form-view-elements-heading-editable">
-                <span class="editlinktip hasTip"
+                <span class="editlinktip hasTip cb-elements-heading-label"
                     title="<?php echo Text::_('COM_CONTENTBUILDERNG_EDITABLE_TIP'); ?>">
-                    <?php echo is_callable($sortLink) ? $sortLink(Text::_('COM_CONTENTBUILDERNG_EDITABLE'), 'editable') : Text::_('COM_CONTENTBUILDERNG_EDITABLE'); ?>
+                    <?php echo is_callable($sortLink) ? $sortLink(Text::_('COM_CONTENTBUILDERNG_ELEMENT_HEADING_EDIT'), 'editable') : Text::_('COM_CONTENTBUILDERNG_ELEMENT_HEADING_EDIT'); ?>
                 </span>
             </th>
             <th id="cb-form-view-elements-heading-wordwrap">
@@ -75,7 +75,9 @@ $isModifiedElementSettings = $displayData['isModifiedElementSettings'] ?? null;
                 </span>
             </th>
             <th id="cb-form-view-elements-heading-published">
-                <?php echo is_callable($sortLink) ? $sortLink(Text::_('COM_CONTENTBUILDERNG_LIST_STATES_PUBLISHED'), 'published') : Text::_('COM_CONTENTBUILDERNG_LIST_STATES_PUBLISHED'); ?>
+                <span class="cb-elements-heading-label">
+                    <?php echo is_callable($sortLink) ? $sortLink(Text::_('COM_CONTENTBUILDERNG_ELEMENT_HEADING_PUBLISH'), 'published') : Text::_('COM_CONTENTBUILDERNG_ELEMENT_HEADING_PUBLISH'); ?>
+                </span>
             </th>
             <th id="cb-form-view-elements-heading-ordering" width="120" class="cb-order-head">
                 <?php if (!empty($elements)) : ?>
@@ -91,7 +93,7 @@ $isModifiedElementSettings = $displayData['isModifiedElementSettings'] ?? null;
         $n = count($elements);
         for ($i = 0; $i < $n; $i++) {
             $row = $elements[$i];
-            $checked = '<input class="form-check-input" type="checkbox" id="cb-element-' . (int) $i . '" name="cid[]" value="' . (int) $row->id . '" onclick="Joomla.isChecked(this.checked);">';
+            $checked = '<input class="form-check-input" type="checkbox" id="cb' . (int) $i . '" name="cid[]" value="' . (int) $row->id . '" onclick="Joomla.isChecked(this.checked);">';
             $published = ContentbuilderngHelper::listPublish('form', $row, $i);
             $listInclude = ContentbuilderngHelper::listIncludeInList('form', $row, $i);
             $searchInclude = ContentbuilderngHelper::listIncludeInSearch('form', $row, $i);
@@ -174,14 +176,14 @@ $isModifiedElementSettings = $displayData['isModifiedElementSettings'] ?? null;
                         value="<?php echo htmlentities($row->wordwrap ?? '', ENT_QUOTES, 'UTF-8') ?>" />
                 </td>
                 <td class="align-top">
-                    <input class="form-control form-control-sm w-100" style="width: 150px;" type="text"
+                    <input class="form-control form-control-sm w-100 cb-item-wrapper-input" type="text"
                         name="jform[itemWrapper][<?php echo $row->id ?>]"
                         value="<?php echo htmlentities($row->item_wrapper ?? '', ENT_QUOTES, 'UTF-8') ?>" />
                 </td>
                 <td class="align-top">
                     <?php echo $published; ?>
                 </td>
-                <td class="order align-top" width="150">
+                <td class="order align-top">
                     <?php
                     $orderUp = '';
                     $orderDown = '';
@@ -201,10 +203,9 @@ $isModifiedElementSettings = $displayData['isModifiedElementSettings'] ?? null;
                         type="text"
                         name="jform[order][<?php echo (int) $row->id; ?>]"
                         size="3"
-                        style="width:30px;text-align:center;margin-left:20px"
                         value="<?php echo (int) $row->ordering; ?>"
                         <?php echo $disabled; ?>
-                        class="text_area" />
+                        class="text_area cb-order-input-field" />
                 </td>
             </tr>
         <?php

@@ -49,7 +49,18 @@ $renderPermissions = static function (array $permissions) use ($permissionLabelK
 ?>
 <style>
     #cb-form-api-endpoints {
-        min-width: 760px;
+        width: 100%;
+        min-width: 0;
+    }
+
+    #cb-form-api-endpoints th:first-child,
+    #cb-form-api-endpoints td:first-child {
+        width: 9rem;
+    }
+
+    #cb-form-api-endpoints th:last-child,
+    #cb-form-api-endpoints td:last-child {
+        width: 12rem;
     }
 
     #cb-form-api-endpoints code,
@@ -68,12 +79,14 @@ $renderPermissions = static function (array $permissions) use ($permissionLabelK
 </div>
 <div class="table-responsive mb-3">
     <table id="cb-form-api-endpoints" class="table table-striped align-middle">
-        <tr>
-            <th style="width:180px;"><?php echo Text::_('COM_CONTENTBUILDERNG_API_METHOD'); ?></th>
-            <th><?php echo Text::_('COM_CONTENTBUILDERNG_API_ENDPOINT'); ?></th>
-            <th><?php echo Text::_('COM_CONTENTBUILDERNG_API_DESCRIPTION'); ?></th>
-            <th style="width:220px;"><?php echo Text::_('COM_CONTENTBUILDERNG_API_PERMISSIONS'); ?></th>
-        </tr>
+        <thead>
+            <tr>
+                <th><?php echo Text::_('COM_CONTENTBUILDERNG_API_METHOD'); ?></th>
+                <th><?php echo Text::_('COM_CONTENTBUILDERNG_API_ENDPOINT'); ?></th>
+                <th><?php echo Text::_('COM_CONTENTBUILDERNG_API_DESCRIPTION'); ?></th>
+                <th><?php echo Text::_('COM_CONTENTBUILDERNG_API_PERMISSIONS'); ?></th>
+            </tr>
+        </thead>
         <tr>
             <td><code>GET</code></td>
             <td>

@@ -82,7 +82,8 @@ class HtmlView extends BaseHtmlView
 
     private function resolveSiblingRecordIdsByRecordId(object $subject, int $currentRecordId): array
     {
-        $currentList = (array) Factory::getApplication()->getInput()->get('list', [], 'array');
+        $app = Factory::getApplication();
+        $currentList = (array) $app->getInput()->get('list', [], 'array');
         $currentListStart = array_key_exists('start', $currentList) ? max(0, (int) $currentList['start']) : 0;
         if (
             $currentRecordId < 1
@@ -95,7 +96,7 @@ class HtmlView extends BaseHtmlView
         }
 
         $db = Factory::getContainer()->get(DatabaseInterface::class);
-        $isAdminPreview = Factory::getApplication()->getInput()->getBool('cb_preview_ok', false);
+        $isAdminPreview = $app->getInput()->getBool('cb_preview_ok', false);
 
         $baseWhere = [
             $db->quoteName('type') . ' = ' . $db->quote((string) $subject->type),
@@ -244,6 +245,7 @@ class HtmlView extends BaseHtmlView
             return $markup;
         }
 
+        $app = Factory::getApplication();
         $matches = array(array(), array());
         preg_match_all('/\"([^\"]*contentbuilderng_slug_used[^\"]*)\"/i', $markup, $matches);
 
@@ -273,9 +275,9 @@ class HtmlView extends BaseHtmlView
 
             $replacement = Route::_(
                 'index.php?option=com_contentbuilderng&view=details&id='
-                . Factory::getApplication()->getInput()->getInt('id')
-                . '&record_id=' . Factory::getApplication()->getInput()->getCmd('record_id', '')
-                . '&Itemid=' . Factory::getApplication()->getInput()->getInt('Itemid', 0)
+                . $app->getInput()->getInt('id')
+                . '&record_id=' . $app->getInput()->getCmd('record_id', '')
+                . '&Itemid=' . $app->getInput()->getInt('Itemid', 0)
                 . $sub
             );
             $markup = str_replace($match, $replacement, $markup);
@@ -502,10 +504,11 @@ class HtmlView extends BaseHtmlView
         $registry = new Registry();
         $registry->loadString((string) ($table->attribs ?? ''));
 
-        $limitstart = Factory::getApplication()->getInput()->getInt('limitstart', 0);
-        $start = Factory::getApplication()->getInput()->getInt('start', 0);
+        $app = Factory::getApplication();
+        $limitstart = $app->getInput()->getInt('limitstart', 0);
+        $start = $app->getInput()->getInt('start', 0);
         $page = $limitstart ? $limitstart : $start;
-        $dispatcher = Factory::getApplication()->getDispatcher();
+        $dispatcher = $app->getDispatcher();
         $hasBfShortcode = $this->hasBreezingFormsPlaceholder($template);
 
         PluginHelper::importPlugin('content');
@@ -597,6 +600,7 @@ CSS;
 
     public function display($tpl = null): void
     {
+        $app = Factory::getApplication();
         /** @var EditModel|null $model */
         $model = $this->getModel();
         if ($model) {
@@ -661,7 +665,7 @@ CSS;
                         PluginHelper::importPlugin('contentbuilderng_themes', $themePlugin);
                         $fallbackTheme = true;
                     }
-                    $dispatcher = Factory::getApplication()->getDispatcher();
+                    $dispatcher = $app->getDispatcher();
 
                     $eventObj = new \Joomla\CMS\Event\GenericEvent('onEditableTemplateCss', ['theme' => $themePlugin]);
                     $dispatcher->dispatch('onEditableTemplateCss', $eventObj);
@@ -686,8 +690,8 @@ CSS;
                 'beforeDisplayContent' => '',
                 'afterDisplayContent' => '',
             ];
-            Factory::getApplication()->enqueueMessage(
-                Text::_('COM_CONTENTBUILDERNG') .' : Edit model not found for this request.',
+            $app->enqueueMessage(
+                Text::_('COM_CONTENTBUILDERNG_EDIT_MODEL_NOT_FOUND'),
                 'warning'
             );
         }

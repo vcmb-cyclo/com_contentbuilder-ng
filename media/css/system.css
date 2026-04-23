@@ -1,6 +1,24 @@
 /* -------------------
    General Pagination
 --------------------- */
+table thead th {
+    white-space: normal;
+    vertical-align: bottom;
+}
+
+table thead th.text-nowrap {
+    white-space: normal !important;
+}
+
+table thead th a,
+table thead th span {
+    white-space: normal !important;
+    overflow-wrap: normal;
+    word-break: normal;
+    text-wrap: wrap;
+    line-height: 1.15;
+}
+
 div.pagination {
     clear: both;
     text-align: center;

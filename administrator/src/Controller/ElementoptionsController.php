@@ -12,7 +12,6 @@ namespace CB\Component\Contentbuilderng\Administrator\Controller;
 // No direct access
 \defined('_JEXEC') or die('Restricted access');
 
-use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Router\Route;
 use Joomla\CMS\MVC\Controller\AdminController;
@@ -34,9 +33,9 @@ class ElementoptionsController extends AdminController
 
     function display($cachable = false, $urlparams = array())
     {
-        Factory::getApplication()->getInput()->set('tmpl', Factory::getApplication()->getInput()->getWord('tmpl', null));
-        Factory::getApplication()->getInput()->set('layout', Factory::getApplication()->getInput()->getWord('layout', null));
-        Factory::getApplication()->getInput()->set('view', 'elementoptions');
+        $this->input->set('tmpl', $this->input->getWord('tmpl', null));
+        $this->input->set('layout', $this->input->getWord('layout', null));
+        $this->input->set('view', 'elementoptions');
 
         parent::display();
     }
@@ -56,13 +55,13 @@ class ElementoptionsController extends AdminController
 
 
         $type_change_url = '';
-        $type_change = Factory::getApplication()->getInput()->getInt('type_change', 0);
+        $type_change = $this->input->getInt('type_change', 0);
         if ($type_change) {
-            $type_change_url = '&type_change=1&type_selection=' . Factory::getApplication()->getInput()->getCmd('type_selection', '');
+            $type_change_url = '&type_change=1&type_selection=' . $this->input->getCmd('type_selection', '');
         }
 
         // Check the table in so it can be edited.... we are done with it anyway
-        $link = Route::_('index.php?option=com_contentbuilderng&view=elementoptions&tabStartOffset=' . Factory::getApplication()->getInput()->getInt('tabStartOffset', 0) . '&tmpl=component&element_id=' . Factory::getApplication()->getInput()->getInt('element_id', 0) . '&id=' . Factory::getApplication()->getInput()->getInt('id', 0) . $type_change_url, false);
+        $link = Route::_('index.php?option=com_contentbuilderng&view=elementoptions&tabStartOffset=' . $this->input->getInt('tabStartOffset', 0) . '&tmpl=component&element_id=' . $this->input->getInt('element_id', 0) . '&id=' . $this->input->getInt('id', 0) . $type_change_url, false);
         $this->setRedirect($link, $msg);
     }
 }

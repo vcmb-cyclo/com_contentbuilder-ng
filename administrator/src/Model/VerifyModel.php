@@ -128,7 +128,7 @@ class VerifyModel extends BaseDatabaseModel
         if (isset($out['plugin']) && $out['plugin'] && isset($out['verification_name']) && $out['verification_name'] && isset($out['verify_view']) && $out['verify_view']) {
             // alright 
         } else {
-            $this->app->enqueueMessage('Spoofed data or invalid verification id', 'error');
+            $this->app->enqueueMessage(Text::_('COM_CONTENTBUILDERNG_VERIFICATION_INVALID_ID'), 'error');
             $this->app->redirect('index.php');
         }
 
@@ -166,7 +166,7 @@ class VerifyModel extends BaseDatabaseModel
             $formsettings = $this->getDatabase()->loadAssoc();
 
             if (!is_array($formsettings)) {
-                throw new \Exception('Verification Setup failed. Reason: View id ' . $out['require_view'] . ' has been requested but is not available (not existent or unpublished). Please update your content template or publish the view.', 500);
+                throw new \Exception(Text::sprintf('COM_CONTENTBUILDERNG_VERIFICATION_SETUP_VIEW_UNAVAILABLE', $out['require_view']), 500);
             }
 
             $form = FormSourceFactory::getForm((string) $formsettings['type'], (string) $formsettings['reference_id']);
@@ -414,7 +414,7 @@ class VerifyModel extends BaseDatabaseModel
                 }
             }
         } else {
-            throw new \Exception('Verification Setup failed. Reason: ' . implode('', $setup_result), 500);
+            throw new \Exception(Text::sprintf('COM_CONTENTBUILDERNG_VERIFICATION_SETUP_FAILED', implode('', $setup_result)), 500);
         }
     }
 

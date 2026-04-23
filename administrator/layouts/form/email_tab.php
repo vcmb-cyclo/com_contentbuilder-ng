@@ -76,7 +76,7 @@ $breezingFormsProvidedMessage = (string) ($displayData['breezingFormsProvidedMes
     <div id="email_admins_div"
         style="display:<?php echo $session ? $session->get('email_admins', '', 'com_contentbuilderng') : ''; ?>">
         <div class="table-responsive mb-3">
-        <table width="100%" class="table table-striped" id="cb-form-email-admins-table" style="min-width: 760px;">
+        <table class="table table-striped cb-form-email-settings-table" id="cb-form-email-admins-table">
             <tr>
                 <td width="20%">
                     <label for="email_admin_subject"><span class="editlinktip hasTip"
@@ -183,7 +183,7 @@ $breezingFormsProvidedMessage = (string) ($displayData['breezingFormsProvidedMes
     </div>
     <div id="email_users_div">
         <div class="table-responsive mb-3">
-        <table width="100%" class="table table-striped" id="cb-form-email-users-table" style="min-width: 760px;">
+        <table class="table table-striped cb-form-email-settings-table" id="cb-form-email-users-table">
             <tr>
                 <td width="20%">
                     <label for="email_subject">

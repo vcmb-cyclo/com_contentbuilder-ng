@@ -467,7 +467,7 @@ class plgContentContentbuilderng_image_scale extends CMSPlugin implements Subscr
 													// displaying the original file on request
 													if (Factory::getApplication()->getInput()->getInt('contentbuilderng_display_detail', 0)) {
 
-														if (Factory::getApplication()->getInput()->get('contentbuilderng_detail_file', '', 'REQUEST', 'STRING', CBREQUEST_ALLOWRAW, 'string') == sha1($field . $the_value)) {
+														if ($this->app->getInput()->getString('contentbuilderng_detail_file', '') == sha1($field . $the_value)) {
 
 															// clean up before displaying
 															ob_end_clean();
@@ -698,7 +698,7 @@ class plgContentContentbuilderng_image_scale extends CMSPlugin implements Subscr
 														if ($the_image !== false) {
 															if (Factory::getApplication()->getInput()->getInt('contentbuilderng_display', 0)) {
 
-																if (Factory::getApplication()->getInput()->get('contentbuilderng_field', '', 'REQUEST', 'STRING', CBREQUEST_ALLOWRAW, 'string') == sha1($field . $filename)) {
+																if ($this->app->getInput()->getString('contentbuilderng_field', '') == sha1($field . $filename)) {
 
 																	// clean up before displaying
 																	ob_end_clean();

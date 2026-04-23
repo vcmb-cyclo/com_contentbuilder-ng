@@ -21,6 +21,8 @@ class HtmlView extends BaseHtmlView
         // 1️⃣ Récupération du WebAssetManager
         $document = $this->getDocument();
         $wa = $document->getWebAssetManager();
+        $wa->getRegistry()->addExtensionRegistryFile('com_contentbuilderng');
+        $wa->useStyle('com_contentbuilderng.system');
 
         // 2️⃣ Enregistrement + chargement du CSS
         $wa->registerAndUseStyle(

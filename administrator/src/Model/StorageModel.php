@@ -987,7 +987,7 @@ class StorageModel extends AdminModel
 
         $storage = $this->getItem($resolvedStorageId);
         if (!$storage) {
-            $this->setError('Storage not found');
+            $this->setError(Text::_('COM_CONTENTBUILDERNG_STORAGE_NOT_FOUND'));
             return false;
         }
         if (!empty($storage->bytable)) {

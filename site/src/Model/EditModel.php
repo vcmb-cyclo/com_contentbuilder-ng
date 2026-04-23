@@ -1562,7 +1562,7 @@ var contentbuilderng = new function(){
                                 // rollback upon registration problems
                                 $data->form->clearDirtyRecordUserData($record_return);
 
-                                throw new \Exception('Failed attempt to register user');
+                                throw new \Exception(Text::_('COM_CONTENTBUILDERNG_REGISTRATION_FAILED'));
                             }
                         } else {
 
@@ -1611,7 +1611,7 @@ var contentbuilderng = new function(){
                                     // rollback upon registration problems
                                     $data->form->clearDirtyRecordUserData($record_return);
 
-                                    throw new \Exception('Failed attempt to register user');
+                                    throw new \Exception(Text::_('COM_CONTENTBUILDERNG_REGISTRATION_FAILED'));
                                 }
 
                                 if ($bypass->text != $orig_text && intval($user_id) > 0) {
@@ -1934,7 +1934,7 @@ var contentbuilderng = new function(){
                                 $send = $mailer->Send();
 
                                 if ($send !== true) {
-                                    $this->app->enqueueMessage('Error sending email: ' . $mailer->ErrorInfo, 'error');
+                                    $this->app->enqueueMessage(Text::sprintf('COM_CONTENTBUILDERNG_EMAIL_SEND_ERROR', $mailer->ErrorInfo), 'error');
                                 }
                             }
 
@@ -2045,7 +2045,7 @@ var contentbuilderng = new function(){
                                 $send = $mailer->Send();
 
                                 if ($send !== true) {
-                                    $this->app->enqueueMessage('Error sending email: ' . $mailer->ErrorInfo, 'error');
+                                    $this->app->enqueueMessage(Text::sprintf('COM_CONTENTBUILDERNG_EMAIL_SEND_ERROR', $mailer->ErrorInfo), 'error');
                                 }
                             }
 

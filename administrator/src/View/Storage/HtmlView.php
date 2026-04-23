@@ -47,7 +47,7 @@ class HtmlView extends BaseHtmlView
         $identity = $app->getIdentity();
         $app->getInput()->set('hidemainmenu', true);
 
-        $wa = $app->getDocument()->getWebAssetManager();
+        $wa = $this->getDocument()->getWebAssetManager();
         $wa->getRegistry()->addExtensionRegistryFile('com_contentbuilderng');
         $wa->useScript('com_contentbuilderng.admin-ui');
         HTMLHelper::_('script', 'com_contentbuilderng/admin-ui.js', ['version' => 'auto', 'relative' => true], ['defer' => true]);
@@ -135,9 +135,9 @@ class HtmlView extends BaseHtmlView
             'btn-success'
         );
 
-        $toolbar = $app->getDocument()->getToolbar('toolbar');
+        $toolbar = $this->getDocument()->getToolbar('toolbar');
         $dropdown = $toolbar->dropdownButton('storage-status-group');
-        $dropdown->text('Actions');
+        $dropdown->text(Text::_('COM_CONTENTBUILDERNG_TOOLBAR_ACTIONS'));
         $dropdown->toggleSplit(false);
         $dropdown->icon('fa fa-ellipsis-h');
         $dropdown->buttonClass('btn btn-action');

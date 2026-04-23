@@ -148,11 +148,11 @@ class HtmlView extends BaseHtmlView
         /** @var CMSApplication $app */
         $app = Factory::getApplication();
         /** @var HtmlDocument $document */
-        $document = $app->getDocument();
+        $document = $this->getDocument();
         $toolbar = $document->getToolbar('toolbar');
 
         $statusDropdown = $toolbar->dropdownButton('storages-status-group');
-        $statusDropdown->text('Actions');
+        $statusDropdown->text(Text::_('COM_CONTENTBUILDERNG_TOOLBAR_ACTIONS'));
         $statusDropdown->toggleSplit(false);
         $statusDropdown->icon('fa fa-ellipsis-h');
         $statusDropdown->buttonClass('btn btn-action');
@@ -178,7 +178,7 @@ class HtmlView extends BaseHtmlView
          // 1️⃣ Récupération du WebAssetManager
         /** @var CMSApplication $app */
         $app = Factory::getApplication();
-        $document = $app->getDocument();
+        $document = $this->getDocument();
         $wa = $document->getWebAssetManager();
 
          // Icon addition.

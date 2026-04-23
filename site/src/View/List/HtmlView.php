@@ -29,7 +29,8 @@ class HtmlView extends BaseHtmlView
 
     function display($tpl = null)
     {
-        $this->frontend = Factory::getApplication()->isClient('site');
+        $app = Factory::getApplication();
+        $this->frontend = $app->isClient('site');
 
         // Get data from the model
         $subject = $this->get('Data');
@@ -75,7 +76,7 @@ class HtmlView extends BaseHtmlView
         $lists['filter_language'] = $state?->get('formsd_filter_language');
         $lists['liststart'] = (int) ($pagination?->limitstart ?? $state?->get('list.start') ?? 0);
 
-        $dispatcher = Factory::getApplication()->getDispatcher();
+        $dispatcher = $app->getDispatcher();
         $eventResult = $dispatcher->dispatch('onListViewCss', new \Joomla\CMS\Event\GenericEvent('onListViewCss', ['theme' => $themePlugin]));
         $results = $eventResult->getArgument('result') ?: [];
 
@@ -142,7 +143,7 @@ class HtmlView extends BaseHtmlView
         $this->total = $total;
         $this->preview_no_list_fields = !empty($subject->preview_no_list_fields);
         $this->invalid_list_setup = !empty($subject->invalid_list_setup);
-        $own_only = Factory::getApplication()->isClient('site') ? $subject->own_only_fe : $subject->own_only;
+        $own_only = $app->isClient('site') ? $subject->own_only_fe : $subject->own_only;
         $this->own_only = $own_only;
         parent::display($tpl);
     }

@@ -37,8 +37,9 @@ $wa->addInlineStyle(
         . '.cb-order-slot{display:inline-block;width:24px;text-align:center}'
         . '.cb-order-placeholder{visibility:hidden}'
         . '.cb-order-input{margin-left:6px}'
-        . '.cb-order-head{vertical-align:middle;white-space:nowrap}'
-        . '.cb-order-head .saveorder{float:none!important;margin-left:6px}'
+        . '.cb-order-head{vertical-align:bottom;white-space:nowrap;text-align:center}'
+        . '.cb-order-head>a:not(.saveorder),.cb-order-head .saveorder{display:inline-flex!important;align-items:center;vertical-align:middle;white-space:nowrap!important}'
+        . '.cb-order-head .saveorder{float:none!important;margin-left:.45rem}'
         . '.cb-item-label-cell{display:flex;flex-direction:column;gap:4px}'
         . '.cb-item-label-display{cursor:pointer;width:100%;display:block}'
         . '.cb-item-type-badge{display:inline-flex;align-items:center;gap:.3rem;padding:.22rem .5rem;border-radius:999px;border:1px solid transparent;font-size:.72rem;font-weight:700;line-height:1.2}'
@@ -46,8 +47,28 @@ $wa->addInlineStyle(
         . '.cb-item-type-badge.is-default{color:var(--bs-secondary-color);background:var(--bs-secondary-bg);border-color:var(--bs-border-color)}'
         . '.cb-item-type-badge.is-modified{color:#842029;background:#f8d7da;border-color:#f1aeb5}'
         . '.cb-item-order-type-select{align-self:flex-start;width:auto!important;max-width:100%}'
+        . '.cb-elements-table{width:100%;min-width:960px;table-layout:fixed}'
+        . '.cb-elements-table thead th{white-space:normal;vertical-align:bottom}'
+        . '.cb-elements-table thead th a{display:inline-flex;align-items:center;justify-content:center;gap:.15rem;white-space:nowrap!important;line-height:1.15}'
+        . '.cb-elements-table thead th .cb-elements-heading-label{white-space:normal;overflow-wrap:normal;word-break:normal;text-wrap:wrap;line-height:1.15}'
+        . '.cb-elements-table th:nth-child(1),.cb-elements-table td:nth-child(1){width:4rem;white-space:nowrap}'
+        . '.cb-elements-table th:nth-child(2),.cb-elements-table td:nth-child(2){width:2.75rem;text-align:center}'
+        . '.cb-elements-table th:nth-child(3),.cb-elements-table td:nth-child(3){width:20%}'
+        . '.cb-elements-table th:nth-child(4),.cb-elements-table td:nth-child(4),.cb-elements-table th:nth-child(5),.cb-elements-table td:nth-child(5),.cb-elements-table th:nth-child(6),.cb-elements-table td:nth-child(6),.cb-elements-table th:nth-child(7),.cb-elements-table td:nth-child(7),.cb-elements-table th:nth-child(10),.cb-elements-table td:nth-child(10){width:6.25%;text-align:center}'
+        . '.cb-elements-table th:nth-child(8),.cb-elements-table td:nth-child(8){width:6rem;text-align:center}'
+        . '.cb-elements-table th:nth-child(9),.cb-elements-table td:nth-child(9){width:9rem}'
+        . '.cb-elements-table th:nth-child(11),.cb-elements-table td:nth-child(11){width:10.5rem}'
         . '.cb-wordwrap-input{width:8ch!important;min-width:8ch!important;max-width:8ch!important;text-align:center}'
-        . '.cb-prepare-tools{row-gap:.5rem}'
+        . '.cb-item-wrapper-input{min-width:7rem;max-width:100%}'
+        . '.cb-elements-table td.order{white-space:nowrap}'
+        . '.cb-elements-table td.order .cb-order-slot{margin-inline-end:.35rem}'
+        . '.cb-order-input-field{width:3rem;text-align:center;margin-left:.35rem}'
+        . '.cb-form-email-settings-table{width:100%;min-width:0;table-layout:auto}'
+        . '.cb-form-email-settings-table td{vertical-align:middle}'
+        . '.cb-form-email-settings-table td:nth-child(odd){width:12rem;max-width:34%;white-space:normal}'
+        . '.cb-form-email-settings-table td:nth-child(even){min-width:12rem}'
+        . '@media (max-width:767.98px){.cb-form-email-settings-table,.cb-form-email-settings-table tbody,.cb-form-email-settings-table tr,.cb-form-email-settings-table td{display:block;width:100%!important;max-width:none}.cb-form-email-settings-table td{padding:.35rem .5rem}.cb-form-email-settings-table td:nth-child(even){min-width:0}}'
+	        . '.cb-prepare-tools{row-gap:.5rem}'
         . '.cb-prepare-tools .btn{text-wrap:nowrap}'
         . '.cb-prepare-tools .cb-snippet-select{display:inline-block;width:auto;min-width:12ch;max-width:42ch;flex:0 0 auto}'
         . '.cb-prepare-tools .cb-effect-select{min-width:170px;max-width:240px}'
@@ -77,12 +98,12 @@ $wa->addInlineStyle(
         . '.cb-perm-inherited .form-check-input{background-color:#dce2e8;border-color:#b8c2cc}'
         . '.cb-perm-inherited .form-check-input:not(:checked){box-shadow:none}'
         . '.cb-perm-inherited .form-check-input:indeterminate{background-color:#c8d1db!important;border-color:#9eacba!important;background-image:url("data:image/svg+xml,%3csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 20 20%27%3e%3cpath fill=%27none%27 stroke=%27%23ffffff%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27 stroke-width=%273%27 d=%27M5 10.5l3 3 7-7%27/%3e%3c/svg%3e")!important;background-size:1rem 1rem!important}'
-        . '#cb-form-permissions-frontend-groups{width:auto;min-width:780px}'
-        . '#cb-form-permissions-frontend-groups th:first-child,#cb-form-permissions-frontend-groups td:first-child{min-width:210px;max-width:280px;white-space:normal}'
-        . '#cb-form-permissions-frontend-groups th:not(:first-child),#cb-form-permissions-frontend-groups td:not(:first-child){width:48px;min-width:48px;text-align:center;padding:.45rem .35rem}'
-        . '#cb-form-permissions-frontend-groups thead th:not(:first-child){height:8.25rem;vertical-align:bottom}'
-        . '#cb-form-permissions-frontend-groups thead th:not(:first-child) .cb-perm-header-tip{display:inline-flex;align-items:center;writing-mode:vertical-rl;transform:rotate(180deg);white-space:nowrap;font-size:.75rem;line-height:1.1}'
-        . '#cb-form-permissions-frontend-groups .form-check{display:inline-flex;margin:0;min-height:0}'
+	        . '#cb-form-permissions-frontend-groups{width:auto;min-width:780px}'
+	        . '#cb-form-permissions-frontend-groups th:first-child,#cb-form-permissions-frontend-groups td:first-child{min-width:210px;max-width:280px;white-space:normal}'
+	        . '#cb-form-permissions-frontend-groups th:not(:first-child),#cb-form-permissions-frontend-groups td:not(:first-child){min-width:90px;text-align:center;padding:.45rem .35rem}'
+	        . '#cb-form-permissions-frontend-groups thead th:not(:first-child){vertical-align:bottom}'
+	        . '#cb-form-permissions-frontend-groups thead th:not(:first-child) .cb-perm-header-tip{display:inline-block;max-width:7.5em;white-space:normal;overflow-wrap:normal;word-break:normal;text-wrap:wrap;font-size:.75rem;line-height:1.2;text-align:center}'
+	        . '#cb-form-permissions-frontend-groups .form-check{display:inline-flex;margin:0;min-height:0}'
         . '#cb-form-permissions-frontend-groups .form-check-input{margin:0}'
         . '.cb-perm-users-grid{display:grid;grid-template-columns:minmax(280px,340px) minmax(0,1fr);gap:1rem;align-items:start}'
         . '.cb-perm-users-card{border:1px solid var(--bs-border-color);border-radius:10px;background:var(--bs-body-bg);padding:.65rem 1rem .9rem}'
@@ -301,12 +322,12 @@ $sortLink = function (string $label, string $field) use ($listOrder, $listDirn, 
 };
 
 $permHeaderLabel = static function (string $labelKey, string $tipKey): string {
-    $label = Text::_($labelKey);
-    $tip = Text::_($tipKey);
+	$label = Text::_($labelKey);
+	$tip = Text::_($tipKey);
 
-    return '<span class="cb-perm-header-tip" tabindex="0" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="'
-        . htmlspecialchars($tip, ENT_QUOTES, 'UTF-8') . '" title="' . htmlspecialchars($tip, ENT_QUOTES, 'UTF-8') . '">'
-        . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '</span>';
+	return '<span class="cb-perm-header-tip" tabindex="0" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="'
+	    . htmlspecialchars($tip, ENT_QUOTES, 'UTF-8') . '" title="' . htmlspecialchars($tip, ENT_QUOTES, 'UTF-8') . '">'
+	    . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '</span>';
 };
 
 $permGroupLabel = static function (string $groupText, int $groupId = 0, string $groupPath = '', string $groupTitle = ''): string {
@@ -591,6 +612,7 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
     const cbEditByTypeEnableConfirm = <?php echo json_encode(Text::_('COM_CONTENTBUILDERNG_TYPE_EDIT_ENABLE_BF_CONFIRM'), JSON_UNESCAPED_UNICODE); ?>;
     const cbFormNotFoundMessage = <?php echo json_encode(Text::_('COM_CONTENTBUILDERNG_FORM_NOT_FOUND'), JSON_UNESCAPED_UNICODE); ?>;
     const cbSaveFailedMessage = <?php echo json_encode(Text::_('COM_CONTENTBUILDERNG_SAVE_FAILED'), JSON_UNESCAPED_UNICODE); ?>;
+    const cbCloseUnsavedMessage = <?php echo json_encode(Text::_('COM_CONTENTBUILDERNG_CONFIRM_CLOSE_UNSAVED'), JSON_UNESCAPED_UNICODE); ?>;
     const cbUnnamedLabel = <?php echo json_encode(Text::_('COM_CONTENTBUILDERNG_UNNAMED'), JSON_UNESCAPED_UNICODE); ?>;
     const cbInheritedFromLabel = <?php echo json_encode(Text::_('COM_CONTENTBUILDERNG_INHERITED_FROM'), JSON_UNESCAPED_UNICODE); ?>;
     const cbFirefoxVersionMatch = String(window.navigator.userAgent || '').match(/\bfirefox\/(\d+)/i);
@@ -1074,11 +1096,11 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
 
         var f = document.adminForm;
         f.limitstart.value = <?php echo Factory::getApplication()->getInput()->getInt('limitstart', 0) ?>;
-        cb = eval('f.' + id);
+        var cb = f.elements[id] || document.getElementById(id);
 
         if (cb) {
-            for (i = 0; true; i++) {
-                cbx = eval('f.cb' + i);
+            for (var i = 0; true; i++) {
+                var cbx = f.elements['cb' + i] || document.getElementById('cb' + i);
                 if (!cbx) break;
                 cbx.checked = false;
             } // for
@@ -1144,6 +1166,13 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
 
         switch (task) {
             case 'form.cancel':
+                cbRefreshDirtyState();
+                if (cbDirtyState && !confirm(cbCloseUnsavedMessage)) {
+                    return;
+                }
+                cbBypassDirtyBeforeUnload();
+                Joomla.submitform(task, form);
+                break;
             case 'form.publish':
             case 'form.unpublish':
             case 'form.formpublish':
@@ -1163,7 +1192,7 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
             case 'form.editable':
             case 'form.not_editable':
             case 'form.save_labels':
-                Joomla.submitform(task);
+                Joomla.submitform(task, form);
                 break;
             case 'form.save':
             case 'form.save2new':

@@ -197,7 +197,7 @@ class ListModel extends BaseListModel
             if (is_object($item)) {
                 $resolvedMenuParams = $menu->getParams((int) $item->id);
                 $rawShowPageHeading = $item->getParams()->get('show_page_heading', null);
-                $resolvedShowPageHeading = Factory::getApplication()->getParams()->get(
+                $resolvedShowPageHeading = $app->getParams()->get(
                     'show_page_heading',
                     $resolvedMenuParams?->get('show_page_heading', null)
                 );
@@ -286,7 +286,7 @@ class ListModel extends BaseListModel
     protected function populateState($ordering = null, $direction = null)
     {
         /** @var CMSWebApplication $app */
-        $app = Factory::getApplication();
+        $app = $this->app;
         parent::populateState($ordering, $direction);
 
         $list = (array) $app->getInput()->get('list', [], 'array');
@@ -349,7 +349,7 @@ class ListModel extends BaseListModel
     private function getPaginationStateKeyPrefix(): string
     {
         /** @var CMSWebApplication $app */
-        $app = Factory::getApplication();
+        $app = $this->app;
         $option = 'com_contentbuilderng';
 
         $formId = (int) $this->_id;
@@ -382,7 +382,7 @@ class ListModel extends BaseListModel
     private function getCurrentListScreenKey(): string
     {
         /** @var CMSWebApplication $app */
-        $app = Factory::getApplication();
+        $app = $this->app;
 
         $scope = $this->isDirectStorageMode()
             ? 'storage.' . (int) $this->directStorageId
@@ -395,7 +395,7 @@ class ListModel extends BaseListModel
 
     private function getMenuToggle(string $key, int $default = 0): int
     {
-        return MenuParamHelper::resolveInputOrMenuToggle(Factory::getApplication(), $key, $default);
+        return MenuParamHelper::resolveInputOrMenuToggle($this->app, $key, $default);
     }
 
     private function getScopedListStateKey(string $suffix): string
@@ -1117,7 +1117,7 @@ class ListModel extends BaseListModel
 
                     if ($data->items === null) {
                         $app->setUserState($option . 'formsd_filter_order', '');
-                        throw new \Exception(Text::_('Stale list setup detected. Please reload view.'), 500);
+                        throw new \Exception(Text::_('COM_CONTENTBUILDERNG_STALE_LIST_SETUP_RELOAD'), 500);
                     }
                     $data->items = $this->templateRenderService->applyItemWrappers($this->_id, $data->items, $data);
                     $this->_total = $data->form->getListRecordsTotal($ids, $this->getState('formsd_filter'), $searchable_elements);

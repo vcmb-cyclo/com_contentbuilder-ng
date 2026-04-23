@@ -8,7 +8,7 @@
  * @license     GNU General Public License version 2 or later; see LICENSE.txt
  *
  * script.php (Installer Script)
- * - Single-file, clean & hardened, Joomla 6 style (works Joomla 5+)
+ * - Single-file, clean & hardened, Joomla 6 style
  * - Keeps ALL legacy handling in best-effort mode
  * - Legacy plugins: DISABLE ONLY (no uninstall), with optional best-effort folder cleanup
  */
@@ -52,7 +52,7 @@ class com_contentbuilderngInstallerScript
     // ---------------------------------------------------------------------
     protected string $extension = 'com_contentbuilderng';
     protected string $minimumPhp = '8.1';
-    protected string $minimumJoomla = '5.0';
+    protected string $minimumJoomla = '6.0';
 
     private const SHARED_LOG_FILE = 'com_contentbuilderng.log';
     private const SHARED_LOG_KEEP_FILES = 10;
@@ -214,10 +214,14 @@ class com_contentbuilderngInstallerScript
     {
         $this->resetCriticalFailures();
 
-        // Keep your original “hard warning” behavior
-        if (!version_compare(PHP_VERSION, '8.1', '>=')) {
+        if (!version_compare(PHP_VERSION, $this->minimumPhp, '>=')) {
             Factory::getApplication()->enqueueMessage(
-                'WARNING: YOU ARE RUNNING PHP VERSION "' . PHP_VERSION . '". ContentBuilder NG WON\'T WORK WITH THIS VERSION. PLEASE UPGRADE TO AT LEAST PHP 8.1.',
+                $this->installerText(
+                    'COM_CONTENTBUILDERNG_INSTALLER_ERROR_PHP_TOO_OLD',
+                    'You are running PHP %s. ContentBuilder NG requires PHP %s or later.',
+                    PHP_VERSION,
+                    $this->minimumPhp
+                ),
                 'error'
             );
         }
@@ -234,9 +238,14 @@ class com_contentbuilderngInstallerScript
     {
         $this->resetCriticalFailures();
 
-        if (!version_compare(PHP_VERSION, '8.1', '>=')) {
+        if (!version_compare(PHP_VERSION, $this->minimumPhp, '>=')) {
             Factory::getApplication()->enqueueMessage(
-                'WARNING: YOU ARE RUNNING PHP VERSION "' . PHP_VERSION . '". ContentBuilder NG WON\'T WORK WITH THIS VERSION. PLEASE UPGRADE TO AT LEAST PHP 8.1.',
+                $this->installerText(
+                    'COM_CONTENTBUILDERNG_INSTALLER_ERROR_PHP_TOO_OLD',
+                    'You are running PHP %s. ContentBuilder NG requires PHP %s or later.',
+                    PHP_VERSION,
+                    $this->minimumPhp
+                ),
                 'error'
             );
         }
@@ -398,7 +407,13 @@ class com_contentbuilderngInstallerScript
             if ($this->hasCriticalFailure()) {
                 $summary = $this->getCriticalFailureSummary();
                 $this->log('[ERROR] Postflight completed with critical failures: ' . $summary, Log::ERROR);
-                throw new \RuntimeException('ContentBuilder NG postflight failed: ' . $summary);
+                throw new \RuntimeException(
+                    $this->installerText(
+                        'COM_CONTENTBUILDERNG_INSTALLER_ERROR_POSTFLIGHT_FAILED',
+                        'ContentBuilder NG postflight failed: %s',
+                        $summary
+                    )
+                );
             }
 
             $timezoneName = $this->resolveJoomlaTimezoneName();
@@ -467,12 +482,28 @@ class com_contentbuilderngInstallerScript
     private function checkRequirements(): bool
     {
         if (!version_compare(PHP_VERSION, $this->minimumPhp, '>=')) {
-            $this->log('[ERROR] PHP ' . PHP_VERSION . ' is too old. Requires >= ' . $this->minimumPhp, Log::ERROR);
+            $this->log(
+                '[ERROR] ' . $this->installerText(
+                    'COM_CONTENTBUILDERNG_INSTALLER_ERROR_PHP_REQUIRES',
+                    'PHP %s is too old. Requires PHP %s or later.',
+                    PHP_VERSION,
+                    $this->minimumPhp
+                ),
+                Log::ERROR
+            );
             return false;
         }
 
         if (defined('JVERSION') && !version_compare(JVERSION, $this->minimumJoomla, '>=')) {
-            $this->log('[ERROR] Joomla ' . JVERSION . ' is too old. Requires >= ' . $this->minimumJoomla, Log::ERROR);
+            $this->log(
+                '[ERROR] ' . $this->installerText(
+                    'COM_CONTENTBUILDERNG_INSTALLER_ERROR_JOOMLA_REQUIRES',
+                    'Joomla %s is too old. Requires Joomla %s or later.',
+                    JVERSION,
+                    $this->minimumJoomla
+                ),
+                Log::ERROR
+            );
             return false;
         }
 
@@ -683,6 +714,17 @@ class com_contentbuilderngInstallerScript
         } catch (\Throwable) {
             // Installer output falls back to raw keys if language loading fails.
         }
+    }
+
+    private function installerText(string $key, string $fallback, mixed ...$args): string
+    {
+        $translated = Text::sprintf($key, ...$args);
+
+        if ($translated !== $key) {
+            return $translated;
+        }
+
+        return sprintf($fallback, ...$args);
     }
 
     private function writeInstallLogEntry(string $message, int $priority = Log::INFO): void

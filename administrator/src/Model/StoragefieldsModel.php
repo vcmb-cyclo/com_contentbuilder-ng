@@ -47,6 +47,7 @@ class StoragefieldsModel extends ListModel
     public function setStorageId(int $storageId): void
     {
         $this->storageId = $storageId;
+        $this->setState('storage.id', $storageId);
     }
 
     /**
@@ -185,7 +186,7 @@ class StoragefieldsModel extends ListModel
             return false;
         }
 
-        $cid = $this->input->post->get('cid', [], 'array');
+        $cid = Factory::getApplication()->getInput()->post->get('cid', [], 'array');
         ArrayHelper::toInteger($cid);
         $pk = (int) ($cid[0] ?? 0);
 

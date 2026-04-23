@@ -240,11 +240,11 @@ class StorageController extends BaseFormController
             Logger::info('Controller got model class', ['class' => get_class($model)]);
             $saved = $model->save($data);
             if (!$saved) {
-                $this->setRedirect(
-                    Route::_('index.php?option=com_contentbuilderng&task=storage.edit&id=' . (int) ($data['id'] ?? 0), false),
-                    Text::_('JLIB_APPLICATION_ERROR_SAVE_FAILED'),
-                    'error'
-                );
+	                $this->setRedirect(
+	                    Route::_('index.php?option=com_contentbuilderng&task=storage.edit&id=' . (int) ($data['id'] ?? 0), false),
+	                    Text::_('COM_CONTENTBUILDERNG_SAVE_FAILED'),
+	                    'error'
+	                );
                 return false;
             }
 
@@ -300,12 +300,12 @@ class StorageController extends BaseFormController
             }
 
             // (B) Import file (CSV/Excel)
-            $ok = $model->storeCsv($file, (int) $id);
-            if (!$ok) {
-                $error = trim((string) $model->getError());
-                if ($error === '') {
-                    $error = Text::_('JLIB_APPLICATION_ERROR_SAVE_FAILED');
-                }
+	            $ok = $model->storeCsv($file, (int) $id);
+	            if (!$ok) {
+	                $error = trim((string) $model->getError());
+	                if ($error === '') {
+	                    $error = Text::_('COM_CONTENTBUILDERNG_SAVE_FAILED');
+	                }
                 $this->setRedirect(
                     Route::_('index.php?option=com_contentbuilderng&task=storage.edit&id=' . (int) $id, false),
                     $error,
@@ -550,6 +550,15 @@ class StorageController extends BaseFormController
         return true;
     }
 
+    public function orderup(): bool
+    {
+        return $this->moveStorageField(-1);
+    }
+
+    public function orderdown(): bool
+    {
+        return $this->moveStorageField(1);
+    }
 
     public function publish(): bool
     {
@@ -646,9 +655,9 @@ class StorageController extends BaseFormController
             if (!$model) {
                 throw new \RuntimeException('StoragefieldsModel introuvable');
             }
-            $model->setStorageId($storageId);
-            if (!$model->publish($cids, $state)) {
-                $error = Text::_('JLIB_APPLICATION_ERROR_SAVE_FAILED');
+	            $model->setStorageId($storageId);
+	            if (!$model->publish($cids, $state)) {
+	                $error = Text::_('COM_CONTENTBUILDERNG_SAVE_FAILED');
                 $this->setMessage($error, 'error');
                 if ($this->isAjaxCall()) {
                     $this->respondAjax(false, $error);
@@ -680,6 +689,72 @@ class StorageController extends BaseFormController
             } else {
                 $this->setRedirect(Route::_('index.php?option=com_contentbuilderng&task=storage.display', false));
             }
+            return false;
+        }
+    }
+
+    private function moveStorageField(int $direction): bool
+    {
+        $this->checkToken();
+
+        $storageId = (int) $this->input->getInt('id', 0);
+        if ($storageId <= 0) {
+            $jform = $this->input->post->get('jform', [], 'array');
+            $storageId = (int) ($jform['id'] ?? 0);
+        }
+
+        $tabStartOffset = trim((string) $this->input->getString('tabStartOffset', 'tab0'));
+        if ($tabStartOffset === '') {
+            $tabStartOffset = 'tab0';
+        }
+
+        try {
+            if ($storageId <= 0) {
+                throw new \RuntimeException(Text::_('JERROR_NO_ITEMS_SELECTED'));
+            }
+
+            $cids = (array) $this->input->get('cid', [], 'array');
+            ArrayHelper::toInteger($cids);
+
+            if (empty($cids)) {
+                throw new \RuntimeException(Text::_('JERROR_NO_ITEMS_SELECTED'));
+            }
+
+            /** @var StorageModel|null $storageModel */
+            $storageModel = $this->getModel('Storage', 'Administrator', ['ignore_request' => true]);
+            if ($storageModel && method_exists($storageModel, 'syncEditedFieldsFromRequest')) {
+                $storageModel->syncEditedFieldsFromRequest($storageId);
+            }
+
+            /** @var StoragefieldsModel|null $model */
+            $model = $this->getModel('Storagefields', 'Administrator', ['ignore_request' => true]);
+            if (!$model) {
+                throw new \RuntimeException('StoragefieldsModel introuvable');
+            }
+
+            $model->setStorageId($storageId);
+            if (!$model->move($direction)) {
+                throw new \RuntimeException(Text::_('COM_CONTENTBUILDERNG_FIELD_REORDER_FAILED'));
+            }
+
+            $this->setRedirect(
+                Route::_(
+                    'index.php?option=com_contentbuilderng&task=storage.display&layout=edit&id='
+                    . $storageId
+                    . '&tabStartOffset=' . rawurlencode($tabStartOffset)
+                    . '#' . rawurlencode($tabStartOffset),
+                    false
+                )
+            );
+
+            return true;
+        } catch (\Throwable $e) {
+            $this->setRedirect(
+                Route::_('index.php?option=com_contentbuilderng&task=storage.display&layout=edit&id=' . max(0, $storageId), false),
+                $e->getMessage(),
+                'error'
+            );
+
             return false;
         }
     }

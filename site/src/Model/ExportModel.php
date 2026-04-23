@@ -197,7 +197,7 @@ class ExportModel extends BaseDatabaseModel
                 }
 
                 if (is_array($data->export_xls) && !count($data->export_xls)) {
-                    throw new \Exception(Text::_('Not exportable error'), 404);
+                    throw new \Exception(Text::_('COM_CONTENTBUILDERNG_NOT_EXPORTABLE_ERROR'), 404);
                 }
                 $data->form_id = $this->_id;
                 if ($data->type && $data->reference_id) {
