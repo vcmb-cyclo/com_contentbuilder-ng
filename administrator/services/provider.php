@@ -17,6 +17,8 @@ use Joomla\CMS\Extension\ComponentInterface;
 use Joomla\CMS\Extension\Service\Provider\ComponentDispatcherFactory;
 use Joomla\CMS\Extension\Service\Provider\MVCFactory;
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
+use Joomla\CMS\Factory;
+use Joomla\Database\DatabaseInterface;
 use Joomla\DI\Container;
 use Joomla\DI\ServiceProviderInterface;
 use CB\Component\Contentbuilderng\Administrator\Service\DatatableService;
@@ -33,7 +35,6 @@ use CB\Component\Contentbuilderng\Administrator\Service\RuntimeUtilityService;
 use CB\Component\Contentbuilderng\Administrator\Service\TemplateRenderService;
 use CB\Component\Contentbuilderng\Administrator\Service\TextUtilityService;
 
-//\Joomla\CMS\Factory::getApplication()->enqueueMessage('provider.php chargé', 'warning');
 return new class implements ServiceProviderInterface
 {
     public function register(Container $container): void
@@ -43,14 +44,13 @@ return new class implements ServiceProviderInterface
         $container->registerServiceProvider(new MVCFactory($namespace));
         $container->registerServiceProvider(new ComponentDispatcherFactory($namespace));
 
-        // ✅ Enregistre les services ici
         $container->set(
             DatatableService::class,
-            static fn(Container $c) => new DatatableService()
+            static fn(Container $c) => new DatatableService($c->get(DatabaseInterface::class))
         );
         $container->set(
             StorageFieldService::class,
-            static fn(Container $c) => new StorageFieldService()
+            static fn(Container $c) => new StorageFieldService($c->get(DatabaseInterface::class))
         );
         $container->set(
             PathService::class,
@@ -58,11 +58,18 @@ return new class implements ServiceProviderInterface
         );
         $container->set(
             TemplateSampleService::class,
-            static fn(Container $c) => new TemplateSampleService()
+            static fn(Container $c) => new TemplateSampleService(
+                Factory::getApplication(),
+                $c->get(DatabaseInterface::class)
+            )
         );
         $container->set(
             FormSupportService::class,
-            static fn(Container $c) => new FormSupportService($c->get(PathService::class))
+            static fn(Container $c) => new FormSupportService(
+                $c->get(PathService::class),
+                $c->get(DatabaseInterface::class),
+                $c->get(TemplateSampleService::class)
+            )
         );
         $container->set(
             PermissionService::class,
@@ -74,7 +81,7 @@ return new class implements ServiceProviderInterface
         );
         $container->set(
             ListSupportService::class,
-            static fn(Container $c) => new ListSupportService()
+            static fn(Container $c) => new ListSupportService($c->get(DatabaseInterface::class))
         );
         $container->set(
             RuntimeUtilityService::class,
@@ -82,7 +89,7 @@ return new class implements ServiceProviderInterface
         );
         $container->set(
             MenuService::class,
-            static fn(Container $c) => new MenuService()
+            static fn(Container $c) => new MenuService($c->get(DatabaseInterface::class))
         );
         $container->set(
             FormResolverService::class,

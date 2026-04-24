@@ -4,22 +4,22 @@ namespace CB\Component\Contentbuilderng\Administrator\Service;
 
 \defined('_JEXEC') or die;
 
-use Joomla\CMS\Factory;
-use Joomla\CMS\Language\Text;
+use Joomla\CMS\Application\CMSApplicationInterface;
 use Joomla\CMS\Log\Log;
 use Joomla\CMS\Plugin\PluginHelper;
 use Joomla\Database\DatabaseInterface;
 
 class TemplateSampleService
 {
-    private function getApp()
-    {
-        return Factory::getApplication();
+    public function __construct(
+        private readonly CMSApplicationInterface $app,
+        private readonly DatabaseInterface $db
+    ) {
     }
 
     private function getDispatcher()
     {
-        return $this->getApp()->getDispatcher();
+        return $this->app->getDispatcher();
     }
 
     public function createDetailsSample($formId, $form, $plugin)
@@ -34,7 +34,7 @@ class TemplateSampleService
         if (!PluginHelper::isEnabled('contentbuilderng_themes', $activePlugin)) {
             $msg = "ContentBuilder NG theme plugin not enabled: contentbuilderng_themes/{$activePlugin}";
             Log::add($msg, Log::WARNING, 'com_contentbuilderng');
-            $this->getApp()->enqueueMessage($msg, 'warning');
+            $this->app->enqueueMessage($msg, 'warning');
         }
 
         if (!PluginHelper::importPlugin('contentbuilderng_themes', $activePlugin)) {
@@ -55,7 +55,7 @@ class TemplateSampleService
         if ($activePlugin !== '' && $out === '') {
             $msg = "ContentBuilder NG theme plugin returned empty sample: contentbuilderng_themes/{$activePlugin}";
             Log::add($msg, Log::WARNING, 'com_contentbuilderng');
-            $this->getApp()->enqueueMessage($msg, 'warning');
+            $this->app->enqueueMessage($msg, 'warning');
         }
 
         return $out;
@@ -67,7 +67,7 @@ class TemplateSampleService
             return;
         }
 
-        $db = Factory::getContainer()->get(DatabaseInterface::class);
+        $db = $this->db;
         $out = '';
 
         if ($html) {

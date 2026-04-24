@@ -296,7 +296,7 @@ class EditModel extends BaseDatabaseModel
         $app = Factory::getApplication();
         $this->app = $app;
         $this->runtimeUtilityService = new RuntimeUtilityService();
-        $this->listSupportService = new ListSupportService();
+        $this->listSupportService = $app->bootComponent('com_contentbuilderng')->getContainer()->get(ListSupportService::class);
         $this->templateRenderService = new TemplateRenderService();
         $option = 'com_contentbuilderng';
 

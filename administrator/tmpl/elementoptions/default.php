@@ -33,7 +33,7 @@ if (!is_object($element) || empty($element->id)) {
     return;
 }
 
-$plugins = (new FormSupportService())->getFormElementsPlugins();
+$plugins = (Factory::getApplication()->bootComponent('com_contentbuilderng')->getContainer()->get(FormSupportService::class))->getFormElementsPlugins();
 
 $elementType = is_string($this->element->type) ? $this->element->type : '';
 if ($elementType !== '') {

@@ -202,7 +202,7 @@ class ElementoptionsModel extends BaseDatabaseModel
             return 1;
         }
         $setClauses = [];
-        $formSupportService = new FormSupportService(new PathService());
+        $formSupportService = $this->getApp()->bootComponent('com_contentbuilderng')->getContainer()->get(FormSupportService::class);
         $pathService = new PathService();
         $plugins = $formSupportService->getFormElementsPlugins();
         $type = $input->getCmd('field_type', '');

@@ -5,7 +5,6 @@ namespace CB\Component\Contentbuilderng\Administrator\Service;
 \defined('_JEXEC') or die;
 
 use CB\Component\Contentbuilderng\Administrator\Helper\PackedDataHelper;
-use Joomla\CMS\Factory;
 use Joomla\Database\DatabaseInterface;
 use Joomla\Filesystem\File;
 use Joomla\Filesystem\Folder;
@@ -13,7 +12,9 @@ use Joomla\Filesystem\Folder;
 class FormSupportService
 {
     public function __construct(
-        private readonly PathService $pathService = new PathService()
+        private readonly PathService $pathService,
+        private readonly DatabaseInterface $db,
+        private readonly TemplateSampleService $templateSampleService
     ) {
     }
 
@@ -25,7 +26,7 @@ class FormSupportService
             return $langs;
         }
 
-        $db = Factory::getContainer()->get(DatabaseInterface::class);
+        $db = $this->db;
         $query = $db->getQuery(true)
             ->select($db->quoteName('lang_code'))
             ->from($db->quoteName('#__languages'))
@@ -39,17 +40,17 @@ class FormSupportService
 
     public function createDetailsSample($formId, $form, $plugin)
     {
-        return (new TemplateSampleService())->createDetailsSample($formId, $form, $plugin);
+        return $this->templateSampleService->createDetailsSample($formId, $form, $plugin);
     }
 
     public function createEmailSample($formId, $form, $html = false)
     {
-        return (new TemplateSampleService())->createEmailSample($formId, $form, $html);
+        return $this->templateSampleService->createEmailSample($formId, $form, $html);
     }
 
     public function createEditableSample($formId, $form, $plugin)
     {
-        return (new TemplateSampleService())->createEditableSample($formId, $form, $plugin);
+        return $this->templateSampleService->createEditableSample($formId, $form, $plugin);
     }
 
     public function synchElements($formId, $form): array
@@ -65,7 +66,7 @@ class FormSupportService
             return $report;
         }
 
-        $db = Factory::getContainer()->get(DatabaseInterface::class);
+        $db = $this->db;
         $ids = [];
         $elements = (array) $form->getElementLabels();
 
@@ -272,7 +273,7 @@ class FormSupportService
 
     public function getFormElementsPlugins(): array
     {
-        $db = Factory::getContainer()->get(DatabaseInterface::class);
+        $db = $this->db;
         $query = $db->getQuery(true)
             ->select($db->quoteName('element'))
             ->from($db->quoteName('#__extensions'))
@@ -300,7 +301,7 @@ class FormSupportService
         }
 
         try {
-            $db = Factory::getContainer()->get(DatabaseInterface::class);
+            $db = $this->db;
             $query = $db->getQuery(true)
                 ->select('COUNT(1)')
                 ->from($db->quoteName('#__extensions'))
@@ -315,7 +316,7 @@ class FormSupportService
         }
 
         try {
-            $db = Factory::getContainer()->get(DatabaseInterface::class);
+            $db = $this->db;
             $tables = array_map('strtolower', (array) $db->getTableList());
             $required = [
                 strtolower($db->replacePrefix('#__facileforms_forms')),

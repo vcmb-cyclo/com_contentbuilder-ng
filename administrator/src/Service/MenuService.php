@@ -4,11 +4,15 @@ namespace CB\Component\Contentbuilderng\Administrator\Service;
 
 \defined('_JEXEC') or die;
 
-use Joomla\CMS\Factory;
 use Joomla\Database\DatabaseInterface;
 
 class MenuService
 {
+    public function __construct(
+        private readonly DatabaseInterface $db
+    ) {
+    }
+
     public function createBackendMenuItem($contentbuilderngFormId, $name, $update): void
     {
         $this->createBackendMenuItem3($contentbuilderngFormId, $name, $update);
@@ -16,7 +20,7 @@ class MenuService
 
     public function createBackendMenuItem15($contentbuilderngFormId, $name, $update): void
     {
-        $db = Factory::getContainer()->get(DatabaseInterface::class);
+        $db = $this->db;
         $parentId = 0;
 
         $query = $db->getQuery(true)
@@ -117,7 +121,7 @@ class MenuService
             return;
         }
 
-        $db = Factory::getContainer()->get(DatabaseInterface::class);
+        $db = $this->db;
 
         $query = $db->getQuery(true)
             ->select($db->quoteName('component_id'))
@@ -257,7 +261,7 @@ class MenuService
             return;
         }
 
-        $db = Factory::getContainer()->get(DatabaseInterface::class);
+        $db = $this->db;
 
         $query = $db->getQuery(true)
             ->select($db->quoteName('component_id'))

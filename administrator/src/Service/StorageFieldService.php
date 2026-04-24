@@ -3,17 +3,21 @@ namespace CB\Component\Contentbuilderng\Administrator\Service;
 
 \defined('_JEXEC') or die;
 
-use Joomla\CMS\Factory;
 use Joomla\Database\DatabaseInterface;
 use CB\Component\Contentbuilderng\Administrator\Helper\Logger;
 
 class StorageFieldService
 {
+    public function __construct(
+        private readonly DatabaseInterface $db
+    ) {
+    }
+
     public function addField(int $storageId, array $fieldData): void
     {
         Logger::info("Demande d'ajout du champ $fieldData dont la table a un storageId $storageId.");
 
-        $db = Factory::getContainer()->get(DatabaseInterface::class);
+        $db = $this->db;
 
         // 1) Charger le storage
         $query = $db->getQuery(true)

@@ -24,10 +24,15 @@ class DisplayController extends BaseController
 
     public function display($cachable = false, $urlparams = [])
     {
-        $user = Factory::getApplication()->getIdentity();
+        $app = Factory::getApplication();
+        $user = $app->getIdentity();
 
         if (!$user->authorise('core.manage', 'com_contentbuilderng')) {
             throw new \Exception(Text::_('JERROR_ALERTNOAUTHOR'), 403);
+        }
+
+        if ($app->getInput()->getBool('market')) {
+            $app->redirect('https://breezingforms-ng.vcmb.fr');
         }
 
         return parent::display($cachable, $urlparams);

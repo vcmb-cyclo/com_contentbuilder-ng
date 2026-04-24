@@ -4,11 +4,15 @@ namespace CB\Component\Contentbuilderng\Administrator\Service;
 
 \defined('_JEXEC') or die;
 
-use Joomla\CMS\Factory;
 use Joomla\Database\DatabaseInterface;
 
 class ListSupportService
 {
+    public function __construct(
+        private readonly DatabaseInterface $db
+    ) {
+    }
+
     public function getListRecordMeta(array $items, int $formId, string $type, $referenceId): array
     {
         $recordIds = $this->collectRecordIds($items);
@@ -23,7 +27,7 @@ class ListSupportService
             ];
         }
 
-        $db = Factory::getContainer()->get(DatabaseInterface::class);
+        $db = $this->db;
         $quotedIds = array_map([$db, 'quote'], $recordIds);
         $meta = [
             'state_ids' => [],
@@ -69,7 +73,7 @@ class ListSupportService
 
     public function getListSearchableElements(int $formId): array
     {
-        $db = Factory::getContainer()->get(DatabaseInterface::class);
+        $db = $this->db;
         $db->setQuery(
             'Select reference_id From #__contentbuilderng_elements'
             . ' Where search_include = 1 And published = 1 And form_id = ' . (int) $formId
@@ -80,7 +84,7 @@ class ListSupportService
 
     public function getListLinkableElements(int $formId): array
     {
-        $db = Factory::getContainer()->get(DatabaseInterface::class);
+        $db = $this->db;
         $db->setQuery(
             'Select reference_id From #__contentbuilderng_elements'
             . ' Where linkable = 1 And published = 1 And form_id = ' . (int) $formId
@@ -91,7 +95,7 @@ class ListSupportService
 
     public function getListEditableElements(int $formId): array
     {
-        $db = Factory::getContainer()->get(DatabaseInterface::class);
+        $db = $this->db;
         $db->setQuery(
             'Select reference_id From #__contentbuilderng_elements'
             . ' Where editable = 1 And published = 1 And form_id = ' . (int) $formId
@@ -102,7 +106,7 @@ class ListSupportService
 
     public function getListNonEditableElements(int $formId): array
     {
-        $db = Factory::getContainer()->get(DatabaseInterface::class);
+        $db = $this->db;
         $db->setQuery(
             'Select reference_id From #__contentbuilderng_elements'
             . ' Where ( editable = 0 Or published = 0 ) And form_id = ' . (int) $formId
@@ -113,7 +117,7 @@ class ListSupportService
 
     public function getListStates(int $formId): array
     {
-        $db = Factory::getContainer()->get(DatabaseInterface::class);
+        $db = $this->db;
         $db->setQuery(
             'Select * From #__contentbuilderng_list_states'
             . ' where form_id = ' . (int) $formId
@@ -131,7 +135,7 @@ class ListSupportService
             return [];
         }
 
-        $db = Factory::getContainer()->get(DatabaseInterface::class);
+        $db = $this->db;
         $quotedIds = array_map([$db, 'quote'], $recordIds);
 
         $db->setQuery(
@@ -160,7 +164,7 @@ class ListSupportService
             return [];
         }
 
-        $db = Factory::getContainer()->get(DatabaseInterface::class);
+        $db = $this->db;
         $quotedIds = array_map([$db, 'quote'], $recordIds);
 
         $db->setQuery(
@@ -189,7 +193,7 @@ class ListSupportService
             return [];
         }
 
-        $db = Factory::getContainer()->get(DatabaseInterface::class);
+        $db = $this->db;
         $quotedIds = array_map([$db, 'quote'], $recordIds);
 
         $db->setQuery(
@@ -222,7 +226,7 @@ class ListSupportService
             return [];
         }
 
-        $db = Factory::getContainer()->get(DatabaseInterface::class);
+        $db = $this->db;
         $quotedIds = array_map([$db, 'quote'], $recordIds);
         $db->setQuery(
             'Select records.published, records.record_id'
@@ -252,7 +256,7 @@ class ListSupportService
             return [];
         }
 
-        $db = Factory::getContainer()->get(DatabaseInterface::class);
+        $db = $this->db;
         $quotedIds = array_map([$db, 'quote'], $recordIds);
         $db->setQuery(
             'Select records.lang_code, records.record_id'

@@ -66,7 +66,7 @@ class DetailsModel extends ListModel
         $this->app = $app;
         $this->templateRenderService = new TemplateRenderService();
         $this->runtimeUtilityService = new RuntimeUtilityService();
-        $this->listSupportService = new ListSupportService();
+        $this->listSupportService = $app->bootComponent('com_contentbuilderng')->getContainer()->get(ListSupportService::class);
         $option = 'com_contentbuilderng';
         $this->frontend = $app->isClient('site');
         $this->directStorageId = max(0, $app->getInput()->getInt('storage_id', 0));

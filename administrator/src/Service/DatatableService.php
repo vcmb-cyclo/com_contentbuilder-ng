@@ -13,14 +13,19 @@ namespace CB\Component\Contentbuilderng\Administrator\Service;
 
 \defined('_JEXEC') or die;
 
-use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
+use Joomla\CMS\Factory;
 use Joomla\Database\DatabaseInterface;
 use Joomla\Database\ParameterType;
 use CB\Component\Contentbuilderng\Administrator\Helper\Logger;
 
 class DatatableService
 {
+    public function __construct(
+        private readonly DatabaseInterface $db
+    ) {
+    }
+
     /** Valide un identifiant SQL simple (table/col) */
     private function assertSafeIdentifier(string $value, string $label): string
     {
@@ -36,7 +41,7 @@ class DatatableService
     /** Retourne l’object storage (ou throw) */
     private function loadStorage(int $storageId): object
     {
-        $db = Factory::getContainer()->get(DatabaseInterface::class);
+        $db = $this->db;
         $query = $db->getQuery(true)
             ->select($db->quoteName(['id', 'name', 'bytable']))
             ->from($db->quoteName('#__contentbuilderng_storages'))
@@ -56,7 +61,7 @@ class DatatableService
     /** Test robuste d’existence de table (via getTableColumns) */
     private function tableExists(string $prefixedTableName): bool
     {
-        $db = Factory::getContainer()->get(DatabaseInterface::class);
+        $db = $this->db;
 
         try {
             $columns = $db->getTableColumns($prefixedTableName, true);
@@ -70,7 +75,7 @@ class DatatableService
     /** Retourne les colonnes déjà indexées (quel que soit le nom d’index). */
     private function getIndexedColumns(string $tableQN): array
     {
-        $db = Factory::getContainer()->get(DatabaseInterface::class);
+        $db = $this->db;
         $indexedColumns = [];
 
         try {
@@ -100,7 +105,7 @@ class DatatableService
      */
     private function getTableIndexes(string $tableQN): array
     {
-        $db = Factory::getContainer()->get(DatabaseInterface::class);
+        $db = $this->db;
         $indexMap = [];
 
         $db->setQuery('SHOW INDEX FROM ' . $tableQN);
@@ -174,7 +179,7 @@ class DatatableService
 
     private function removeDuplicateIndexes(string $tableQN, string $tableName, int $storageId): int
     {
-        $db = Factory::getContainer()->get(DatabaseInterface::class);
+        $db = $this->db;
         $removed = 0;
 
         try {
@@ -251,7 +256,7 @@ class DatatableService
      */
     public function ensureInternalAuditColumns(int $storageId): void
     {
-        $db = Factory::getContainer()->get(DatabaseInterface::class);
+        $db = $this->db;
         $storage = $this->loadStorage($storageId);
 
         if ((int) $storage->bytable === 1) {
@@ -274,7 +279,7 @@ class DatatableService
      */
     private function ensureInternalAuditColumnsAndIndexes(string $tableName, int $storageId): void
     {
-        $db = Factory::getContainer()->get(DatabaseInterface::class);
+        $db = $this->db;
         $prefixed = $db->getPrefix() . $tableName;
         $tableQN = $db->quoteName('#__' . $tableName);
         $now = Factory::getDate()->toSql();
@@ -450,7 +455,7 @@ class DatatableService
     public function createForStorage(int $storageId): bool
     {
         Logger::info("Demande de création de la table dont l'ID STORAGE vaut $storageId.");
-        $db = Factory::getContainer()->get(DatabaseInterface::class);
+        $db = $this->db;
         $storage = $this->loadStorage($storageId);
 
         if ((int) $storage->bytable === 1) {
@@ -512,7 +517,7 @@ class DatatableService
      */
     public function syncColumnsFromFields(int $storageId): void
     {
-        $db = Factory::getContainer()->get(DatabaseInterface::class);
+        $db = $this->db;
         $storage = $this->loadStorage($storageId);
 
         if ((int) $storage->bytable === 1) {

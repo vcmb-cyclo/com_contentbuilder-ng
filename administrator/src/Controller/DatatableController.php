@@ -94,7 +94,12 @@ class DatatableController extends BaseController
         }
 
         try {
-            (new DatatableService())->syncColumnsFromFields($storageId);
+            $component = Factory::getApplication()->bootComponent('com_contentbuilderng');
+            if (!$component instanceof ContentbuilderngComponent) {
+                throw new \RuntimeException('Unexpected component instance');
+            }
+
+            $component->getContainer()->get(DatatableService::class)->syncColumnsFromFields($storageId);
 
             $this->setRedirect(
                 Route::_('index.php?option=com_contentbuilderng&task=storage.edit&id=' . $storageId, false),

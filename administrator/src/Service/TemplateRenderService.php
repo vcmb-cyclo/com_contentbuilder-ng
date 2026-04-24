@@ -116,7 +116,7 @@ class TemplateRenderService
 
     private function getFormElementsPlugins(): array
     {
-        return (new FormSupportService(new PathService()))->getFormElementsPlugins();
+        return $this->getApp()->bootComponent('com_contentbuilderng')->getContainer()->get(FormSupportService::class)->getFormElementsPlugins();
     }
 
     private function execPhp($result)

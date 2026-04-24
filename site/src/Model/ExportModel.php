@@ -47,7 +47,7 @@ class ExportModel extends BaseDatabaseModel
         $app = Factory::getApplication();
         $this->app = $app;
         $this->runtimeUtilityService = new RuntimeUtilityService();
-        $this->listSupportService = new ListSupportService();
+        $this->listSupportService = $app->bootComponent('com_contentbuilderng')->getContainer()->get(ListSupportService::class);
         $this->frontend = $app->isClient('site');
         $option = 'com_contentbuilderng';
 

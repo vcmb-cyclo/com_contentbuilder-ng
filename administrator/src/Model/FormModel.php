@@ -736,7 +736,7 @@ class FormModel extends AdminModel
         }
 
         $data->forms = array();
-        $formSupportService = new FormSupportService(new PathService());
+        $formSupportService = $this->getApp()->bootComponent('com_contentbuilderng')->getContainer()->get(FormSupportService::class);
         $pathService = new PathService();
 
         $data->types = $formSupportService->getTypes();
@@ -893,7 +893,7 @@ class FormModel extends AdminModel
         $app   = $this->getApp();
         $input = $app->getInput();
         $db    = $this->getDatabase();
-        $formSupportService = new FormSupportService(new PathService());
+        $formSupportService = $this->getApp()->bootComponent('com_contentbuilderng')->getContainer()->get(FormSupportService::class);
         $pathService = new PathService();
 
         // 1) Récupération standard + RAW/HTML (nécessaire pour tes éditeurs)

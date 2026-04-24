@@ -3,7 +3,9 @@ namespace CB\Component\Contentbuilderng\Administrator\Controller;
 
 \defined('_JEXEC') or die;
 
+use CB\Component\Contentbuilderng\Administrator\Extension\ContentbuilderngComponent;
 use Joomla\CMS\MVC\Controller\BaseController;
+use Joomla\CMS\Factory;
 use Joomla\CMS\Router\Route;
 use Joomla\CMS\Language\Text;
 use CB\Component\Contentbuilderng\Administrator\Service\StorageFieldService;
@@ -42,8 +44,12 @@ class StoragefieldController extends BaseController
         }
 
         try {
-            $service = new StorageFieldService();
-            $service->addField($storageId, [
+            $component = Factory::getApplication()->bootComponent('com_contentbuilderng');
+            if (!$component instanceof ContentbuilderngComponent) {
+                throw new \RuntimeException('Unexpected component instance');
+            }
+
+            $component->getContainer()->get(StorageFieldService::class)->addField($storageId, [
                 'name'             => $fieldname,
                 'title'            => $fieldtitle,
                 'is_group'         => $isGroup,

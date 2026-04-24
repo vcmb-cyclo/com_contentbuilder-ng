@@ -76,7 +76,7 @@ class ListModel extends BaseListModel
         /** @var CMSWebApplication $app */
         $app = Factory::getApplication();
         $this->app = $app;
-        $this->listSupportService = new ListSupportService();
+        $this->listSupportService = $app->bootComponent('com_contentbuilderng')->getContainer()->get(ListSupportService::class);
         $this->runtimeUtilityService = new RuntimeUtilityService();
         $this->templateRenderService = new TemplateRenderService();
 
@@ -1140,7 +1140,7 @@ class ListModel extends BaseListModel
                     if ($data->list_language) {
                         $data->lang_codes = $recordMeta['lang_codes'];
                     }
-                    $data->languages = (new FormSupportService())->getLanguageCodes();
+                    $data->languages = (Factory::getApplication()->bootComponent('com_contentbuilderng')->getContainer()->get(FormSupportService::class))->getLanguageCodes();
 
                     // Search for the {readmore} tag and split the text up accordingly.
                     $pattern = '#<hr\s+id=("|\')system-readmore("|\')\s*\/*>#i';

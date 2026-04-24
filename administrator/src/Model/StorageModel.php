@@ -28,6 +28,7 @@ use Joomla\Database\DatabaseInterface;
 use Joomla\Filesystem\File;
 use Joomla\Utilities\ArrayHelper;
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
+use CB\Component\Contentbuilderng\Administrator\Extension\ContentbuilderngComponent;
 use CB\Component\Contentbuilderng\Administrator\Helper\Logger;
 use CB\Component\Contentbuilderng\Administrator\Helper\VendorHelper;
 use CB\Component\Contentbuilderng\Administrator\Service\DatatableService;
@@ -43,6 +44,17 @@ class StorageModel extends AdminModel
     /** Required for CSV file */
     private string $target_table = '';
     private int $storageId = 0;
+
+    private function getDatatableService(): DatatableService
+    {
+        $component = Factory::getApplication()->bootComponent('com_contentbuilderng');
+
+        if (!$component instanceof ContentbuilderngComponent) {
+            throw new \RuntimeException('Unexpected component instance');
+        }
+
+        return $component->getContainer()->get(DatatableService::class);
+    }
     /** @var array<string,mixed> */
     private array $lastImportSummary = [];
 
@@ -560,7 +572,7 @@ class StorageModel extends AdminModel
                         ];
 
                         try {
-                            (new DatatableService())->ensureInternalAuditColumns($storageId);
+                            $this->getDatatableService()->ensureInternalAuditColumns($storageId);
                         } catch (\Throwable $e) {
                             Logger::exception($e);
                         }
@@ -603,7 +615,7 @@ class StorageModel extends AdminModel
             }
 
             try {
-                (new DatatableService())->ensureInternalAuditColumns($storageId);
+                $this->getDatatableService()->ensureInternalAuditColumns($storageId);
             } catch (\Throwable $e) {
                 Logger::exception($e);
             }

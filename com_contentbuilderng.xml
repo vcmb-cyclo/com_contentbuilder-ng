@@ -37,9 +37,7 @@
 
  <files folder="site">
     <filename>index.html</filename>
-    <filename>controller.php</filename>
     <filename>router.php</filename>
-    <filename>contentbuilderng.php</filename>
     <folder>layouts</folder>
     <folder>src</folder>
     <folder>tmpl</folder>
@@ -83,8 +81,6 @@
         <filename>composer.lock</filename>
         <filename>config.xml</filename>
         <filename>index.html</filename>
-        <filename>contentbuilderng.php</filename>
-        <filename>controller.php</filename>
         
         <folder>forms</folder>
         <folder>languages</folder>
