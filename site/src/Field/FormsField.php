@@ -32,6 +32,10 @@ class FormsField extends FormField
         'cb_prefix_in_title' => 0,
     ];
 
+    private const FORM_EXTRA_DEFAULT_COLUMNS = [
+        'default_category',
+    ];
+
     private function getSelectedFormId(): int
     {
         $selectedFormId = (int) ($this->form?->getValue('form_id', 'params.settings', 0) ?? 0);
@@ -75,7 +79,7 @@ class FormsField extends FormField
                 $knownColumns[strtolower((string) $columnName)] = true;
             }
 
-            foreach (array_keys(self::FORM_BOOLEAN_DEFAULTS) as $columnName) {
+            foreach (array_merge(array_keys(self::FORM_BOOLEAN_DEFAULTS), self::FORM_EXTRA_DEFAULT_COLUMNS) as $columnName) {
                 if (isset($knownColumns[$columnName])) {
                     $optionalColumns[] = $columnName;
                 }
@@ -98,13 +102,22 @@ class FormsField extends FormField
         $status = $db->loadObjectList();
 
         $defaultsByForm = [];
+        $defaultCategoryIds = [];
+
         foreach ($status as $form) {
             $formId = (string) ($form->id ?? '');
             if ($formId === '') {
                 continue;
             }
 
+            $defaultCategoryId = (int) ($form->default_category ?? 0);
+            if ($defaultCategoryId > 0) {
+                $defaultCategoryIds[$defaultCategoryId] = $defaultCategoryId;
+            }
+
             $defaultsByForm[$formId] = [
+                'form_name' => (string) ($form->name ?? ''),
+                'default_category_id' => $defaultCategoryId,
                 'cb_show_author' => (int) ($form->cb_show_author ?? self::FORM_BOOLEAN_DEFAULTS['cb_show_author']),
                 'cb_show_top_bar' => (int) ($form->cb_show_top_bar ?? self::FORM_BOOLEAN_DEFAULTS['cb_show_top_bar']),
                 'cb_show_bottom_bar' => (int) ($form->cb_show_bottom_bar ?? self::FORM_BOOLEAN_DEFAULTS['cb_show_bottom_bar']),
@@ -114,6 +127,28 @@ class FormsField extends FormField
                 'cb_filter_in_title' => (int) ($form->cb_filter_in_title ?? self::FORM_BOOLEAN_DEFAULTS['cb_filter_in_title']),
                 'cb_prefix_in_title' => (int) ($form->cb_prefix_in_title ?? self::FORM_BOOLEAN_DEFAULTS['cb_prefix_in_title']),
             ];
+        }
+
+        $categoryTitles = [];
+
+        if ($defaultCategoryIds !== []) {
+            $query = $db->getQuery(true)
+                ->select($db->quoteName(['id', 'title']))
+                ->from($db->quoteName('#__categories'))
+                ->where($db->quoteName('id') . ' IN (' . implode(',', array_map('intval', $defaultCategoryIds)) . ')');
+            $db->setQuery($query);
+
+            foreach ((array) $db->loadObjectList() as $category) {
+                $categoryTitles[(int) ($category->id ?? 0)] = (string) ($category->title ?? '');
+            }
+        }
+
+        foreach ($defaultsByForm as $formId => $defaults) {
+            $categoryId = (int) ($defaults['default_category_id'] ?? 0);
+            $defaultsByForm[$formId]['default_category_label'] = $categoryId > 0
+                ? ($categoryTitles[$categoryId] ?? ('#' . $categoryId))
+                : Text::_('COM_CONTENTBUILDERNG_INHERIT');
+            $defaultsByForm[$formId]['cb_category_menu_filter'] = 0;
         }
 
         $select = '<select id="' . htmlspecialchars($this->id, ENT_QUOTES, 'UTF-8') . '"'
@@ -133,20 +168,43 @@ class FormsField extends FormField
 
         $yesLabel = Text::_('COM_CONTENTBUILDERNG_YES');
         $noLabel = Text::_('COM_CONTENTBUILDERNG_NO');
+        $defaultValueFormat = Text::_('COM_CONTENTBUILDERNG_MENU_DEFAULT_VALUE');
+        if ($defaultValueFormat === 'COM_CONTENTBUILDERNG_MENU_DEFAULT_VALUE') {
+            $defaultValueFormat = 'Default value: %s';
+        }
         $defaultsJson = json_encode(
             $defaultsByForm,
             JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP
         );
         $yesJson = json_encode($yesLabel, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP);
         $noJson = json_encode($noLabel, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP);
+        $defaultValueFormatJson = json_encode($defaultValueFormat, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP);
         $selectedJson = json_encode((string) $selectedFormId, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP);
 
         $script = <<<'JS'
+            <style>
+            .cb-menu-default-wrap {
+                display: inline-flex;
+                align-items: center;
+                gap: .75rem;
+                flex-wrap: wrap;
+            }
+            .cb-menu-default-value {
+                display: inline-flex;
+                align-items: center;
+                line-height: 1;
+                white-space: nowrap;
+                background-color: #fff;
+                color: #000;
+                border: 1px solid #6c757d;
+            }
+            </style>
             <script>
             (() => {
                 const defaultsByForm = __DEFAULTS_JSON__;
                 const yesLabel = __YES_JSON__;
                 const noLabel = __NO_JSON__;
+                const defaultValueFormat = __DEFAULT_VALUE_FORMAT_JSON__;
                 const initialFormId = __SELECTED_JSON__;
 
                 function findField(selectors) {
@@ -178,6 +236,72 @@ class FormsField extends FormField
                     return group ? group.querySelector('.form-text') : null;
                 }
 
+                function findInput(fieldName) {
+                    return findField([
+                        `#jform_params_settings_${fieldName}`,
+                        `#jform_params_${fieldName}`,
+                        `[name="jform[params][settings][${fieldName}]"]`,
+                        `[name="jform[params][${fieldName}]"]`,
+                    ]);
+                }
+
+                function findBadgeAnchor(fieldName) {
+                    const input = findInput(fieldName);
+                    if (!input) {
+                        return null;
+                    }
+
+                    if (String(input.type || '').toLowerCase() === 'radio') {
+                        return input.closest('.switcher, .btn-group, fieldset, .radio');
+                    }
+
+                    return input;
+                }
+
+                function renderDefaultValue(value) {
+                    const template = String(defaultValueFormat || 'Default value: %s');
+                    return template.includes('%s') ? template.replace('%s', String(value)) : `${template} ${value}`;
+                }
+
+                function updateDefaultBadge(fieldName, value) {
+                    const anchor = findBadgeAnchor(fieldName);
+                    if (!anchor || !anchor.parentNode) {
+                        return;
+                    }
+
+                    let wrapper = anchor.closest(`.cb-menu-default-wrap[data-cb-default-for="${fieldName}"]`);
+
+                    if (!wrapper) {
+                        wrapper = document.createElement('span');
+                        wrapper.className = 'cb-menu-default-wrap';
+                        wrapper.dataset.cbDefaultFor = fieldName;
+                        anchor.parentNode.insertBefore(wrapper, anchor);
+                        wrapper.appendChild(anchor);
+                    }
+
+                    let badge = wrapper.querySelector('.cb-menu-default-value');
+
+                    if (!value) {
+                        if (badge) {
+                            badge.remove();
+                        }
+
+                        if (!wrapper.querySelector('.cb-menu-default-value')) {
+                            wrapper.replaceWith(anchor);
+                        }
+
+                        return;
+                    }
+
+                    if (!badge) {
+                        badge = document.createElement('span');
+                        badge.className = 'cb-menu-default-value badge rounded-pill';
+                        wrapper.appendChild(badge);
+                    }
+
+                    badge.textContent = renderDefaultValue(value);
+                }
+
                 function updateDescription(fieldName, enabled) {
                     const description = findDescription(fieldName);
                     if (!description) {
@@ -194,21 +318,30 @@ class FormsField extends FormField
                     description.textContent = originalText.replace(/\s+[^\s.]+\.?$/, ' ' + suffix + '.');
                 }
 
+                function updateBooleanField(fieldName, enabled) {
+                    const value = enabled ? yesLabel : noLabel;
+                    updateDescription(fieldName, enabled);
+                    updateDefaultBadge(fieldName, value);
+                }
+
                 function updateDescriptions(formId) {
                     const values = defaultsByForm[String(formId)] || null;
                     if (!values) {
                         return;
                     }
 
-                    updateDescription('cb_show_author', Number(values.cb_show_author) === 1);
-                    updateDescription('cb_show_top_bar', Number(values.cb_show_top_bar) === 1);
-                    updateDescription('cb_show_bottom_bar', Number(values.cb_show_bottom_bar) === 1);
-                    updateDescription('cb_show_details_top_bar', Number(values.cb_show_details_top_bar) === 1);
-                    updateDescription('cb_show_details_bottom_bar', Number(values.cb_show_details_bottom_bar) === 1);
-                    updateDescription('cb_show_details_back_button', Number(values.show_back_button) === 1);
-                    updateDescription('show_back_button', Number(values.show_back_button) === 1);
-                    updateDescription('cb_filter_in_title', Number(values.cb_filter_in_title) === 1);
-                    updateDescription('cb_prefix_in_title', Number(values.cb_prefix_in_title) === 1);
+                    updateDefaultBadge('form_id', values.form_name || '');
+                    updateDefaultBadge('cb_category_id', values.default_category_label || '');
+                    updateDefaultBadge('cb_category_menu_filter', noLabel);
+                    updateBooleanField('cb_show_author', Number(values.cb_show_author) === 1);
+                    updateBooleanField('cb_show_top_bar', Number(values.cb_show_top_bar) === 1);
+                    updateBooleanField('cb_show_bottom_bar', Number(values.cb_show_bottom_bar) === 1);
+                    updateBooleanField('cb_show_details_top_bar', Number(values.cb_show_details_top_bar) === 1);
+                    updateBooleanField('cb_show_details_bottom_bar', Number(values.cb_show_details_bottom_bar) === 1);
+                    updateBooleanField('cb_show_details_back_button', Number(values.show_back_button) === 1);
+                    updateBooleanField('show_back_button', Number(values.show_back_button) === 1);
+                    updateBooleanField('cb_filter_in_title', Number(values.cb_filter_in_title) === 1);
+                    updateBooleanField('cb_prefix_in_title', Number(values.cb_prefix_in_title) === 1);
                 }
 
                 window.contentbuilderng_setFormId = function(formId) {
@@ -227,11 +360,12 @@ class FormsField extends FormField
 JS;
 
         return $select . str_replace(
-            ['__DEFAULTS_JSON__', '__YES_JSON__', '__NO_JSON__', '__SELECTED_JSON__'],
+            ['__DEFAULTS_JSON__', '__YES_JSON__', '__NO_JSON__', '__DEFAULT_VALUE_FORMAT_JSON__', '__SELECTED_JSON__'],
             [
                 $defaultsJson ?: '{}',
                 $yesJson ?: '""',
                 $noJson ?: '""',
+                $defaultValueFormatJson ?: '"Default value: %s"',
                 $selectedJson ?: '""',
             ],
             $script
