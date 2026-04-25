@@ -16,8 +16,41 @@ namespace {
 }
 
 namespace Joomla\CMS\Application {
+    if (!\interface_exists(CMSApplicationInterface::class, false)) {
+        interface CMSApplicationInterface
+        {
+        }
+    }
+
     if (!\class_exists(CMSApplication::class, false)) {
-        abstract class CMSApplication
+        abstract class CMSApplication implements CMSApplicationInterface
+        {
+        }
+    }
+}
+
+namespace Joomla\CMS\Categories {
+    if (!\interface_exists(CategoryFactoryInterface::class, false)) {
+        interface CategoryFactoryInterface
+        {
+        }
+    }
+}
+
+namespace Joomla\CMS\Component\Router {
+    if (!\interface_exists(RouterInterface::class, false)) {
+        interface RouterInterface
+        {
+            public function preprocess($query);
+            public function build(&$query);
+            public function parse(&$segments);
+        }
+    }
+}
+
+namespace Joomla\CMS\Menu {
+    if (!\class_exists(AbstractMenu::class, false)) {
+        abstract class AbstractMenu
         {
         }
     }
@@ -216,6 +249,11 @@ namespace CB\Component\Contentbuilderng\Tests\Stubs {
             return $this->session;
         }
 
+        public function getInput(): Input
+        {
+            return $this->input;
+        }
+
         public function enqueueMessage($msg, $type = 'message'): void
         {
             $this->messages[] = [(string) $msg, (string) $type];
@@ -396,4 +434,5 @@ namespace {
     require_once \dirname(__DIR__) . '/src/Service/ConfigExportService.php';
     require_once \dirname(__DIR__) . '/src/Service/ConfigImportService.php';
     require_once \dirname(__DIR__) . '/src/Helper/PhpTemplateHelper.php';
+    require_once \dirname(__DIR__, 2) . '/site/src/Service/Router.php';
 }

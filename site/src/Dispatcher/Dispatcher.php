@@ -157,7 +157,9 @@ class Dispatcher extends ComponentDispatcher
             }
         }
 
-        if ($view === 'details' || ($view === 'latest' && $input->getCmd('controller', '') === '')) {
+        if (in_array($view, ['export', 'verify'], true)) {
+            $controller = $view;
+        } elseif ($view === 'details' || ($view === 'latest' && $input->getCmd('controller', '') === '')) {
             $controller = 'details';
         }
 
