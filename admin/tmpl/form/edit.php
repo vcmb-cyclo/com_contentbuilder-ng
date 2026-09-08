@@ -639,27 +639,21 @@ $renderCheckbox = static function (string $name, string $id, bool $checked = fal
                 $listStatesBadgeClass = 'cb-template-state is-filled';
                 $listStatesBadgeTip = Text::_('COM_CONTENTBUILDERNG_LIST_STATES_BADGE_COHERENT');
                 $listStatesTabTipKey = 'COM_CONTENTBUILDERNG_TAB_TIP_LIST_STATES_GREEN';
-            } elseif ($showsStateFilter) {
-                $listStatesBadgeClass = 'cb-template-state is-incomplete';
-                $listStatesTabTipKey = 'COM_CONTENTBUILDERNG_TAB_TIP_LIST_STATES_ORANGE_FILTER_NO_STATE';
-                $listStatesBadgeTip = Text::_($listStatesTabTipKey);
-            } else {
-                if (!$hasPublishedListState && $showsListStates && $hasListStatePermission) {
+            } elseif ($showsListStates || $hasListStatePermission) {
+                if ($showsListStates && $hasListStatePermission) {
                     $listStatesBadgeClass = 'cb-template-state is-inconsistent';
                     $listStatesTabTipKey = 'COM_CONTENTBUILDERNG_TAB_TIP_LIST_STATES_RED_NO_PUBLISHED_FULL';
-                } elseif (!$hasPublishedListState && $showsListStates) {
+                } elseif ($showsListStates) {
                     $listStatesBadgeClass = 'cb-template-state is-inconsistent';
                     $listStatesTabTipKey = 'COM_CONTENTBUILDERNG_TAB_TIP_LIST_STATES_RED_NO_PUBLISHED_DISPLAY';
-                } elseif (!$hasPublishedListState && $hasListStatePermission) {
+                } else {
                     $listStatesBadgeClass = 'cb-template-state is-inconsistent';
                     $listStatesTabTipKey = 'COM_CONTENTBUILDERNG_TAB_TIP_LIST_STATES_RED_NO_PUBLISHED_PERMISSION';
-                } elseif (!$hasListStatePermission) {
-                    $listStatesBadgeClass = 'cb-template-state is-incomplete';
-                    $listStatesTabTipKey = 'COM_CONTENTBUILDERNG_TAB_TIP_LIST_STATES_ORANGE_NO_PERMISSION';
-                } else {
-                    $listStatesBadgeClass = 'cb-template-state is-incomplete';
-                    $listStatesTabTipKey = 'COM_CONTENTBUILDERNG_TAB_TIP_LIST_STATES_ORANGE_NO_DISPLAY';
                 }
+                $listStatesBadgeTip = Text::_($listStatesTabTipKey);
+            } else {
+                $listStatesBadgeClass = 'cb-template-state is-incomplete';
+                $listStatesTabTipKey = 'COM_CONTENTBUILDERNG_TAB_TIP_LIST_STATES_ORANGE_FILTER_NO_STATE';
                 $listStatesBadgeTip = Text::_($listStatesTabTipKey);
             }
 

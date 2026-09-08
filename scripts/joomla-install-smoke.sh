@@ -3,7 +3,7 @@
 set -euo pipefail
 
 archive="${1:?Usage: scripts/joomla-install-smoke.sh path/to/package.zip}"
-joomla_image="${JOOMLA_IMAGE:-joomla:6.1.2-php8.3-apache}"
+joomla_image="${JOOMLA_IMAGE:-joomla:6.1.2-php8.4-apache}"
 mysql_image="${MYSQL_IMAGE:-mysql:8.4}"
 run_id="${GITHUB_RUN_ID:-local}-$$"
 network="cbng-smoke-${run_id}"
@@ -101,7 +101,11 @@ docker exec "${web_container}" php -r '
 '
 
 docker cp "${archive}" "${web_container}:${container_archive}" >/dev/null
-docker exec -e HTTP_HOST=localhost "${web_container}" php /var/www/html/cli/joomla.php extension:install \
+for target in /var/www/html/administrator/components /var/www/html/components /var/www/html/media /var/www/html/plugins; do
+    docker exec --user www-data "${web_container}" test -w "${target}"
+done
+
+docker exec --user www-data -e HTTP_HOST=localhost "${web_container}" php /var/www/html/cli/joomla.php extension:install \
     --path="${container_archive}" \
     --live-site=http://localhost \
     --quiet \
@@ -150,7 +154,7 @@ fi
 # Exercise the update path and one supported historical table rename.
 docker exec -e MYSQL_PWD=joomla "${db_container}" mysql -ujoomla joomla \
     -e "RENAME TABLE \`${table_prefix}contentbuilderng_list_states\` TO \`${table_prefix}contentbuilder_list_states\`;"
-docker exec -e HTTP_HOST=localhost "${web_container}" php /var/www/html/cli/joomla.php extension:install \
+docker exec --user www-data -e HTTP_HOST=localhost "${web_container}" php /var/www/html/cli/joomla.php extension:install \
     --path="${container_archive}" \
     --live-site=http://localhost \
     --quiet \
@@ -182,7 +186,7 @@ api_response="$(
     '
 )"
 
-php -r '
+docker exec "${web_container}" php -r '
     $payload = json_decode($argv[1], true, 512, JSON_THROW_ON_ERROR);
     if (!array_key_exists("success", $payload) || !array_key_exists("data", $payload)) {
         fwrite(STDERR, "Unexpected API response shape.\n");

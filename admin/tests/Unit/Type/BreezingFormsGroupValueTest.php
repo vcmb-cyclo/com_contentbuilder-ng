@@ -15,7 +15,6 @@ final class BreezingFormsGroupValueTest extends TestCase
     public function testGroupValueMatchNormalizesFrenchAccentsAndApostrophes(): void
     {
         $method = new ReflectionMethod(contentbuilderng_com_breezingformsng::class, 'normalizeGroupValueForMatch');
-        $method->setAccessible(true);
 
         self::assertSame(
             $method->invoke(null, "Soirée pizzas vendredi 19 juin - 19h"),

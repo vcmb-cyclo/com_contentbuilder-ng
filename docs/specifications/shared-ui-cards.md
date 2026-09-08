@@ -1,5 +1,9 @@
 # Interface partagée et Cards CSS
 
+Pour les boutons des écrans Liste, Détail et Éditer, appliquer la
+[charte graphique frontend](frontend-graphic-charter.md). Les palettes des
+Cards ci-dessous ne remplacent pas le style neutre des boutons d’action.
+
 L'asset Joomla commun `com_contentbuilderng.cards` charge
 `media/css/cards.css`. CBList, CBStats et les futures extensions utilisent cet
 asset sans dupliquer les styles. Toutes les classes partagées sont préfixées
@@ -12,7 +16,7 @@ classes sont `cb-card`, `cb-card-header`, `cb-card-body`, `cb-card-h1` à
 une clé `title` explicite dans `labels=` contient du texte et `hide="title"` est absent. Pour toutes les variantes H et V, le
 titre reste horizontal et placé au-dessus du contenu. Les variantes H occupent
 la largeur disponible. Les variantes V sont compactes, se juxtaposent lorsque
-l'espace le permet et repassent en pleine largeur sur petit écran.
+l'espace le permet et repassent en pleine largeur sous 768 px.
 Les titres des Cards sont centrés par défaut.
 
 CBList et CBStats partagent le même contrat : `labels="title=..."` fournit le
@@ -42,7 +46,8 @@ la largeur du graphique à l'intérieur de cette Card.
 
 Le conteneur commun facultatif `.cb-cards` organise trois variantes V par ligne
 sur PC. Une variante H placée directement dans ce conteneur occupe la ligne
-complète. Sur petit écran, le conteneur passe à une colonne. Toutes les Cards à
+complète. Sous 768 px, le conteneur passe à une colonne et toutes les largeurs
+`w=33`, `w=66` et `w=100` occupent la ligne complète. Toutes les Cards à
 juxtaposer doivent être dans le même conteneur, sans élément `<br>` entre elles.
 
 ```html
@@ -52,6 +57,29 @@ juxtaposer doivent être dans le même conteneur, sans élément `<br>` entre el
 {CBList id=15 fields="Nom|Prenom|Email" labels="title=Derniers inscrits" card=h1 w=100}
 </div>
 ```
+
+Pour présenter des chiffres clés dans n'importe quelle Card H1 à H6 ou V1 à
+V6, utiliser une liste de définitions `.cb-kpi-list`. Chaque ligne contient un
+`dt` pour le libellé et un `dd` pour la valeur. Les styles partagés alignent les
+valeurs, renforcent leur graisse et ajoutent un séparateur discret :
+
+```html
+<dl class="cb-kpi-list">
+  <div>
+    <dt>Inscriptions</dt>
+    <dd>{CBStats id=15 output=total}</dd>
+  </div>
+  <div>
+    <dt>Places restantes</dt>
+    <dd>{CBStats id=15 output=remaining target=200}</dd>
+  </div>
+</dl>
+```
+
+Les classes éditoriales facultatives `.cb-brm-heading`, `.cb-brm-lead` et
+`.cb-brm-latest` structurent respectivement l'en-tête centré, son texte
+d'introduction et l'ancre vers la liste. Elles n'ajoutent aucune syntaxe à
+CBStats ou CBList.
 
 Les propriétés publiques sont `--cb-card-accent`, `--cb-card-header-bg`, `--cb-card-header-color`,
 `--cb-card-bg`, `--cb-card-color` et `--cb-card-border-color` :

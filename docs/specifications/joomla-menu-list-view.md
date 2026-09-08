@@ -1,5 +1,22 @@
 # Menu Joomla — List View
 
+Les boutons frontend suivent la [charte graphique commune](frontend-graphic-charter.md),
+avec Éditer/Imprimer comme référence de taille, graisse et marges.
+
+## Priorité des actions d’affichage — 6.1.16-RC1
+
+Pour Imprimer, Export XLS et Évaluation, Oui et Non dans le menu remplacent
+le réglage de la vue. Paramètre par défaut conserve la valeur de la vue.
+La résolution s’applique aux écrans Liste et Détail avant le chargement des
+données d’évaluation. Elle ne donne aucun droit supplémentaire et ne modifie
+pas la syntaxe CBList. Imprimer conserve sa place dans la barre supérieure de
+Détail : cette barre doit être affichée. Le mode stockage direct en lecture
+seule conserve ses restrictions.
+
+Les tests doivent couvrir chaque action, les deux valeurs de la vue et les
+trois choix du menu. La navigation Liste → Détail doit conserver le contexte
+du menu Joomla.
+
 ## 1. Statut du document
 
 Cette spécification décrit le nouveau type de menu ContentBuilder NG
@@ -121,9 +138,9 @@ Un tableau Joomla unifié intitulé « Colonnes affichées » est placé en bas 
 l'onglet. Il reprend les indicateurs de la Vue afin que l'administrateur voie
 immédiatement le plafond applicable au menu :
 
-| Ordre | Champ / Libellé | Liste | Recherche | Lien | Detail | Modifier | Publié | Filtre de données |
-|---|---|---|---|---|---|---|---|---|
-| déplacement | libellé de la Vue | choix restrictif | choix restrictif | choix restrictif | choix restrictif | choix restrictif | choix restrictif | valeur facultative |
+| Ordre | Champ / Libellé | Liste | Recherche | Lien | Detail | Modifier | Export | Publié | Filtre de données |
+|---|---|---|---|---|---|---|---|---|---|
+| déplacement | libellé de la Vue | choix restrictif | choix restrictif | choix restrictif | choix restrictif | choix restrictif | choix restrictif | choix restrictif | valeur facultative |
 
 Comportement attendu :
 
@@ -133,15 +150,17 @@ Comportement attendu :
   par glisser-déposer ;
 - un champ non affiché peut recevoir un filtre fixe ;
 - une recherche interne permet de retrouver un champ dans une Vue volumineuse ;
-- Liste, Recherche, Lien, Detail, Modifier et Publié reprennent le plafond
+- Liste, Recherche, Lien, Detail, Modifier, Export et Publié reprennent le plafond
   défini par la Vue mère ;
 - si une capacité vaut Yes dans la Vue, le menu peut la désactiver puis la
   réactiver dans la limite autorisée par la Vue ;
 - si une capacité vaut No dans la Vue, sa case est décochée, désactivée et ne
   peut jamais être activée par le menu ;
 - les libellés et l'ordre Champ / Libellé, Liste, Recherche, Lien, Detail,
-  Modifier, Publié correspondent à ceux de `CB → View` ;
+  Modifier, Export et Publié correspondent à ceux de `CB → View` ;
 - chaque libellé possède une explication accessible par infobulle ;
+- l'infobulle apparaît au survol ou au focus du libellé lui-même, sans ajouter
+  de pictogramme visible `i`, `?` ou équivalent ;
 - le champ de filtre utilise le message « Add a data filter » ;
 - une commande permet de n'afficher dans l'éditeur que les colonnes
   sélectionnées ;
@@ -359,18 +378,20 @@ Le filtre d'état reste absent si aucun état n'est publié.
 Une option d'affichage ne contourne jamais une permission applicable et ne
 crée pas une fonctionnalité absente de la Vue.
 
-## 10. Restrictions de sécurité du menu
+## 10. Actions frontend du menu
 
 La Vue et les ACL Joomla constituent toujours le plafond des droits. Le menu
 peut ajouter une interdiction, mais ne peut jamais accorder un droit.
 
 Chaque opération protégée propose uniquement :
 
-- `Use Default (Yes/No)`, où la valeur indique si la Vue accorde cette
-  permission à au moins un groupe frontend ou au propriétaire du record ;
+- `Permissions de la vue`, qui conserve les droits frontend définis dans la
+  Vue pour les groupes et le propriétaire du record ;
 - `Disabled`.
 
 `Disabled` utilise l'état rouge des listes Joomla. L'héritage reste neutre.
+Il n'affiche aucun résumé Oui/Non, car l'absence d'une autorisation globale ne
+constitue pas un refus explicite pour chaque utilisateur.
 
 Restrictions individuelles :
 
@@ -401,7 +422,9 @@ verrouillée et ne peut jamais être activée dans le menu.
 
 L'export conserve le mécanisme actuel et respecte le contrat du nouveau menu :
 
-- uniquement les colonnes affichées ;
+- uniquement les champs publiés et autorisés pour Export par la Vue ;
+- en mode Custom, la sélection Export propre au menu, indépendamment des
+  colonnes affichées dans la liste ;
 - valeurs des états lorsque les états sont présents ;
 - ACL ;
 - filtres fixes ;
@@ -409,7 +432,18 @@ L'export conserve le mécanisme actuel et respecte le contrat du nouveau menu :
 - tri courant ou initial ;
 - limite totale ;
 - toutes les lignes du résultat autorisé, pas seulement la page visible ;
-- aucune donnée provenant d'un champ masqué.
+- aucune donnée provenant d'un champ non autorisé pour Export.
+
+Un champ peut donc être absent des colonnes affichées et rester présent dans le
+fichier XLSX. Le menu peut retirer un champ exportable autorisé par la Vue, mais
+ne peut jamais ajouter un champ dont la capacité Export est désactivée dans la
+Vue ou dont la publication est désactivée.
+
+Le classeur XLSX utilise les types de tri explicites de la Vue lorsqu'ils sont
+définis. Sinon, il détecte prudemment les colonnes entièrement numériques ou
+temporelles, y compris les champs de choix BreezingForms. Les colonnes mixtes,
+les nombres avec zéro initial et les formules restent du texte. Cette conversion
+est interne et n'ajoute aucun réglage dans la Vue ou le menu.
 
 ## 12. Groupes de paramètres
 
@@ -433,13 +467,13 @@ Ordre fonctionnel validé dans RC09-B13 :
    - Show State ;
    - Show bulk state changer ;
    - Show State filter.
-9. **Access restrictions**
-   - Create access ;
-   - Detail access ;
-   - Editing access ;
-   - Deletion access ;
-   - Publishing access ;
-   - State access.
+9. **Frontend actions**
+   - Create ;
+   - Detail ;
+   - Edit ;
+   - Delete ;
+   - Publish ;
+   - States.
 10. **Displayed columns**, avec les filtres de données.
 11. **Article**, groupe peu utilisé placé en fin d'onglet.
 
@@ -450,12 +484,12 @@ validé sur le List View historique : trait fin, titre centré, trait fin.
 Le groupe **Display** fusionne les réglages d'affichage et les anciennes
 « Actions ». Le terme Action n'est pas utilisé comme titre de groupe, car il
 ne décrit pas correctement ces contrôles visuels. Le groupe
-**Access restrictions** contient les contrôles qui peuvent interdire, pour ce
+**Frontend actions** contient les contrôles qui peuvent interdire, pour ce
 menu, des opérations autorisées par la Vue ; il ne s'agit pas d'un éditeur
-d'ACL et ces contrôles ne peuvent jamais accorder une autorisation. Le résumé
-Oui/Non décrit la configuration frontend de la Vue, pas les droits effectifs
-d'un compte particulier. Ceux-ci dépendent aussi de ses groupes, des règles de
-propriété et de ses privilèges Joomla.
+d'ACL et ces contrôles ne peuvent jamais accorder une autorisation. Le choix
+`View permissions` reste neutre et n'affiche aucun résumé Oui/Non. Son
+infobulle rappelle que les droits effectifs dépendent des groupes, des règles
+de propriété et des privilèges Joomla.
 
 **Edit - List button** est un réglage d'affichage distinct. Il hérite de
 `View > Options > Edit button` ou masque uniquement le crayon de modification
@@ -597,11 +631,12 @@ publié sous 6.1.10-RC09.
 16. Le rendu frontend reste celui du tableau actuel avec tri par en-tête.
 17. Save et Save & Close conservent toutes les options du constructeur.
 18. Le constructeur est aligné sur la largeur des autres groupes Joomla.
-19. Les valeurs héritées Oui/Non sont visibles dans les options Use Default.
+19. Les valeurs héritées Oui/Non restent visibles dans les options Use Default,
+    sauf pour les actions frontend qui affichent seulement View permissions.
 20. Back button et Lines per page ne sont présents qu'une seule fois.
 21. Export No masque l'export et Detail Disabled bloque les liens et l'accès direct.
-22. Les cases Liste, Recherche, Lien, Detail, Modifier et Publié du mode Custom
-    sont modifiables uniquement dans la limite autorisée par la Vue mère.
+22. Les cases Liste, Recherche, Lien, Detail, Modifier, Export et Publié du mode
+    Custom sont modifiables uniquement dans la limite autorisée par la Vue mère.
 23. Les sélecteurs sont limités à une largeur lisible et les valeurs Oui/Non utilisent les couleurs Joomla verte/rouge.
 24. Search, State et State filter proposent séparément Use Default/Yes/No et
     héritent chacun de leur propre option de Vue.
@@ -615,7 +650,7 @@ publié sous 6.1.10-RC09.
 30. Le message d'information est placé en haut et Article en fin d'onglet.
 31. Display - Detail - Edit regroupe les contrôles Export, Print et Rating,
     les barres Detail/Edit et le bouton Retour.
-32. Access restrictions remplace le titre Security sans modifier le plafond
+32. Frontend actions remplace le titre Security sans modifier le plafond
     d'autorisation fourni par la Vue.
 33. Chaque sous-catégorie utilise un séparateur fin avec son titre centré.
 34. View introduction et Custom introduction sont conservés, alignés avec les
@@ -645,8 +680,6 @@ publié sous 6.1.10-RC09.
     libellé Detail - Print et se trouve immédiatement sous Detail - Bottom panel.
     Dans CB → Vue → Options, sa case est regroupée avec Export XLS sur la même
     ligne. Cette disposition n'ajoute aucun bouton d'impression de liste.
-    Dans CB → Vue → Options, sa case est regroupée avec Export XLS sur la même
-    ligne. Cette disposition n'ajoute aucun bouton d'impression de liste.
 47. Rating termine le groupe Display - Detail - Edit et les deux contrôles
     déplacés utilisent le même alignement horizontal que les panneaux.
 48. Tous les contrôles de Display - Detail - Edit partagent la même grille
@@ -672,8 +705,9 @@ publié sous 6.1.10-RC09.
 56. Les valeurs héritées Oui/Activé utilisent un vert léger, les valeurs
     héritées Non/Désactivé un rouge léger, les héritages non booléens restent gris
     et les surcharges explicites conservent les couleurs Joomla fortes.
-57. Chaque restriction Access restrictions possède une aide inline précisant
-    qu'elle peut conserver ou réduire l'ACL de la Vue, sans jamais l'étendre.
+57. Chaque action frontend possède une infobulle sans icône précisant qu'elle peut
+    conserver ou réduire l'ACL de la Vue, sans jamais l'étendre. View permissions
+    reste neutre et n'affiche pas de résumé Oui/Non.
 58. Une Vue non publiée sélectionnable dans un menu fournit elle aussi ses
     valeurs héritées réelles au constructeur.
 59. Le bouton Close preview ferme l'onglet ouvert par Preview ; si le navigateur

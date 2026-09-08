@@ -57,7 +57,6 @@ final class VerifyModelTest extends TestCase
     {
         $reflection = new \ReflectionClass($this->model);
         $target = $reflection->getMethod($method);
-        $target->setAccessible(true);
 
         return $target->invoke($this->model, ...$args);
     }

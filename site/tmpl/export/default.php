@@ -17,8 +17,11 @@
 
 use Joomla\CMS\Language\Text;
 use Joomla\Database\DatabaseInterface;
+use CB\Component\Contentbuilderng\Site\Helper\SpreadsheetExportValueHelper;
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 use PhpOffice\PhpSpreadsheet\Cell\DataType;
+use PhpOffice\PhpSpreadsheet\Shared\Date as SpreadsheetDate;
+use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
@@ -136,9 +139,27 @@ foreach ($labels as $label) {
     $worksheet1->getStyle($cell)->getFont()->setBold(true);
 }
 
+$visibleColumns = array_values((array) ($this->data->visible_cols ?? []));
+$exportItems = array_values((array) ($this->data->items ?? []));
+$exportOrderTypes = (array) ($this->data->export_order_types ?? []);
+$exportSourceTypes = (array) ($this->data->export_source_types ?? []);
+$resolvedColumnTypes = [];
+foreach ($visibleColumns as $id) {
+    $columnKey = 'col' . $id;
+    $values = array_map(
+        static fn(object $item): mixed => $item->{$columnKey} ?? '',
+        $exportItems
+    );
+    $resolvedColumnTypes[(string) $id] = SpreadsheetExportValueHelper::resolveColumnType(
+        $values,
+        (string) ($exportOrderTypes[$columnKey] ?? ''),
+        (string) ($exportSourceTypes[$columnKey] ?? '')
+    );
+}
+
 // 2 -- Data.
 $row = 2;
-foreach ((array) ($this->data->items ?? []) as $item) {
+foreach ($exportItems as $item) {
     $i = 1; // Colonne de départ
     
     // Si on veut mettre l'ID
@@ -213,16 +234,55 @@ foreach ((array) ($this->data->items ?? []) as $item) {
     }
  
     // Les autres colonnes.
-    foreach ((array) ($this->data->visible_cols ?? []) as $id) {
+    foreach ($visibleColumns as $id) {
         $value = $item->{"col$id"} ?? '';
-        $worksheet1->setCellValueExplicit(
-            [$i++, $row],
-            is_scalar($value) ? (string) $value : '',
-            DataType::TYPE_STRING
-        );
+        $columnType = $resolvedColumnTypes[(string) $id] ?? SpreadsheetExportValueHelper::TEXT;
+        $preparedValue = SpreadsheetExportValueHelper::prepareCellValue($value, $columnType);
+        $cell = Coordinate::stringFromColumnIndex($i++) . $row;
+        if ($preparedValue['value'] instanceof \DateTimeImmutable) {
+            $spreadsheetValue = $preparedValue['type'] === SpreadsheetExportValueHelper::TIME
+                ? (((int) $preparedValue['value']->format('H') * 3600)
+                    + ((int) $preparedValue['value']->format('i') * 60)
+                    + (int) $preparedValue['value']->format('s')) / 86400
+                : SpreadsheetDate::dateTimeToExcel($preparedValue['value']);
+            $worksheet1->setCellValueExplicit(
+                $cell,
+                $spreadsheetValue,
+                DataType::TYPE_NUMERIC
+            );
+        } elseif (in_array($preparedValue['type'], [
+            SpreadsheetExportValueHelper::INTEGER,
+            SpreadsheetExportValueHelper::DECIMAL,
+        ], true)) {
+            $worksheet1->setCellValueExplicit($cell, $preparedValue['value'], DataType::TYPE_NUMERIC);
+        } else {
+            $worksheet1->setCellValueExplicit($cell, (string) $preparedValue['value'], DataType::TYPE_STRING);
+            if ($preparedValue['ignoreNumberStoredAsText']) {
+                $worksheet1->getCell($cell)->getIgnoredErrors()->setNumberStoredAsText(true);
+            }
+        }
+
+        $numberFormat = SpreadsheetExportValueHelper::numberFormat($columnType);
+        if ($numberFormat !== null) {
+            $worksheet1->getStyle($cell)->getNumberFormat()->setFormatCode($numberFormat);
+        }
     }
 
     $row++; // Passer à la ligne suivante pour chaque item
+}
+
+$lastDataRow = $row - 1;
+if ($lastDataRow >= 2) {
+    foreach ($visibleColumns as $columnOffset => $id) {
+        $columnIndex = $colreserved + $columnOffset + 1;
+        $columnLetter = Coordinate::stringFromColumnIndex($columnIndex);
+        $columnType = $resolvedColumnTypes[(string) $id] ?? SpreadsheetExportValueHelper::TEXT;
+        $worksheet1->getStyle($columnLetter . '2:' . $columnLetter . $lastDataRow)
+            ->getAlignment()
+            ->setHorizontal($columnType === SpreadsheetExportValueHelper::TEXT
+                ? Alignment::HORIZONTAL_LEFT
+                : Alignment::HORIZONTAL_RIGHT);
+    }
 }
 
 $spreadsheet->getDefaultStyle()->getAlignment()->setWrapText(true);

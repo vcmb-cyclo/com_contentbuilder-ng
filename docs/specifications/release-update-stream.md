@@ -9,6 +9,35 @@
 
 ## Principe
 
+### État validé au 8 septembre 2026
+
+- La version stable `6.1.15` est publiée sous le tag `v6.1.15`, avec son ZIP
+  officiel et le manifeste Joomla Update correspondant. La PR #132 est fusionnée.
+- La version stable `6.1.16` reprend la RC04 validée. Sa publication, son tag et
+  son annonce Joomla Update sont réalisés exclusivement par le workflow de
+  release après fusion de `gil_6.1.16` dans `main`.
+- `6.1.16` regroupe les réglages du menu Joomla List View, la sélection
+  Export indépendante, les infobulles sans pictogramme, les actions frontend
+  neutres, l'export XLSX typé par colonne et la matrice PHP de préparation de
+  release.
+- Les trois appels inutiles à `ReflectionMethod::setAccessible()` ont été
+  supprimés des tests pour PHP 8.5 : 988 tests et 5 445 assertions passent sans
+  dépréciation sur la base reprise pour 6.1.16.
+- PHP 8.3 et PHP 8.4 sont les cibles de production supportées. PHP 8.4 est la
+  cible principale de développement, de couverture, de packaging et du smoke
+  test Joomla. PHP 8.5 est testé par la syntaxe et PHPUnit mais reste
+  expérimental tant que le smoke test complet sur une image Joomla épinglée
+  PHP 8.5 n'est pas disponible.
+- La sortie des fichiers de langue FR et DE du paquet principal est prévue
+  pour 6.2.0. Le conditionnement, l’installation et les mises à jour des langues
+  restent à spécifier avant toute modification des paquets.
+
+Après publication réussie, une branche de release peut être supprimée localement
+et sur GitHub uniquement après vérification de son intégration complète dans
+`origin/main`. Le tag et la release sont conservés. Les développements suivants
+restent sur leur branche `gil_<version>` ; la branche locale `main` peut être
+synchronisée sans y effectuer de développement.
+
 La version du code et la version proposée par Joomla Update sont deux états
 distincts. Une RC peut être préparée, testée, installée manuellement et fusionnée
 dans `main` sans être publiée comme release GitHub.

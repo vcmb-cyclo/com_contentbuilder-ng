@@ -37,6 +37,25 @@ Cette règle est corrigée dans `6.1.12-RC03`. Les sorties CBStats
 `percentage` et `progress`, ainsi que la parité API de `groupset`, restent celles
 documentées et introduites dans `6.1.12-RC02`.
 
+## Type de tri avancé
+
+Le réglage historique Type de tri est un réglage avancé propre à chaque
+élément. Dans `CB → Vue → Vue`, il est replié derrière une roue dentée placée à
+côté du libellé afin de ne pas surcharger la grille. Aucun sélecteur n'est
+visible tant que ce contrôle n'est pas ouvert. Lorsqu'un type explicite est
+enregistré, un badge discret indique sa valeur.
+
+Les valeurs disponibles sont Texte, Date et heure, Date, Heure, Entier et
+Décimal. L'absence de valeur conserve la détection automatique. Ce réglage ne
+convertit pas et ne modifie pas la donnée enregistrée dans BreezingForms NG ou
+dans le stockage CB : il guide le tri et le type produit dans l'export XLSX.
+
+Pour l'export, un type explicite est prioritaire. Texte force une cellule texte,
+Entier et Décimal produisent des cellules numériques lorsqu'une valeur est
+valide, et les types temporels produisent des cellules Excel de date ou d'heure
+pour les formats CB/SQL reconnus. Une valeur incompatible est conservée comme
+texte afin d'éviter une conversion destructive.
+
 ## Export des éléments
 
 La capacité Export est activée par défaut. Un élément est exporté uniquement
@@ -61,6 +80,12 @@ les indicateurs d'onglets, l'audit et les templates verrouillés. Le bouton
 
 Les restrictions de contexte continuent de s'appliquer : ACL, filtres,
 recherche, limites CBList, fields CBList et colonnes de menu.
+
+Dans un menu Joomla List View configuré en mode Custom, la case Export est
+indépendante de la case Liste. Elle peut retirer un élément de l'export sans le
+masquer dans la liste, ou exporter un élément non affiché lorsque la Vue mère
+l'autorise. Elle ne peut jamais réactiver un élément dépublié ou dont la
+capacité Export est désactivée dans la Vue.
 
 ## Colonnes système
 

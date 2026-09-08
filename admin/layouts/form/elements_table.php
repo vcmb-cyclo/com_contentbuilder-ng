@@ -33,6 +33,14 @@ foreach ($elements as $element) {
         break;
     }
 }
+$orderTypeLabels = [
+    'CHAR' => Text::_('COM_CONTENTBUILDERNG_ELEMENT_TYPE_TEXT'),
+    'DATETIME' => Text::_('COM_CONTENTBUILDERNG_ORDER_TYPES_DATETIME'),
+    'DATE' => Text::_('COM_CONTENTBUILDERNG_ORDER_TYPES_DATE'),
+    'TIME' => Text::_('COM_CONTENTBUILDERNG_ORDER_TYPES_TIME'),
+    'UNSIGNED' => Text::_('COM_CONTENTBUILDERNG_ORDER_TYPES_INTEGER'),
+    'DECIMAL' => Text::_('COM_CONTENTBUILDERNG_ORDER_TYPES_DECIMAL'),
+];
 $columnOptions = [
     'id' => Text::_('COM_CONTENTBUILDERNG_ID'),
     'label' => Text::_('COM_CONTENTBUILDERNG_LABEL'),
@@ -211,6 +219,8 @@ if ($debugModeEnabled) {
             $isDetailEnabled = (int) ($row->detail_include ?? 0) === 1;
             $isEditEnabled = (int) ($row->editable ?? 0) === 1;
             $isExportEnabled = (int) ($row->export_include ?? 0) === 1;
+            $selectedOrderType = strtoupper(trim((string) ($row->order_type ?? '')));
+            $selectedOrderTypeLabel = $orderTypeLabels[$selectedOrderType] ?? '';
             $unavailable = '<span class="tbody-icon jgrid cb-view-capability-locked" title="'
                 . htmlspecialchars(Text::_('COM_CONTENTBUILDERNG_FIELD_UNPUBLISHED_CAPABILITY_DISABLED'), ENT_QUOTES, 'UTF-8')
                 . '"><span class="icon-lock" aria-hidden="true"></span></span>';
@@ -257,30 +267,46 @@ if ($debugModeEnabled) {
                             data-cb-last-saved="<?php echo htmlspecialchars($row->label ?? '', ENT_QUOTES, 'UTF-8'); ?>"
                             value="<?php echo htmlspecialchars($row->label ?? '', ENT_QUOTES, 'UTF-8') ?>" />
 
-                        <select class="form-select form-select-sm d-inline-block w-auto cb-item-order-type-select"
-                            id="itemOrderTypes<?php echo $row->id ?>" name="jform[itemOrderTypes][<?php echo $row->id ?>]">
-                            <option value=""> -
-                                <?php echo Text::_('COM_CONTENTBUILDERNG_ORDER_TYPES'); ?> -
-                            </option>
-                            <option value="CHAR" <?php echo $row->order_type == 'CHAR' ? ' selected="selected"' : '' ?>>
-                                <?php echo Text::_('COM_CONTENTBUILDERNG_ELEMENT_TYPE_TEXT'); ?>
-                            </option>
-                            <option value="DATETIME" <?php echo $row->order_type == 'DATETIME' ? ' selected="selected"' : '' ?>>
-                                <?php echo Text::_('COM_CONTENTBUILDERNG_ORDER_TYPES_DATETIME'); ?>
-                            </option>
-                            <option value="DATE" <?php echo $row->order_type == 'DATE' ? ' selected="selected"' : '' ?>>
-                                <?php echo Text::_('COM_CONTENTBUILDERNG_ORDER_TYPES_DATE'); ?>
-                            </option>
-                            <option value="TIME" <?php echo $row->order_type == 'TIME' ? ' selected="selected"' : '' ?>>
-                                <?php echo Text::_('COM_CONTENTBUILDERNG_ORDER_TYPES_TIME'); ?>
-                            </option>
-                            <option value="UNSIGNED" <?php echo $row->order_type == 'UNSIGNED' ? ' selected="selected"' : '' ?>>
-                                <?php echo Text::_('COM_CONTENTBUILDERNG_ORDER_TYPES_INTEGER'); ?>
-                            </option>
-                            <option value="DECIMAL" <?php echo $row->order_type == 'DECIMAL' ? ' selected="selected"' : '' ?>>
-                                <?php echo Text::_('COM_CONTENTBUILDERNG_ORDER_TYPES_DECIMAL'); ?>
-                            </option>
-                        </select>
+                        <details class="cb-item-order-type-details">
+                            <summary class="cb-item-order-type-trigger"
+                                title="<?php echo htmlspecialchars(Text::_('COM_CONTENTBUILDERNG_ORDER_TYPE_TIP'), ENT_QUOTES, 'UTF-8'); ?>">
+                                <span class="icon-cog" aria-hidden="true"></span>
+                                <span class="visually-hidden"><?php echo Text::_('COM_CONTENTBUILDERNG_ORDER_TYPE_ADVANCED'); ?></span>
+                                <?php if ($selectedOrderTypeLabel !== '') : ?>
+                                    <span class="badge bg-secondary">
+                                        <?php echo Text::sprintf('COM_CONTENTBUILDERNG_ORDER_TYPE_BADGE', $selectedOrderTypeLabel); ?>
+                                    </span>
+                                <?php endif; ?>
+                            </summary>
+                            <div class="cb-item-order-type-panel">
+                                <label class="form-label small mb-1" for="itemOrderTypes<?php echo (int) $row->id; ?>">
+                                    <?php echo Text::_('COM_CONTENTBUILDERNG_ORDER_TYPES'); ?>
+                                </label>
+                                <select class="form-select form-select-sm cb-item-order-type-select"
+                                    id="itemOrderTypes<?php echo $row->id ?>" name="jform[itemOrderTypes][<?php echo $row->id ?>]">
+                                    <option value=""><?php echo Text::_('COM_CONTENTBUILDERNG_ORDER_TYPE_DEFAULT'); ?></option>
+                                    <option value="CHAR" <?php echo $selectedOrderType === 'CHAR' ? ' selected="selected"' : '' ?>>
+                                        <?php echo Text::_('COM_CONTENTBUILDERNG_ELEMENT_TYPE_TEXT'); ?>
+                                    </option>
+                                    <option value="DATETIME" <?php echo $selectedOrderType === 'DATETIME' ? ' selected="selected"' : '' ?>>
+                                        <?php echo Text::_('COM_CONTENTBUILDERNG_ORDER_TYPES_DATETIME'); ?>
+                                    </option>
+                                    <option value="DATE" <?php echo $selectedOrderType === 'DATE' ? ' selected="selected"' : '' ?>>
+                                        <?php echo Text::_('COM_CONTENTBUILDERNG_ORDER_TYPES_DATE'); ?>
+                                    </option>
+                                    <option value="TIME" <?php echo $selectedOrderType === 'TIME' ? ' selected="selected"' : '' ?>>
+                                        <?php echo Text::_('COM_CONTENTBUILDERNG_ORDER_TYPES_TIME'); ?>
+                                    </option>
+                                    <option value="UNSIGNED" <?php echo $selectedOrderType === 'UNSIGNED' ? ' selected="selected"' : '' ?>>
+                                        <?php echo Text::_('COM_CONTENTBUILDERNG_ORDER_TYPES_INTEGER'); ?>
+                                    </option>
+                                    <option value="DECIMAL" <?php echo $selectedOrderType === 'DECIMAL' ? ' selected="selected"' : '' ?>>
+                                        <?php echo Text::_('COM_CONTENTBUILDERNG_ORDER_TYPES_DECIMAL'); ?>
+                                    </option>
+                                </select>
+                                <div class="form-text"><?php echo Text::_('COM_CONTENTBUILDERNG_ORDER_TYPE_TIP'); ?></div>
+                            </div>
+                        </details>
                     </div>
                 </td>
                 <?php if ($hasBfSystemFields) : ?>

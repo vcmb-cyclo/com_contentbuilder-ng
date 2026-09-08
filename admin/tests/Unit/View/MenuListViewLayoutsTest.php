@@ -180,7 +180,7 @@ final class MenuListViewLayoutsTest extends TestCase
         ];
         $offset = 0;
         foreach ($expectedSections as $languageKey) {
-            $position = strpos($fieldSource, "section(Text::_('" . $languageKey . "')", $offset);
+            $position = strpos($fieldSource, "Text::_('" . $languageKey . "')", $offset);
             self::assertNotFalse($position, $languageKey . ' is missing or out of order.');
             $offset = $position + 1;
         }
@@ -244,6 +244,10 @@ final class MenuListViewLayoutsTest extends TestCase
             'COM_CONTENTBUILDERNG_MENU_NEW_EDIT_LIST_BUTTON_DESC',
             'COM_CONTENTBUILDERNG_MENU_NEW_VIEW_PERMISSIONS_VALUE',
             'COM_CONTENTBUILDERNG_MENU_NEW_HIDE',
+            'COM_CONTENTBUILDERNG_MENU_NEW_VIEW_EXPORT',
+            'COM_CONTENTBUILDERNG_MENU_NEW_VIEW_EXPORT_DESC',
+            'COM_CONTENTBUILDERNG_MENU_NEW_FIELD_UNPUBLISHED_TIP',
+            'COM_CONTENTBUILDERNG_MENU_NEW_FIELD_NOT_LISTED_TIP',
         ];
 
         foreach (['en-GB', 'fr-FR', 'de-DE'] as $tag) {
@@ -323,6 +327,7 @@ final class MenuListViewLayoutsTest extends TestCase
             'COM_CONTENTBUILDERNG_MENU_NEW_VIEW_LINK',
             'COM_CONTENTBUILDERNG_MENU_NEW_VIEW_DETAIL',
             'COM_CONTENTBUILDERNG_MENU_NEW_VIEW_EDIT',
+            'COM_CONTENTBUILDERNG_MENU_NEW_VIEW_EXPORT',
             'COM_CONTENTBUILDERNG_MENU_NEW_VIEW_PUBLISHED',
             'COM_CONTENTBUILDERNG_MENU_NEW_FIXED_FILTER',
         ];
@@ -333,10 +338,14 @@ final class MenuListViewLayoutsTest extends TestCase
             $offset = $position + 1;
         }
 
-        foreach (['detail', 'edit', 'published'] as $capability) {
+        foreach (['detail', 'edit', 'export', 'published'] as $capability) {
             self::assertStringContainsString("capabilityCheckbox('" . $capability . "'", $fieldSource);
             self::assertStringContainsString('data-can-' . $capability, $fieldSource);
         }
+        self::assertStringNotContainsString('COM_CONTENTBUILDERNG_MENU_NEW_FILTER_ONLY', $fieldSource);
+        self::assertStringContainsString('cb-menu-table-heading', $fieldSource);
+        self::assertStringNotContainsString('icon-info-circle', $fieldSource);
+        self::assertStringContainsString('cb-menu-filter-input', $fieldSource);
         self::assertStringNotContainsString('statusCell(', $fieldSource);
     }
 
@@ -347,17 +356,15 @@ final class MenuListViewLayoutsTest extends TestCase
         $scriptSource = (string) \file_get_contents($this->root . '/media/js/menu-list-options.js');
         $styleSource = (string) \file_get_contents($this->root . '/media/css/menu-options.css');
 
-        self::assertStringContainsString("'detail' => 'view'", $defaultsSource);
-        self::assertStringContainsString("['permissions_fe']", $defaultsSource);
-        self::assertStringContainsString("['own_fe']", $defaultsSource);
-        self::assertStringContainsString("'cb_permission_' . \$menuAction", $defaultsSource);
         self::assertStringContainsString("'COM_CONTENTBUILDERNG_MENU_NEW_VIEW_PERMISSIONS_VALUE'", $fieldSource);
+        self::assertStringNotContainsString("'cb_permission_' . \$key", $fieldSource);
+        self::assertStringContainsString("Text::_('COM_CONTENTBUILDERNG_MENU_NEW_ADDITIONAL_DISPLAY_DESC')", $fieldSource);
+        self::assertStringContainsString("hasTip\" tabindex=\"0\" title=\"", $fieldSource);
         self::assertStringContainsString("'edit_button'", $defaultsSource);
         self::assertStringContainsString("'show_state_filter'", $defaultsSource);
         self::assertStringContainsString("'editListButton'", $fieldSource);
         self::assertStringContainsString("'show_state_filter', true", $fieldSource);
-        self::assertStringContainsString("'cb_permission_' . \$key", $fieldSource);
-        self::assertStringContainsString('viewPermissionsFormat', $scriptSource);
+        self::assertStringNotContainsString('viewPermissionsFormat', $scriptSource);
         self::assertStringContainsString("value === 'disabled'", $scriptSource);
         self::assertStringContainsString('cb-form-select-inherited-success', $scriptSource);
         self::assertStringContainsString('cb-form-select-inherited-danger', $scriptSource);

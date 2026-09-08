@@ -687,6 +687,11 @@ class ListModel extends BaseListModel
             }
 
             foreach ($this->_data as $data) {
+                MenuListConfigurationHelper::applyDisplayActionOverrides($data, [
+                    'export' => $app->getInput()->getCmd('cb_new_show_export', 'default'),
+                    'print' => $app->getInput()->getCmd('cb_new_show_print', 'default'),
+                    'rating' => $app->getInput()->getCmd('cb_new_show_rating', 'default'),
+                ]);
                 $data->items = [];
                 $data->published_items = [];
                 $data->states = [];

@@ -295,11 +295,11 @@ class ExportModel extends BaseDatabaseModel
                     }
                     $order_types = array();
                     $ids = array();
+                    $db = $this->getDatabase();
                     foreach ($data->labels as $reference_id => $label) {
-                        $ids[] = $this->getDatabase()->quote($reference_id);
+                        $ids[] = $db->quote($reference_id);
                     }
                     if (count($ids)) {
-                        $db = $this->getDatabase();
                         $query = $db->getQuery(true)
                             ->select('DISTINCT ' . implode(', ', $db->quoteName(['id', 'label', 'reference_id', 'order_type'])))
                             ->from($db->quoteName('#__contentbuilderng_elements'))
@@ -310,9 +310,6 @@ class ExportModel extends BaseDatabaseModel
                             ->where($db->quoteName('type') . ' <> ' . $db->quote('hidden'))
                             ->order($db->quoteName('ordering'));
                         $newMenuCustomColumns = $app->getInput()->getInt('cb_new_list_menu', 0) === 1;
-                        if ($newMenuCustomColumns) {
-                            $query->where($db->quoteName('list_include') . ' = 1');
-                        }
                         $db->setQuery($query);
                         $rows = $this->getDatabase()->loadAssocList();
                         $ids = array();
@@ -325,12 +322,25 @@ class ExportModel extends BaseDatabaseModel
                         if ($newMenuCustomColumns) {
                             $ids = MenuListConfigurationHelper::filterSearchableElements(
                                 $ids,
+                                (string) $app->getInput()->getString('cb_menu_export_fields', '')
+                            );
+                            $ids = MenuListConfigurationHelper::filterSearchableElements(
+                                $ids,
                                 (string) $app->getInput()->getString('cb_menu_published_fields', '')
+                            );
+                            $labelByReference = [];
+                            foreach ($rows as $row) {
+                                $labelByReference[(string) $row['reference_id']] = (string) $row['label'];
+                            }
+                            $labels = array_map(
+                                static fn(int|string $reference): string => $labelByReference[(string) $reference] ?? (string) $reference,
+                                $ids
                             );
                         }
                         $rawExportFields = trim((string) $app->getInput()->getString('cblist_fields', ''));
                         if (
-                            $rawExportFields !== ''
+                            !$newMenuCustomColumns
+                            && $rawExportFields !== ''
                             && EmbeddedListFieldFilterService::isEmbeddedRequest($app->getInput()->getCmd('cblist_embed', ''))
                         ) {
                             $match = EmbeddedListFieldFilterService::matchFieldSelectors(
@@ -351,6 +361,25 @@ class ExportModel extends BaseDatabaseModel
                     }
                     $data->visible_cols = $ids;
                     $data->visible_labels = $labels;
+                    $data->export_order_types = $order_types;
+                    $data->export_source_types = [];
+                    if (($data->type ?? '') === 'com_breezingformsng') {
+                        $positiveIds = array_values(array_filter(array_map('intval', $ids), static fn(int $id): bool => $id > 0));
+                        if ($positiveIds !== []) {
+                            $sourceTypeQuery = $db->getQuery(true)
+                                ->select($db->quoteName(['id', 'type']))
+                                ->from($db->quoteName('#__facileforms_elements'))
+                                ->where($db->quoteName('id') . ' IN (' . implode(',', $positiveIds) . ')');
+                            $db->setQuery($sourceTypeQuery);
+                            foreach ((array) $db->loadAssocList() as $sourceElement) {
+                                $data->export_source_types['col' . (int) $sourceElement['id']] = (string) $sourceElement['type'];
+                            }
+                        }
+                    } elseif (method_exists($data->form, 'getEditableElementTypes')) {
+                        foreach ((array) $data->form->getEditableElementTypes() as $referenceId => $sourceType) {
+                            $data->export_source_types['col' . $referenceId] = (string) $sourceType;
+                        }
+                    }
                     $act_as_registration = array();
 
                     if (
