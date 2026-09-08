@@ -3,6 +3,15 @@
     <changelog>
         <element>com_contentbuilderng</element>
         <type>component</type>
+        <version>6.1.17-RC1</version>
+        <fix>
+            <item>Keep element labels and the compact advanced sort-type control on one line in the View grid.</item>
+            <item>Reduce the advanced sort-type cog, remove its oversized frame and centre the Export capability column.</item>
+        </fix>
+    </changelog>
+    <changelog>
+        <element>com_contentbuilderng</element>
+        <type>component</type>
         <version>6.1.16</version>
         <change>
             <item>Promote the validated RC04 implementation and synchronize all shipped plugin versions.</item>

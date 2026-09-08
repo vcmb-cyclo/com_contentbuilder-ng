@@ -45,6 +45,12 @@ côté du libellé afin de ne pas surcharger la grille. Aucun sélecteur n'est
 visible tant que ce contrôle n'est pas ouvert. Lorsqu'un type explicite est
 enregistré, un badge discret indique sa valeur.
 
+À partir de `6.1.17-RC1`, le libellé et la roue fermée restent sur une seule
+ligne. La roue est un contrôle compact sans grand cadre visible ; seul un fond
+discret au survol ou au focus signale son interaction. L'ouverture du réglage
+peut développer son panneau sur la ligne suivante. La colonne Export reprend
+exactement la largeur et le centrage horizontal des autres colonnes de capacité.
+
 Les valeurs disponibles sont Texte, Date et heure, Date, Heure, Entier et
 Décimal. L'absence de valeur conserve la détection automatique. Ce réglage ne
 convertit pas et ne modifie pas la donnée enregistrée dans BreezingForms NG ou

@@ -9,6 +9,16 @@
 
 ## Principe
 
+### Développement 6.1.17-RC1
+
+- La correction repart du `main` publié en `6.1.16` sur la branche
+  `gil_6.1.17`.
+- Elle compacte la roue du type de tri avancé, maintient le libellé et son
+  contrôle fermé sur une seule ligne et aligne la colonne Export comme les
+  autres capacités.
+- Les versions des plugins restent en `6.1.16`, leurs fichiers n'étant pas
+  modifiés dans cette RC.
+
 ### État validé au 8 septembre 2026
 
 - La version stable `6.1.15` est publiée sous le tag `v6.1.15`, avec son ZIP

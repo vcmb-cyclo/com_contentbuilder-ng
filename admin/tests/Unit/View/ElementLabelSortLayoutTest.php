@@ -19,11 +19,11 @@ final class ElementLabelSortLayoutTest extends TestCase
         self::assertStringContainsString('class="cb-item-order-type-trigger"', $layout);
         self::assertStringContainsString('cb-item-order-type-select', $layout);
         self::assertStringContainsString(
-            '.cb-item-label-cell{flex-flow:row wrap;align-items:center;column-gap:.5rem}',
+            '.cb-item-label-cell{flex-flow:row nowrap;align-items:center;column-gap:.25rem}',
             $style
         );
         self::assertStringContainsString(
-            '.cb-item-label-display{flex:0 1 auto;min-width:0;width:auto!important}.cb-item-label-cell>.form-control{flex:1 1 14rem;',
+            '.cb-item-label-display{flex:0 1 auto;min-width:0;width:auto!important;white-space:nowrap}',
             $style
         );
         self::assertStringContainsString(
@@ -32,6 +32,14 @@ final class ElementLabelSortLayoutTest extends TestCase
         );
         self::assertStringContainsString(
             '.cb-item-order-type-details[open]{flex-basis:100%}',
+            $style
+        );
+        self::assertStringContainsString(
+            '.cb-item-order-type-trigger{display:inline-flex;align-items:center;justify-content:center;gap:.2rem;width:1.4rem;height:1.4rem;',
+            $style
+        );
+        self::assertStringContainsString(
+            'th[data-cb-col="export"],.cb-elements-table td[data-cb-col="export"]{width:4.75rem;text-align:center}',
             $style
         );
     }

@@ -1,5 +1,11 @@
 # Changelog
 
+## 6.1.17-RC1 — 2026-09-08
+
+- Keep element labels and their compact advanced sort-type control on one line in the View grid.
+- Reduce the advanced sort-type cog and remove its oversized visible frame.
+- Centre the Export column consistently with the other capability columns.
+
 ## 6.1.16 — 2026-09-08
 
 - Promote the validated RC04 implementation to the stable 6.1.16 release and synchronize all shipped plugin versions.
