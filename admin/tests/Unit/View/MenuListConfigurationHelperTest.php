@@ -9,6 +9,25 @@ use PHPUnit\Framework\TestCase;
 
 final class MenuListConfigurationHelperTest extends TestCase
 {
+    public function testDisplayActionsOverrideBothViewDefaults(): void
+    {
+        foreach (['export' => 'export_xls', 'print' => 'print_button', 'rating' => 'list_rating'] as $action => $field) {
+            foreach ([0, 1] as $viewValue) {
+                foreach (['yes', 'no', 'default'] as $choice) {
+                    $parameters = MenuListConfigurationHelper::requestParameters(['action' => [$action => $choice]]);
+                    $key = 'cb_new_show_' . $action;
+                    self::assertSame($choice !== 'default', array_key_exists($key, $parameters));
+                    $data = (object) [$field => $viewValue];
+                    MenuListConfigurationHelper::applyDisplayActionOverrides($data, [$action => $parameters[$key] ?? 'default']);
+                    self::assertSame($choice === 'default' ? $viewValue : (int) ($choice === 'yes'), $data->{$field});
+                    if ($choice === 'no') {
+                        self::assertNotContains($action, explode('|', $parameters['cblist_actions']));
+                    }
+                }
+            }
+        }
+    }
+
     public function testNewListMenuDetectionIncludesEveryHarmonisedLayout(): void
     {
         foreach (['', 'default', 'listcard', 'listcompact', 'listtiles'] as $layout) {
@@ -35,6 +54,7 @@ final class MenuListConfigurationHelperTest extends TestCase
             'linkFields' => ['9'],
             'detailFields' => ['9'],
             'editFields' => ['12'],
+            'exportFields' => ['9', '12'],
             'publishedFields' => ['9', '12'],
             'filters' => ['9' => ' Route 1*| *Gravel ', '15' => 'blocked'],
             'searchFields' => ['12'],
@@ -65,6 +85,7 @@ final class MenuListConfigurationHelperTest extends TestCase
         self::assertSame('9', $parameters['cb_menu_link_fields']);
         self::assertSame('9', $parameters['cb_menu_detail_fields']);
         self::assertSame('12', $parameters['cb_menu_edit_fields']);
+        self::assertSame('9|12', $parameters['cb_menu_export_fields']);
         self::assertSame('9|12', $parameters['cb_menu_published_fields']);
         self::assertSame(1, $parameters['cb_new_list_menu']);
         self::assertSame('ID|12', $parameters['cblist_sort']);
@@ -112,6 +133,7 @@ final class MenuListConfigurationHelperTest extends TestCase
             'linkFields' => [],
             'detailFields' => [],
             'editFields' => [],
+            'exportFields' => [],
             'publishedFields' => [],
         ]);
 
@@ -119,6 +141,7 @@ final class MenuListConfigurationHelperTest extends TestCase
         self::assertSame('__none__', $parameters['cb_menu_link_fields']);
         self::assertSame('__none__', $parameters['cb_menu_detail_fields']);
         self::assertSame('__none__', $parameters['cb_menu_edit_fields']);
+        self::assertSame('__none__', $parameters['cb_menu_export_fields']);
         self::assertSame('__none__', $parameters['cb_menu_published_fields']);
         self::assertSame([], MenuListConfigurationHelper::filterSearchableElements([3, 7, 12], '__none__'));
         self::assertSame('content-plugin', $parameters['cblist_embed']);
@@ -132,6 +155,7 @@ final class MenuListConfigurationHelperTest extends TestCase
 
         self::assertSame('', $parameters['cb_menu_search_fields']);
         self::assertSame('', $parameters['cb_menu_link_fields']);
+        self::assertSame('', $parameters['cb_menu_export_fields']);
         self::assertArrayNotHasKey('cb_new_list_menu', $parameters);
         self::assertArrayNotHasKey('cblist_embed', $parameters);
     }
@@ -218,6 +242,7 @@ final class MenuListConfigurationHelperTest extends TestCase
             'linkFields' => ['9', '12'],
             'detailFields' => ['9', '12'],
             'editFields' => ['12'],
+            'exportFields' => ['9'],
             'publishedFields' => ['9', '12'],
             'filters' => ['9' => 'DAN*'],
         ]);
@@ -225,5 +250,21 @@ final class MenuListConfigurationHelperTest extends TestCase
         self::assertSame('12', $parameters['cblist_fields']);
         self::assertSame('9|12', $parameters['cb_menu_search_fields']);
         self::assertSame('{"9":["DAN*"]}', $parameters['cb_menu_data_filters']);
+    }
+
+    public function testCustomExportSelectionIsIndependentFromDisplayedColumns(): void
+    {
+        $parameters = MenuListConfigurationHelper::requestParameters([
+            'columnsMode' => 'custom',
+            'columns' => ['12'],
+            'exportFields' => ['9'],
+        ]);
+        $exportModel = (string) file_get_contents(dirname(__DIR__, 4) . '/site/src/Model/ExportModel.php');
+
+        self::assertSame('12', $parameters['cblist_fields']);
+        self::assertSame('9', $parameters['cb_menu_export_fields']);
+        self::assertStringContainsString("getString('cb_menu_export_fields', '')", $exportModel);
+        self::assertStringContainsString("getString('cb_menu_published_fields', '')", $exportModel);
+        self::assertStringContainsString('!$newMenuCustomColumns', $exportModel);
     }
 }

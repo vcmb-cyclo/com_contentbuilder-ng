@@ -932,7 +932,7 @@ $cbListInitScriptVersion = is_file($cbListInitScriptPath) ? (string) filemtime($
 								<div class="d-flex align-items-center gap-2 ms-auto cb-list-toolbar-actions">
 
 										<?php if ($showNewButton) : ?>
-											<a class="btn btn-sm btn-outline-primary align-self-center d-inline-flex align-items-center gap-1 rounded-pill cb-list-new-btn"
+											<a class="btn btn-sm btn-outline-secondary align-self-center d-inline-flex align-items-center gap-1 rounded-pill cb-list-new-btn"
 												href="<?php echo $newRecordLink; ?>"
 												title="<?php echo Text::_('COM_CONTENTBUILDERNG_NEW'); ?>">
 												<span class="fa-solid fa-plus" aria-hidden="true"></span>

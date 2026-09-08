@@ -23,20 +23,23 @@ permissions:
   contents: read
 
 jobs:
-  lint:
-    name: PHP, XML and translation checks
+  php-compatibility:
+    name: PHP ${{ matrix.php-version }} compatibility
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        php-version: ['8.3', '8.4', '8.5']
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
 
-      - name: Setup PHP 8.3
+      - name: Setup PHP ${{ matrix.php-version }}
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.3'
-          tools: composer:v2
+          php-version: ${{ matrix.php-version }}
           coverage: none
 
       - name: PHP syntax check
@@ -44,6 +47,22 @@ jobs:
           find . -type f -name '*.php' \
             -not -path './admin/vendor/*' \
             -print0 | xargs -0 -n1 -P4 php -l > /dev/null
+
+  lint:
+    name: XML, translation and dependency checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Setup PHP 8.4
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          tools: composer:v2
+          coverage: none
 
       - name: Install xmllint
         run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libxml2-utils
@@ -80,10 +99,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v7
 
-      - name: Setup PHP 8.3
+      - name: Setup PHP 8.4
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.3'
+          php-version: '8.4'
           tools: composer:v2
           coverage: none
 
@@ -133,10 +152,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v7
 
-      - name: Setup PHP 8.3
+      - name: Setup PHP 8.4
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.3'
+          php-version: '8.4'
           tools: composer:v2
           coverage: none
 
@@ -149,8 +168,8 @@ jobs:
         uses: actions/cache@v6
         with:
           path: ${{ steps.composer-cache.outputs.dir }}
-          key: composer-8.3-${{ hashFiles('admin/composer.lock') }}
-          restore-keys: composer-8.3-
+          key: composer-8.4-${{ hashFiles('admin/composer.lock') }}
+          restore-keys: composer-8.4-
 
       - name: Install dependencies
         working-directory: admin
@@ -161,12 +180,12 @@ jobs:
         uses: actions/cache@v6
         with:
           path: joomla-stubs
-          key: joomla-stubs-6.1.2-php8.3
+          key: joomla-stubs-6.1.2-php8.4
 
       - name: Extract Joomla core for class discovery
         if: steps.joomla-stubs-cache.outputs.cache-hit != 'true'
         run: |
-          container="$(docker create joomla:6.1.2-php8.3-apache)"
+          container="$(docker create joomla:6.1.2-php8.4-apache)"
           mkdir -p joomla-stubs
           docker cp "${container}:/usr/src/joomla/libraries" joomla-stubs/libraries
           docker rm "${container}"
@@ -175,20 +194,25 @@ jobs:
         run: admin/vendor/bin/phpstan analyse -c phpstan.neon.dist --no-progress --error-format=github
 
   unit-tests:
-    name: Unit tests and coverage
+    name: Unit tests (PHP ${{ matrix.php-version }})
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        php-version: ['8.3', '8.4', '8.5']
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
 
-      - name: Setup PHP 8.3 with coverage
+      - name: Setup PHP ${{ matrix.php-version }}
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.3'
+          php-version: ${{ matrix.php-version }}
+          extensions: intl
           tools: composer:v2
-          coverage: pcov
+          coverage: ${{ matrix.php-version == '8.4' && 'pcov' || 'none' }}
 
       - name: Get Composer cache directory
         id: composer-cache
@@ -199,14 +223,20 @@ jobs:
         uses: actions/cache@v6
         with:
           path: ${{ steps.composer-cache.outputs.dir }}
-          key: composer-8.3-${{ hashFiles('admin/composer.lock') }}
-          restore-keys: composer-8.3-
+          key: composer-${{ matrix.php-version }}-${{ hashFiles('admin/composer.lock') }}
+          restore-keys: composer-${{ matrix.php-version }}-
 
       - name: Install test dependencies
         working-directory: admin
         run: composer install --prefer-dist --no-interaction --no-progress
 
+      - name: Run unit tests
+        if: matrix.php-version != '8.4'
+        working-directory: admin
+        run: vendor/bin/phpunit
+
       - name: Run unit tests and generate coverage reports
+        if: matrix.php-version == '8.4'
         working-directory: admin
         run: |
           vendor/bin/phpunit \
@@ -215,9 +245,11 @@ jobs:
             --coverage-text
 
       - name: Enforce coverage threshold
+        if: matrix.php-version == '8.4'
         run: php scripts/check-coverage.php admin/coverage/clover.xml 5
 
       - name: Upload coverage reports
+        if: matrix.php-version == '8.4'
         uses: actions/upload-artifact@v7
         with:
           name: phpunit-coverage
@@ -226,7 +258,7 @@ jobs:
 
   package:
     name: Build and smoke-test package
-    needs: [lint, code-style, css-lint, unit-tests, phpstan]
+    needs: [php-compatibility, lint, code-style, css-lint, unit-tests, phpstan]
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
@@ -234,10 +266,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v7
 
-      - name: Setup PHP 8.3
+      - name: Setup PHP 8.4
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.3'
+          php-version: '8.4'
           tools: composer:v2
           coverage: none
 
@@ -250,8 +282,8 @@ jobs:
         uses: actions/cache@v6
         with:
           path: ${{ steps.composer-cache.outputs.dir }}
-          key: composer-8.3-${{ hashFiles('admin/composer.lock') }}
-          restore-keys: composer-8.3-
+          key: composer-8.4-${{ hashFiles('admin/composer.lock') }}
+          restore-keys: composer-8.4-
 
       - name: Set package creation date
         run: |

@@ -6,7 +6,6 @@
         : {};
     const defaultsByForm = config.defaultsByForm || {};
     const useDefaultFormat = String(config.useDefaultFormat || 'Use Default (%s)');
-    const viewPermissionsFormat = String(config.viewPermissionsFormat || 'View permissions (%s)');
     let resetting = false;
 
     function formatValue(format, value) {
@@ -89,10 +88,7 @@
             const value = Number(defaults[key]) === 1
                 ? (config.yesLabel || 'Yes')
                 : (config.noLabel || 'No');
-            option.textContent = formatValue(
-                String(option.value) === 'inherit' ? viewPermissionsFormat : useDefaultFormat,
-                value
-            );
+            option.textContent = formatDefault(value);
             field.dataset.cbInheritedBoolean = inheritedBoolean(defaults[key]);
             refreshColourState(field);
         });
@@ -275,7 +271,7 @@
                 const available = row?.dataset.canLink === '1' && locallyPublished;
                 setCapabilityState(field, !customColumns || !available, available);
             });
-            ['detail', 'edit'].forEach((capability) => {
+            ['detail', 'edit', 'export'].forEach((capability) => {
                 root.querySelectorAll(`[data-cb-${capability}-field]`).forEach((field) => {
                     const row = field.closest('tr');
                     const locallyPublished = row?.querySelector('[data-cb-published-field]')?.checked !== false;
@@ -304,6 +300,7 @@
             state.linkFields = Array.from(root.querySelectorAll('[data-cb-link-field]:checked')).map((field) => field.value);
             state.detailFields = Array.from(root.querySelectorAll('[data-cb-detail-field]:checked')).map((field) => field.value);
             state.editFields = Array.from(root.querySelectorAll('[data-cb-edit-field]:checked')).map((field) => field.value);
+            state.exportFields = Array.from(root.querySelectorAll('[data-cb-export-field]:checked')).map((field) => field.value);
             state.publishedFields = Array.from(root.querySelectorAll('[data-cb-published-field]:checked')).map((field) => field.value);
             state.columns = Array.from(root.querySelectorAll('[data-cb-column]:checked')).map((field) => field.value);
             state.columnOrder = Array.from(root.querySelectorAll('[data-cb-column-row]'))
@@ -379,7 +376,7 @@
                     : field.dataset.viewDefault === '1');
             });
 
-            ['detail', 'edit', 'published'].forEach((capability) => {
+            ['detail', 'edit', 'export', 'published'].forEach((capability) => {
                 const stateKey = `${capability}Fields`;
                 const hasFields = Array.isArray(state[stateKey]);
                 const fields = new Set(hasFields ? state[stateKey].map(String) : []);

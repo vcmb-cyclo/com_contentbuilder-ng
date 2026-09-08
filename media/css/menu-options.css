@@ -314,6 +314,16 @@ select[data-cb-menu-view-selector] {
     transition: background-color .15s ease-in-out;
 }
 
+.cb-menu-table-heading,
+.cb-menu-field-state {
+    cursor: help;
+}
+
+.cb-menu-filter-input {
+    width: 11rem;
+    min-width: 8rem;
+}
+
 .cb-menu-capability-cell.is-inherited {
     background-color: var(--bs-secondary-bg, #e9ecef) !important;
     --bs-table-bg-type: var(--bs-secondary-bg, #e9ecef);

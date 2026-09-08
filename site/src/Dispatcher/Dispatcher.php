@@ -67,6 +67,7 @@ class Dispatcher extends ComponentDispatcher
             'cb_menu_link_fields' => null,
             'cb_menu_detail_fields' => null,
             'cb_menu_edit_fields' => null,
+            'cb_menu_export_fields' => null,
             'cb_menu_published_fields' => null,
             'cb_new_list_menu' => null,
             'cb_new_show_search' => null,

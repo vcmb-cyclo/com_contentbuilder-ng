@@ -113,36 +113,6 @@ final class MenuViewDefaultsHelper
                 'cb_theme_plugin' => trim((string) $form->theme_plugin) ?: 'thoth',
             ];
 
-            $configuration = json_decode((string) ($form->config ?? ''), true);
-            $configuration = is_array($configuration) ? $configuration : [];
-            $permissions = is_array($configuration['permissions_fe'] ?? null)
-                ? $configuration['permissions_fe']
-                : [];
-            $ownerPermissions = is_array($configuration['own_fe'] ?? null)
-                ? $configuration['own_fe']
-                : [];
-            foreach (
-                [
-                    'new' => 'new',
-                    'detail' => 'view',
-                    'edit' => 'edit',
-                    'delete' => 'delete',
-                    'publish' => 'publish',
-                    'state' => 'state',
-                ] as $menuAction => $permissionKey
-            ) {
-                $granted = !empty($ownerPermissions[$permissionKey]);
-
-                foreach ($permissions as $groupPermissions) {
-                    if (is_array($groupPermissions) && !empty($groupPermissions[$permissionKey])) {
-                        $granted = true;
-                        break;
-                    }
-                }
-
-                $values['cb_permission_' . $menuAction] = $granted ? 1 : 0;
-            }
-
             foreach (self::BOOLEAN_COLUMNS as $column) {
                 $key = $column === 'show_back_button' ? 'cb_show_details_back_button' : $column;
                 $values[$key] = (int) $form->$column === 1 ? 1 : 0;

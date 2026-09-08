@@ -11,6 +11,23 @@ use CB\Component\Contentbuilderng\Site\Service\MenuDataFilterService;
 
 final class MenuListConfigurationHelper
 {
+    public const DISPLAY_ACTION_FIELDS = [
+        'export' => 'export_xls',
+        'print' => 'print_button',
+        'rating' => 'list_rating',
+    ];
+
+    /** Apply display preferences only; permission checks remain unchanged. */
+    public static function applyDisplayActionOverrides(object $data, array $overrides): void
+    {
+        foreach (self::DISPLAY_ACTION_FIELDS as $action => $field) {
+            $value = self::toggleValue($overrides, $action);
+            if ($value !== 'default') {
+                $data->{$field} = $value === 'yes' ? 1 : 0;
+            }
+        }
+    }
+
     /** @param list<int|string> $searchable @return list<int|string> */
     public static function filterSearchableElements(array $searchable, string $rawSelectors): array
     {
@@ -75,6 +92,10 @@ final class MenuListConfigurationHelper
         if ($customColumns && is_array($config['editFields'] ?? null) && $editFields === '') {
             $editFields = '__none__';
         }
+        $exportFields = self::selectorList($config, 'columnsMode', 'exportFields');
+        if ($customColumns && is_array($config['exportFields'] ?? null) && $exportFields === '') {
+            $exportFields = '__none__';
+        }
         $publishedFields = self::selectorList($config, 'columnsMode', 'publishedFields');
         if ($customColumns && is_array($config['publishedFields'] ?? null) && $publishedFields === '') {
             $publishedFields = '__none__';
@@ -91,6 +112,7 @@ final class MenuListConfigurationHelper
             'cb_menu_link_fields' => $linkFields,
             'cb_menu_detail_fields' => $detailFields,
             'cb_menu_edit_fields' => $editFields,
+            'cb_menu_export_fields' => $exportFields,
             'cb_menu_published_fields' => $publishedFields,
         ];
         if ($customColumns && $hasColumnSelection) {
@@ -108,6 +130,13 @@ final class MenuListConfigurationHelper
             $value = self::toggleValue($config, $configKey);
             if ($value !== 'default') {
                 $parameters[$requestKey] = $value;
+            }
+        }
+
+        foreach (self::DISPLAY_ACTION_FIELDS as $action => $field) {
+            $value = self::toggleValue((array) ($config['action'] ?? []), $action);
+            if ($value !== 'default') {
+                $parameters['cb_new_show_' . $action] = $value;
             }
         }
 
@@ -163,7 +192,7 @@ final class MenuListConfigurationHelper
             $parameters['cblist_actions'] = implode('|', $restrictedActions);
         }
 
-        if (count($parameters) > 6 || $fields !== '' || $searchFields !== '' || $linkFields !== '' || $detailFields !== '' || $editFields !== '' || $publishedFields !== '' || $parameters[MenuDataFilterService::INPUT_NAME] !== '') {
+        if (count($parameters) > 7 || $fields !== '' || $searchFields !== '' || $linkFields !== '' || $detailFields !== '' || $editFields !== '' || $exportFields !== '' || $publishedFields !== '' || $parameters[MenuDataFilterService::INPUT_NAME] !== '') {
             $parameters['cblist_embed'] = 'content-plugin';
         }
 

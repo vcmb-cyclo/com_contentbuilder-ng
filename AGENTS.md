@@ -25,7 +25,7 @@
 - Stop after completing the requested task.
 
 ## Local Git branches
-- Current development branch: `gil_6.2.0`. Version 6.1.15 is published.
+- Current development branch: `gil_6.1.16`. Version 6.1.15 is published.
 - Before editing files, check the active local branch and working tree status.
 - Work on a local branch named `gil_<development-version>`, for example
   `gil_6.1.15` for version 6.1.15 under development. Use the development version
@@ -39,6 +39,10 @@
 - Preserve existing uncommitted changes when switching branches.
 
 ## Joomla
+- For frontend action buttons, follow `docs/specifications/frontend-graphic-charter.md`.
+  Edit/Print are the typography and spacing reference. New, Edit, Print, Save,
+  Apply and Article Settings use neutral outline-secondary styling and grey hover;
+  preserve destructive Delete and export colours.
 - Keep local package ZIP files in `build/`. Store intermediate screenshots,
   previews and diagnostic scripts in ignored `qa-artifacts/`, not in `build/`.
 - Prefer native Joomla 6 admin patterns before custom markup, CSS, or JavaScript.

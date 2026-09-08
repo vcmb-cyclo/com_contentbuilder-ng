@@ -204,8 +204,7 @@ final class MenulistbuilderField extends FormField
         $out .= $this->section(Text::_('COM_CONTENTBUILDERNG_MENU_NEW_SEARCH_STATE'), $searchHtml);
 
         $security = is_array($config['security'] ?? null) ? $config['security'] : [];
-        $additionalDisplayHtml = $this->inlineHelp('COM_CONTENTBUILDERNG_MENU_NEW_ADDITIONAL_DISPLAY_DESC', 'mb-3')
-            . '<div class="row g-3">';
+        $additionalDisplayHtml = '<div class="row g-3">';
         $securityLabels = [
             'new' => 'COM_CONTENTBUILDERNG_MENU_NEW_ACTION_CREATE',
             'detail' => 'COM_CONTENTBUILDERNG_MENU_NEW_ACTION_DETAIL',
@@ -215,12 +214,8 @@ final class MenulistbuilderField extends FormField
             'state' => 'COM_CONTENTBUILDERNG_MENU_NEW_ACTION_STATE',
         ];
         foreach ($securityLabels as $key => $label) {
-            $permissionEnabled = (int) ($viewDefaults['cb_permission_' . $key] ?? 0) === 1;
             $securityOptions = [
-                'inherit' => Text::sprintf(
-                    'COM_CONTENTBUILDERNG_MENU_NEW_VIEW_PERMISSIONS_VALUE',
-                    Text::_($permissionEnabled ? 'JYES' : 'JNO')
-                ),
+                'inherit' => 'COM_CONTENTBUILDERNG_MENU_NEW_VIEW_PERMISSIONS_VALUE',
                 'disabled' => 'JDISABLED',
             ];
             $additionalDisplayHtml .= $this->selectControl(
@@ -229,14 +224,17 @@ final class MenulistbuilderField extends FormField
                 $securityOptions,
                 (string) ($security[$key] ?? 'inherit'),
                 $options,
-                'cb_permission_' . $key,
+                '',
                 true,
-                'COM_CONTENTBUILDERNG_MENU_NEW_ADDITIONAL_' . strtoupper($key) . '_DESC',
-                $permissionEnabled
+                'COM_CONTENTBUILDERNG_MENU_NEW_ADDITIONAL_' . strtoupper($key) . '_DESC'
             );
         }
         $additionalDisplayHtml .= '</div>';
-        $out .= $this->section(Text::_('COM_CONTENTBUILDERNG_MENU_NEW_ADDITIONAL_DISPLAY'), $additionalDisplayHtml);
+        $out .= $this->section(
+            Text::_('COM_CONTENTBUILDERNG_MENU_NEW_ADDITIONAL_DISPLAY'),
+            $additionalDisplayHtml,
+            Text::_('COM_CONTENTBUILDERNG_MENU_NEW_ADDITIONAL_DISPLAY_DESC')
+        );
 
         $columnMode = (string) ($config['columnsMode'] ?? 'default');
         $selectedColumns = array_map('strval', is_array($config['columns'] ?? null) ? $config['columns'] : []);
@@ -244,9 +242,11 @@ final class MenulistbuilderField extends FormField
         $selectedLinks = array_map('strval', is_array($config['linkFields'] ?? null) ? $config['linkFields'] : []);
         $selectedDetails = array_map('strval', is_array($config['detailFields'] ?? null) ? $config['detailFields'] : []);
         $selectedEdits = array_map('strval', is_array($config['editFields'] ?? null) ? $config['editFields'] : []);
+        $selectedExports = array_map('strval', is_array($config['exportFields'] ?? null) ? $config['exportFields'] : []);
         $selectedPublished = array_map('strval', is_array($config['publishedFields'] ?? null) ? $config['publishedFields'] : []);
         $hasSelectedDetails = is_array($config['detailFields'] ?? null);
         $hasSelectedEdits = is_array($config['editFields'] ?? null);
+        $hasSelectedExports = is_array($config['exportFields'] ?? null);
         $hasSelectedPublished = is_array($config['publishedFields'] ?? null);
         $filters = is_array($config['filters'] ?? null) ? $config['filters'] : [];
         $columnsHtml = '<div class="row g-3 mb-3">'
@@ -259,6 +259,7 @@ final class MenulistbuilderField extends FormField
             . $this->tableHeading('COM_CONTENTBUILDERNG_MENU_NEW_VIEW_LINK', 'COM_CONTENTBUILDERNG_MENU_NEW_VIEW_LINK_DESC', true)
             . $this->tableHeading('COM_CONTENTBUILDERNG_MENU_NEW_VIEW_DETAIL', 'COM_CONTENTBUILDERNG_MENU_NEW_VIEW_DETAIL_DESC', true)
             . $this->tableHeading('COM_CONTENTBUILDERNG_MENU_NEW_VIEW_EDIT', 'COM_CONTENTBUILDERNG_MENU_NEW_VIEW_EDIT_DESC', true)
+            . $this->tableHeading('COM_CONTENTBUILDERNG_MENU_NEW_VIEW_EXPORT', 'COM_CONTENTBUILDERNG_MENU_NEW_VIEW_EXPORT_DESC', true)
             . $this->tableHeading('COM_CONTENTBUILDERNG_MENU_NEW_VIEW_PUBLISHED', 'COM_CONTENTBUILDERNG_MENU_NEW_VIEW_PUBLISHED_DESC', true)
             . $this->tableHeading('COM_CONTENTBUILDERNG_MENU_NEW_FIXED_FILTER', 'COM_CONTENTBUILDERNG_MENU_NEW_FIXED_FILTER_DESC')
             . '</tr></thead><tbody data-cb-column-rows>';
@@ -270,19 +271,26 @@ final class MenulistbuilderField extends FormField
             $viewLink = (int) $element['linkable'] === 1;
             $viewDetail = (int) $element['detail_include'] === 1;
             $viewEdit = (int) $element['editable'] === 1;
+            $viewExport = (int) $element['export_include'] === 1;
             $checked = $viewList && ($columnMode === 'custom' ? in_array($reference, $selectedColumns, true) : true);
+            $fieldStateTip = !$isPublished
+                ? Text::_('COM_CONTENTBUILDERNG_MENU_NEW_FIELD_UNPUBLISHED_TIP')
+                : (!$viewList ? Text::_('COM_CONTENTBUILDERNG_MENU_NEW_FIELD_NOT_LISTED_TIP') : '');
+            $fieldLabel = htmlspecialchars((string) $element['label'], ENT_QUOTES, 'UTF-8');
+            if ($fieldStateTip !== '') {
+                $fieldLabel = '<span class="cb-menu-field-state" tabindex="0" title="'
+                    . htmlspecialchars($fieldStateTip, ENT_QUOTES, 'UTF-8') . '">' . $fieldLabel . '</span>';
+            }
             $columnsHtml .= '<tr data-cb-column-row data-reference="' . htmlspecialchars($reference, ENT_QUOTES, 'UTF-8') . '" data-view-order="'
                 . (int) $element['ordering'] . '" data-can-list="'
                 . ($isPublished && $viewList ? '1' : '0') . '" data-can-search="' . ($isPublished && $viewSearch ? '1' : '0')
                 . '" data-can-link="' . ($isPublished && $viewLink ? '1' : '0') . '" data-can-detail="'
                 . ($isPublished && $viewDetail ? '1' : '0') . '" data-can-edit="'
-                . ($isPublished && $viewEdit ? '1' : '0') . '" data-can-published="'
+                . ($isPublished && $viewEdit ? '1' : '0') . '" data-can-export="'
+                . ($isPublished && $viewExport ? '1' : '0') . '" data-can-published="'
                 . ($isPublished ? '1' : '0') . '" data-label="'
                 . htmlspecialchars(mb_strtolower((string) $element['label'], 'UTF-8'), ENT_QUOTES, 'UTF-8') . '"><td><div class="btn-group btn-group-sm" role="group"><button type="button" class="btn btn-outline-secondary" data-cb-move="up" aria-label="↑">↑</button><button type="button" class="btn btn-outline-secondary" data-cb-move="down" aria-label="↓">↓</button></div></td><td>'
-                . htmlspecialchars((string) $element['label'], ENT_QUOTES, 'UTF-8')
-                . (!$isPublished ? ' <span class="badge text-bg-secondary">' . Text::_('JUNPUBLISHED') . '</span>' : '')
-                . ($isPublished && !$viewList ? ' <span class="badge text-bg-secondary">'
-                    . Text::_('COM_CONTENTBUILDERNG_MENU_NEW_FILTER_ONLY') . '</span>' : '') . '</td>'
+                . $fieldLabel . '</td>'
                 . '<td class="text-center cb-menu-capability-cell"><input type="checkbox" class="form-check-input" data-cb-column value="'
                 . htmlspecialchars($reference, ENT_QUOTES, 'UTF-8') . '" data-view-default="' . ($viewList ? '1' : '0') . '"'
                 . ($checked ? ' checked' : '') . (!$isPublished || !$viewList || $columnMode !== 'custom' ? ' disabled' : '')
@@ -299,8 +307,9 @@ final class MenulistbuilderField extends FormField
                 . ' aria-label="' . htmlspecialchars(Text::_('COM_CONTENTBUILDERNG_MENU_NEW_VIEW_LINK'), ENT_QUOTES, 'UTF-8') . '"></td>'
                 . $this->capabilityCheckbox('detail', $reference, $viewDetail, $isPublished && $viewDetail && ($columnMode !== 'custom' || !$hasSelectedDetails || in_array($reference, $selectedDetails, true)), $isPublished && $viewDetail && $columnMode === 'custom', 'COM_CONTENTBUILDERNG_MENU_NEW_VIEW_DETAIL')
                 . $this->capabilityCheckbox('edit', $reference, $viewEdit, $isPublished && $viewEdit && ($columnMode !== 'custom' || !$hasSelectedEdits || in_array($reference, $selectedEdits, true)), $isPublished && $viewEdit && $columnMode === 'custom', 'COM_CONTENTBUILDERNG_MENU_NEW_VIEW_EDIT')
+                . $this->capabilityCheckbox('export', $reference, $viewExport, $isPublished && $viewExport && ($columnMode !== 'custom' || !$hasSelectedExports || in_array($reference, $selectedExports, true)), $isPublished && $viewExport && $columnMode === 'custom', 'COM_CONTENTBUILDERNG_MENU_NEW_VIEW_EXPORT')
                 . $this->capabilityCheckbox('published', $reference, $isPublished, $isPublished && ($columnMode !== 'custom' || !$hasSelectedPublished || in_array($reference, $selectedPublished, true)), $isPublished && $columnMode === 'custom', 'COM_CONTENTBUILDERNG_MENU_NEW_VIEW_PUBLISHED')
-                . '<td><input type="text" class="form-control" data-cb-filter value="'
+                . '<td><input type="text" class="form-control form-control-sm cb-menu-filter-input" data-cb-filter value="'
                 . htmlspecialchars((string) ($filters[$reference] ?? ''), ENT_QUOTES, 'UTF-8') . '" placeholder="'
                 . htmlspecialchars(Text::_('COM_CONTENTBUILDERNG_MENU_NEW_FILTER_PLACEHOLDER'), ENT_QUOTES, 'UTF-8') . '"'
                 . (!$isPublished ? ' disabled' : '') . '></td></tr>';
@@ -321,7 +330,7 @@ final class MenulistbuilderField extends FormField
 
         $db = RuntimeContextHelper::getDatabase();
         $query = $db->getQuery(true)
-            ->select($db->quoteName(['reference_id', 'label', 'published', 'detail_include', 'editable', 'list_include', 'search_include', 'linkable', 'order_type', 'ordering']))
+            ->select($db->quoteName(['reference_id', 'label', 'published', 'detail_include', 'editable', 'export_include', 'list_include', 'search_include', 'linkable', 'order_type', 'ordering']))
             ->from($db->quoteName('#__contentbuilderng_elements'))
             ->where($db->quoteName('form_id') . ' = ' . $formId)
             ->where($db->quoteName('reference_id') . ' >= 0')
@@ -331,9 +340,13 @@ final class MenulistbuilderField extends FormField
         return array_values((array) $db->loadAssocList());
     }
 
-    private function section(string $title, string $content): string
+    private function section(string $title, string $content, string $description = ''): string
     {
-        return '<fieldset class="cb-menu-builder-section mb-4"><legend><span class="cb-menu-section-heading">'
+        $tooltip = $description === ''
+            ? ''
+            : ' hasTip" tabindex="0" title="' . htmlspecialchars($description, ENT_QUOTES, 'UTF-8');
+
+        return '<fieldset class="cb-menu-builder-section mb-4"><legend><span class="cb-menu-section-heading' . $tooltip . '">'
             . htmlspecialchars($title, ENT_QUOTES, 'UTF-8') . '</span></legend>' . $content . '</fieldset>';
     }
 
@@ -384,7 +397,7 @@ final class MenulistbuilderField extends FormField
 
     private function tableHeading(string $labelKey, string $descriptionKey, bool $centred = false): string
     {
-        return '<th' . ($centred ? ' class="text-center"' : '') . '><span class="hasTip" title="'
+        return '<th' . ($centred ? ' class="text-center"' : '') . '><span class="hasTip cb-menu-table-heading" tabindex="0" title="'
             . htmlspecialchars(Text::_($descriptionKey), ENT_QUOTES, 'UTF-8') . '">'
             . Text::_($labelKey) . '</span></th>';
     }

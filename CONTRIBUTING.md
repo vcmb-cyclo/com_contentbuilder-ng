@@ -16,11 +16,17 @@ Thank you for helping improve ContentBuilder NG.
 Contributions must target:
 
 - Joomla 6 only;
-- PHP 8.3 or later;
+- PHP 8.3 and PHP 8.4 for supported production code;
+- PHP 8.4 as the standard development runtime;
+- PHP 8.5 as an experimental compatibility target;
 - MySQL or MariaDB only.
 
 Use native Joomla 6 APIs and modern PHP. Do not add compatibility code for
 older Joomla or PHP versions.
+
+The CI syntax and PHPUnit matrices cover PHP 8.3, 8.4 and 8.5. PHPStan,
+code style, coverage, packaging and the Joomla smoke test use PHP 8.4. Do not
+use PHP 8.5-only syntax while PHP 8.3 remains supported.
 
 ## Development Setup
 

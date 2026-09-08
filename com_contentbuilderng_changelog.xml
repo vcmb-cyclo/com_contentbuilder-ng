@@ -3,6 +3,69 @@
     <changelog>
         <element>com_contentbuilderng</element>
         <type>component</type>
+        <version>6.1.16</version>
+        <change>
+            <item>Promote the validated RC04 implementation and synchronize all shipped plugin versions.</item>
+            <item>Add independent Joomla List View export columns, clearer frontend action settings and compact label-hover help.</item>
+            <item>Export safe numeric, date and time columns as native spreadsheet values while preserving identifiers, mixed values and formulas as text.</item>
+            <item>Validate PHP 8.3 and PHP 8.4 for production with PHP 8.5 as an experimental compatibility target.</item>
+        </change>
+        <fix>
+            <item>Harden release checks, Joomla smoke-test ownership and exclusion of local coverage artifacts from production packages.</item>
+        </fix>
+    </changelog>
+    <changelog>
+        <element>com_contentbuilderng</element>
+        <type>component</type>
+        <version>6.1.16-RC04</version>
+        <change>
+            <item>Test PHP syntax and unit behavior on PHP 8.3, 8.4 and 8.5, with PHP 8.4 as the main development and integration target.</item>
+            <item>Document PHP 8.3/8.4 production support and PHP 8.5 experimental compatibility.</item>
+        </change>
+        <fix>
+            <item>Correct Joomla List View release-gate expectations, safely render the advanced order-type label identifier and initialize XLSX source-type lookup consistently.</item>
+            <item>Update the development-only nanoid dependency to 3.3.18 to resolve GHSA-2v37-7h3g-55p8.</item>
+            <item>Run smoke-test installations as the Joomla web user and validate API JSON inside the PHP container.</item>
+            <item>Exclude locally generated coverage reports explicitly from production packages.</item>
+        </fix>
+    </changelog>
+    <changelog>
+        <element>com_contentbuilderng</element>
+        <type>component</type>
+        <version>6.1.16-RC03</version>
+        <change>
+            <item>Make Joomla List View frontend actions neutral and explicit without misleading aggregated permission states.</item>
+            <item>Export safe numeric, date and time columns, including fully numeric choice fields, as native spreadsheet values while preserving identifiers, mixed values and formulas as text.</item>
+            <item>Move advanced field order types behind a compact control and keep Joomla menu help available directly on label hover.</item>
+        </change>
+        <fix>
+            <item>Remove redundant visible information icons from Joomla List View menu help.</item>
+        </fix>
+    </changelog>
+    <changelog>
+        <element>com_contentbuilderng</element>
+        <type>component</type>
+        <version>6.1.16-RC2</version>
+        <change>
+            <item>Clarify Joomla List View menu labels, field hints, access restrictions and status indicators.</item>
+        </change>
+        <fix>
+            <item>Add independent per-field export selection to custom Joomla List View menu configuration.</item>
+            <item>Prioritize blocking State configuration contradictions over incomplete filter warnings.</item>
+        </fix>
+    </changelog>
+    <changelog>
+        <element>com_contentbuilderng</element>
+        <type>component</type>
+        <version>6.1.16-RC1</version>
+        <fix>
+            <item>Honour explicit menu visibility for Print, XLS export and Rating over view defaults.</item>
+            <item>Remove PHP 8.5 deprecations from reflection-based tests.</item>
+        </fix>
+    </changelog>
+    <changelog>
+        <element>com_contentbuilderng</element>
+        <type>component</type>
         <version>6.1.15</version>
         <addition><item>Independent bulk state changer with menu inheritance and selection dependency help.</item></addition>
         <change>

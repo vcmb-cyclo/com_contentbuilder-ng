@@ -1002,12 +1002,12 @@ PreviewColorModeHelper::registerAssets($wa, $previewColorMode);
     ob_start();
     if ($this->record_id && $edit_allowed && $this->create_articles && $fullarticle_allowed) {
     ?>
-        <button type="button" class="btn btn-sm btn-primary cbButton cbArticleSettingsButton" title="<?php echo htmlspecialchars(Text::_('COM_CONTENTBUILDERNG_EDIT_ARTICLE_SETTINGS_TOOLTIP'), ENT_QUOTES, 'UTF-8'); ?>" onclick="var o=document.getElementById('cbArticleOptions');o.hidden=!o.hidden;"><span class="fa-solid fa-gear me-1" aria-hidden="true"></span><?php echo Text::_('COM_CONTENTBUILDERNG_SHOW_ARTICLE_SETTINGS'); ?></button>
+        <button type="button" class="btn btn-sm btn-outline-secondary cbButton cbArticleSettingsButton" title="<?php echo htmlspecialchars(Text::_('COM_CONTENTBUILDERNG_EDIT_ARTICLE_SETTINGS_TOOLTIP'), ENT_QUOTES, 'UTF-8'); ?>" onclick="var o=document.getElementById('cbArticleOptions');o.hidden=!o.hidden;"><span class="fa-solid fa-gear me-1" aria-hidden="true"></span><?php echo Text::_('COM_CONTENTBUILDERNG_SHOW_ARTICLE_SETTINGS'); ?></button>
     <?php
     }
     if (($edit_allowed || $new_allowed) && !$this->edit_by_type && !$editableTemplateMissing) {
     ?>
-        <button type="button" class="btn btn-sm btn-primary cbButton cbSaveButton" title="<?php echo htmlspecialchars(Text::_('COM_CONTENTBUILDERNG_EDIT_SAVE_TOOLTIP'), ENT_QUOTES, 'UTF-8'); ?>" onclick="document.getElementById('contentbuilderng_task').value='edit.save';contentbuilderng.onSubmit();">
+        <button type="button" class="btn btn-sm btn-outline-secondary cbButton cbSaveButton" title="<?php echo htmlspecialchars(Text::_('COM_CONTENTBUILDERNG_EDIT_SAVE_TOOLTIP'), ENT_QUOTES, 'UTF-8'); ?>" onclick="document.getElementById('contentbuilderng_task').value='edit.save';contentbuilderng.onSubmit();">
             <span class="fa-solid fa-floppy-disk me-1" aria-hidden="true"></span>
             <?php echo trim($this->save_button_title) != '' ? htmlspecialchars($this->save_button_title, ENT_QUOTES, 'UTF-8') : Text::_('COM_CONTENTBUILDERNG_SAVE'); ?>
         </button>
@@ -1015,7 +1015,7 @@ PreviewColorModeHelper::registerAssets($wa, $previewColorMode);
     }
     if ($this->record_id && $edit_allowed && $this->create_articles && $this->edit_by_type && $fullarticle_allowed) {
     ?>
-        <button type="button" class="btn btn-sm btn-primary cbButton cbArticleSettingsButton" title="<?php echo htmlspecialchars(Text::_('COM_CONTENTBUILDERNG_EDIT_APPLY_ARTICLE_SETTINGS_TOOLTIP'), ENT_QUOTES, 'UTF-8'); ?>" onclick="document.getElementById('contentbuilderng_task').value='edit.apply';contentbuilderng.onSubmit();">
+        <button type="button" class="btn btn-sm btn-outline-secondary cbButton cbArticleSettingsButton" title="<?php echo htmlspecialchars(Text::_('COM_CONTENTBUILDERNG_EDIT_APPLY_ARTICLE_SETTINGS_TOOLTIP'), ENT_QUOTES, 'UTF-8'); ?>" onclick="document.getElementById('contentbuilderng_task').value='edit.apply';contentbuilderng.onSubmit();">
             <span class="fa-solid fa-check me-1" aria-hidden="true"></span>
             <?php echo Text::_('COM_CONTENTBUILDERNG_APPLY_ARTICLE_SETTINGS'); ?>
         </button>

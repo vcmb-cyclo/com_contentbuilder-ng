@@ -1,5 +1,39 @@
 # Changelog
 
+## 6.1.16 — 2026-09-08
+
+- Promote the validated RC04 implementation to the stable 6.1.16 release and synchronize all shipped plugin versions.
+- Add independent Joomla List View export columns, clearer frontend action settings and compact label-hover help.
+- Export safe numeric, date and time columns as native XLSX values while preserving identifiers, mixed values and formulas as text.
+- Validate PHP 8.3 and PHP 8.4 for production and keep PHP 8.5 under an explicit experimental compatibility matrix.
+- Harden release checks, Joomla smoke-test ownership and package exclusion of local coverage artifacts.
+
+## 6.1.16-RC04 — 2026-09-08
+
+- Validate syntax and unit tests on PHP 8.3, 8.4 and 8.5 while making PHP 8.4 the main development, coverage, packaging and Joomla integration target.
+- Document the production support policy for PHP 8.3/8.4 and the experimental PHP 8.5 compatibility level.
+- Fix release-gate regressions in the Joomla List View section-order test, advanced order-type label output and XLSX source-type lookup initialization.
+- Update the development-only nanoid dependency to 3.3.18 to resolve GHSA-2v37-7h3g-55p8.
+- Run Joomla smoke-test installations as the web user and validate API JSON inside the PHP 8.4 container.
+- Exclude locally generated coverage reports explicitly from production packages.
+
+## 6.1.16-RC03 — 2026-09-08
+
+- Export safe numeric, date and time columns, including fully numeric choice fields, as native XLSX values while preserving identifiers, mixed values and formulas as text.
+- Replace the misleading aggregated View-permission Yes/No states with neutral Frontend actions and label-hover help.
+- Hide advanced field order types behind a compact control and remove redundant visible information icons from Joomla List View menu help.
+
+## 6.1.16-RC2 — 2026-09-08
+
+- Add independent per-field export selection to custom Joomla List View menu configuration.
+- Clarify menu labels, field hints and access restrictions, and compact the fixed-filter controls.
+- Make red State configuration contradictions take priority over orange incomplete-filter warnings.
+
+## 6.1.16-RC1 — 2026-09-04
+
+- Honour explicit List View menu Yes/No overrides for Print, XLS export and Rating over view defaults, preserving permissions.
+- Include the PHP 8.5 test cleanup initially prepared on gil_6.2.0.
+
 ## 6.1.15 — 2026-09-04
 
 - Promoted the validated RC implementation to stable 6.1.15; synchronized all shipped plugin versions.

@@ -168,8 +168,15 @@
     background: var(--cb-screen-bg);
     box-shadow: 0 .35rem .9rem rgba(0, 0, 0, .06);
 }
+.cb-list-new-btn.btn,
 :is(.cbDetailsWrapper, .cbEditableWrapper) :is(.cbToolBar, .cbTitleRecordNav) .cbButton.btn {
     border-radius: 999px;
+}
+
+.cb-list-filters .btn,
+.cb-list-filters .cb-filter-search-group .btn,
+.cb-list-new-btn.btn,
+:is(.cbDetailsWrapper, .cbEditableWrapper) :is(.cbToolBar, .cbTitleRecordNav) .cbButton.btn {
     font-weight: 600;
     font-size: var(--cb-font-size-compact);
     padding: var(--cb-button-padding-block) var(--cb-button-padding-inline);
@@ -178,6 +185,7 @@
     display: inline-flex;
     align-items: center;
 }
+
 :is(.cbDetailsWrapper, .cbEditableWrapper) :is(.cbDetailsBody, .cbEditableBody) {
     min-width: 0;
     padding: .65rem .75rem;
@@ -200,6 +208,7 @@
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;
     }
+    .cb-list-new-btn.btn,
     :is(.cbDetailsWrapper, .cbEditableWrapper) :is(.cbToolBar, .cbTitleRecordNav) .cbButton.btn {
         flex: 0 0 auto;
         justify-content: center;

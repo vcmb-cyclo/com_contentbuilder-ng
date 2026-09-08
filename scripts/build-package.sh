@@ -35,6 +35,7 @@ cp "${root_dir}/script.php" "${package_dir}/"
 rm -rf \
     "${package_dir}/admin/tests" \
     "${package_dir}/admin/vendor" \
+    "${package_dir}/admin/coverage" \
     "${package_dir}/admin/.phpunit.cache" \
     "${package_dir}/admin/.phpunit.result.cache"
 rm -f "${package_dir}/admin/phpunit.xml" "${package_dir}/admin/phpunit.xml.dist"

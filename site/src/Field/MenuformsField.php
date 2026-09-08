@@ -38,7 +38,6 @@ final class MenuformsField extends ListField
         $document->addScriptOptions('com_contentbuilderng.menuListOptions', [
             'defaultsByForm' => MenuViewDefaultsHelper::getAll(),
             'useDefaultFormat' => Text::_('COM_CONTENTBUILDERNG_USE_DEFAULT_VALUE'),
-            'viewPermissionsFormat' => Text::_('COM_CONTENTBUILDERNG_MENU_NEW_VIEW_PERMISSIONS_VALUE'),
             'yesLabel' => Text::_('JYES'),
             'noLabel' => Text::_('JNO'),
             'allLabel' => Text::_('JALL'),

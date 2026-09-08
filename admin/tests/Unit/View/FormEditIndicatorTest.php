@@ -13,6 +13,17 @@ require_once dirname(__DIR__, 3) . '/src/Service/FormAuditService.php';
 
 final class FormEditIndicatorTest extends TestCase
 {
+    public function testMissingPublishedStateUsesRedBeforeOrangeWhenAStateFunctionIsEnabled(): void
+    {
+        $source = (string) file_get_contents(dirname(__DIR__, 4) . '/admin/tmpl/form/edit.php');
+        $redPriority = strpos($source, '} elseif ($showsListStates || $hasListStatePermission) {');
+        $orangeFallback = strpos($source, "COM_CONTENTBUILDERNG_TAB_TIP_LIST_STATES_ORANGE_FILTER_NO_STATE", $redPriority ?: 0);
+
+        self::assertNotFalse($redPriority);
+        self::assertNotFalse($orangeFallback);
+        self::assertLessThan($orangeFallback, $redPriority);
+    }
+
     public static function scenarios(): array
     {
         return [

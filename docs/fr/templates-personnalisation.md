@@ -466,6 +466,24 @@ aucun bandeau n’est généré. `data-card` utilise
 sont `33`, `66` et `100`. Les espaces vides et insécables insérés entre les
 Cards par un éditeur sont ignorés dans les grilles `cb-cards`.
 
+Une liste de définitions rend les chiffres clés plus lisibles dans toutes les
+variantes H1 à H6 et V1 à V6. `<dt>` contient le libellé et `<dd>` sa valeur :
+
+```html
+<dl class="cb-kpi-list">
+  <div>
+    <dt>Inscriptions</dt>
+    <dd>{CBStats id=15 output=total}</dd>
+  </div>
+  <div>
+    <dt>Places restantes</dt>
+    <dd>{CBStats id=15 output=remaining target=200}</dd>
+  </div>
+</dl>
+```
+
+La grille `.cb-cards` passe automatiquement à une colonne sous 768 px.
+
 ### Jeux de titres CBStats réutilisables
 
 Utilisez un fichier INI administré lorsque plusieurs statistiques partagent
