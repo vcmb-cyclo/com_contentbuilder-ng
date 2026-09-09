@@ -1,5 +1,24 @@
 # Changelog
 
+## 6.1.17 — 2026-09-09
+
+- Restore a clean, compact element grid when configuring a View: labels no longer share their cell with a cog or an expandable setting.
+- Move **Sort/export type** into its own optional column, hidden by default and available from the column selector whenever explicit XLSX typing is needed.
+- Keep the selected type per field and remember whether the optional column is displayed, without changing values stored by ContentBuilder NG or BreezingForms NG.
+- Centre the Export status consistently with the other capability columns and prevent the right side of wide View grids from being clipped by the former Label control.
+- Validate the release on Joomla 6 with PHP 8.3 and PHP 8.4; PHP 8.5 remains an experimental CI compatibility target.
+
+## 6.1.17-RC2 — 2026-09-09
+
+- Move the sort/export type selector out of Label into an independent View-grid column hidden by default like Wrap.
+- Restore the normal Label layout and keep the advanced selector directly accessible when its column is displayed.
+
+## 6.1.17-RC1 — 2026-09-08
+
+- Keep element labels and their compact advanced sort-type control on one line in the View grid.
+- Reduce the advanced sort-type cog and remove its oversized visible frame.
+- Centre the Export column consistently with the other capability columns.
+
 ## 6.1.16 — 2026-09-08
 
 - Promote the validated RC04 implementation to the stable 6.1.16 release and synchronize all shipped plugin versions.

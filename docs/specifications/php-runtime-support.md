@@ -30,6 +30,9 @@ une image Joomla 6 épinglée et supportée.
 - Le smoke test par défaut utilise `joomla:6.1.2-php8.4-apache` et MySQL 8.4.
 - La baseline PHPStan ne doit pas être élargie pour masquer une incompatibilité
   de version.
+- Le compte rendu d'une release doit citer explicitement les validations de
+  production PHP 8.3 **et** PHP 8.4. Un test PHP 8.3 seul ne suffit pas à
+  déclarer la release prête.
 
 ## Classification des constats
 

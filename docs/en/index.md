@@ -10,7 +10,7 @@ The project is a community modernization of the former Crosstec ContentBuilder
 extension. It is independent from the historical product and is provided without
 warranty.
 
-> ℹ️ **Note:** this documentation describes component version `6.1.7-RC79` (the
+> ℹ️ **Note:** this documentation describes component version `6.1.17` (the
 > `<version>` field in `com_contentbuilderng.xml`). Screens and options may change
 > between versions.
 
@@ -29,10 +29,10 @@ advanced troubleshooting require Joomla, HTML, and PHP skills.
 
 ## Requirements
 
-- Joomla 6.0 or later (the component is tested on Joomla 6.x, with or without the
-  Backward Compatibility plugin). Joomla 5.4.x should work but is not tested — *to
-  verify* in your environment;
-- PHP 8.3 minimum;
+- Joomla 6.0 or later, with or without the Backward Compatibility plugin;
+- PHP 8.3 or PHP 8.4 for production. Both versions are covered by release tests;
+- PHP 8.5 is checked in CI as an experimental compatibility target, not yet as a
+  production runtime;
 - MySQL or MariaDB compatible with Joomla 6;
 - Joomla permissions to install and administer extensions;
 - database permissions to create and alter tables during installation (the component

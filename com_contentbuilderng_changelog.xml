@@ -3,6 +3,40 @@
     <changelog>
         <element>com_contentbuilderng</element>
         <type>component</type>
+        <version>6.1.17</version>
+        <change>
+            <item>Restore a clean, compact View element grid by moving Sort/export type into an optional column hidden by default.</item>
+            <item>Keep explicit per-field XLSX typing available without changing values stored by ContentBuilder NG or BreezingForms NG.</item>
+            <item>Validate the release on Joomla 6 with PHP 8.3 and PHP 8.4; keep PHP 8.5 as an experimental CI target.</item>
+        </change>
+        <fix>
+            <item>Remove the Label cog and expandable control that widened rows and could clip the right side of the grid.</item>
+            <item>Centre Export consistently with the other capability columns.</item>
+        </fix>
+    </changelog>
+    <changelog>
+        <element>com_contentbuilderng</element>
+        <type>component</type>
+        <version>6.1.17-RC2</version>
+        <change>
+            <item>Move the sort/export type selector into an independent View-grid column hidden by default like Wrap.</item>
+        </change>
+        <fix>
+            <item>Restore the normal Label layout and prevent the advanced selector from widening or wrapping the Label column.</item>
+        </fix>
+    </changelog>
+    <changelog>
+        <element>com_contentbuilderng</element>
+        <type>component</type>
+        <version>6.1.17-RC1</version>
+        <fix>
+            <item>Keep element labels and the compact advanced sort-type control on one line in the View grid.</item>
+            <item>Reduce the advanced sort-type cog, remove its oversized frame and centre the Export capability column.</item>
+        </fix>
+    </changelog>
+    <changelog>
+        <element>com_contentbuilderng</element>
+        <type>component</type>
         <version>6.1.16</version>
         <change>
             <item>Promote the validated RC04 implementation and synchronize all shipped plugin versions.</item>

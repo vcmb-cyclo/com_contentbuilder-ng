@@ -173,6 +173,7 @@
     const cbElementsColumnsDefaultState = Object.freeze({
         id: true,
         label: true,
+        'order-type': false,
         list: true,
         search: true,
         link: true,

@@ -10,7 +10,7 @@ Le projet est issu de la migration et de la modernisation de l'ancien ContentBui
 de Crosstec. Il s'agit d'un projet communautaire, distinct du produit historique et
 fourni sans garantie.
 
-> ℹ️ **Note :** cette documentation décrit la version `6.1.7-RC79` du composant
+> ℹ️ **Note :** cette documentation décrit la version `6.1.17` du composant
 > (champ `<version>` du fichier `com_contentbuilderng.xml`). Les écrans et options
 > peuvent évoluer d'une version à l'autre.
 
@@ -30,10 +30,11 @@ compétences Joomla, HTML et PHP.
 
 ## Prérequis
 
-- Joomla 6.0 ou supérieur (le composant est testé sous Joomla 6.x, avec ou sans le
-  plugin de compatibilité ascendante). Joomla 5.4.x devrait fonctionner mais n'est
-  pas testé — *à vérifier* selon votre environnement ;
-- PHP 8.3 minimum ;
+- Joomla 6.0 ou supérieur, avec ou sans le plugin de compatibilité ascendante ;
+- PHP 8.3 ou PHP 8.4 en production. Les deux versions sont couvertes par les
+  tests de release ;
+- PHP 8.5 est contrôlé en CI comme cible de compatibilité expérimentale, pas
+  encore comme environnement de production ;
 - MySQL ou MariaDB compatible avec Joomla 6 ;
 - droits Joomla permettant d'installer et d'administrer des extensions ;
 - droits SQL suffisants pour créer et modifier les tables lors de l'installation
