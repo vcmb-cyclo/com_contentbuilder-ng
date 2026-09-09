@@ -1,6 +1,8 @@
 ALTER TABLE `#__contentbuilderng_forms`
-    MODIFY COLUMN `initial_order_dir2` VARCHAR(4) NOT NULL DEFAULT 'asc',
-    MODIFY COLUMN `initial_order_dir3` VARCHAR(4) NOT NULL DEFAULT 'asc';
+    MODIFY `initial_order_dir2` VARCHAR(4) NOT NULL DEFAULT 'asc';
+
+ALTER TABLE `#__contentbuilderng_forms`
+    MODIFY `initial_order_dir3` VARCHAR(4) NOT NULL DEFAULT 'asc';
 
 UPDATE `#__contentbuilderng_forms`
 SET `initial_order_dir2` = 'asc'

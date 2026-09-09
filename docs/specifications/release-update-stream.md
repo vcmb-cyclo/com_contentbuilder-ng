@@ -16,6 +16,10 @@
 - L'export conserve simultanément les filtres fixes du menu et les filtres frontend
   ou externes actifs, le tri effectif, la limite totale et l'ordre des colonnes Export
   propre au menu.
+- Les migrations historiques de modification de colonnes utilisent la forme SQL
+  comprise par le vérificateur de schéma Joomla 6.1.3 et une instruction `ALTER`
+  distincte par colonne. L'écran **Système > Maintenance > Base de données** ne
+  doit plus produire de requête de contrôle invalide sur MariaDB.
 - Les versions du composant, des assets et de tous les plugins livrés sont
   synchronisées sur `6.1.18` pour la publication finale.
 - Le manifeste Joomla Update reste sur `6.1.17` jusqu'à la création et à la

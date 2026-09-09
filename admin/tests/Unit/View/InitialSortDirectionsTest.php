@@ -59,8 +59,11 @@ final class InitialSortDirectionsTest extends TestCase
                 $form
             );
             self::assertStringContainsString("`" . $name . "` = 'asc'", $migration);
+            self::assertStringContainsString('MODIFY `' . $name . '`', $migration);
         }
 
+        self::assertSame(2, \substr_count($migration, 'ALTER TABLE'));
+        self::assertStringNotContainsString('MODIFY COLUMN', $migration);
         self::assertStringContainsString("String(orderField.value) !== '-1'", $layout);
         self::assertStringContainsString("\$sortField === '' ? 'asc'", $menuField);
         self::assertStringContainsString("direction.value = 'asc';", $menuScript);
