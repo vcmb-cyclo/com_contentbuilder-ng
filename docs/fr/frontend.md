@@ -31,6 +31,11 @@ Selon la configuration, l'utilisateur peut :
 Les actions réellement visibles dépendent à la fois de la configuration d'affichage et
 des permissions calculées.
 
+L'export XLSX reproduit la Vue liste effective : les filtres fixes du menu et les
+filtres frontend actifs sont combinés, le tri courant et la limite totale sont
+conservés, et les colonnes Export propres au menu gardent leur ordre configuré.
+L'export porte sur l'ensemble du résultat autorisé, pas seulement sur la page visible.
+
 > 📷 *Capture à ajouter : liste frontend avec barre de recherche, filtres et pagination — `docs/fr/img/frontend-liste.png`*
 
 ## Recherche et filtres

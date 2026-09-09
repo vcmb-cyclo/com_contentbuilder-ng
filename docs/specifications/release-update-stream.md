@@ -9,6 +9,27 @@
 
 ## Principe
 
+### Release 6.1.18
+
+- La release finale reprend la RC1 validée et corrige l'export XLSX des menus Joomla
+  List View filtrés et réorganisés.
+- L'export conserve simultanément les filtres fixes du menu et les filtres frontend
+  ou externes actifs, le tri effectif, la limite totale et l'ordre des colonnes Export
+  propre au menu.
+- Les versions du composant, des assets et de tous les plugins livrés sont
+  synchronisées sur `6.1.18` pour la publication finale.
+- Le manifeste Joomla Update reste sur `6.1.17` jusqu'à la création et à la
+  validation du ZIP GitHub par le workflow de publication.
+
+### Développement 6.1.18-RC1
+
+- La correction est développée sur `gil_6.1.18` à partir du `main` publié en
+  `6.1.17`.
+- La RC1 fait exporter la List View effective du menu au lieu de reconstruire le
+  fichier selon la seule Vue mère.
+- Les versions des plugins restent en `6.1.17` pendant la RC, leurs fichiers
+  fonctionnels n'ayant pas été modifiés.
+
 ### Release 6.1.17
 
 - La release finale reprend la RC2 validée : le réglage **Type de tri/export**

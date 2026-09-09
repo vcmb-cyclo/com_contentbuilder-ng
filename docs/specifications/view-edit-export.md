@@ -91,6 +91,11 @@ masquer dans la liste, ou exporter un élément non affiché lorsque la Vue mèr
 l'autorise. Elle ne peut jamais réactiver un élément dépublié ou dont la
 capacité Export est désactivée dans la Vue.
 
+L'ordre des lignes dans le configurateur de menu détermine aussi l'ordre des champs
+retenus pour l'export. Le fichier XLSX conserve les filtres fixes du menu en plus des
+filtres frontend ou externes actifs, ainsi que le tri effectif et la limite totale de
+la liste.
+
 ## Colonnes système
 
 Options propose un sélecteur compact et indépendant de l'affichage frontend

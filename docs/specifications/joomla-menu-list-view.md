@@ -434,6 +434,12 @@ L'export conserve le mécanisme actuel et respecte le contrat du nouveau menu :
 - toutes les lignes du résultat autorisé, pas seulement la page visible ;
 - aucune donnée provenant d'un champ non autorisé pour Export.
 
+Le lien XLSX transporte explicitement le contexte effectif du menu vers le modèle
+d'export : filtres fixes, champs de recherche, sélection Export, publication locale,
+tri, directions et limite. Les filtres frontend ou externes actifs complètent les
+filtres fixes du menu ; ils ne les remplacent pas. La sélection Export est appliquée
+dans l'ordre configuré dans le menu, sans revenir à l'ordre de la Vue mère.
+
 Un champ peut donc être absent des colonnes affichées et rester présent dans le
 fichier XLSX. Le menu peut retirer un champ exportable autorisé par la Vue, mais
 ne peut jamais ajouter un champ dont la capacité Export est désactivée dans la

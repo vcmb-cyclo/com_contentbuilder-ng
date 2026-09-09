@@ -47,6 +47,28 @@ final class MenuListConfigurationHelper
         ));
     }
 
+    /** @param list<int|string> $available @return list<int|string> */
+    public static function selectElementsInMenuOrder(array $available, string $rawSelectors): array
+    {
+        $selectors = array_values(array_unique(array_filter(array_map(
+            static fn(string $value): string => trim($value),
+            explode('|', $rawSelectors)
+        ), static fn(string $value): bool => $value !== '')));
+        if ($selectors === []) {
+            return $available;
+        }
+
+        $availableByReference = [];
+        foreach ($available as $reference) {
+            $availableByReference[(string) $reference] = $reference;
+        }
+
+        return array_values(array_map(
+            static fn(string $reference): int|string => $availableByReference[$reference],
+            array_filter($selectors, static fn(string $reference): bool => isset($availableByReference[$reference]))
+        ));
+    }
+
     /** @return array<string, mixed> */
     public static function decode(mixed $raw): array
     {
