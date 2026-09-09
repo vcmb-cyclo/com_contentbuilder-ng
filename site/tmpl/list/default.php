@@ -37,6 +37,7 @@ use CB\Component\Contentbuilderng\Site\Helper\PreviewThemeHelper;
 use CB\Component\Contentbuilderng\Site\Service\EmbeddedListActionFilterService;
 use CB\Component\Contentbuilderng\Site\Service\EmbeddedListContextService;
 use CB\Component\Contentbuilderng\Site\Service\EmbeddedListFieldFilterService;
+use CB\Component\Contentbuilderng\Site\Service\MenuDataFilterService;
 
 /** @var SiteApplication $app */
 $app = \CB\Component\Contentbuilderng\Administrator\Helper\RuntimeContextHelper::getApplication();
@@ -308,6 +309,18 @@ $exportQueryParams = [
     'list_publish_filter' => (int) ($state?->get('formsd_filter_publish') ?? $input->getInt('list_publish_filter', -1)),
     'list_language_filter' => (string) ($state?->get('formsd_filter_language') ?? $input->getCmd('list_language_filter', '')),
 ];
+$menuExportContext = array_filter([
+    'cb_new_list_menu' => $input->getInt('cb_new_list_menu', 0),
+    MenuDataFilterService::INPUT_NAME => (string) $input->get(MenuDataFilterService::INPUT_NAME, '', 'raw'),
+    'cb_menu_search_fields' => (string) $input->getString('cb_menu_search_fields', ''),
+    'cb_menu_export_fields' => (string) $input->getString('cb_menu_export_fields', ''),
+    'cb_menu_published_fields' => (string) $input->getString('cb_menu_published_fields', ''),
+    'cblist_fields' => (string) $input->getString('cblist_fields', ''),
+    'cblist_sort' => (string) $input->getString('cblist_sort', ''),
+    'cblist_dir' => (string) $input->getString('cblist_dir', ''),
+    'cblist_limit' => $input->getInt('cblist_limit', 0),
+], static fn(string|int $value): bool => $value !== '' && $value !== 0);
+$exportQueryParams = array_merge($exportQueryParams, $menuExportContext);
 if ($isEmbeddedListRequest) {
     $exportQueryParams = array_merge($exportQueryParams, $embeddedListParams, [
         'cblist_sort' => $embeddedListSort,

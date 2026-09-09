@@ -99,6 +99,8 @@ final class ListLimitConfigurationTest extends TestCase
         );
 
         self::assertStringContainsString("DEFAULT '-1'", $update);
+        self::assertStringContainsString('MODIFY `initial_list_limit`', $update);
+        self::assertStringNotContainsString('MODIFY COLUMN', $update);
         self::assertStringNotContainsString('UPDATE ', \strtoupper($update));
     }
 

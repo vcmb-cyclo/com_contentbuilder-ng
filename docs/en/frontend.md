@@ -24,6 +24,11 @@ create, edit, delete, publish, or change state.
 Actions are visible only when both display configuration and calculated permissions
 allow them.
 
+XLSX export reproduces the effective List View: fixed menu filters and active
+frontend filters are combined, the current sorting and total result limit are
+preserved, and menu-specific Export columns keep their configured order. The export
+covers the complete authorized result set, not only the visible page.
+
 > 📷 *Screenshot to add: frontend list with search bar, filters, and pagination — `docs/en/img/frontend-list.png`*
 
 ## Search and filters

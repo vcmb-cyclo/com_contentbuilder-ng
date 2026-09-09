@@ -232,8 +232,13 @@ class ExportModel extends BaseDatabaseModel
                             $i++;
                         }
 
-                        $this->recordFilters = $new_filters;
-                        $this->recordFilterOrder = $orders;
+                        foreach ($new_filters as $filterKey => $filterTerms) {
+                            $this->recordFilters[$filterKey] = $filterTerms;
+                        }
+
+                        foreach ($orders as $filterKey => $orderValue) {
+                            $this->recordFilterOrder[$filterKey] = $orderValue;
+                        }
                     }
 
                     $ordered_extra_title = '';
@@ -320,7 +325,7 @@ class ExportModel extends BaseDatabaseModel
                             $order_types['col' . $row['reference_id']] = $row['order_type'];
                         }
                         if ($newMenuCustomColumns) {
-                            $ids = MenuListConfigurationHelper::filterSearchableElements(
+                            $ids = MenuListConfigurationHelper::selectElementsInMenuOrder(
                                 $ids,
                                 (string) $app->getInput()->getString('cb_menu_export_fields', '')
                             );

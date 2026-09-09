@@ -267,4 +267,24 @@ final class MenuListConfigurationHelperTest extends TestCase
         self::assertStringContainsString("getString('cb_menu_published_fields', '')", $exportModel);
         self::assertStringContainsString('!$newMenuCustomColumns', $exportModel);
     }
+
+    public function testExportKeepsTheMenuColumnOrderAndConfiguration(): void
+    {
+        self::assertSame(
+            [12, 9],
+            MenuListConfigurationHelper::selectElementsInMenuOrder([9, 12, 18], '12|9')
+        );
+
+        $root = dirname(__DIR__, 4);
+        $template = (string) file_get_contents($root . '/site/tmpl/list/default.php');
+        $exportModel = (string) file_get_contents($root . '/site/src/Model/ExportModel.php');
+
+        self::assertStringContainsString('MenuDataFilterService::INPUT_NAME =>', $template);
+        self::assertStringContainsString("'cb_menu_export_fields' =>", $template);
+        self::assertStringContainsString("'cb_menu_published_fields' =>", $template);
+        self::assertStringContainsString("'cblist_sort' =>", $template);
+        self::assertStringContainsString('selectElementsInMenuOrder(', $exportModel);
+        self::assertStringContainsString('$this->recordFilters[$filterKey] = $filterTerms;', $exportModel);
+        self::assertStringNotContainsString('$this->recordFilters = $new_filters;', $exportModel);
+    }
 }

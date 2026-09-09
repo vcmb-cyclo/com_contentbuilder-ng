@@ -1,5 +1,18 @@
 # Changelog
 
+## 6.1.18 — 2026-09-09
+
+- Promote the validated RC1 fix so Joomla List View XLSX exports reproduce the effective menu configuration.
+- Preserve fixed menu filters when external filters are active and export the currently filtered and sorted result set.
+- Keep the menu-specific Export column selection in its configured order instead of reverting to the source View order.
+- Make historical column-change migrations readable by Joomla 6.1.3 Database Maintenance on MariaDB.
+- Synchronize the component assets and all shipped plugin versions for the production release.
+
+## 6.1.18-RC1 — 2026-09-09
+
+- Fix Joomla List View XLSX exports so they carry the effective menu filters, column selection, column order, sorting and result limit.
+- Merge active external filters with fixed menu filters instead of replacing the menu filter set during export.
+
 ## 6.1.17 — 2026-09-09
 
 - Restore a clean, compact element grid when configuring a View: labels no longer share their cell with a cog or an expandable setting.
