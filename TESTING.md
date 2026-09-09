@@ -79,4 +79,6 @@ Joomla image. The default must stay aligned with the supported main runtime.
 `.github/workflows/build-package.yml` runs for pull requests, pushes to `main`
 and manual dispatches. A release is created only by an authorized manual run on
 `main`, and only after the PHP 8.3/8.4/8.5 matrices, coverage, package and Joomla
-integration checks pass.
+integration checks pass. PHP 8.3 and PHP 8.4 are the supported production
+runtimes and must both be named in the release validation report; PHP 8.5 remains
+an experimental compatibility target.

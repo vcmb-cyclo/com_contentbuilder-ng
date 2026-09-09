@@ -9,6 +9,18 @@
 
 ## Principe
 
+### Release 6.1.17
+
+- La release finale reprend la RC2 validée : le réglage **Type de tri/export**
+  dispose de sa propre colonne, masquée par défaut, et le Label retrouve une
+  présentation compacte sans roue ni panneau extensible.
+- L'alignement de la colonne Export est homogène avec les autres capacités.
+- PHP 8.3 et PHP 8.4 sont tous deux contrôlés avant publication par la syntaxe
+  et la suite PHPUnit. Le packaging et le smoke test Joomla 6 s'exécutent sous
+  PHP 8.4. PHP 8.5 reste une cible expérimentale de compatibilité CI.
+- Les versions du composant, des assets et de tous les plugins livrés sont
+  synchronisées sur `6.1.17` pour la publication finale.
+
 ### Développement 6.1.17-RC2
 
 - La RC2 remplace la roue intégrée au Label par une colonne indépendante
@@ -78,7 +90,7 @@ Les fichiers suivants portent la version RC :
 La version de `media/joomla.asset.json` doit correspondre à celle du manifeste
 du composant, notamment lorsque le CSS change. Elle permet aux URL des
 ressources de changer de version pour éviter la réutilisation du CSS précédent
-depuis le cache du navigateur. Pour la version finale validée : `6.1.15`.
+depuis le cache du navigateur.
 
 Le fichier `com_contentbuilderng_update.xml` reste inchangé et continue de
 référencer la dernière release publiée. Le ZIP local n'inclut pas ce manifeste
@@ -88,6 +100,14 @@ Cette règle s'applique aussi lorsqu'une RC est installée manuellement sur un s
 de production : cette installation ne doit pas annoncer la RC aux autres sites.
 
 ## Publication
+
+Avant l'ouverture de la PR, une revue locale vérifie le diff complet par rapport
+à `origin/main`, la cohérence des versions, les traductions, la documentation,
+les fichiers distribués et l'absence de régression identifiable. Après
+l'ouverture de la PR, la revue est répétée sur le diff GitHub et complétée par
+les contrôles automatiques. La fusion et la publication ne sont autorisées que
+si la revue ne contient aucun constat bloquant et si tous les contrôles requis
+sont verts.
 
 Le manifeste de mise à jour peut être modifié seulement après que la release
 GitHub et son ZIP installable sont disponibles. Le workflow publie d'abord la
