@@ -37,19 +37,17 @@ Cette règle est corrigée dans `6.1.12-RC03`. Les sorties CBStats
 `percentage` et `progress`, ainsi que la parité API de `groupset`, restent celles
 documentées et introduites dans `6.1.12-RC02`.
 
-## Type de tri avancé
+## Type de tri/export
 
-Le réglage historique Type de tri est un réglage avancé propre à chaque
-élément. Dans `CB → Vue → Vue`, il est replié derrière une roue dentée placée à
-côté du libellé afin de ne pas surcharger la grille. Aucun sélecteur n'est
-visible tant que ce contrôle n'est pas ouvert. Lorsqu'un type explicite est
-enregistré, un badge discret indique sa valeur.
-
-À partir de `6.1.17-RC1`, le libellé et la roue fermée restent sur une seule
-ligne. La roue est un contrôle compact sans grand cadre visible ; seul un fond
-discret au survol ou au focus signale son interaction. L'ouverture du réglage
-peut développer son panneau sur la ligne suivante. La colonne Export reprend
-exactement la largeur et le centrage horizontal des autres colonnes de capacité.
+Le réglage historique Type de tri est propre à chaque élément. À partir de
+`6.1.17-RC2`, aucun contrôle de type n'est intégré dans la colonne Label. Dans
+`CB → Vue → Vue`, le réglage utilise une colonne indépendante
+**Type de tri/export**,
+masquée par défaut comme **Retour** et disponible dans le sélecteur de colonnes.
+Lorsqu'elle est affichée, elle présente directement le menu de type de chaque
+élément. Son choix de visibilité est mémorisé avec les autres colonnes de la Vue.
+La colonne Export conserve la largeur et le centrage horizontal des autres
+colonnes de capacité.
 
 Les valeurs disponibles sont Texte, Date et heure, Date, Heure, Entier et
 Décimal. L'absence de valeur conserve la détection automatique. Ce réglage ne

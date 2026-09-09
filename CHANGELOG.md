@@ -1,5 +1,10 @@
 # Changelog
 
+## 6.1.17-RC2 — 2026-09-09
+
+- Move the sort/export type selector out of Label into an independent View-grid column hidden by default like Wrap.
+- Restore the normal Label layout and keep the advanced selector directly accessible when its column is displayed.
+
 ## 6.1.17-RC1 — 2026-09-08
 
 - Keep element labels and their compact advanced sort-type control on one line in the View grid.

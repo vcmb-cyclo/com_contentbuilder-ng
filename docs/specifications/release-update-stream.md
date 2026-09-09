@@ -9,6 +9,15 @@
 
 ## Principe
 
+### Développement 6.1.17-RC2
+
+- La RC2 remplace la roue intégrée au Label par une colonne indépendante
+  **Type de tri/export**, masquée par défaut comme **Retour**.
+- Le Label retrouve sa mise en page normale ; afficher la colonne avancée donne
+  directement accès au sélecteur de type sans pictogramme intermédiaire.
+- Les versions des plugins restent en `6.1.16`, leurs fichiers n'étant pas
+  modifiés dans cette RC.
+
 ### Développement 6.1.17-RC1
 
 - La correction repart du `main` publié en `6.1.16` sur la branche
